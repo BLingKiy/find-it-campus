@@ -1,1 +1,22 @@
+# 依赖与构建产物
+node_modules/
+dist/
+target/
+
+# 日志
+*.log
+
+# IDE / 编辑器
+.idea/
+.vscode/
+
+# 本机私密配置（application-example.yml 提交，application-local.yml 不提交）
+.env
+.env.local
+server/src/main/resources/application-local.yml
+
+# Maven Wrapper：脚本与 properties 必须提交，只有 jar 忽略
+.mvn/wrapper/maven-wrapper.jar
+
+# 课件原始素材（仓库初始化时已有）
 /TheClassMaterial/
