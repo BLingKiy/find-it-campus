@@ -1,0 +1,15 @@
+{
+  "name": "find-it-campus-delivery-tools",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "阶段 6.2 交付材料构建：答辩 PPT 生成 + 演示路径自检",
+  "scripts": {
+    "build": "node build-ppt.mjs",
+    "check:demo": "node demo-path-check.mjs"
+  },
+  "dependencies": {
+    "playwright": "^1.64.1",
+    "pptxgenjs": "^4.0.1"
+  }
+}

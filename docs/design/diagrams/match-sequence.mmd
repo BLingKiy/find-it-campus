@@ -1,0 +1,34 @@
+%% find-it-campus · POST /api/match 调用时序（含失败出口）
+%% 事实来源：MatchController / MatchService / MatchCandidatePoolPort / KeywordMatchEngine / MatchResultMapper
+sequenceDiagram
+  autonumber
+  participant C as 浏览器
+  participant Ctl as MatchController
+  participant Svc as MatchService
+  participant Pool as MatchCandidatePoolPort
+  participant Eng as MatchEngine
+  participant DB as MySQL
+
+  C->>Ctl: POST /api/match {text, type?, categoryId?, topN?, minScore?, excludeRecordId?}
+  Ctl->>Svc: match(request)
+  Svc->>Svc: 校验 text（30001）· topN/minScore/type（10001）· categoryId 存在性（40001）
+
+  alt 引擎未装配（30002）
+    Svc-->>C: 503 · code 30002 · data.engine
+  else 引擎已装配
+    Svc->>Pool: load(type, categoryId, poolSize=500)
+    Pool->>DB: SELECT ... WHERE status='PENDING' AND deleted_at IS NULL LIMIT 500
+    Pool-->>Svc: List<MatchCandidateSource>
+    Svc->>Svc: 剔除 excludeRecordId
+    Svc->>Eng: match(candidates, query)
+    alt MatchEngineException
+      Eng-->>Svc: UNAVAILABLE / TIMEOUT
+      Svc-->>C: 503 · 30002 / 504 · 30003
+    else 正常返回
+      Eng-->>Svc: List<MatchCandidate>(recordId, score, reason)
+      Svc->>Svc: minScore 过滤 → 去重 → score DESC, recordId ASC → 截断 topN
+      Svc->>DB: selectSummariesByIds(ids)（再校验未删除且 PENDING）
+      Svc->>DB: INSERT t_match_result（失败仅 WARN，不影响响应）
+      Svc-->>C: 200 · code 0 · items（score / scorePercent / reason / 展示字段）
+    end
+  end

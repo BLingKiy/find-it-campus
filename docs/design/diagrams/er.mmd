@@ -1,0 +1,30 @@
+%% find-it-campus · 三张表 ER 图（关系与关键列）
+%% 事实来源：db/schema.sql（列名与约束逐列核对；31 列的完整字段说明见文档 §4.3）
+%% 取舍：字段类型与全部列在正文表里已经列全，这张图只保留「关系怎么连、哪一列起约束作用」，
+%%       这样字号才够大；把 31 列全塞进图里会让它在 A4 页宽下小到看不清。
+erDiagram
+  t_category ||--o{ t_record : "category_id（RESTRICT）"
+  t_category ||--o{ t_match_result : "input_category_id（SET NULL）"
+
+  t_category {
+    BIGINT id PK "自增主键"
+    VARCHAR code UK "稳定编码，如 WALLET"
+    VARCHAR name "中文名"
+    TINYINT is_active "1 启用 / 0 停用"
+  }
+
+  t_record {
+    BIGINT id PK "对外资源 id"
+    VARCHAR type "LOST / FOUND"
+    VARCHAR status "PENDING / CLAIMED / CLOSED"
+    BIGINT category_id FK "可空，指向 t_category"
+    DATETIME deleted_at "非空即逻辑删除"
+  }
+
+  t_match_result {
+    BIGINT id PK "响应体 matchId"
+    VARCHAR input_type "可空 = 不限类型"
+    BIGINT input_category_id FK "可空，指向 t_category"
+    VARCHAR impl "产出该结果的引擎"
+    JSON candidates "无外键，逻辑引用 t_record.id"
+  }

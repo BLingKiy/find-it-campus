@@ -1,0 +1,13 @@
+{
+  "name": "find-it-campus-design-doc-export",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "把 docs/design/*.md 导出为可提交的 DOCX（课程设计文档附录 A/B 一并合入）",
+  "scripts": {
+    "build": "node build-docx.mjs"
+  },
+  "dependencies": {
+    "docx": "^9.13.0"
+  }
+}

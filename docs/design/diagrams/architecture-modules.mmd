@@ -1,0 +1,19 @@
+%% find-it-campus · 后端模块边界与依赖方向（包级视图）
+%% 事实来源：server/src/main/java/com/findit/campus 包结构
+%% 说明：每个能力包内部仍是 web → service → mapper 的分层（见文档 §3.5 的表），
+%%       本图只画上下文边界与跨上下文依赖，避免把类名塞进一张图后看不清。
+%%{init: {"flowchart": {"wrappingWidth": 360, "nodeSpacing": 25, "rankSpacing": 45}}}%%
+flowchart TB
+  MATCH["match · 语义匹配上下文<br/>web · service · engine · mapper"]
+  LOCAL["engine.local<br/>KeywordMatchEngine（默认启用）"]
+  ADAPTER["service<br/>RecordCandidatePoolAdapter（候选池出口）"]
+  REC["record · 记录上下文<br/>web · service · mapper"]
+  CAT["category · 分类字典<br/>web · service · mapper"]
+  COMMON["common · 共享内核<br/>统一响应体 / 错误码 / 异常出口 / 引擎装配"]
+
+  LOCAL -. "implements MatchEngine" .-> MATCH
+  ADAPTER -. "implements MatchCandidatePoolPort" .-> MATCH
+  MATCH -->|"读候选池与回表（只读 record.mapper）"| REC
+  REC -->|"分类存在性与启用校验"| CAT
+  MATCH -->|"分类存在性校验"| CAT
+  COMMON -. "被所有上下文单向依赖，自身不反向依赖业务包" .-> MATCH
