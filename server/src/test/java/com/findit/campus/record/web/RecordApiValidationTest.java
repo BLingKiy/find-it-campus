@@ -117,6 +117,25 @@ class RecordApiValidationTest {
     }
 
     @Test
+    @DisplayName("POST 提交：occurredAt 日历非法（13 月 / 2 月 30 日 / 非闰年 2 月 29 日）→ 400 + 10001 + 只报一条 field=occurredAt（DEF-01）")
+    void calendarInvalidOccurredAtIsValidationError() throws Exception {
+        // 形状全部合法（正则放行），只有日历不成立；这类值曾经漏到 service 的 parse 才炸成 10005/500，
+        // 其中 2026-02-30 更糟 —— SMART 解析会把它悄悄纠成 2026-02-28 落库。
+        for (String value : List.of("2026-13-40 25:61:61", "2026-02-30 10:00:00", "2025-02-29 10:00:00")) {
+            mockMvc.perform(post("/api/records")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content("""
+                                    {"type":"LOST","title":"丢了一个灰色背包","description":"今天下午在第一教学楼 305 落下","location":"第一教学楼305","occurredAt":"%s"}
+                                    """.formatted(value)))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.code").value(10001))
+                    // 恰好一条：形状/日历/未来三个约束各管一条规则，同一个输入不许报两次
+                    .andExpect(jsonPath("$.data.fieldErrors[*].field", containsInAnyOrder("occurredAt")));
+        }
+        verifyNoInteractions(recordService);
+    }
+
+    @Test
     @DisplayName("POST 提交：纯空格标题按未填写处理（去首尾空格后判长，契约 §5.1）")
     void blankTitleIsRejected() throws Exception {
         mockMvc.perform(post("/api/records")

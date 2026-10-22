@@ -2,8 +2,16 @@ package com.findit.campus.record.web.dto;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
+import java.time.format.ResolverStyle;
+import java.util.List;
+import java.util.Map;
 
+import com.findit.campus.common.api.ErrorCode;
+import com.findit.campus.common.api.FieldError;
+import com.findit.campus.common.error.BizException;
 import com.findit.campus.common.validation.NotFutureMinutes;
+import com.findit.campus.common.validation.StrictDateTime;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
@@ -25,8 +33,22 @@ import jakarta.validation.constraints.Size;
  */
 public class RecordCreateRequest {
 
-    /** 与契约 §1 的时间格式、{@code DATETIME} 精度三者一致；解析只认这一种写法（格式严格）。 */
-    public static final DateTimeFormatter OCCURRED_AT_FORMAT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+    /**
+     * 时间字符串的<b>形状</b>（契约 §1）：分隔符与位数。形状合法不代表日期存在（{@code 2026-02-30} 形状合法）。
+     *
+     * <p>抽成常量是为了让 {@code @Pattern} 与 {@link StrictDateTime#shape()} 引用同一个字面量 ——
+     * 两处各写一份正则是同类 bug（改了一处忘了另一处）的温床。
+     */
+    public static final String DATE_TIME_SHAPE = "\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}";
+
+    /**
+     * 与契约 §1 的时间格式、{@code DATETIME} 精度三者一致；解析只认这一种写法（格式严格）。
+     *
+     * <p>两个都不能省：{@code uuuu}（年）而不是 {@code yyyy}（纪元年），否则 {@code STRICT} 下合法值也解析不了；
+     * {@code STRICT} 而不是默认 {@code SMART}，否则 {@code 2026-02-30} 会被悄悄纠成 {@code 2026-02-28} 写进库。
+     */
+    public static final DateTimeFormatter OCCURRED_AT_FORMAT =
+            DateTimeFormatter.ofPattern("uuuu-MM-dd HH:mm:ss").withResolverStyle(ResolverStyle.STRICT);
 
     @NotBlank(message = "type 不得为空")
     @Pattern(regexp = "LOST|FOUND", message = "type 取值非法：LOST / FOUND")
@@ -48,7 +70,8 @@ public class RecordCreateRequest {
     private String location;
 
     @NotBlank(message = "occurredAt 不得为空")
-    @Pattern(regexp = "\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}", message = "occurredAt 格式须为 yyyy-MM-dd HH:mm:ss")
+    @Pattern(regexp = DATE_TIME_SHAPE, message = "occurredAt 格式须为 yyyy-MM-dd HH:mm:ss")
+    @StrictDateTime(shape = DATE_TIME_SHAPE, message = "occurredAt 不是合法的日期时间（如 2026-02-30 不存在）")
     @NotFutureMinutes(value = 5, message = "occurredAt 不得晚于当前时间（容忍 5 分钟时钟偏差）")
     private String occurredAt;
 
@@ -124,9 +147,30 @@ public class RecordCreateRequest {
         this.publisherName = normalize(publisherName);
     }
 
-    /** 契约 §5.1：业务时间，格式已由 {@code @Pattern} 保证，这里只做解析。 */
+    /**
+     * 契约 §5.1：业务时间；形状由 {@code @Pattern}、日历合法性由 {@code @StrictDateTime} 保证，这里只做解析。
+     *
+     * <p><b>这里仍然必须自己兜住解析失败</b>（而不是直接 {@code LocalDateTime.parse}）：校验注解只在
+     * MVC 的 {@code @Valid} 出口生效，service 是公开方法，任何内部调用、异步重放、将来新增的入口都可能绕过它。
+     * 绕过时抛出的 {@link DateTimeParseException} 会落到 {@code GlobalExceptionHandler} 的兜底出口，
+     * 变成 {@code 10005/500} + 一条 ERROR 堆栈 —— 正是 DEF-01 的原始现象。这里把它翻成契约要求的
+     * {@code 10001/400}，并把字段名带给调用方，纵深防御的第二层。
+     */
     public LocalDateTime occurredAtAsDateTime() {
-        return LocalDateTime.parse(occurredAt, OCCURRED_AT_FORMAT);
+        if (occurredAt == null) {
+            throw invalidOccurredAt("occurredAt 不得为空");
+        }
+        try {
+            return LocalDateTime.parse(occurredAt, OCCURRED_AT_FORMAT);
+        } catch (DateTimeParseException e) {
+            throw invalidOccurredAt("occurredAt 不是合法的日期时间：" + occurredAt);
+        }
+    }
+
+    /** 与 {@code @Valid} 出口同形：{@code 10001 + data.fieldErrors[field=occurredAt]}，不走 10005。 */
+    private static BizException invalidOccurredAt(String reason) {
+        return BizException.of(ErrorCode.VALIDATION_FAILED, "请求参数校验失败",
+                Map.of("fieldErrors", List.of(new FieldError("occurredAt", reason))));
     }
 
     private static String normalize(String value) {
