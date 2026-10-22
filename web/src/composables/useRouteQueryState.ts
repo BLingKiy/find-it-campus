@@ -50,8 +50,12 @@ export function useRouteQueryState<T extends QueryState>(defaults: T): Ref<T> {
     (value) => {
       const next = pick(value, defaults)
       if (JSON.stringify(next) === JSON.stringify(pick(route.query, defaults))) return
-      // 合并不属于本次 state 的其他 query，防止外部参数被吃掉
-      void router.push({ path: route.path, query: { ...route.query, ...prune(next, defaults) } })
+      // 只保留不属于本次 state 的其他 query，防止外部参数被吃掉；属于本次 state 的键
+      // 一律以 next 为准。若沿用 route.query 的旧值，重置筛选后 keyword/type 会留在
+      // URL 里，刷新时筛选复活（DEF-02）。
+      const query: LocationQuery = { ...route.query }
+      for (const key of Object.keys(defaults)) delete query[key]
+      void router.push({ path: route.path, query: { ...query, ...prune(next, defaults) } })
     },
     { deep: true }
   )
