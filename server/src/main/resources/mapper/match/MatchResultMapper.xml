@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!--
+  t_match_result：/api/match 每次成功调用的快照（含空结果）。
+
+  candidates 传的是 JSON 文本（由 service 序列化），MySQL 的 JSON 列会在写入时校验合法性；
+  这里不用 #{...,jdbcType=...} 的花样，MySQL 直接吃字符串。
+
+  input_type 允许 NULL —— 契约 §8.1 允许调用不带 type（不限类型），此时"本次要找的类型"这个事实不存在，
+  存 LOST 或 FOUND 都是编造。3.1 已同步放宽 schema.sql 的 NOT NULL 与 CHECK（属放宽，可逆）。
+-->
+<mapper namespace="com.findit.campus.match.mapper.MatchResultMapper">
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id" keyColumn="id">
+        INSERT INTO t_match_result
+            (input_text, input_type, input_category_id, impl, top_n, min_score, candidates, cost_ms)
+        VALUES
+            (#{inputText}, #{inputType}, #{inputCategoryId}, #{impl}, #{topN}, #{minScore}, #{candidates}, #{costMs})
+    </insert>
+
+</mapper>

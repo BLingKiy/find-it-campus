@@ -60,6 +60,9 @@ findit:
   match:
     # local | external —— 取值非法时启动直接失败，不带病运行（MatchEngineConfig）
     engine: '${FINDIT_MATCH_ENGINE:local}'
+    # 候选池上限：匹配成本不该随全表线性增长（架构基线 §10）。
+    # 取值由 MatchService 读、由 RecordCandidatePoolAdapter 再兜一次底（防调用方误传超大值）
+    pool-size: 500
     external:
       base-url: '${FINDIT_EMBED_BASE_URL:}'
       api-key: '${FINDIT_EMBED_API_KEY:}'

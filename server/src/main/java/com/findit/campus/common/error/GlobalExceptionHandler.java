@@ -12,6 +12,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.validation.BindException;
 import org.springframework.validation.FieldError;
 import org.springframework.validation.method.ParameterValidationResult;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
@@ -89,6 +90,24 @@ public class GlobalExceptionHandler {
     }
 
     /**
+     * 出口 1a1b：{@code @ModelAttribute} 查询对象（如 3.1 的 {@code RecordQuery}）绑定后校验失败 → 10001 + fieldErrors。
+     *
+     * <p>为什么必须补它：请求体（{@code @RequestBody}）与方法级（{@code @RequestParam}）各自的异常出口已在上文，
+     * 但把一组查询参数收成 POJO 后，Spring 抛的是 {@link BindException} —— 它是
+     * {@link MethodArgumentNotValidException} 的<b>父类</b>，出口 1 不认它，缺这条就会掉进出口 4
+     * 变成 10005/500，而契约 §3.3 要求分页/枚举非法回 10001。
+     * 同时注册父子两个出口是安全的：Spring 取最具体的那个，请求体仍走出口 1。
+     */
+    @ExceptionHandler(BindException.class)
+    public ResponseEntity<ApiResponse<Map<String, Object>>> handleBind(BindException ex) {
+        List<com.findit.campus.common.api.FieldError> fieldErrors = ex.getBindingResult().getFieldErrors().stream()
+                .map(e -> new com.findit.campus.common.api.FieldError(e.getField(), safeReason(e)))
+                .toList();
+        log.warn("[{}] 查询参数校验失败: {}", RequestContext.requestId(), fieldErrors);
+        return fail(ErrorCode.VALIDATION_FAILED, Map.of("fieldErrors", fieldErrors));
+    }
+
+    /**
      * 出口 1a3：类级 {@code @Validated} + AOP 代理下的方法校验 → 10001 + 全量 fieldErrors，HTTP 400。
      *
      * <p>与出口 1a2 是同一件事的两副面孔：装配方式换成 {@code @Validated} 后，约束由
@@ -150,11 +169,11 @@ public class GlobalExceptionHandler {
         return fail(ErrorCode.RESOURCE_NOT_FOUND, null);
     }
 
-    /** 出口 3：业务异常 → 携带的错误码。 */
+    /** 出口 3：业务异常 → 携带的错误码（含契约要求的结构化 {@code data}，见 {@link BizException#data()}）。 */
     @ExceptionHandler(BizException.class)
     public ResponseEntity<ApiResponse<Map<String, Object>>> handleBiz(BizException ex) {
         log.warn("[{}] 业务异常 code={}: {}", RequestContext.requestId(), ex.errorCode().code(), ex.getMessage());
-        return fail(ex.errorCode(), null);
+        return fail(ex.errorCode(), ex.data());
     }
 
     /** 出口 4：其他一切异常 → 10005，日志打全栈，响应体只给 message + requestId。 */

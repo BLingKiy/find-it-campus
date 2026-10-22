@@ -318,7 +318,7 @@ t_match_result.candidates(JSON) …→ t_record.id   （无外键，见 §7.3 �
 |---|---|---|
 | `id` | PK | 快照主键（响应体回传 `matchId`） |
 | `input_text` | TEXT NOT NULL | 复现评估的原始输入 |
-| `input_type` | VARCHAR(8) NOT NULL CHECK | 本次要找 LOST 还是 FOUND，统计口径要用 |
+| `input_type` | VARCHAR(8) NULL CHECK | 本次要找 LOST 还是 FOUND，统计口径要用。**3.1 起可空**（契约 §8.1 允许不传 `type`）：不传时快照如实记 NULL，编一个 LOST/FOUND 会污染 5.1 评估数据；ALTER 见 `db/schema.sql` 附 2 |
 | `input_category_id` | BIGINT UNSIGNED NULL FK→t_category **SET NULL** | 分类加权参数；分类删除不影响快照可读 |
 | `impl` | VARCHAR(32) NOT NULL | 产出该结果的引擎标识（`LOCAL_KEYWORD`/`EXTERNAL_EMBEDDING`），换实现后的对比维度 |
 | `top_n` / `min_score` | SMALLINT / DECIMAL(6,4) NOT NULL | 请求参数留痕，评估时可分组统计"阈值 0.3 vs 0.5 命中率" |

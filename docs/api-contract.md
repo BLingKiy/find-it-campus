@@ -345,6 +345,7 @@ HTTP 状态码 = 该 code 的 `httpStatus`（见架构基线 §6.2 表）。未�
 |---|---|---|---|
 | `matchId` | number | 否 | `t_match_result.id`，快照主键。**不可逆点②：前端一旦使用就去不掉** |
 | `engine` | string | 否 | 实际执行的实现标识；答辩与排障看它，前端可用它显示"由本地关键词匹配给出" |
+| `inputType` | string | **是** | 本次"要找的记录类型"；请求未传 `type` 时返回 `null`（快照 `input_type` 同步记 NULL，不伪造 LOST/FOUND） |
 | `total` | number | 否 | = `items.length`（冗余但省得前端算长度，且与分页的 `total` 同词同义） |
 | `items[].score` | number | 否 | **0–1，保留 2 位小数**；口径见 §8.4 |
 | `items[].scorePercent` | integer | 否 | = round(score×100)，为前端展示准备的（避免每处各算各的） |
@@ -378,6 +379,8 @@ HTTP 状态码 = 该 code 的 `httpStatus`（见架构基线 §6.2 表）。未�
 ### 8.5 快照写入语义（写给 3.1 / 3.2）
 
 成功返回后写 `t_match_result`（含空结果）。写失败**只记 warn 日志，不影响响应**——快照是评估证据不是业务数据，不该让用户体验承担它的一致性（依据 A9，若你要求"必须落库才算成功"，改为前置写 + 整体回滚，架构基线 §7.4 已标出该位置）。
+
+> 3.1 DDL 放宽：`t_match_result.input_type` 可为 NULL。原因：§8.1 允许请求不带 `type`（不限类型），而本节要求每次成功调用都写快照；原 `NOT NULL` 下二者无解，编一个 LOST/FOUND 会污染评估口径。ALTER 语句见 `db/schema.sql` 附 2。快照写失败时响应里的 `matchId` 为 `null`（前端按"本次未留痕"处理，不影响 `items` 展示）。
 
 ---
 

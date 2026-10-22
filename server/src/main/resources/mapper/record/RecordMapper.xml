@@ -1,0 +1,168 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!--
+  t_record 的显式 SQL（ADR-004：原生 MyBatis + XML，不用 MyBatis-Plus / PageHelper）。
+
+  三条写在文件头的纪律：
+  1. 所有读路径带 deleted_at IS NULL（ADR-006）。漏一条等于让已删记录重新出现在列表/详情/匹配结果里。
+  2. 所有 ${} 一律为零 —— ORDER BY 的列名与方向由 <choose> 硬编码，入参只允许影响"选哪个分支"
+     （ADR-014：这是本项目唯一现实的注入面，堵死它只需要不在 SQL 里拼请求字符串）。
+  3. 写路径返回影响行数，由 service 把 0 行翻译成 20001；不在 SQL 里做"存在性判断"。
+-->
+<mapper namespace="com.findit.campus.record.mapper.RecordMapper">
+
+    <resultMap id="summaryMap" type="com.findit.campus.record.domain.RecordSummary">
+        <id property="id" column="id"/>
+        <result property="type" column="type"/>
+        <result property="status" column="status"/>
+        <result property="title" column="title"/>
+        <result property="categoryId" column="category_id"/>
+        <result property="categoryName" column="category_name"/>
+        <result property="location" column="location"/>
+        <result property="occurredAt" column="occurred_at"/>
+        <result property="createdAt" column="created_at"/>
+    </resultMap>
+
+    <resultMap id="recordMap" type="com.findit.campus.record.domain.Record">
+        <id property="id" column="id"/>
+        <result property="type" column="type"/>
+        <result property="status" column="status"/>
+        <result property="title" column="title"/>
+        <result property="description" column="description"/>
+        <result property="categoryId" column="category_id"/>
+        <result property="categoryName" column="category_name"/>
+        <result property="location" column="location"/>
+        <result property="occurredAt" column="occurred_at"/>
+        <result property="contact" column="contact"/>
+        <result property="publisherName" column="publisher_name"/>
+        <result property="deletedAt" column="deleted_at"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="updatedAt" column="updated_at"/>
+    </resultMap>
+
+    <resultMap id="candidateMap" type="com.findit.campus.record.domain.RecordCandidate">
+        <id property="id" column="id"/>
+        <result property="title" column="title"/>
+        <result property="description" column="description"/>
+        <result property="categoryId" column="category_id"/>
+        <result property="location" column="location"/>
+    </resultMap>
+
+    <!-- 列表与总数共用同一份条件，避免"总数 21、列表 20"这类两处条件写歪的事故 -->
+    <sql id="listJoins">
+        FROM t_record r
+        LEFT JOIN t_category c ON c.id = r.category_id
+        <where>
+            r.deleted_at IS NULL
+            <if test="condition.type != null">AND r.type = #{condition.type}</if>
+            <if test="condition.status != null">AND r.status = #{condition.status}</if>
+            <if test="condition.categoryId != null">AND r.category_id = #{condition.categoryId}</if>
+            <if test="condition.keywordPattern != null">
+                AND (r.title LIKE #{condition.keywordPattern} ESCAPE '/'
+                  OR r.description LIKE #{condition.keywordPattern} ESCAPE '/')
+            </if>
+        </where>
+    </sql>
+
+    <!--
+      排序：只认 RecordSortField / SortDirection 两个枚举的名字（由 service 从请求值查表得到）。
+      末尾恒追加 r.id DESC —— DATETIME 是秒精度，同秒创建的记录顺序不稳定，分页会出现重复/漏行。
+    -->
+    <sql id="orderByClause">
+        <choose>
+            <when test="condition.sortField == 'OCCURRED_AT'">
+                <choose>
+                    <when test="condition.sortDirection == 'ASC'">ORDER BY r.occurred_at ASC, r.id DESC</when>
+                    <otherwise>ORDER BY r.occurred_at DESC, r.id DESC</otherwise>
+                </choose>
+            </when>
+            <otherwise>
+                <choose>
+                    <when test="condition.sortDirection == 'ASC'">ORDER BY r.created_at ASC, r.id DESC</when>
+                    <otherwise>ORDER BY r.created_at DESC, r.id DESC</otherwise>
+                </choose>
+            </otherwise>
+        </choose>
+    </sql>
+
+    <select id="countByCondition" resultType="long">
+        SELECT COUNT(*)
+        <include refid="listJoins"/>
+    </select>
+
+    <select id="selectSummaries" resultMap="summaryMap">
+        SELECT r.id, r.type, r.status, r.title, r.category_id, c.name AS category_name,
+               r.location, r.occurred_at, r.created_at
+        <include refid="listJoins"/>
+        <include refid="orderByClause"/>
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <select id="selectById" resultMap="recordMap">
+        SELECT r.id, r.type, r.status, r.title, r.description, r.category_id, c.name AS category_name,
+               r.location, r.occurred_at, r.contact, r.publisher_name, r.deleted_at, r.created_at, r.updated_at
+        FROM t_record r
+        LEFT JOIN t_category c ON c.id = r.category_id
+        WHERE r.id = #{id} AND r.deleted_at IS NULL
+    </select>
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id" keyColumn="id">
+        INSERT INTO t_record
+            (type, status, title, description, category_id, location, occurred_at, contact, publisher_name)
+        VALUES
+            (#{type}, #{status}, #{title}, #{description}, #{categoryId}, #{location}, #{occurredAt},
+             #{contact}, #{publisherName})
+    </insert>
+
+    <update id="updateContent">
+        UPDATE t_record
+        SET type            = #{type},
+            title           = #{title},
+            description     = #{description},
+            category_id     = #{categoryId},
+            location        = #{location},
+            occurred_at     = #{occurredAt},
+            contact         = #{contact},
+            publisher_name  = #{publisherName}
+        WHERE id = #{id} AND deleted_at IS NULL
+    </update>
+
+    <update id="updateStatus">
+        UPDATE t_record
+        SET status = #{status}
+        WHERE id = #{id} AND deleted_at IS NULL
+    </update>
+
+    <!-- 幂等无关：已删再删影响 0 行，service 翻译成 20001（契约 §6.2 要求明确报错而非静默成功） -->
+    <update id="markDeleted">
+        UPDATE t_record
+        SET deleted_at = #{deletedAt}
+        WHERE id = #{id} AND deleted_at IS NULL
+    </update>
+
+    <!--
+      匹配候选池：口径与回表一致（PENDING + 未删除），两处同口径才不会出现
+      "CLAIMED 到底进不进结果"在取数与回表两个地方写法不一致（docs/ai-match-module.md §5 步骤 5）。
+    -->
+    <select id="selectCandidatePool" resultMap="candidateMap">
+        SELECT id, title, description, category_id, location
+        FROM t_record
+        <where>
+            deleted_at IS NULL AND status = 'PENDING'
+            <if test="type != null">AND type = #{type}</if>
+            <if test="categoryId != null">AND category_id = #{categoryId}</if>
+        </where>
+        ORDER BY created_at DESC, id DESC
+        LIMIT #{limit}
+    </select>
+
+    <select id="selectSummariesByIds" resultMap="summaryMap">
+        SELECT r.id, r.type, r.status, r.title, r.category_id, c.name AS category_name,
+               r.location, r.occurred_at, r.created_at
+        FROM t_record r
+        LEFT JOIN t_category c ON c.id = r.category_id
+        WHERE r.deleted_at IS NULL AND r.status = 'PENDING' AND r.id IN
+        <foreach item="id" collection="ids" open="(" separator="," close=")">#{id}</foreach>
+    </select>
+
+</mapper>

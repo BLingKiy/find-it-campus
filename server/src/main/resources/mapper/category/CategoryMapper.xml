@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!--
+  t_category：分类字典的只读 SQL。
+
+  排序固定 sort_order ASC, id ASC —— 契约 §7 要求"已排好序，前端不要再排"，
+  两个排序键都写死是为了让顺序稳定（只按 sort_order 时同序项的顺序随执行计划变，
+  前端下拉会莫名换位置，这种 bug 极难复现）。
+-->
+<mapper namespace="com.findit.campus.category.mapper.CategoryMapper">
+
+    <resultMap id="categoryMap" type="com.findit.campus.category.domain.Category">
+        <id property="id" column="id"/>
+        <result property="code" column="code"/>
+        <result property="name" column="name"/>
+        <result property="keywords" column="keywords"/>
+        <result property="sortOrder" column="sort_order"/>
+        <result property="active" column="is_active"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="updatedAt" column="updated_at"/>
+    </resultMap>
+
+    <select id="selectAll" resultMap="categoryMap">
+        SELECT id, code, name, keywords, sort_order, is_active, created_at, updated_at
+        FROM t_category
+        <if test="onlyActive">WHERE is_active = 1</if>
+        ORDER BY sort_order ASC, id ASC
+    </select>
+
+    <select id="selectById" resultMap="categoryMap">
+        SELECT id, code, name, keywords, sort_order, is_active, created_at, updated_at
+        FROM t_category
+        WHERE id = #{id}
+    </select>
+
+</mapper>
