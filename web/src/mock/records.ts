@@ -1,5 +1,6 @@
-// 临时样例数据（2.1 验收用渲染证据），仅在 api/records.ts 的 listRecords 内部使用
-// 页面组件不得 import 本文件；4.1 后端接通后连同 listRecords 里的 TODO 一起删除
+// TODO(4.1): 临时样例数据（骨架验收用渲染证据），仅在 api/records.ts 的 listRecords 内部使用
+// 页面组件不得 import 本文件；ZHYYKFX-8（4.1 页面接通后端）后连同 listRecords 里的开关分支一起删除
+// 若 4.1 决定保留开关供答辩演示，须在 4.1 明确写出保留理由
 import type { PageResult, RecordListItem, RecordQuery } from '@/types/api'
 
 const mockRecords: RecordListItem[] = [

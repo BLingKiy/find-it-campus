@@ -9,11 +9,16 @@ import type {
 import { mockRecordPage } from '@/mock/records'
 import { request } from './http'
 
+// TODO(4.1): mock 与开关分支在 ZHYYKFX-8（4.1 页面接通后端）后删除；
+// 若 4.1 决定保留开关供答辩演示，须在 4.1 明确写出保留理由。
+// 字符串比较：未设置或 =false 一律走真实接口。
+const USE_MOCK = import.meta.env.VITE_USE_MOCK === 'true'
+
 /** GET /api/records（契约 §3） */
 export function listRecords(query: RecordQuery = {}): Promise<PageResult<RecordListItem>> {
-  // TODO(2.1): mock → 后端接口接通后删除
-  return mockRecordPage(query)
-  // return request<PageResult<RecordListItem>>('/records', { query: { ...query } })
+  if (USE_MOCK) return mockRecordPage(query)
+  // baseURL 已含 /api，故路径为 /records
+  return request<PageResult<RecordListItem>>('/records', { query: { ...query } })
 }
 
 /** GET /api/records/{id}（契约 §4） */
