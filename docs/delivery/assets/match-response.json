@@ -1,0 +1,29 @@
+{
+  "code": 0,
+  "message": "ok",
+  "data": {
+    "matchId": 1,
+    "engine": "LOCAL_KEYWORD",
+    "inputType": "FOUND",
+    "topN": 5,
+    "minScore": 0.3,
+    "tookMs": 2,
+    "total": 1,
+    "items": [
+      {
+        "recordId": 13,
+        "score": 0.57,
+        "scorePercent": 57,
+        "reason": "关键词命中：钱包、现金、银行卡、书馆；分类词表命中：钱包卡证",
+        "type": "FOUND",
+        "status": "PENDING",
+        "title": "图书馆拾到黑色钱包",
+        "categoryName": "钱包卡证",
+        "location": "图书馆三楼自习区",
+        "occurredAt": "2026-10-20 15:00:00",
+        "createdAt": "2026-10-20 15:30:00"
+      }
+    ]
+  },
+  "requestId": "5d9e9d0767674185"
+}
