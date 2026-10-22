@@ -217,3 +217,17 @@ V4 是这套设计的价值核心：它把"可替换"从一句 PPT 话术变成�
 - 不做模型训练/微调、不做 embedding 持久化表。
 - 不做匹配结果的缓存层（重复输入直接命中缓存会绕过快照，评估样本会被吞掉）。
 - 不做多路召回融合（BM25 + 向量加权）——先证明单实现效果不足再谈。
+
+---
+
+## 8. 3.2 落地记录（2026-10-22）
+
+**实现**：`server/src/main/java/com/findit/campus/match/engine/local/KeywordMatchEngine.java`
+**装配**：`common/config/MatchEngineConfig#keywordMatchEngine`，`@ConditionalOnProperty(prefix="findit.match", name="engine", havingValue="local", matchIfMissing=true)`，容器内唯一 `MatchEngine` bean。
+
+- **依赖**：只注入 `CategoryMapper`，在首次匹配时读一次 `t_category.keywords` 并在进程内缓存；不注入 `RecordMapper`、不读 `t_record`、不写库、不认识 HTTP。
+- **打分**：中文 unigram + bigram、英文/数字整词；权重 = 基础权重 × 本次候选池 IDF；文本覆盖 0.78 + 标题覆盖 0.22 + 地点 bigram 覆盖 0.07 + 类目词表命中 0.25；`setScale(2, HALF_UP)` 后 clamp 到 `[0,1]`。
+- **契约**：引擎自身保证非 null、`size ≤ topN`、`score ≥ minScore`、去重、降序（同分按 recordId 升序）；`excludeRecordId` 由 `MatchService` 在调用引擎前剔除（3.1 已实现，引擎入参里没有这个字段）。
+- **样例结果**：S1–S6 top1 = 13/14/15/16/17/18；N1 top1 = 7 且 13–22 不出现；N2 空；N3 为 4/16 且 18 不出现；N4 top1 = 18，23（CLAIMED）/25（已删除）不进候选池。
+- **换 external 的改动面**：新增 `engine/remote/ExternalEmbeddingMatchEngine` + 包内 `EmbeddingClient`；在 `MatchEngineConfig` 加一个 `havingValue="external"` 的 `@Bean`；`application.yml` 设 `findit.match.engine=external` 并给 `base-url/api-key/timeout`。`MatchEngine` / `MatchQuery` / `MatchCandidate` / `MatchService` / `MatchController` / DTO / 前端均不改。
+- **代价与边界**：同义词（充电宝↔移动电源）、拼音、错别字召回弱；候选池外记录召回为 0；单次成本 O(候选池 × 查询词数)，池上限 500。需要语义泛化时按 §3.2 换实现。
