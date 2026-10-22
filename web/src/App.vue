@@ -24,7 +24,7 @@
     </main>
 
     <footer class="app-footer">
-      <div class="container">find-it-campus · 前端骨架 2.1-A（演示用 dev server）</div>
+      <div class="container">find-it-campus · 前端 4.1 页面（演示用 dev server）</div>
     </footer>
   </div>
 </template>

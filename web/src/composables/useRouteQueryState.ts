@@ -7,7 +7,7 @@ import { useRoute, useRouter } from 'vue-router'
 export type QueryState = Record<string, string | number>
 
 /** URL query 与本地 query state 都能喂进来做「按 defaults 取值 + 归一」 */
-function pick(source: LocationQuery | QueryState, defaults: QueryState): QueryState {
+function pick<T extends QueryState>(source: LocationQuery | QueryState, defaults: T): T {
   const result: QueryState = { ...defaults }
   for (const key of Object.keys(defaults)) {
     const raw = (source as Record<string, unknown>)[key]
@@ -16,14 +16,27 @@ function pick(source: LocationQuery | QueryState, defaults: QueryState): QuerySt
     if (typeof value !== 'string' && typeof value !== 'number') continue
     result[key] = typeof defaults[key] === 'number' ? Number(value) || defaults[key] : value
   }
-  return result
+  return result as T
 }
 
-/** 骨架阶段只做初始值读取 + 写回 URL；筛选表单的具体字段由 4.1 填充 */
-export function useRouteQueryState(defaults: QueryState): Ref<QueryState> {
+/**
+ * 写回 URL 时丢弃「等于默认值」与「空值」的项。否则分享链接会长成
+ * /?type=ALL&status=PENDING&keyword=&page=1&pageSize=10…，可读性为零。
+ */
+function prune<T extends QueryState>(value: T, defaults: T): Record<string, string> {
+  const query: Record<string, string> = {}
+  for (const [key, raw] of Object.entries(value)) {
+    if (raw === '' || raw === null || raw === undefined) continue
+    if (String(raw) === String(defaults[key])) continue
+    query[key] = String(raw)
+  }
+  return query
+}
+
+export function useRouteQueryState<T extends QueryState>(defaults: T): Ref<T> {
   const route = useRoute()
   const router = useRouter()
-  const state = ref<QueryState>(pick(route.query, defaults)) as Ref<QueryState>
+  const state = ref<T>(pick(route.query, defaults)) as Ref<T>
 
   watch(
     () => route.query,
@@ -35,11 +48,10 @@ export function useRouteQueryState(defaults: QueryState): Ref<QueryState> {
   watch(
     state,
     (value) => {
-      if (JSON.stringify(value) === JSON.stringify(pick(route.query, defaults))) return
       const next = pick(value, defaults)
-      const query: Record<string, string> = {}
-      for (const [key, item] of Object.entries(next)) query[key] = String(item)
-      void router.push({ path: route.path, query })
+      if (JSON.stringify(next) === JSON.stringify(pick(route.query, defaults))) return
+      // 合并不属于本次 state 的其他 query，防止外部参数被吃掉
+      void router.push({ path: route.path, query: { ...route.query, ...prune(next, defaults) } })
     },
     { deep: true }
   )
