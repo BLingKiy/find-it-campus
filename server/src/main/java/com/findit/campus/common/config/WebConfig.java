@@ -7,7 +7,7 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 /**
  * Web 层配置。当前只有 CORS —— 跨域的<b>兜底</b>路径（ADR-012）。
  *
- * <p>主路径是前端 Vite 代理（浏览器视角同源，零 CORS）；这条配置服务于"直接用 8080 调试 / 非代理消费者"。
+ * <p>主路径是前端 Vite 代理（浏览器视角同源，零 CORS）；这条配置服务于"直接调 18080 / 非代理消费者"。
  * 白名单写死两个开发源而<b>不用 {@code *}</b>：本项目无鉴权体系，但一旦将来加了 cookie 凭据，
  * {@code *} + credentials 是被浏览器拒绝的组合，提前堵掉这条路。
  *

@@ -399,7 +399,7 @@ HTTP 状态码 = 该 code 的 `httpStatus`（见架构基线 §6.2 表）。未�
 ## 10. curl 冒烟集（2.1 之后 5.1 直接扩展成接口测试）
 
 ```bash
-BASE=http://localhost:8080
+BASE=http://localhost:18080
 
 curl -s $BASE/api/health
 curl -s "$BASE/api/records?type=FOUND&status=PENDING&page=1&pageSize=5&sortBy=createdAt&sortOrder=desc"

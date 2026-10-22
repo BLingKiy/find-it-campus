@@ -27,7 +27,8 @@ import com.findit.campus.common.config.MatchEngineConfig;
  * <p>为什么它不是"永远返回 200 的假探针"：这个接口的用途是判断"前端能不能连、库通不通"，
  * 一个恒真的 UP 在演示排障时毫无价值。因此这里真连一次数据库 —— 拿不到连接就按契约返回
  * HTTP 503 + code 10005 + {@code db:"DOWN"}，<b>明确失败，不许挂住</b>。
- * 注意这里选的是 503 而不是 10005 默认映射的 500：两份基线文档口径不一致，详见方法内注释，待人类拍板改哪一处。
+ * 这里选 503 而不是 10005 默认映射的 500：两份基线文档原先口径不一致，人类已拍板「以契约为
+ * 准」（见 {@code docs/architecture-baseline.md} §6.2 表下注脚，2026-10-22）。
  *
  * <p>不靠 hang 的保证来自数据源侧超时：
  * {@code spring.datasource.hikari.connection-timeout=3s} 与 JDBC URL 上的 {@code connectTimeout/socketTimeout}，
@@ -62,10 +63,10 @@ public class HealthController {
 
         if ("DOWN".equals(db)) {
             log.warn("健康检查失败：数据库不可用");
-            // ⚠ 基线与契约在这里不一致，按契约执行，已报人类确认（见本文件类注释）：
-            // docs/api-contract.md §2 要求 DB 不可用时 HTTP 503 + code 10005；
-            // docs/architecture-baseline.md §6.2 表里 10005 默认映射 500。
-            // 取 503：body 的 code 仍是 10005，只是 HTTP 层多选了一个语义更准的状态码。
+            // 10005 的 HTTP 口径以契约为准（人类 2026-10-22 拍板，架构基线 §6.2 表下已同步注脚）：
+            // docs/api-contract.md §2 要求 DB 不可用时 HTTP 503 + code 10005。
+            // ErrorCode.INTERNAL_ERROR 枚举自身仍映射 500，故这里显式覆写 HTTP 层为 503；
+            // body 的 code 仍是 10005，只是状态码选了语义更准的那个。
             return new ResponseEntity<>(ApiResponse.fail(ErrorCode.INTERNAL_ERROR, data), new HttpHeaders(),
                     HttpStatusCode.valueOf(HttpStatus.SERVICE_UNAVAILABLE.value()));
         }

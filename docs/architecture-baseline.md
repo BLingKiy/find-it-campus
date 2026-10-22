@@ -90,7 +90,7 @@ category ✗→ 任何业务上下文
 [浏览器 SPA  Vue3+Vite :5173]
    │  HTTP JSON /api/** （开发期经 Vite 代理转发，无跨域）
    ▼
-[后端应用  Spring Boot :8080]  ← 单一进程，无状态
+[后端应用  Spring Boot :18080] ← 单一进程，无状态（默认端口 18080，非 8080，见 §9.2）
    ├─ record 能力   ─┐
    ├─ category 能力 ─┼─→ JDBC/HikariCP → [MySQL 8  find_it_campus: t_record / t_category / t_match_result]
    └─ match 能力   ──┘
@@ -219,7 +219,7 @@ com.findit.campus
 | 10002 | 413 | 请求体过大 | 超过 `spring.codec.max-in-memory-size`（基线 64KB） | null |
 | 10003 | 404 | 资源不存在 | 路径 id 不存在（通用兜底） | null |
 | 10004 | 405 | 方法不支持 | 路由存在但动词错 | null |
-| 10005 | 500 | 服务器内部错误 | 未预期异常；**响应体不含堆栈**，只含 requestId | null |
+| 10005 | 503 | 依赖不可用 / 服务器内部错误 | 依赖（DB、外部引擎）不可用或未预期异常；**响应体不含堆栈**，只含 requestId | null（`GET /api/health` 例外：`{"status":"DOWN","db":"DOWN",…}`） |
 | 20001 | 404 | 记录不存在或已删除 | `GET/PUT/PATCH/DELETE /api/records/{id}` | null |
 | 20002 | 409 | 状态流转非法 | 违反 §7.4 流转表（如 CLOSED→CLAIMED） | `{"current":"CLOSED","allowed":[…]}` |
 | 20003 | 409 | 记录当前状态不可执行该操作 | 业务禁止的删除/修改（**依赖 1.1 规则，Q-03**） | null |
@@ -229,6 +229,13 @@ com.findit.campus
 | 30004 | 429 | 匹配调用过于频繁 | 若人类确认需要限流才启用（当前基线**不实现**） | null |
 | 40001 | 404 | 分类不存在 | 提交/筛选带了不存在的 `categoryId` | null |
 | 40002 | 409 | 分类停用不可选 | 提交时 `categoryId` 指向 `is_active=0` | null |
+
+> **10005 的 HTTP 口径已对齐为 503**（2026-10-22，人类拍板）：原基线表里写 500，与
+> `docs/api-contract.md` §2「DB 不可用 → HTTP 503 + code 10005」冲突，**以契约为准**。
+> 代码侧落地：`HealthController` 在 DB 探测失败时用 `ErrorCode.INTERNAL_ERROR`（body `code=10005`）
+> 显式覆写 HTTP 状态为 503；`ErrorCode.INTERNAL_ERROR` 枚举自身的 `httpStatus` 仍是 `INTERNAL_SERVER_ERROR`，
+> 即未预期异常的通用兜底仍走 500。`api-contract.md` 第 45、367 行仍有「未预期异常 500 + 10005」的表述，
+> 与第 56 行的 503 并存 —— 是否把契约里这两处也统一，留给人类确认（**未替他改**）。
 
 ### 6.3 全局异常处理
 
@@ -365,7 +372,7 @@ t_match_result.candidates(JSON) …→ t_record.id   （无外键，见 §7.3 �
 
 ### 9.2 配置约定
 
-- `server.port=8080`、`web` dev server `5173`（Vite 默认）。
+- `server.port=18080`、`web` dev server `5173`（Vite 默认）。**不是 8080**：本机 8080 已被另一个服务（upload-svc）长期占用，整合时把仓库默认端口整体对齐到 18080，前端 Vite 代理同步指向它，避免每人各配一次。
 - 敏感配置（DB 密码、外部模型 API Key）只从环境变量读：`FINDIT_DB_URL` / `FINDIT_DB_USER` / `FINDIT_DB_PASSWORD` / `FINDIT_EMBED_BASE_URL` / `FINDIT_EMBED_API_KEY`；`application.yml` 里写 `${VAR:默认值}`。
 - **提交 `application-example.yml`，不提交 `application-local.yml` 与任何 `.env`**；缺必要变量时启动即失败（`@Validated` 配置类或 `MatchProperties` 校验），不要带病启动。
 - 外部模型类配置遵循 `findit.match.*` 前缀（见 `docs/ai-match-module.md`）。
@@ -378,12 +385,12 @@ mysql -u root -p -e "SOURCE db/schema.sql"
 mysql -u root -p find_it_campus -e "SOURCE db/seed.sql"
 
 # 1. 后端（server 目录，Windows 用 mvnw.cmd）
-./mvnw spring-boot:run                      # http://localhost:8080/api/health
+./mvnw spring-boot:run                      # http://localhost:18080/api/health
 ./mvnw -q clean package                     # 构建产物 server/target/*.jar
 
 # 2. 前端（web 目录）
 npm install
-npm run dev                                 # http://localhost:5173  （/api 经代理转 8080）
+npm run dev                                 # http://localhost:5173  （/api 经代理转 18080）
 npm run build && npm run preview            # 构建 + 本地预览
 ```
 
@@ -391,10 +398,10 @@ npm run build && npm run preview            # 构建 + 本地预览
 
 ### 9.4 跨域方案（双轨，ADR-012）
 
-1. **开发期主路径 = Vite 代理**：`server.proxy['/api'] → http://localhost:8080`，浏览器视角同源，零 CORS 问题，生产部署时前端配同源 base 或反代。
-2. **后端同时显式配置 CORS**，为"直接用 `http://localhost:8080`/非代理消费者"兜底：`allowedOriginPatterns=["http://localhost:5173","http://127.0.0.1:5173"]`、`allowedMethods=GET,POST,PUT,PATCH,DELETE,OPTIONS`、`allowCredentials=false`（无鉴权体系，不需要 credentials；**不用 `*`**）。
+1. **开发期主路径 = Vite 代理**：`server.proxy['/api'] → http://localhost:18080`，浏览器视角同源，零 CORS 问题，生产部署时前端配同源 base 或反代。
+2. **后端同时显式配置 CORS**，为"直接用 `http://localhost:18080`/非代理消费者"兜底：`allowedOriginPatterns=["http://localhost:5173","http://127.0.0.1:5173"]`、`allowedMethods=GET,POST,PUT,PATCH,DELETE,OPTIONS`、`allowCredentials=false`（无鉴权体系，不需要 credentials；**不用 `*`**）。
 
-代价：两条路径都可能"看起来能用"，联调时容易分不清错误来自哪一层。缓解：README 里写明默认走代理，若前端 `VITE_API_BASE_URL` 直指 8080 则走 CORS。
+代价：两条路径都可能"看起来能用"，联调时容易分不清错误来自哪一层。缓解：README 里写明默认走代理，若前端 `VITE_API_BASE_URL` 直指 18080 则走 CORS。
 
 ### 9.5 `.gitignore` 增补（现仓库只忽略了 `/TheClassMaterial/`）
 

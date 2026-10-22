@@ -152,7 +152,7 @@ export function request<T>(path: string, init?: {
 ```
 
 行为契约（页面可依赖，不许各自变通）：
-1. `baseURL` 取 `import.meta.env.VITE_API_BASE_URL ?? '/api'`，**代码里不出现 `localhost:8080`**。
+1. `baseURL` 取 `import.meta.env.VITE_API_BASE_URL ?? '/api'`，**代码里不出现 `localhost:18080`**（端口只在 `vite.config.ts` 的代理目标与 `.env.example` 里出现一次）。
 2. `AbortController` 超时；网络失败/超时抛 `BizError{code:-1,status:0}`，`message` 用固定中文"网络请求失败，请稍后再试"。
 3. 解包：`code===0 && 2xx` ⇒ resolve `data`；否则抛 `BizError`（携带 `code/message/fieldErrors/requestId`）。**页面层永远看不到 `ApiResponse` 外层**，也就永远不会忘了判 `code`。
 4. HTTP 与 code 的映射文案在 §9（api-contract.md）那张表里，前端错误展示按它分流，不在组件里 switch 数字——统一走 `describeError(err): string`（`src/api/http.ts` 导出）。
@@ -203,7 +203,7 @@ const { data, error, loading, run } = useRequest(listRecords, { immediate: false
 ```bash
 cd web
 npm install            # Node 22.x LTS（本机实测 v22.23.3 / npm 10.9.9）
-npm run dev            # http://localhost:5173 ，/api 代理到 http://localhost:8080
+npm run dev            # http://localhost:5173 ，/api 代理到 http://localhost:18080
 npm run build          # 产物 dist/
 npm run preview        # 本地验证构建产物
 npm run type-check     # vue-tsc --noEmit（若选 TS）
@@ -217,7 +217,7 @@ export default defineConfig({
   resolve: { alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) } },
   server: {
     port: 5173,
-    proxy: { '/api': { target: 'http://localhost:8080', changeOrigin: true } }
+    proxy: { '/api': { target: 'http://localhost:18080', changeOrigin: true } }
   },
   build: { outDir: 'dist', sourcemap: false }
 })
@@ -225,7 +225,7 @@ export default defineConfig({
 
 | 变量 | 默认 | 说明 |
 |---|---|---|
-| `VITE_API_BASE_URL` | `/api` | 一般不改；若前端直连后端 8080 则设 `http://localhost:8080/api`，此时依赖后端 CORS（架构基线 §9.4） |
+| `VITE_API_BASE_URL` | `/api` | 一般不改；若前端直连后端则设 `http://localhost:18080/api`，此时依赖后端 CORS（架构基线 §9.4） |
 
 - 前端**不读任何密钥**（外部模型 Key 只在后端）。若将来需要前端直连模型服务，那属于范围变更，须先报人类。
 - 生产形态（若答辩需要打包演示）：`npm run build` 后把 `dist/` 交给 `server` 静态目录或由 Nginx 反代同源；本课程版**不实现**，README 写一句"演示用 dev server"。
