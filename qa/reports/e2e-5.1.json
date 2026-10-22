@@ -1,13 +1,13 @@
 {
   "summary": {
     "title": "e2e-5.1",
-    "startedAt": "2026-10-22T07:10:48.377Z",
+    "startedAt": "2026-10-22T09:45:08.501Z",
     "total": 19,
-    "passed": 18,
-    "failed": 1,
-    "knownFailures": 1,
-    "passRate": "94.7%",
-    "durationMs": 13366
+    "passed": 19,
+    "failed": 0,
+    "knownFailures": 0,
+    "passRate": "100.0%",
+    "durationMs": 15781
   },
   "cases": [
     {
@@ -15,128 +15,126 @@
       "priority": "P0",
       "name": "列表页默认加载：10 条 / 共 21 条 / 3 页",
       "status": "PASS",
-      "durationMs": 1057
+      "durationMs": 2240
     },
     {
       "id": "E2E-L-02",
       "priority": "P0",
       "name": "类型筛选 FOUND：卡片全部是「招领」且 URL 同步",
       "status": "PASS",
-      "durationMs": 673
+      "durationMs": 601
     },
     {
       "id": "E2E-L-03",
       "priority": "P0",
       "name": "关键词「钱包」：命中 2 条且 URL 带 keyword",
       "status": "PASS",
-      "durationMs": 462
+      "durationMs": 519
     },
     {
       "id": "E2E-L-04",
       "priority": "P1",
       "name": "重置筛选应同时清空 URL（刷新后不应重现筛选）",
-      "status": "KNOWN_FAIL",
-      "knownDefect": "DEF-02",
-      "reason": "重置后 URL 残留的筛选参数：期望 []，实际 [[\"keyword\",\"钱包\"]]",
-      "durationMs": 77
+      "status": "PASS",
+      "durationMs": 849
     },
     {
       "id": "E2E-L-05",
       "priority": "P1",
       "name": "翻到第 2 页：URL page=2 且卡片与第 1 页不重复",
       "status": "PASS",
-      "durationMs": 942
+      "durationMs": 921
     },
     {
       "id": "E2E-D-01",
       "priority": "P0",
       "name": "点卡片进详情：标题/分类/地点/描述与列表一致",
       "status": "PASS",
-      "durationMs": 590
+      "durationMs": 995
     },
     {
       "id": "E2E-D-02",
       "priority": "P0",
       "name": "详情页发起匹配：出现名次、相似度与排序说明",
       "status": "PASS",
-      "durationMs": 446
+      "durationMs": 760
     },
     {
       "id": "E2E-D-03",
       "priority": "P0",
       "name": "详情页状态流转：标记为已认领后按钮随 allowedStatuses 收缩",
       "status": "PASS",
-      "durationMs": 955
+      "durationMs": 931
     },
     {
       "id": "E2E-C-01",
       "priority": "P0",
       "name": "提交页黄金路径：填写 → 提交 → 跳详情并提示发布成功",
       "status": "PASS",
-      "durationMs": 1275
+      "durationMs": 1610
     },
     {
       "id": "E2E-C-02",
       "priority": "P0",
       "name": "列表能看到刚提交的记录（createdAt desc 首位）",
       "status": "PASS",
-      "durationMs": 351
+      "durationMs": 338
     },
     {
       "id": "E2E-C-03",
       "priority": "P1",
       "name": "关键词检索刚提交的记录，详情可回跳",
       "status": "PASS",
-      "durationMs": 192
+      "durationMs": 190
     },
     {
       "id": "E2E-C-04",
       "priority": "P0",
       "name": "全新浏览器上下文直接打开该记录详情，内容仍完整（非 sessionStorage）",
       "status": "PASS",
-      "durationMs": 1076
+      "durationMs": 931
     },
     {
       "id": "E2E-E-01",
       "priority": "P0",
       "name": "校验失败：空表单提交出现页级摘要 + 字段级错误",
       "status": "PASS",
-      "durationMs": 484
+      "durationMs": 535
     },
     {
       "id": "E2E-E-02",
       "priority": "P0",
       "name": "后端不可用：列表显示错误条，恢复后「重试」能拉到数据",
       "status": "PASS",
-      "durationMs": 652
+      "durationMs": 713
     },
     {
       "id": "E2E-E-03",
       "priority": "P1",
       "name": "空数据：显示空态而不是错误或空白页",
       "status": "PASS",
-      "durationMs": 452
+      "durationMs": 497
     },
     {
       "id": "E2E-E-04",
       "priority": "P1",
       "name": "详情 404：显示「记录不存在或已删除」空态，不给重试",
       "status": "PASS",
-      "durationMs": 328
+      "durationMs": 324
     },
     {
       "id": "E2E-E-05",
       "priority": "P1",
       "name": "接口 500：错误条带 requestId，便于按 id 查日志",
       "status": "PASS",
-      "durationMs": 428
+      "durationMs": 408
     },
     {
       "id": "E2E-E-06",
       "priority": "P1",
       "name": "匹配服务 503：只降级匹配区，详情主体照常可用",
       "status": "PASS",
-      "durationMs": 516
+      "durationMs": 595
     },
     {
       "id": "E2E-Z-01",

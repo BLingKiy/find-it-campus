@@ -1,4 +1,4 @@
-# 5.1 全量回归 · 2026-10-22T07:10:13.920Z
+# 5.1 全量回归 · 2026-10-22T09:44:28.923Z
 - 后端：http://localhost:18080
 - 前端：http://localhost:5173
 - MySQL 客户端：C:/Project/tools/mysql/mysql-8.0.29-winx64/bin/mysql.exe
@@ -12,77 +12,75 @@
 
   清理：逻辑删除本轮创建的 15 条记录（种子数据未改动）
   清理后基线自检：默认列表 total=21（应为 21）
-  PASS  ENV-01 [P0] 后端可达且数据库为 seed 初始状态（total=21） (96ms)
-  PASS  API-CON-01 [P1] 外层响应体恒含 code/message/data/requestId 四字段 (13ms)
-  PASS  API-CON-02 [P1] 未知路径返回 404 + 10003，而非框架默认错误页 (4ms)
-  PASS  API-CON-03 [P1] 动词不支持返回 405 + 10004 (4ms)
-  PASS  API-CON-04 [P2] 请求体不是合法 JSON 时返回 400 + 10001 (17ms)
-  PASS  API-CON-05 [P2] 错误响应不含堆栈信息 (7ms)
-  PASS  API-L-01 [P0] 默认参数：status=PENDING、page=1、pageSize=10、createdAt desc (13ms)
-  PASS  API-L-02 [P0] 列表项字段白名单：不含 description / contact / publisherName (8ms)
-  PASS  API-L-03 [P0] type=FOUND 过滤后全部为 FOUND (6ms)
-  PASS  API-L-04 [P1] status=ALL 含已认领/已关闭但排除逻辑删除 (5ms)
-  PASS  API-L-05 [P1] categoryId 过滤且停用分类返回 40002 (16ms)
-  PASS  API-L-06 [P1] keyword 命中标题与描述（中文，不区分字段） (6ms)
-  PASS  API-L-07 [P1] keyword 中的 % 与 _ 按字面量处理，不当通配符 (9ms)
-  PASS  API-L-08 [P1] 分页无重复且末页 hasNext=false (16ms)
-  PASS  API-L-09 [P1] sortBy=occurredAt&asc 按发生时间升序 (5ms)
-  PASS  API-L-10 [P1] sortBy=createdAt&desc 严格降序且两次调用顺序一致 (16ms)
-  PASS  API-L-11 [P2] 分页与枚举参数非法逐项返回 10001 + fieldErrors (45ms)
-  PASS  API-L-12 [P3] 页码越界返回空列表而非报错 (7ms)
-  PASS  API-D-01 [P0] 详情返回完整字段与 allowedStatuses (5ms)
-  PASS  API-D-02 [P1] 逻辑删除记录 404 + 20001 (4ms)
-  PASS  API-D-03 [P1] 不存在的 id 404 + 20001 (6ms)
-  PASS  API-D-04 [P1] 非数字 id 400 + 10001（/records/new 路由不被 id 抢走） (7ms)
-  PASS  API-D-05 [P1] CLOSED 记录 allowedStatuses 为空、CLAIMED 只可到 CLOSED (11ms)
-  PASS  API-D-06 [P2] 无分类记录的 categoryId / categoryName 为 null (4ms)
-  PASS  API-C-01 [P0] 合法提交返回与详情同构的对象，初始状态 PENDING (17ms)
-  PASS  API-C-02 [P1] 可选字段缺省时落为 null (366ms)
-  PASS  API-C-03 [P1] 分类不存在 404/40001，分类停用 409/40002 (10ms)
-  PASS  API-C-04 [P1] 标题长度边界：1 字与 65 字均 10001 (7ms)
-  PASS  API-C-05 [P1] 描述长度边界：1 字拒绝、2000 字通过 (380ms)
-  PASS  API-C-06 [P1] 地点 129 字拒绝、1 字通过 (371ms)
-  PASS  API-C-07 [P1] occurredAt 未来 10 分钟拒绝、3 分钟放行（容差 5 分钟） (21ms)
-  KNOWN_FAIL DEF-01  API-C-08 [P1] occurredAt 格式严格（分隔符、时间必须合法） (16ms)
-        → occurredAt=2026-13-40 25:61:61：期望 HTTP 400 + code 10001，实际 HTTP 500 / code=10005 / message="服务器内部错误" / requestId=36a4ef7d3a21409c
-  PASS  API-C-09 [P1] type 非法 10001，必填项缺失一并返回 fieldErrors (10ms)
-  PASS  API-C-10 [P1] contact 只允许数字/字母/中文/-_()，空格与符号被拒 (37ms)
-  PASS  API-C-11 [P2] 中文与 emoji 往返无损（UTF-8 全链路） (12ms)
-  PASS  API-C-12 [P2] 纯空格标题被 strip 后判空 (3ms)
-  PASS  API-C-13 [P3] 重复提交不幂等（契约 §5.2 已知行为，产生两条记录） (382ms)
-  PASS  API-U-01 [P0] 全量更新成功且不改 status (381ms)
-  PASS  API-U-02 [P1] 未传的可选字段按全量语义清空为 null (28ms)
-  PASS  API-U-03 [P1] 已关闭记录不可修改 409 + 20003 (5ms)
-  PASS  API-U-04 [P1] PUT 不存在的记录 404 + 20001 (4ms)
-  PASS  API-U-05 [P1] PUT 缺 type 或字段非法时 10001 (18ms)
-  PASS  API-S-01 [P0] PENDING → CLAIMED → CLOSED 全链路，allowedStatuses 同步收缩 (384ms)
-  PASS  API-S-02 [P1] 终态不可再流转 409 + 20002，且带 current / allowed (5ms)
-  PASS  API-S-03 [P1] 流转到当前相同状态 409 + 20002 (5ms)
-  PASS  API-S-04 [P1] 目标状态非法 400 + 10001（field=status） (4ms)
-  PASS  API-S-05 [P1] 对不存在的记录流转 404 + 20001 (4ms)
-  PASS  API-X-01 [P0] 逻辑删除后详情 404、列表不可见、匹配候选池不含 (745ms)
-  PASS  API-X-02 [P1] 重复删除 404 + 20001 (380ms)
-  PASS  API-X-03 [P1] 删除不存在的记录 404 + 20001 (4ms)
-  PASS  API-CAT-01 [P0] 默认只返启用分类，按 sortOrder 升序，字段与契约一致 (3ms)
-  PASS  API-CAT-02 [P1] onlyActive=false 含停用分类 (4ms)
-  PASS  API-M-01 [P0] S1–S6 正例 top1 命中（失主找招领帖 ⇒ type=FOUND） (1481ms)
-  PASS  API-M-02 [P0] 结果结构与排序：倒序、去重、score 口径、total=items.length (366ms)
-  PASS  API-M-03 [P1] excludeRecordId 生效（详情页发起匹配时排除自身） (357ms)
-  PASS  API-M-04 [P1] N1 计算器问句命中 7（拾到者找失物帖 ⇒ type=LOST） (15ms)
-  PASS  API-M-05 [P1] N2 负例返回 200 + 空结果（不是错误、不是高分误报） (12ms)
-  PASS  API-M-06 [P1] N4 不返回已认领(23)与已删除(25) (14ms)
-  PASS  API-M-07 [P1] N3 同时命中 4 与 16（雨伞语义两侧都能召回） (14ms)
-  PASS  API-M-08 [P1] 同一输入两次调用结果完全一致（本地实现必须确定） (27ms)
-  PASS  API-M-09 [P1] topN / minScore / type / categoryId 约束生效 (1109ms)
-  PASS  API-M-10 [P1] text 非法统一回 400 + 30001（空/1 字/超长） (13ms)
-  PASS  API-M-11 [P2] topN / minScore / type / categoryId 非法各自 10001 或 40001 (28ms)
-  PASS  API-M-12 [P2] 并发 10 次匹配全部 200 且快照 id 唯一 (403ms)
-
-  api-5.1: 总数 64 / 通过 63 / 失败 1（已登记缺陷 1） / 通过率 98.4%
+  PASS  ENV-01 [P0] 后端可达且数据库为 seed 初始状态（total=21） (450ms)
+  PASS  API-CON-01 [P1] 外层响应体恒含 code/message/data/requestId 四字段 (66ms)
+  PASS  API-CON-02 [P1] 未知路径返回 404 + 10003，而非框架默认错误页 (15ms)
+  PASS  API-CON-03 [P1] 动词不支持返回 405 + 10004 (14ms)
+  PASS  API-CON-04 [P2] 请求体不是合法 JSON 时返回 400 + 10001 (135ms)
+  PASS  API-CON-05 [P2] 错误响应不含堆栈信息 (65ms)
+  PASS  API-L-01 [P0] 默认参数：status=PENDING、page=1、pageSize=10、createdAt desc (24ms)
+  PASS  API-L-02 [P0] 列表项字段白名单：不含 description / contact / publisherName (20ms)
+  PASS  API-L-03 [P0] type=FOUND 过滤后全部为 FOUND (19ms)
+  PASS  API-L-04 [P1] status=ALL 含已认领/已关闭但排除逻辑删除 (25ms)
+  PASS  API-L-05 [P1] categoryId 过滤且停用分类返回 40002 (40ms)
+  PASS  API-L-06 [P1] keyword 命中标题与描述（中文，不区分字段） (11ms)
+  PASS  API-L-07 [P1] keyword 中的 % 与 _ 按字面量处理，不当通配符 (18ms)
+  PASS  API-L-08 [P1] 分页无重复且末页 hasNext=false (36ms)
+  PASS  API-L-09 [P1] sortBy=occurredAt&asc 按发生时间升序 (14ms)
+  PASS  API-L-10 [P1] sortBy=createdAt&desc 严格降序且两次调用顺序一致 (44ms)
+  PASS  API-L-11 [P2] 分页与枚举参数非法逐项返回 10001 + fieldErrors (68ms)
+  PASS  API-L-12 [P3] 页码越界返回空列表而非报错 (9ms)
+  PASS  API-D-01 [P0] 详情返回完整字段与 allowedStatuses (17ms)
+  PASS  API-D-02 [P1] 逻辑删除记录 404 + 20001 (9ms)
+  PASS  API-D-03 [P1] 不存在的 id 404 + 20001 (7ms)
+  PASS  API-D-04 [P1] 非数字 id 400 + 10001（/records/new 路由不被 id 抢走） (12ms)
+  PASS  API-D-05 [P1] CLOSED 记录 allowedStatuses 为空、CLAIMED 只可到 CLOSED (16ms)
+  PASS  API-D-06 [P2] 无分类记录的 categoryId / categoryName 为 null (7ms)
+  PASS  API-C-01 [P0] 合法提交返回与详情同构的对象，初始状态 PENDING (66ms)
+  PASS  API-C-02 [P1] 可选字段缺省时落为 null (22ms)
+  PASS  API-C-03 [P1] 分类不存在 404/40001，分类停用 409/40002 (25ms)
+  PASS  API-C-04 [P1] 标题长度边界：1 字与 65 字均 10001 (16ms)
+  PASS  API-C-05 [P1] 描述长度边界：1 字拒绝、2000 字通过 (38ms)
+  PASS  API-C-06 [P1] 地点 129 字拒绝、1 字通过 (375ms)
+  PASS  API-C-07 [P1] occurredAt 未来 10 分钟拒绝、3 分钟放行（容差 5 分钟） (367ms)
+  PASS  API-C-08 [P1] occurredAt 格式严格（分隔符、时间必须合法） (28ms)
+  PASS  API-C-09 [P1] type 非法 10001，必填项缺失一并返回 fieldErrors (14ms)
+  PASS  API-C-10 [P1] contact 只允许数字/字母/中文/-_()，空格与符号被拒 (402ms)
+  PASS  API-C-11 [P2] 中文与 emoji 往返无损（UTF-8 全链路） (18ms)
+  PASS  API-C-12 [P2] 纯空格标题被 strip 后判空 (7ms)
+  PASS  API-C-13 [P3] 重复提交不幂等（契约 §5.2 已知行为，产生两条记录） (392ms)
+  PASS  API-U-01 [P0] 全量更新成功且不改 status (753ms)
+  PASS  API-U-02 [P1] 未传的可选字段按全量语义清空为 null (39ms)
+  PASS  API-U-03 [P1] 已关闭记录不可修改 409 + 20003 (12ms)
+  PASS  API-U-04 [P1] PUT 不存在的记录 404 + 20001 (10ms)
+  PASS  API-U-05 [P1] PUT 缺 type 或字段非法时 10001 (32ms)
+  PASS  API-S-01 [P0] PENDING → CLAIMED → CLOSED 全链路，allowedStatuses 同步收缩 (758ms)
+  PASS  API-S-02 [P1] 终态不可再流转 409 + 20002，且带 current / allowed (8ms)
+  PASS  API-S-03 [P1] 流转到当前相同状态 409 + 20002 (8ms)
+  PASS  API-S-04 [P1] 目标状态非法 400 + 10001（field=status） (5ms)
+  PASS  API-S-05 [P1] 对不存在的记录流转 404 + 20001 (7ms)
+  PASS  API-X-01 [P0] 逻辑删除后详情 404、列表不可见、匹配候选池不含 (1200ms)
+  PASS  API-X-02 [P1] 重复删除 404 + 20001 (390ms)
+  PASS  API-X-03 [P1] 删除不存在的记录 404 + 20001 (6ms)
+  PASS  API-CAT-01 [P0] 默认只返启用分类，按 sortOrder 升序，字段与契约一致 (12ms)
+  PASS  API-CAT-02 [P1] onlyActive=false 含停用分类 (8ms)
+  PASS  API-M-01 [P0] S1–S6 正例 top1 命中（失主找招领帖 ⇒ type=FOUND） (1160ms)
+  PASS  API-M-02 [P0] 结果结构与排序：倒序、去重、score 口径、total=items.length (373ms)
+  PASS  API-M-03 [P1] excludeRecordId 生效（详情页发起匹配时排除自身） (356ms)
+  PASS  API-M-04 [P1] N1 计算器问句命中 7（拾到者找失物帖 ⇒ type=LOST） (357ms)
+  PASS  API-M-05 [P1] N2 负例返回 200 + 空结果（不是错误、不是高分误报） (21ms)
+  PASS  API-M-06 [P1] N4 不返回已认领(23)与已删除(25) (22ms)
+  PASS  API-M-07 [P1] N3 同时命中 4 与 16（雨伞语义两侧都能召回） (381ms)
+  PASS  API-M-08 [P1] 同一输入两次调用结果完全一致（本地实现必须确定） (1071ms)
+  PASS  API-M-09 [P1] topN / minScore / type / categoryId 约束生效 (1168ms)
+  PASS  API-M-10 [P1] text 非法统一回 400 + 30001（空/1 字/超长） (21ms)
+  PASS  API-M-11 [P2] topN / minScore / type / categoryId 非法各自 10001 或 40001 (48ms)
+  PASS  API-M-12 [P2] 并发 10 次匹配全部 200 且快照 id 唯一 (92ms)
+  api-5.1: 总数 64 / 通过 64 / 失败 0（已登记缺陷 0） / 通过率 100.0%
 
   报告：C:\Project\hifox-workspaces\duancece\find-it-campus\qa\reports\api-5.1.txt
   报告：C:\Project\hifox-workspaces\duancece\find-it-campus\qa\reports\api-5.1.json
---- 接口测试（node qa/api/run.mjs） 退出码 1
+--- 接口测试（node qa/api/run.mjs） 退出码 0
 
 === 匹配效果评估（node qa/match/evaluate.mjs） ===
 # /api/match 匹配效果评估（ZHYYKFX-10 · 5.1）
@@ -90,22 +88,22 @@
 - 引擎：LOCAL_KEYWORD（impl 分组：本轮只有这一种实现，契约 §8.4 要求不与其他实现混池）
 - 参数：topN=5 · minScore=0.3
 - 样例来源：db/seed.sql 文末 S1–S6 / N1–N4（3.2 预置）
-- 生成时间：2026-10-22T07:10:47.557Z
+- 生成时间：2026-10-22T09:45:07.682Z
 
 ## 协议 P1：产品路径（按详情页真实调用方式带 type）
 
 | # | 意图 | 输入 | 期望 | 实际（top5，recordId@score） | 判定 | 耗时 |
 |---|---|---|---|---|---|---|
-| S1 | 失主找招领帖 | 我在图书馆三楼弄丢了一个黑色皮钱包，里面有银行卡 | top1 = 13 | 13@0.95 | 通过 | 0ms |
-| S2 | 失主找招领帖 | 操场跑步忘拿了白色 iPhone，透明壳带小熊贴纸 | top1 = 14 | 14@0.74 | 通过 | 0ms |
-| S3 | 失主找招领帖 | 高数课上的学生证校园卡不见了，姓名张三 | top1 = 15 | 15@0.60 | 通过 | 0ms |
-| S4 | 失主找招领帖 | 食堂丢了把深蓝自动伞，木头伞柄 | top1 = 16 | 16@0.65 | 通过 | 0ms |
-| S5 | 失主找招领帖 | 白色的无线耳机加充电盒，右耳有划痕 | top1 = 17 | 17@0.80 | 通过 | 0ms |
+| S1 | 失主找招领帖 | 我在图书馆三楼弄丢了一个黑色皮钱包，里面有银行卡 | top1 = 13 | 13@0.95 | 通过 | 1ms |
+| S2 | 失主找招领帖 | 操场跑步忘拿了白色 iPhone，透明壳带小熊贴纸 | top1 = 14 | 14@0.74 | 通过 | 1ms |
+| S3 | 失主找招领帖 | 高数课上的学生证校园卡不见了，姓名张三 | top1 = 15 | 15@0.60 | 通过 | 1ms |
+| S4 | 失主找招领帖 | 食堂丢了把深蓝自动伞，木头伞柄 | top1 = 16 | 16@0.65 | 通过 | 1ms |
+| S5 | 失主找招领帖 | 白色的无线耳机加充电盒，右耳有划痕 | top1 = 17 | 17@0.80 | 通过 | 1ms |
 | S6 | 失主找招领帖 | 快递点掉的钥匙串，黄色小熊挂饰 | top1 = 18 | 18@0.82 | 通过 | 0ms |
 | N1 | 拾到者找失物帖 | 捡到过一个计算器吗？灰色的卡西欧 | top1 = 7 | 7@0.72 | 通过 | 0ms |
 | N2 | 拾到者找失物帖（纯负例） | 有人在体育馆捡到泳镜吗 | 空结果 | （空） | 通过 | 0ms |
-| N3 | 失主找伞（不限类型） | 丢了一把雨伞 | top1 = 4 | 4@0.79 → 16@0.35 | 通过 | 0ms |
-| N4 | 拾到者找钥匙（不限类型） | 捡到一串钥匙 | top1 = 18 | 18@1.00 → 6@0.76 | 通过 | 0ms |
+| N3 | 失主找伞（不限类型） | 丢了一把雨伞 | top1 = 4 | 4@0.79 → 16@0.35 | 通过 | 1ms |
+| N4 | 拾到者找钥匙（不限类型） | 捡到一串钥匙 | top1 = 18 | 18@1.00 → 6@0.76 | 通过 | 1ms |
 
 ## 协议 P2：不限类型（对照，观察原始召回）
 
@@ -129,46 +127,46 @@
 | top1 命中率 | 10/10（100%） | 6/10（60%） |
 | top3 命中率 | 10/10（100%） | 10/10（100%） |
 | 两次调用结果一致 | 10/10 | 10/10 |
-| 耗时（后端 tookMs，仅引擎）avg / p95 / max | 0 / 0 / 0 ms | 0.2 / 1 / 1 ms |
-| 耗时（客户端端到端）avg / p95 / max | 128.9 / 368.2 / 368.2 ms | 89.2 / 366.3 / 366.3 ms |
+| 耗时（后端 tookMs，仅引擎）avg / p95 / max | 0.7 / 1 / 1 ms | 0.8 / 1 / 1 ms |
+| 耗时（客户端端到端）avg / p95 / max | 282.2 / 444 / 444 ms | 241.7 / 715.7 / 715.7 ms |
 
 报告：qa/reports/match-eval.md（同内容 JSON：match-eval.json）
 --- 匹配效果评估（node qa/match/evaluate.mjs） 退出码 0
 
 === E2E 走查（node qa/e2e/walkthrough.mjs） ===
-  PASS  E2E-L-01 [P0] 列表页默认加载：10 条 / 共 21 条 / 3 页 (1057ms)
-  PASS  E2E-L-02 [P0] 类型筛选 FOUND：卡片全部是「招领」且 URL 同步 (673ms)
-  PASS  E2E-L-03 [P0] 关键词「钱包」：命中 2 条且 URL 带 keyword (462ms)
-  KNOWN_FAIL DEF-02  E2E-L-04 [P1] 重置筛选应同时清空 URL（刷新后不应重现筛选） (77ms)
-        → 重置后 URL 残留的筛选参数：期望 []，实际 [["keyword","钱包"]]
-  PASS  E2E-L-05 [P1] 翻到第 2 页：URL page=2 且卡片与第 1 页不重复 (942ms)
-  PASS  E2E-D-01 [P0] 点卡片进详情：标题/分类/地点/描述与列表一致 (590ms)
-  PASS  E2E-D-02 [P0] 详情页发起匹配：出现名次、相似度与排序说明 (446ms)
-  PASS  E2E-D-03 [P0] 详情页状态流转：标记为已认领后按钮随 allowedStatuses 收缩 (955ms)
-  PASS  E2E-C-01 [P0] 提交页黄金路径：填写 → 提交 → 跳详情并提示发布成功 (1275ms)
-  PASS  E2E-C-02 [P0] 列表能看到刚提交的记录（createdAt desc 首位） (351ms)
-  PASS  E2E-C-03 [P1] 关键词检索刚提交的记录，详情可回跳 (192ms)
-  PASS  E2E-C-04 [P0] 全新浏览器上下文直接打开该记录详情，内容仍完整（非 sessionStorage） (1076ms)
-  PASS  E2E-E-01 [P0] 校验失败：空表单提交出现页级摘要 + 字段级错误 (484ms)
-  PASS  E2E-E-02 [P0] 后端不可用：列表显示错误条，恢复后「重试」能拉到数据 (652ms)
-  PASS  E2E-E-03 [P1] 空数据：显示空态而不是错误或空白页 (452ms)
-  PASS  E2E-E-04 [P1] 详情 404：显示「记录不存在或已删除」空态，不给重试 (328ms)
-  PASS  E2E-E-05 [P1] 接口 500：错误条带 requestId，便于按 id 查日志 (428ms)
-  PASS  E2E-E-06 [P1] 匹配服务 503：只降级匹配区，详情主体照常可用 (516ms)
+  PASS  E2E-L-01 [P0] 列表页默认加载：10 条 / 共 21 条 / 3 页 (2240ms)
+  PASS  E2E-L-02 [P0] 类型筛选 FOUND：卡片全部是「招领」且 URL 同步 (601ms)
+  PASS  E2E-L-03 [P0] 关键词「钱包」：命中 2 条且 URL 带 keyword (519ms)
+  PASS  E2E-L-04 [P1] 重置筛选应同时清空 URL（刷新后不应重现筛选） (849ms)
+  PASS  E2E-L-05 [P1] 翻到第 2 页：URL page=2 且卡片与第 1 页不重复 (921ms)
+  PASS  E2E-D-01 [P0] 点卡片进详情：标题/分类/地点/描述与列表一致 (995ms)
+  PASS  E2E-D-02 [P0] 详情页发起匹配：出现名次、相似度与排序说明 (760ms)
+  PASS  E2E-D-03 [P0] 详情页状态流转：标记为已认领后按钮随 allowedStatuses 收缩 (931ms)
+  PASS  E2E-C-01 [P0] 提交页黄金路径：填写 → 提交 → 跳详情并提示发布成功 (1610ms)
+  PASS  E2E-C-02 [P0] 列表能看到刚提交的记录（createdAt desc 首位） (338ms)
+  PASS  E2E-C-03 [P1] 关键词检索刚提交的记录，详情可回跳 (190ms)
+  PASS  E2E-C-04 [P0] 全新浏览器上下文直接打开该记录详情，内容仍完整（非 sessionStorage） (931ms)
+  PASS  E2E-E-01 [P0] 校验失败：空表单提交出现页级摘要 + 字段级错误 (535ms)
+  PASS  E2E-E-02 [P0] 后端不可用：列表显示错误条，恢复后「重试」能拉到数据 (713ms)
+  PASS  E2E-E-03 [P1] 空数据：显示空态而不是错误或空白页 (497ms)
+  PASS  E2E-E-04 [P1] 详情 404：显示「记录不存在或已删除」空态，不给重试 (324ms)
+  PASS  E2E-E-05 [P1] 接口 500：错误条带 requestId，便于按 id 查日志 (408ms)
+  PASS  E2E-E-06 [P1] 匹配服务 503：只降级匹配区，详情主体照常可用 (595ms)
   PASS  E2E-Z-01 [P2] 全程无未捕获的前端异常 (0ms)
-  e2e-5.1: 总数 19 / 通过 18 / 失败 1（已登记缺陷 1） / 通过率 94.7%
+
+  e2e-5.1: 总数 19 / 通过 19 / 失败 0（已登记缺陷 0） / 通过率 100.0%
 
   截图目录：C:\Project\hifox-workspaces\duancece\find-it-campus\qa\reports\screenshots
   报告：C:\Project\hifox-workspaces\duancece\find-it-campus\qa\reports\e2e-5.1.txt
   本轮通过 UI 创建的记录 id=42（供 MySQL 落库取证用）
---- E2E 走查（node qa/e2e/walkthrough.mjs） 退出码 1
+--- E2E 走查（node qa/e2e/walkthrough.mjs） 退出码 0
 
 === 落库取证（node qa/db/evidence.mjs） ===
 # 4.1 真实落库取证（MySQL 直查）
 
-- 生成时间：2026-10-22T07:11:01.940Z
+- 生成时间：2026-10-22T09:45:24.455Z
 - 客户端：C:/Project/tools/mysql/mysql-8.0.29-winx64/bin/mysql.exe · 库：find_it_campus · 用户：root
-- 取证对象：E2E 走查通过 UI 创建的记录 id=42（标题「E2E 走查记录 1792653054960」）
+- 取证对象：E2E 走查通过 UI 创建的记录 id=42（标题「E2E 走查记录 1792662317501」）
 
 ## ① 三张表存在，且 t_record 是「记录主表」
 
@@ -212,16 +210,16 @@ SELECT id, type, status, title, LEFT(description, 60) AS description_head, categ
               id: 42
             type: LOST
           status: PENDING
-           title: E2E 走查记录 1792653054960
-description_head: 这条记录由 5.1 端到端走查脚本创建（1792653054960），用于验证「提交 → 列表 → 详情」真实接口全链路
+           title: E2E 走查记录 1792662317501
+description_head: 这条记录由 5.1 端到端走查脚本创建（1792662317501），用于验证「提交 → 列表 → 详情」真实接口全链路
      category_id: 5
         location: E2E 测试地点 · 第三教学楼
      occurred_at: 2026-10-21 15:20:00
          contact: 13800001234
   publisher_name: 端测测
       deleted_at: NULL
-      created_at: 2026-10-22 15:10:55
-      updated_at: 2026-10-22 15:10:55
+      created_at: 2026-10-22 17:45:18
+      updated_at: 2026-10-22 17:45:18
 ```
 
 ## ④ 同一条记录的分类关联（证明 category_id 真实映射到 t_category，而不是前端硬编码文案）
@@ -230,13 +228,13 @@ description_head: 这条记录由 5.1 端到端走查脚本创建（179265305496
 SELECT r.id, r.title, r.category_id, c.code, c.name FROM t_record r LEFT JOIN t_category c ON c.id = r.category_id WHERE r.id = 42;
 ```
 ```
-42	E2E 走查记录 1792653054960	5	BAG	包袋
+42	E2E 走查记录 1792662317501	5	BAG	包袋
 ```
 
 ## ⑤ 该记录在默认列表查询条件下确实被 SQL 检索到（复现列表页即这条 SQL 的口径）
 
 ```sql
-SELECT COUNT(*) AS hit FROM t_record WHERE deleted_at IS NULL AND status = 'PENDING' AND (title LIKE '%E2E 走查记录 1792653054960%' OR description LIKE '%E2E 走查记录 1792653054960%');
+SELECT COUNT(*) AS hit FROM t_record WHERE deleted_at IS NULL AND status = 'PENDING' AND (title LIKE '%E2E 走查记录 1792662317501%' OR description LIKE '%E2E 走查记录 1792662317501%');
 ```
 ```
 1
@@ -248,7 +246,7 @@ SELECT COUNT(*) AS hit FROM t_record WHERE deleted_at IS NULL AND status = 'PEND
 SELECT id, title, status, created_at, updated_at FROM t_record WHERE id = 1;
 ```
 ```
-1	图书馆丢了黑色钱包	CLAIMED	2026-10-20 09:10:00	2026-10-22 15:10:54
+1	图书馆丢了黑色钱包	CLAIMED	2026-10-20 09:10:00	2026-10-22 17:45:16
 ```
 
 ## ⑦ 匹配快照落库（t_match_result 行数 + 最近一条的 impl / 输入 / 候选 JSON）
@@ -266,7 +264,7 @@ snapshots: 70
           top_n: 5
       min_score: 0.3000
         cost_ms: 0
-     created_at: 2026-10-22 15:10:53
+     created_at: 2026-10-22 17:45:16
 candidates_head: [{"score": 0.57, "reason": "关键词命中：钱包、现金、银行卡、书馆；分类词表命中：钱包卡证", "recordId": 13}]
 ```
 
@@ -277,10 +275,10 @@ SELECT id, title, status, deleted_at FROM t_record WHERE deleted_at IS NOT NULL 
 ```
 ```
 25	这条已删除（验证 deleted_at 过滤）	PENDING	2026-10-21 08:00:00
-27	QA 测试记录 1792653033547-gcok	PENDING	2026-10-22 15:10:41
-28	QA 测试记录 1792653033564-3ess	PENDING	2026-10-22 15:10:41
-29	QA 测试记录 1792653033953-c8rn	PENDING	2026-10-22 15:10:42
-30	QA 测试记录 1792653034331-ob33	PENDING	2026-10-22 15:10:42
+27	QA 测试记录 1792662284377-wjhy	PENDING	2026-10-22 17:44:54
+28	QA 测试记录 1792662284443-750i	PENDING	2026-10-22 17:44:54
+29	QA 测试记录 1792662284514-gsc8	PENDING	2026-10-22 17:44:55
+30	QA 测试记录 1792662284550-xqfa	PENDING	2026-10-22 17:44:55
 ```
 
 ## ⑨ 全库状态分布（解释为什么默认列表是 21 条：24 条 − CLAIMED 1 − CLOSED 1 − 逻辑删除 1）
@@ -298,8 +296,8 @@ PENDING	36	15
 
 | 检查项 | 结果 | 证据 |
 |---|---|---|
-| 记录存在于 t_record（不是 sessionStorage） | 通过 | 42	E2E 走查记录 1792653054960	PENDING	5	13800001234	端测测	NULL |
-| 标题与 UI 提交内容一致 | 通过 | DB=E2E 走查记录 1792653054960 / UI=E2E 走查记录 1792653054960 |
+| 记录存在于 t_record（不是 sessionStorage） | 通过 | 42	E2E 走查记录 1792662317501	PENDING	5	13800001234	端测测	NULL |
+| 标题与 UI 提交内容一致 | 通过 | DB=E2E 走查记录 1792662317501 / UI=E2E 走查记录 1792662317501 |
 | 状态为 PENDING（列表默认口径可见） | 通过 | status=PENDING |
 | 分类真实写入 category_id | 通过 | category_id=5 |
 | 联系方式 / 联系人落库 | 通过 | contact=13800001234 publisher=端测测 |
@@ -315,15 +313,16 @@ PENDING	36	15
 --- 落库取证（node qa/db/evidence.mjs） 退出码 0
 
 === 跨页一致性（node qa/e2e/consistency.mjs） ===
-  PASS  CON-01 [P0] 三页读取到同一套 token（品牌色 / 圆角 / 容器宽） (1656ms)
-  PASS  CON-02 [P0] 按钮：三页所有 .btn 变体圆角一致，主按钮配色一致 (662ms)
-  PASS  CON-03 [P0] 表单控件：高度 / 圆角 / 描边一致（列表筛选区 + 提交表单） (631ms)
-  PASS  CON-04 [P1] 面板与徽标：面板 10px、徽标 pill，卡片与面板各用一档间距 (740ms)
-  PASS  CON-05 [P1] 页面头（.page-head）三页同字号、同容器宽、同内边距 (705ms)
-  PASS  CON-06 [P1] 加载态：列表与详情用同一骨架类（.skeleton），不是各自一套 (742ms)
-  PASS  CON-07 [P1] 空态与错误态：三页共用 .empty / .alert--danger 结构 (1145ms)
-  PASS  CON-08 [P0] 320 / 768 / 1280 三档 × 三页均无横向溢出 (4371ms)
-  PASS  CON-09 [P2] 深色模式本期不做：暗色偏好下颜色不变（口径接受，不计缺陷） (830ms)
+  PASS  CON-01 [P0] 三页读取到同一套 token（品牌色 / 圆角 / 容器宽） (1623ms)
+  PASS  CON-02 [P0] 按钮：三页所有 .btn 变体圆角一致，主按钮配色一致 (961ms)
+  PASS  CON-03 [P0] 表单控件：高度 / 圆角 / 描边一致（列表筛选区 + 提交表单） (840ms)
+  PASS  CON-04 [P1] 面板与徽标：面板 10px、徽标 pill，卡片与面板各用一档间距 (726ms)
+  PASS  CON-05 [P1] 页面头（.page-head）三页同字号、同容器宽、同内边距 (794ms)
+  PASS  CON-06 [P1] 加载态：列表与详情用同一骨架类（.skeleton），不是各自一套 (743ms)
+  PASS  CON-07 [P1] 空态与错误态：三页共用 .empty / .alert--danger 结构 (1067ms)
+  PASS  CON-08 [P0] 320 / 768 / 1280 三档 × 三页均无横向溢出 (4563ms)
+  PASS  CON-09 [P2] 深色模式本期不做：暗色偏好下颜色不变（口径接受，不计缺陷） (843ms)
+
   consistency-5.1: 总数 9 / 通过 9 / 失败 0（已登记缺陷 0） / 通过率 100.0%
 
 报告：C:\Project\hifox-workspaces\duancece\find-it-campus\qa\reports\consistency-5.1.md
@@ -336,11 +335,11 @@ PENDING	36	15
 === 汇总 ===
 | 阶段 | 退出码 | 结论 |
 |---|---|---|
-| 接口测试（node qa/api/run.mjs） | 1 | 有失败（见上文明细） |
+| 接口测试（node qa/api/run.mjs） | 0 | 通过 |
 | 匹配效果评估（node qa/match/evaluate.mjs） | 0 | 通过 |
-| E2E 走查（node qa/e2e/walkthrough.mjs） | 1 | 有失败（见上文明细） |
+| E2E 走查（node qa/e2e/walkthrough.mjs） | 0 | 通过 |
 | 落库取证（node qa/db/evidence.mjs） | 0 | 通过 |
 | 跨页一致性（node qa/e2e/consistency.mjs） | 0 | 通过 |
 
-说明：接口与 E2E 各有一条已登记缺陷用例（DEF-01 / DEF-02），它们会保持失败并标 KNOWN_FAIL；
-      「有失败」不代表新回归，缺陷清单见 docs/testing/5.1-defects.md。
+说明：DEF-01 / DEF-02 已修复，接口与 E2E 两处 knownDefect 豁免标记均已移除，全组按原断言判定；
+      「有失败」即为新回归，缺陷清单见 docs/testing/5.1-defects.md。

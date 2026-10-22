@@ -1,8 +1,8 @@
 # 4.1 真实落库取证（MySQL 直查）
 
-- 生成时间：2026-10-22T07:11:01.940Z
+- 生成时间：2026-10-22T09:45:24.455Z
 - 客户端：C:/Project/tools/mysql/mysql-8.0.29-winx64/bin/mysql.exe · 库：find_it_campus · 用户：root
-- 取证对象：E2E 走查通过 UI 创建的记录 id=42（标题「E2E 走查记录 1792653054960」）
+- 取证对象：E2E 走查通过 UI 创建的记录 id=42（标题「E2E 走查记录 1792662317501」）
 
 ## ① 三张表存在，且 t_record 是「记录主表」
 
@@ -46,16 +46,16 @@ SELECT id, type, status, title, LEFT(description, 60) AS description_head, categ
               id: 42
             type: LOST
           status: PENDING
-           title: E2E 走查记录 1792653054960
-description_head: 这条记录由 5.1 端到端走查脚本创建（1792653054960），用于验证「提交 → 列表 → 详情」真实接口全链路
+           title: E2E 走查记录 1792662317501
+description_head: 这条记录由 5.1 端到端走查脚本创建（1792662317501），用于验证「提交 → 列表 → 详情」真实接口全链路
      category_id: 5
         location: E2E 测试地点 · 第三教学楼
      occurred_at: 2026-10-21 15:20:00
          contact: 13800001234
   publisher_name: 端测测
       deleted_at: NULL
-      created_at: 2026-10-22 15:10:55
-      updated_at: 2026-10-22 15:10:55
+      created_at: 2026-10-22 17:45:18
+      updated_at: 2026-10-22 17:45:18
 ```
 
 ## ④ 同一条记录的分类关联（证明 category_id 真实映射到 t_category，而不是前端硬编码文案）
@@ -64,13 +64,13 @@ description_head: 这条记录由 5.1 端到端走查脚本创建（179265305496
 SELECT r.id, r.title, r.category_id, c.code, c.name FROM t_record r LEFT JOIN t_category c ON c.id = r.category_id WHERE r.id = 42;
 ```
 ```
-42	E2E 走查记录 1792653054960	5	BAG	包袋
+42	E2E 走查记录 1792662317501	5	BAG	包袋
 ```
 
 ## ⑤ 该记录在默认列表查询条件下确实被 SQL 检索到（复现列表页即这条 SQL 的口径）
 
 ```sql
-SELECT COUNT(*) AS hit FROM t_record WHERE deleted_at IS NULL AND status = 'PENDING' AND (title LIKE '%E2E 走查记录 1792653054960%' OR description LIKE '%E2E 走查记录 1792653054960%');
+SELECT COUNT(*) AS hit FROM t_record WHERE deleted_at IS NULL AND status = 'PENDING' AND (title LIKE '%E2E 走查记录 1792662317501%' OR description LIKE '%E2E 走查记录 1792662317501%');
 ```
 ```
 1
@@ -82,7 +82,7 @@ SELECT COUNT(*) AS hit FROM t_record WHERE deleted_at IS NULL AND status = 'PEND
 SELECT id, title, status, created_at, updated_at FROM t_record WHERE id = 1;
 ```
 ```
-1	图书馆丢了黑色钱包	CLAIMED	2026-10-20 09:10:00	2026-10-22 15:10:54
+1	图书馆丢了黑色钱包	CLAIMED	2026-10-20 09:10:00	2026-10-22 17:45:16
 ```
 
 ## ⑦ 匹配快照落库（t_match_result 行数 + 最近一条的 impl / 输入 / 候选 JSON）
@@ -100,7 +100,7 @@ snapshots: 70
           top_n: 5
       min_score: 0.3000
         cost_ms: 0
-     created_at: 2026-10-22 15:10:53
+     created_at: 2026-10-22 17:45:16
 candidates_head: [{"score": 0.57, "reason": "关键词命中：钱包、现金、银行卡、书馆；分类词表命中：钱包卡证", "recordId": 13}]
 ```
 
@@ -111,10 +111,10 @@ SELECT id, title, status, deleted_at FROM t_record WHERE deleted_at IS NOT NULL 
 ```
 ```
 25	这条已删除（验证 deleted_at 过滤）	PENDING	2026-10-21 08:00:00
-27	QA 测试记录 1792653033547-gcok	PENDING	2026-10-22 15:10:41
-28	QA 测试记录 1792653033564-3ess	PENDING	2026-10-22 15:10:41
-29	QA 测试记录 1792653033953-c8rn	PENDING	2026-10-22 15:10:42
-30	QA 测试记录 1792653034331-ob33	PENDING	2026-10-22 15:10:42
+27	QA 测试记录 1792662284377-wjhy	PENDING	2026-10-22 17:44:54
+28	QA 测试记录 1792662284443-750i	PENDING	2026-10-22 17:44:54
+29	QA 测试记录 1792662284514-gsc8	PENDING	2026-10-22 17:44:55
+30	QA 测试记录 1792662284550-xqfa	PENDING	2026-10-22 17:44:55
 ```
 
 ## ⑨ 全库状态分布（解释为什么默认列表是 21 条：24 条 − CLAIMED 1 − CLOSED 1 − 逻辑删除 1）
@@ -132,8 +132,8 @@ PENDING	36	15
 
 | 检查项 | 结果 | 证据 |
 |---|---|---|
-| 记录存在于 t_record（不是 sessionStorage） | 通过 | 42	E2E 走查记录 1792653054960	PENDING	5	13800001234	端测测	NULL |
-| 标题与 UI 提交内容一致 | 通过 | DB=E2E 走查记录 1792653054960 / UI=E2E 走查记录 1792653054960 |
+| 记录存在于 t_record（不是 sessionStorage） | 通过 | 42	E2E 走查记录 1792662317501	PENDING	5	13800001234	端测测	NULL |
+| 标题与 UI 提交内容一致 | 通过 | DB=E2E 走查记录 1792662317501 / UI=E2E 走查记录 1792662317501 |
 | 状态为 PENDING（列表默认口径可见） | 通过 | status=PENDING |
 | 分类真实写入 category_id | 通过 | category_id=5 |
 | 联系方式 / 联系人落库 | 通过 | contact=13800001234 publisher=端测测 |

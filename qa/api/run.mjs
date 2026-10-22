@@ -412,8 +412,6 @@ async function createSuite() {
     expectCode(r2.res, 200, 0, '未来 3 分钟（容差内）');
   });
 
-  // 已登记缺陷 DEF-01：occurredAt 只按正则校验格式，日历上不存在的值（13 月/40 日）漏到
-  // LocalDateTime.parse 才炸，返回 500/10005；契约 §5.3 要求 10001。判定维持失败，标 KNOWN_FAIL。
   await t.case(
     'API-C-08',
     'P1',
@@ -424,7 +422,6 @@ async function createSuite() {
         expectCode(res, 400, 10001, `occurredAt=${value}`);
       }
     },
-    { knownDefect: 'DEF-01' },
   );
 
   await t.case('API-C-09', 'P1', 'type 非法 10001，必填项缺失一并返回 fieldErrors', async () => {

@@ -115,8 +115,8 @@ for (const r of results) {
   const verdict = r.code === 'skipped' ? '跳过（前端未起）' : r.code === 0 ? '通过' : '有失败（见上文明细）';
   out(`| ${r.name} | ${r.code} | ${verdict} |`);
 }
-out('\n说明：接口与 E2E 各有一条已登记缺陷用例（DEF-01 / DEF-02），它们会保持失败并标 KNOWN_FAIL；');
-out('      「有失败」不代表新回归，缺陷清单见 docs/testing/5.1-defects.md。');
+out('\n说明：DEF-01 / DEF-02 已修复，接口与 E2E 两处 knownDefect 豁免标记均已移除，全组按原断言判定；');
+out('      「有失败」即为新回归，缺陷清单见 docs/testing/5.1-defects.md。');
 
 const logPath = resolve(here, 'reports', 'run-all-output.txt');
 await writeFile(logPath, log.join('\n') + '\n', 'utf8');
