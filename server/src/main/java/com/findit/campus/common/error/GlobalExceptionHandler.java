@@ -1,23 +1,31 @@
 package com.findit.campus.common.error;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.MessageSourceResolvable;
+import org.springframework.core.MethodParameter;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.FieldError;
+import org.springframework.validation.method.ParameterValidationResult;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.HandlerMethodValidationException;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.servlet.NoHandlerFoundException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
+
+import jakarta.validation.ConstraintViolationException;
+import jakarta.validation.Path;
 
 import com.findit.campus.common.api.ApiResponse;
 import com.findit.campus.common.api.ErrorCode;
@@ -28,7 +36,8 @@ import com.findit.campus.common.api.RequestContext;
  *
  * <p>出口：
  * <ol>
- *   <li>参数类（{@code @Valid} 未过、参数类型不符、请求体不可解析）→ 10001 + fieldErrors（<b>HTTP 400，不是 500</b>）</li>
+ *   <li>参数类（{@code @Valid} 未过、方法级约束未过、参数类型不符、请求体不可解析）
+ *       → 10001 + fieldErrors（<b>HTTP 400，不是 500</b>）</li>
  *   <li>路由类（路径不存在 → 10003；动词不支持 → 10004，由 Spring 默认解析器经 405 抛出后在此归一）</li>
  *   <li>{@link BizException} → 携带的 ErrorCode 对应 code 与 httpStatus</li>
  *   <li>其余一切 {@code Exception} → 10005，日志打全栈，<b>响应体不含堆栈</b>，只回 message + requestId</li>
@@ -50,6 +59,49 @@ public class GlobalExceptionHandler {
                 .map(e -> new com.findit.campus.common.api.FieldError(e.getField(), safeReason(e)))
                 .toList();
         log.warn("[{}] 参数校验失败: {}", RequestContext.requestId(), fieldErrors);
+        return fail(ErrorCode.VALIDATION_FAILED, Map.of("fieldErrors", fieldErrors));
+    }
+
+    /**
+     * 出口 1a2：方法级参数校验失败（{@code @RequestParam} / {@code @PathVariable} 上直接挂 {@code @Min}、
+     * {@code @Pattern} 等约束）→ 10001 + <b>全量</b> fieldErrors，HTTP 400。
+     *
+     * <p>为什么必须单独注册：Spring 6.1+ MVC 内建方法校验抛的是 {@link HandlerMethodValidationException}
+     * （继承 {@code ResponseStatusException}）。它不被出口 1（只认 {@code @Valid} 请求体）覆盖，
+     * 落不到这里就会掉进出口 4 变 10005/500，或由 {@code ResponseStatusExceptionResolver}
+     * 渲染成 ProblemDetail —— 两种都不是契约形状，前端按 {@code code} 取值直接崩。
+     */
+    @ExceptionHandler(HandlerMethodValidationException.class)
+    public ResponseEntity<ApiResponse<Map<String, Object>>> handleMethodValidation(HandlerMethodValidationException ex) {
+        List<com.findit.campus.common.api.FieldError> fieldErrors = new ArrayList<>();
+        for (ParameterValidationResult result : ex.getParameterValidationResults()) {
+            String field = resolveParameterName(result.getMethodParameter());
+            List<? extends MessageSourceResolvable> reasons = result.getResolvableErrors();
+            if (reasons.isEmpty()) {
+                fieldErrors.add(new com.findit.campus.common.api.FieldError(field, "参数不合法"));
+                continue;
+            }
+            reasons.forEach(reason ->
+                    fieldErrors.add(new com.findit.campus.common.api.FieldError(field, safeReason(reason.getDefaultMessage()))));
+        }
+        log.warn("[{}] 方法参数校验失败: {}", RequestContext.requestId(), fieldErrors);
+        return fail(ErrorCode.VALIDATION_FAILED, Map.of("fieldErrors", fieldErrors));
+    }
+
+    /**
+     * 出口 1a3：类级 {@code @Validated} + AOP 代理下的方法校验 → 10001 + 全量 fieldErrors，HTTP 400。
+     *
+     * <p>与出口 1a2 是同一件事的两副面孔：装配方式换成 {@code @Validated} 后，约束由
+     * {@code MethodValidationPostProcessor} 抛出 {@link ConstraintViolationException} 而非
+     * {@link HandlerMethodValidationException}。两个都注册，避免"换种写法就静默退化成 500"。
+     */
+    @ExceptionHandler(ConstraintViolationException.class)
+    public ResponseEntity<ApiResponse<Map<String, Object>>> handleConstraintViolation(ConstraintViolationException ex) {
+        List<com.findit.campus.common.api.FieldError> fieldErrors = ex.getConstraintViolations().stream()
+                .map(violation -> new com.findit.campus.common.api.FieldError(
+                        lastPathNode(violation.getPropertyPath()), safeReason(violation.getMessage())))
+                .toList();
+        log.warn("[{}] 方法参数校验失败（@Validated）: {}", RequestContext.requestId(), fieldErrors);
         return fail(ErrorCode.VALIDATION_FAILED, Map.of("fieldErrors", fieldErrors));
     }
 
@@ -119,7 +171,27 @@ public class GlobalExceptionHandler {
     }
 
     private static String safeReason(FieldError fieldError) {
-        String reason = fieldError.getDefaultMessage();
+        return safeReason(fieldError.getDefaultMessage());
+    }
+
+    private static String safeReason(String reason) {
         return reason == null || reason.isBlank() ? "参数不合法" : reason;
+    }
+
+    /** 入参名取不到（未带 {@code -parameters} 且无调试信息）时退化为 {@code arg{index}}，不返回 null。 */
+    private static String resolveParameterName(MethodParameter parameter) {
+        String name = parameter.getParameterName();
+        return name == null || name.isBlank() ? "arg" + parameter.getParameterIndex() : name;
+    }
+
+    /** {@code list.page} → {@code page}：方法校验的 propertyPath 末节点才是入参名，与前端表单项同名。 */
+    private static String lastPathNode(Path propertyPath) {
+        String name = null;
+        for (Path.Node node : propertyPath) {
+            if (node.getName() != null) {
+                name = node.getName();
+            }
+        }
+        return name == null ? "arg" : name;
     }
 }

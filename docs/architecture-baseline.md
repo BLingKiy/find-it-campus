@@ -219,7 +219,7 @@ com.findit.campus
 | 10002 | 413 | 请求体过大 | 超过 `spring.codec.max-in-memory-size`（基线 64KB） | null |
 | 10003 | 404 | 资源不存在 | 路径 id 不存在（通用兜底） | null |
 | 10004 | 405 | 方法不支持 | 路由存在但动词错 | null |
-| 10005 | 503 | 依赖不可用 / 服务器内部错误 | 依赖（DB、外部引擎）不可用或未预期异常；**响应体不含堆栈**，只含 requestId | null（`GET /api/health` 例外：`{"status":"DOWN","db":"DOWN",…}`） |
+| 10005 | 500（默认）；依赖不可用（如 DB DOWN）时由 controller 覆写 503 | 依赖（DB、外部引擎）不可用或未预期异常；**响应体不含堆栈**，只含 requestId | null（`GET /api/health` 例外：`{"status":"DOWN","db":"DOWN",…}`） |
 | 20001 | 404 | 记录不存在或已删除 | `GET/PUT/PATCH/DELETE /api/records/{id}` | null |
 | 20002 | 409 | 状态流转非法 | 违反 §7.4 流转表（如 CLOSED→CLAIMED） | `{"current":"CLOSED","allowed":[…]}` |
 | 20003 | 409 | 记录当前状态不可执行该操作 | 业务禁止的删除/修改（**依赖 1.1 规则，Q-03**） | null |
@@ -230,22 +230,44 @@ com.findit.campus
 | 40001 | 404 | 分类不存在 | 提交/筛选带了不存在的 `categoryId` | null |
 | 40002 | 409 | 分类停用不可选 | 提交时 `categoryId` 指向 `is_active=0` | null |
 
-> **10005 的 HTTP 口径已对齐为 503**（2026-10-22，人类拍板）：原基线表里写 500，与
-> `docs/api-contract.md` §2「DB 不可用 → HTTP 503 + code 10005」冲突，**以契约为准**。
-> 代码侧落地：`HealthController` 在 DB 探测失败时用 `ErrorCode.INTERNAL_ERROR`（body `code=10005`）
-> 显式覆写 HTTP 状态为 503；`ErrorCode.INTERNAL_ERROR` 枚举自身的 `httpStatus` 仍是 `INTERNAL_SERVER_ERROR`，
-> 即未预期异常的通用兜底仍走 500。`api-contract.md` 第 45、367 行仍有「未预期异常 500 + 10005」的表述，
-> 与第 56 行的 503 并存 —— 是否把契约里这两处也统一，留给人类确认（**未替他改**）。
+> **10005 的 HTTP 口径：默认 500，依赖不可用时由 controller 覆写 503**（2026-10-22 人类拍板，方案 A）。
+>
+> 结论（口径已闭合，不再有待确认项）：
+> - `ErrorCode.INTERNAL_ERROR` 枚举自身映射 **500**，未预期异常走这个默认值，body `code=10005`。
+> - 依赖不可用（典型是 DB 探测失败）不属于"未预期"，语义上更接近"暂时不可用"，
+>   由 controller 在返回时**显式覆写 HTTP 为 503**，body 的 `code` 仍是 10005（"两轨不同源"是刻意的）。
+> - 覆写点只有一个：`HealthController`（`GET /api/health` DB DOWN → 503）。新增依赖探测点必须沿用同一写法，
+>   即 body 用 `ErrorCode.INTERNAL_ERROR`、HTTP 层单独覆写，不许改枚举的 `httpStatus`。
+>
+> 与 `docs/api-contract.md` 三处一致、无需改契约：第 45 行与第 367 行「未预期异常 500 + 10005」对上默认值，
+> 第 56 行「DB 不可用 503 + 10005」对上覆写分支。
 
 ### 6.3 全局异常处理
 
 `GlobalExceptionHandler`（`@RestControllerAdvice`）四类出口，其余一律落到 `INTERNAL_ERROR`：
-1. `MethodArgumentNotValidException` / `ConstraintViolationException` → 10001 + fieldErrors（**HTTP 400，不是 500**）
+1. `MethodArgumentNotValidException`（`@Valid` 请求体）/ `HandlerMethodValidationException` 与 `ConstraintViolationException`
+   （`@RequestParam`/`@PathVariable` 上的 `@Min`/`@Pattern` 等约束，见 §6.4）→ 10001 + fieldErrors（**HTTP 400，不是 500**）
 2. `MethodArgumentTypeMismatchException`（路径/查询参数类型不符，如 `/api/records/new` 被当 id 请求）→ 10001，`fieldErrors:[{field:"id",reason:"必须为数字"}]`
 3. `BizException`（携带 ErrorCode）→ 对应 code 与 httpStatus
 4. `Exception` → 10005，`log.error` 打全栈（含 requestId），响应体只回 message + requestId
 
 日志：logback 默认文本格式 + MDC `requestId`；一次请求一行 INFO 访问日志（方法、路径、状态、耗时）。不引入 JSON appender（无人消费，成本 > 收益）。
+
+### 6.4 方法级参数校验的两个出口（为什么两个都注册）
+
+`@RequestParam`/`@PathVariable` 上直接挂 `@Min`/`@Pattern`/`@NotBlank` 时，约束不是被参数解析器拦下的，
+而是方法校验阶段抛的。**同一个错误在不同装配下抛的是两个不同的异常**，漏一个就等于给前端漏一个 500：
+
+| 异常 | 何时出现 | 出处 |
+|---|---|---|
+| `HandlerMethodValidationException` | Spring MVC 内建方法校验（Spring 6.1+ 默认开启，controller 上无需 `@Validated`） | `org.springframework.web.method.annotation` |
+| `ConstraintViolationException` | 类上标了 `@Validated`，走 AOP `MethodValidationPostProcessor` 代理 | `jakarta.validation` |
+
+两个都注册，行为一致（都是 10001 + 400 + 全量 `fieldErrors`），成本只是多一个方法；
+不注册的代价是：换一种装配方式就静默退化成 10005/500 或 Spring 默认 ProblemDetail —— 前端按 `code` 取值直接崩。
+
+`fieldErrors` 必须返回**全部**违规字段，不只第一条：多参数同时错时前端要一次性标红全部表单项，
+只给一条会让用户"改一个、提交、再报下一个"。
 
 ---
 
