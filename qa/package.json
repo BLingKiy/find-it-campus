@@ -1,0 +1,18 @@
+{
+  "name": "find-it-campus-qa",
+  "version": "1.0.0",
+  "private": true,
+  "description": "5.1 测试资产：接口测试 / 匹配效果评估 / 前端 E2E 走查 / 落库取证 / 跨页一致性",
+  "type": "module",
+  "scripts": {
+    "test": "node run-all.mjs",
+    "test:api": "node api/run.mjs",
+    "test:match": "node match/evaluate.mjs",
+    "test:e2e": "node e2e/walkthrough.mjs",
+    "test:db": "node db/evidence.mjs",
+    "test:consistency": "node e2e/consistency.mjs"
+  },
+  "devDependencies": {
+    "playwright": "^1.64.1"
+  }
+}

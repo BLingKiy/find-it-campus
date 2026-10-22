@@ -1,0 +1,146 @@
+# 4.1 真实落库取证（MySQL 直查）
+
+- 生成时间：2026-10-22T07:11:01.940Z
+- 客户端：C:/Project/tools/mysql/mysql-8.0.29-winx64/bin/mysql.exe · 库：find_it_campus · 用户：root
+- 取证对象：E2E 走查通过 UI 创建的记录 id=42（标题「E2E 走查记录 1792653054960」）
+
+## ① 三张表存在，且 t_record 是「记录主表」
+
+```sql
+SELECT table_name, table_rows FROM information_schema.tables WHERE table_schema = DATABASE() ORDER BY table_name;
+```
+```
+t_category	9
+t_match_result	70
+t_record	40
+```
+
+## ② t_record 关键列与落库相关的约束（逻辑删除列 / 时间列 / CHECK）
+
+```sql
+SELECT column_name, column_type, is_nullable FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 't_record' ORDER BY ordinal_position;
+```
+```
+id	bigint unsigned	NO
+type	varchar(8)	NO
+status	varchar(16)	NO
+title	varchar(64)	NO
+description	text	NO
+category_id	bigint unsigned	YES
+location	varchar(128)	NO
+occurred_at	datetime	NO
+contact	varchar(64)	YES
+publisher_name	varchar(32)	YES
+deleted_at	datetime	YES
+created_at	datetime	NO
+updated_at	datetime	NO
+```
+
+## ③ E2E 通过 UI 提交的记录（id=42）在 MySQL 中的整行（含 description / contact / category / 时间）
+
+```sql
+SELECT id, type, status, title, LEFT(description, 60) AS description_head, category_id, location, occurred_at, contact, publisher_name, deleted_at, created_at, updated_at FROM t_record WHERE id = 42;
+```
+```
+*************************** 1. row ***************************
+              id: 42
+            type: LOST
+          status: PENDING
+           title: E2E 走查记录 1792653054960
+description_head: 这条记录由 5.1 端到端走查脚本创建（1792653054960），用于验证「提交 → 列表 → 详情」真实接口全链路
+     category_id: 5
+        location: E2E 测试地点 · 第三教学楼
+     occurred_at: 2026-10-21 15:20:00
+         contact: 13800001234
+  publisher_name: 端测测
+      deleted_at: NULL
+      created_at: 2026-10-22 15:10:55
+      updated_at: 2026-10-22 15:10:55
+```
+
+## ④ 同一条记录的分类关联（证明 category_id 真实映射到 t_category，而不是前端硬编码文案）
+
+```sql
+SELECT r.id, r.title, r.category_id, c.code, c.name FROM t_record r LEFT JOIN t_category c ON c.id = r.category_id WHERE r.id = 42;
+```
+```
+42	E2E 走查记录 1792653054960	5	BAG	包袋
+```
+
+## ⑤ 该记录在默认列表查询条件下确实被 SQL 检索到（复现列表页即这条 SQL 的口径）
+
+```sql
+SELECT COUNT(*) AS hit FROM t_record WHERE deleted_at IS NULL AND status = 'PENDING' AND (title LIKE '%E2E 走查记录 1792653054960%' OR description LIKE '%E2E 走查记录 1792653054960%');
+```
+```
+1
+```
+
+## ⑥ 详情页状态流转落库（E2E 把 1 号记录从 PENDING 改成 CLAIMED）
+
+```sql
+SELECT id, title, status, created_at, updated_at FROM t_record WHERE id = 1;
+```
+```
+1	图书馆丢了黑色钱包	CLAIMED	2026-10-20 09:10:00	2026-10-22 15:10:54
+```
+
+## ⑦ 匹配快照落库（t_match_result 行数 + 最近一条的 impl / 输入 / 候选 JSON）
+
+```sql
+SELECT COUNT(*) AS snapshots FROM t_match_result; SELECT id, impl, IFNULL(input_type,'NULL') AS input_type, top_n, min_score, cost_ms, created_at, LEFT(candidates, 120) AS candidates_head FROM t_match_result ORDER BY id DESC LIMIT 1;
+```
+```
+*************************** 1. row ***************************
+snapshots: 70
+*************************** 1. row ***************************
+             id: 70
+           impl: LOCAL_KEYWORD
+     input_type: FOUND
+          top_n: 5
+      min_score: 0.3000
+        cost_ms: 0
+     created_at: 2026-10-22 15:10:53
+candidates_head: [{"score": 0.57, "reason": "关键词命中：钱包、现金、银行卡、书馆；分类词表命中：钱包卡证", "recordId": 13}]
+```
+
+## ⑧ 逻辑删除列的证据（种子里的 25 号：deleted_at 非空，读接口不可见）
+
+```sql
+SELECT id, title, status, deleted_at FROM t_record WHERE deleted_at IS NOT NULL ORDER BY id LIMIT 5;
+```
+```
+25	这条已删除（验证 deleted_at 过滤）	PENDING	2026-10-21 08:00:00
+27	QA 测试记录 1792653033547-gcok	PENDING	2026-10-22 15:10:41
+28	QA 测试记录 1792653033564-3ess	PENDING	2026-10-22 15:10:41
+29	QA 测试记录 1792653033953-c8rn	PENDING	2026-10-22 15:10:42
+30	QA 测试记录 1792653034331-ob33	PENDING	2026-10-22 15:10:42
+```
+
+## ⑨ 全库状态分布（解释为什么默认列表是 21 条：24 条 − CLAIMED 1 − CLOSED 1 − 逻辑删除 1）
+
+```sql
+SELECT status, COUNT(*) AS cnt, SUM(deleted_at IS NOT NULL) AS deleted FROM t_record GROUP BY status ORDER BY status;
+```
+```
+CLAIMED	2	0
+CLOSED	2	1
+PENDING	36	15
+```
+
+## 判定
+
+| 检查项 | 结果 | 证据 |
+|---|---|---|
+| 记录存在于 t_record（不是 sessionStorage） | 通过 | 42	E2E 走查记录 1792653054960	PENDING	5	13800001234	端测测	NULL |
+| 标题与 UI 提交内容一致 | 通过 | DB=E2E 走查记录 1792653054960 / UI=E2E 走查记录 1792653054960 |
+| 状态为 PENDING（列表默认口径可见） | 通过 | status=PENDING |
+| 分类真实写入 category_id | 通过 | category_id=5 |
+| 联系方式 / 联系人落库 | 通过 | contact=13800001234 publisher=端测测 |
+| 未被逻辑删除 | 通过 | deleted_at=NULL |
+| 描述按 UTF-8 完整落库（长度与提交一致） | 通过 | CHAR_LENGTH=71 |
+| 详情页状态流转已落库（1 号 = CLAIMED） | 通过 | status=CLAIMED |
+| 匹配快照有行（>0） | 通过 | t_match_result rows=70 |
+| 快照 impl 为 LOCAL_KEYWORD（本期实现口径） | 通过 | impl=LOCAL_KEYWORD |
+
+**结论**：通过 —— 10/10 项检查符合预期。数据来自 MySQL 直查，不采信接口自述。
