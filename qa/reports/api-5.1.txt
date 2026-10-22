@@ -1,72 +1,70 @@
 # api-5.1
-开始时间: 2026-10-22T07:10:33.215Z | 用例总数: 64 | 通过: 63 | 失败: 1（其中已登记缺陷: 1）| 通过率: 98.4% | 耗时: 9325ms
+开始时间: 2026-10-22T09:44:43.235Z | 用例总数: 64 | 通过: 64 | 失败: 0（其中已登记缺陷: 0）| 通过率: 100.0% | 耗时: 14917ms
 
-[PASS] ENV-01 (P0) 后端可达且数据库为 seed 初始状态（total=21）  96ms
-[PASS] API-CON-01 (P1) 外层响应体恒含 code/message/data/requestId 四字段  13ms
-[PASS] API-CON-02 (P1) 未知路径返回 404 + 10003，而非框架默认错误页  4ms
-[PASS] API-CON-03 (P1) 动词不支持返回 405 + 10004  4ms
-[PASS] API-CON-04 (P2) 请求体不是合法 JSON 时返回 400 + 10001  17ms
-[PASS] API-CON-05 (P2) 错误响应不含堆栈信息  7ms
-[PASS] API-L-01 (P0) 默认参数：status=PENDING、page=1、pageSize=10、createdAt desc  13ms
-[PASS] API-L-02 (P0) 列表项字段白名单：不含 description / contact / publisherName  8ms
-[PASS] API-L-03 (P0) type=FOUND 过滤后全部为 FOUND  6ms
-[PASS] API-L-04 (P1) status=ALL 含已认领/已关闭但排除逻辑删除  5ms
-[PASS] API-L-05 (P1) categoryId 过滤且停用分类返回 40002  16ms
-[PASS] API-L-06 (P1) keyword 命中标题与描述（中文，不区分字段）  6ms
-[PASS] API-L-07 (P1) keyword 中的 % 与 _ 按字面量处理，不当通配符  9ms
-[PASS] API-L-08 (P1) 分页无重复且末页 hasNext=false  16ms
-[PASS] API-L-09 (P1) sortBy=occurredAt&asc 按发生时间升序  5ms
-[PASS] API-L-10 (P1) sortBy=createdAt&desc 严格降序且两次调用顺序一致  16ms
-[PASS] API-L-11 (P2) 分页与枚举参数非法逐项返回 10001 + fieldErrors  45ms
-[PASS] API-L-12 (P3) 页码越界返回空列表而非报错  7ms
-[PASS] API-D-01 (P0) 详情返回完整字段与 allowedStatuses  5ms
-[PASS] API-D-02 (P1) 逻辑删除记录 404 + 20001  4ms
-[PASS] API-D-03 (P1) 不存在的 id 404 + 20001  6ms
-[PASS] API-D-04 (P1) 非数字 id 400 + 10001（/records/new 路由不被 id 抢走）  7ms
-[PASS] API-D-05 (P1) CLOSED 记录 allowedStatuses 为空、CLAIMED 只可到 CLOSED  11ms
-[PASS] API-D-06 (P2) 无分类记录的 categoryId / categoryName 为 null  4ms
-[PASS] API-C-01 (P0) 合法提交返回与详情同构的对象，初始状态 PENDING  17ms
-[PASS] API-C-02 (P1) 可选字段缺省时落为 null  366ms
-[PASS] API-C-03 (P1) 分类不存在 404/40001，分类停用 409/40002  10ms
-[PASS] API-C-04 (P1) 标题长度边界：1 字与 65 字均 10001  7ms
-[PASS] API-C-05 (P1) 描述长度边界：1 字拒绝、2000 字通过  380ms
-[PASS] API-C-06 (P1) 地点 129 字拒绝、1 字通过  371ms
-[PASS] API-C-07 (P1) occurredAt 未来 10 分钟拒绝、3 分钟放行（容差 5 分钟）  21ms
-[KNOWN_FAIL] API-C-08 (P1) occurredAt 格式严格（分隔符、时间必须合法）  16ms
-      失败原因: occurredAt=2026-13-40 25:61:61：期望 HTTP 400 + code 10001，实际 HTTP 500 / code=10005 / message="服务器内部错误" / requestId=36a4ef7d3a21409c  ← 已登记缺陷 DEF-01
-[PASS] API-C-09 (P1) type 非法 10001，必填项缺失一并返回 fieldErrors  10ms
-[PASS] API-C-10 (P1) contact 只允许数字/字母/中文/-_()，空格与符号被拒  37ms
-[PASS] API-C-11 (P2) 中文与 emoji 往返无损（UTF-8 全链路）  12ms
-[PASS] API-C-12 (P2) 纯空格标题被 strip 后判空  3ms
-[PASS] API-C-13 (P3) 重复提交不幂等（契约 §5.2 已知行为，产生两条记录）  382ms
-[PASS] API-U-01 (P0) 全量更新成功且不改 status  381ms
-[PASS] API-U-02 (P1) 未传的可选字段按全量语义清空为 null  28ms
-[PASS] API-U-03 (P1) 已关闭记录不可修改 409 + 20003  5ms
-[PASS] API-U-04 (P1) PUT 不存在的记录 404 + 20001  4ms
-[PASS] API-U-05 (P1) PUT 缺 type 或字段非法时 10001  18ms
-[PASS] API-S-01 (P0) PENDING → CLAIMED → CLOSED 全链路，allowedStatuses 同步收缩  384ms
-[PASS] API-S-02 (P1) 终态不可再流转 409 + 20002，且带 current / allowed  5ms
-[PASS] API-S-03 (P1) 流转到当前相同状态 409 + 20002  5ms
-[PASS] API-S-04 (P1) 目标状态非法 400 + 10001（field=status）  4ms
-[PASS] API-S-05 (P1) 对不存在的记录流转 404 + 20001  4ms
-[PASS] API-X-01 (P0) 逻辑删除后详情 404、列表不可见、匹配候选池不含  745ms
-[PASS] API-X-02 (P1) 重复删除 404 + 20001  380ms
-[PASS] API-X-03 (P1) 删除不存在的记录 404 + 20001  4ms
-[PASS] API-CAT-01 (P0) 默认只返启用分类，按 sortOrder 升序，字段与契约一致  3ms
-[PASS] API-CAT-02 (P1) onlyActive=false 含停用分类  4ms
-[PASS] API-M-01 (P0) S1–S6 正例 top1 命中（失主找招领帖 ⇒ type=FOUND）  1481ms
-[PASS] API-M-02 (P0) 结果结构与排序：倒序、去重、score 口径、total=items.length  366ms
-[PASS] API-M-03 (P1) excludeRecordId 生效（详情页发起匹配时排除自身）  357ms
-[PASS] API-M-04 (P1) N1 计算器问句命中 7（拾到者找失物帖 ⇒ type=LOST）  15ms
-[PASS] API-M-05 (P1) N2 负例返回 200 + 空结果（不是错误、不是高分误报）  12ms
-[PASS] API-M-06 (P1) N4 不返回已认领(23)与已删除(25)  14ms
-[PASS] API-M-07 (P1) N3 同时命中 4 与 16（雨伞语义两侧都能召回）  14ms
-[PASS] API-M-08 (P1) 同一输入两次调用结果完全一致（本地实现必须确定）  27ms
-[PASS] API-M-09 (P1) topN / minScore / type / categoryId 约束生效  1109ms
-[PASS] API-M-10 (P1) text 非法统一回 400 + 30001（空/1 字/超长）  13ms
-[PASS] API-M-11 (P2) topN / minScore / type / categoryId 非法各自 10001 或 40001  28ms
-[PASS] API-M-12 (P2) 并发 10 次匹配全部 200 且快照 id 唯一  403ms
+[PASS] ENV-01 (P0) 后端可达且数据库为 seed 初始状态（total=21）  450ms
+[PASS] API-CON-01 (P1) 外层响应体恒含 code/message/data/requestId 四字段  66ms
+[PASS] API-CON-02 (P1) 未知路径返回 404 + 10003，而非框架默认错误页  15ms
+[PASS] API-CON-03 (P1) 动词不支持返回 405 + 10004  14ms
+[PASS] API-CON-04 (P2) 请求体不是合法 JSON 时返回 400 + 10001  135ms
+[PASS] API-CON-05 (P2) 错误响应不含堆栈信息  65ms
+[PASS] API-L-01 (P0) 默认参数：status=PENDING、page=1、pageSize=10、createdAt desc  24ms
+[PASS] API-L-02 (P0) 列表项字段白名单：不含 description / contact / publisherName  20ms
+[PASS] API-L-03 (P0) type=FOUND 过滤后全部为 FOUND  19ms
+[PASS] API-L-04 (P1) status=ALL 含已认领/已关闭但排除逻辑删除  25ms
+[PASS] API-L-05 (P1) categoryId 过滤且停用分类返回 40002  40ms
+[PASS] API-L-06 (P1) keyword 命中标题与描述（中文，不区分字段）  11ms
+[PASS] API-L-07 (P1) keyword 中的 % 与 _ 按字面量处理，不当通配符  18ms
+[PASS] API-L-08 (P1) 分页无重复且末页 hasNext=false  36ms
+[PASS] API-L-09 (P1) sortBy=occurredAt&asc 按发生时间升序  14ms
+[PASS] API-L-10 (P1) sortBy=createdAt&desc 严格降序且两次调用顺序一致  44ms
+[PASS] API-L-11 (P2) 分页与枚举参数非法逐项返回 10001 + fieldErrors  68ms
+[PASS] API-L-12 (P3) 页码越界返回空列表而非报错  9ms
+[PASS] API-D-01 (P0) 详情返回完整字段与 allowedStatuses  17ms
+[PASS] API-D-02 (P1) 逻辑删除记录 404 + 20001  9ms
+[PASS] API-D-03 (P1) 不存在的 id 404 + 20001  7ms
+[PASS] API-D-04 (P1) 非数字 id 400 + 10001（/records/new 路由不被 id 抢走）  12ms
+[PASS] API-D-05 (P1) CLOSED 记录 allowedStatuses 为空、CLAIMED 只可到 CLOSED  16ms
+[PASS] API-D-06 (P2) 无分类记录的 categoryId / categoryName 为 null  7ms
+[PASS] API-C-01 (P0) 合法提交返回与详情同构的对象，初始状态 PENDING  66ms
+[PASS] API-C-02 (P1) 可选字段缺省时落为 null  22ms
+[PASS] API-C-03 (P1) 分类不存在 404/40001，分类停用 409/40002  25ms
+[PASS] API-C-04 (P1) 标题长度边界：1 字与 65 字均 10001  16ms
+[PASS] API-C-05 (P1) 描述长度边界：1 字拒绝、2000 字通过  38ms
+[PASS] API-C-06 (P1) 地点 129 字拒绝、1 字通过  375ms
+[PASS] API-C-07 (P1) occurredAt 未来 10 分钟拒绝、3 分钟放行（容差 5 分钟）  367ms
+[PASS] API-C-08 (P1) occurredAt 格式严格（分隔符、时间必须合法）  28ms
+[PASS] API-C-09 (P1) type 非法 10001，必填项缺失一并返回 fieldErrors  14ms
+[PASS] API-C-10 (P1) contact 只允许数字/字母/中文/-_()，空格与符号被拒  402ms
+[PASS] API-C-11 (P2) 中文与 emoji 往返无损（UTF-8 全链路）  18ms
+[PASS] API-C-12 (P2) 纯空格标题被 strip 后判空  7ms
+[PASS] API-C-13 (P3) 重复提交不幂等（契约 §5.2 已知行为，产生两条记录）  392ms
+[PASS] API-U-01 (P0) 全量更新成功且不改 status  753ms
+[PASS] API-U-02 (P1) 未传的可选字段按全量语义清空为 null  39ms
+[PASS] API-U-03 (P1) 已关闭记录不可修改 409 + 20003  12ms
+[PASS] API-U-04 (P1) PUT 不存在的记录 404 + 20001  10ms
+[PASS] API-U-05 (P1) PUT 缺 type 或字段非法时 10001  32ms
+[PASS] API-S-01 (P0) PENDING → CLAIMED → CLOSED 全链路，allowedStatuses 同步收缩  758ms
+[PASS] API-S-02 (P1) 终态不可再流转 409 + 20002，且带 current / allowed  8ms
+[PASS] API-S-03 (P1) 流转到当前相同状态 409 + 20002  8ms
+[PASS] API-S-04 (P1) 目标状态非法 400 + 10001（field=status）  5ms
+[PASS] API-S-05 (P1) 对不存在的记录流转 404 + 20001  7ms
+[PASS] API-X-01 (P0) 逻辑删除后详情 404、列表不可见、匹配候选池不含  1200ms
+[PASS] API-X-02 (P1) 重复删除 404 + 20001  390ms
+[PASS] API-X-03 (P1) 删除不存在的记录 404 + 20001  6ms
+[PASS] API-CAT-01 (P0) 默认只返启用分类，按 sortOrder 升序，字段与契约一致  12ms
+[PASS] API-CAT-02 (P1) onlyActive=false 含停用分类  8ms
+[PASS] API-M-01 (P0) S1–S6 正例 top1 命中（失主找招领帖 ⇒ type=FOUND）  1160ms
+[PASS] API-M-02 (P0) 结果结构与排序：倒序、去重、score 口径、total=items.length  373ms
+[PASS] API-M-03 (P1) excludeRecordId 生效（详情页发起匹配时排除自身）  356ms
+[PASS] API-M-04 (P1) N1 计算器问句命中 7（拾到者找失物帖 ⇒ type=LOST）  357ms
+[PASS] API-M-05 (P1) N2 负例返回 200 + 空结果（不是错误、不是高分误报）  21ms
+[PASS] API-M-06 (P1) N4 不返回已认领(23)与已删除(25)  22ms
+[PASS] API-M-07 (P1) N3 同时命中 4 与 16（雨伞语义两侧都能召回）  381ms
+[PASS] API-M-08 (P1) 同一输入两次调用结果完全一致（本地实现必须确定）  1071ms
+[PASS] API-M-09 (P1) topN / minScore / type / categoryId 约束生效  1168ms
+[PASS] API-M-10 (P1) text 非法统一回 400 + 30001（空/1 字/超长）  21ms
+[PASS] API-M-11 (P2) topN / minScore / type / categoryId 非法各自 10001 或 40001  48ms
+[PASS] API-M-12 (P2) 并发 10 次匹配全部 200 且快照 id 唯一  92ms
 
 --- 失败明细 ---
-API-C-08 (P1) occurredAt 格式严格（分隔符、时间必须合法） [DEF-01]
-    occurredAt=2026-13-40 25:61:61：期望 HTTP 400 + code 10001，实际 HTTP 500 / code=10005 / message="服务器内部错误" / requestId=36a4ef7d3a21409c
+（无）
