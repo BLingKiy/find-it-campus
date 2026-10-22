@@ -91,9 +91,8 @@ await t.case('E2E-L-03', 'P0', '关键词「钱包」：命中 2 条且 URL 带 
   await shot(page, '03-list-keyword');
 });
 
-// 已登记缺陷 DEF-02：重置筛选后 URL 仍保留旧筛选参数（useRouteQueryState 用 merge 写回，
-// 默认值/空值被 prune 掉但旧键没删）。用户可见后果：刷新或复制链接后筛选又回来了。
-// 判定按契约（URL 即状态）保持失败，标 KNOWN_FAIL。
+// DEF-02 已修复（ZHYYKFX-21）：useRouteQueryState 写回时不再沿用旧 query 键，
+// 重置筛选后 URL 清空，刷新不再重现筛选。本用例按契约（URL 即状态）正常判定。
 await t.case(
   'E2E-L-04',
   'P1',
@@ -111,7 +110,6 @@ await t.case(
     const afterReload = await page.locator('.pagination-bar__total').innerText();
     assert(afterReload.includes('共 21 条'), `刷新后应回到全量 21 条，实际：${afterReload}`);
   },
-  { knownDefect: 'DEF-02' },
 );
 
 await t.case('E2E-L-05', 'P1', '翻到第 2 页：URL page=2 且卡片与第 1 页不重复', async () => {
