@@ -7,7 +7,7 @@
     "inputType": "FOUND",
     "topN": 5,
     "minScore": 0.3,
-    "tookMs": 2,
+    "tookMs": 25,
     "total": 1,
     "items": [
       {
@@ -25,5 +25,5 @@
       }
     ]
   },
-  "requestId": "5d9e9d0767674185"
+  "requestId": "8904d8f4c60a4077"
 }
