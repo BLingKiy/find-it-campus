@@ -1,6 +1,8 @@
 <script setup lang="ts">
 // 详情页（基线 §2）：id 非正整数直接跳 NotFound，不带非法 id 去打接口；
 // 状态机在后端（allowedStatuses），前端不自己推流转规则。
+// 4.2：h1 固定为「启事详情」以保证五状态结构一致，记录标题降为 h2；
+// 状态流转区在无可用流转时给出明确说明（原来直接不渲染，用户会以为页面缺了一块）。
 import { computed, onBeforeMount, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { getRecord, patchStatus } from '@/api/records'
@@ -64,35 +66,57 @@ const seedText = computed(() =>
 
 /** 提交页 replace 过来时带 ?created=1，只作为一次性成功反馈（刷新/回退不重复弹） */
 const justCreated = computed(() => route.query.created === '1')
+
+function reload(): void {
+  if (isValidId.value) void run(recordId.value)
+}
+
+const STATUS_ACTION_LABEL: Record<RecordStatus, string> = {
+  PENDING: '待认领',
+  CLAIMED: '已认领',
+  CLOSED: '已关闭'
+}
 </script>
 
 <template>
   <section v-if="isValidId" class="record-detail">
-    <LoadingBlock v-if="loading" :rows="4" />
+    <header class="page-head">
+      <div>
+        <h1 class="page-head__title">启事详情</h1>
+        <p class="page-head__desc">看清单条启事，或让匹配找找可能相关的另一条。</p>
+      </div>
+      <div class="page-head__actions">
+        <RouterLink :to="{ name: 'RecordList' }" class="btn btn--ghost">← 返回列表</RouterLink>
+      </div>
+    </header>
 
-    <EmptyState
-      v-else-if="notFound"
-      title="记录不存在或已删除"
-      description="这条启事可能已被发布者删除"
-      action-text="看看别的启事吧"
-    />
+    <LoadingBlock v-if="loading" variant="detail" :rows="1" label="正在加载启事详情" />
 
-    <ErrorBanner v-else-if="error" :error="error" />
+    <template v-else-if="notFound">
+      <EmptyState
+        title="记录不存在或已删除"
+        description="这条启事可能已被发布者删除，或链接里的编号不对"
+        action-label="回到启事列表"
+        :to="{ name: 'RecordList' }"
+      />
+    </template>
+
+    <ErrorBanner v-else-if="error" :error="error" retry-label="重试" @retry="reload" />
 
     <template v-else-if="record">
-      <template v-if="justCreated">
-        <p class="record-detail__created" role="status">发布成功，这条已经是你的启事了</p>
-      </template>
+      <p v-if="justCreated" class="alert alert--success record-detail__created" role="status">
+        <span class="alert__title">发布成功</span>
+        <span class="alert__text">这条启事已经出现在列表里了。</span>
+      </p>
 
-      <article class="record-detail__card">
-        <header class="record-detail__head">
-          <div class="record-detail__tags">
-            <RecordTypeTag :type="record.type" />
-            <RecordStatusTag :status="record.status" />
-            <span class="record-detail__id">#{{ record.id }}</span>
-          </div>
-          <h1 class="record-detail__title">{{ record.title }}</h1>
-        </header>
+      <article class="panel record-detail__card">
+        <div class="record-detail__tags">
+          <RecordTypeTag :type="record.type" />
+          <RecordStatusTag :status="record.status" />
+          <span class="record-detail__id">#{{ record.id }}</span>
+        </div>
+
+        <h2 class="record-detail__title">{{ record.title }}</h2>
 
         <dl class="record-detail__facts">
           <div class="record-detail__fact">
@@ -126,55 +150,49 @@ const justCreated = computed(() => route.query.created === '1')
         </dl>
 
         <div class="record-detail__body">
-          <h2 class="record-detail__section-title">详细描述</h2>
+          <h3 class="record-detail__section-title">详细描述</h3>
           <p class="record-detail__description">{{ record.description }}</p>
         </div>
 
-        <footer v-if="record.allowedStatuses.length > 0" class="record-detail__actions">
-          <span class="record-detail__actions-label">更新状态：</span>
-          <button
-            v-for="status in record.allowedStatuses"
-            :key="status"
-            type="button"
-            class="btn btn--ghost"
-            :disabled="statusLoading"
-            @click="changeStatus(status)"
-          >
-            标记为{{ status === 'CLAIMED' ? '已认领' : status === 'CLOSED' ? '已关闭' : status }}
-          </button>
+        <footer class="record-detail__actions">
+          <template v-if="record.allowedStatuses.length > 0">
+            <span class="record-detail__actions-label">更新状态</span>
+            <button
+              v-for="status in record.allowedStatuses"
+              :key="status"
+              type="button"
+              class="btn btn--ghost"
+              :disabled="statusLoading"
+              @click="changeStatus(status)"
+            >
+              <span v-if="statusLoading" class="btn__spinner" aria-hidden="true"></span>
+              标记为{{ STATUS_ACTION_LABEL[status] }}
+            </button>
+          </template>
+          <p v-else class="hint">当前状态没有可执行的流转，启事已归档。</p>
         </footer>
-        <ErrorBanner v-if="statusError" :error="statusError" class="u-mt" />
+        <ErrorBanner
+          v-if="statusError"
+          class="record-detail__status-error"
+          :error="statusError"
+          title="状态更新失败"
+        />
       </article>
 
       <MatchPanel
-        class="u-mt"
+        class="record-detail__match"
         :seed-text="seedText"
         :exclude-record-id="record.id"
         :want-type="record.type === 'LOST' ? 'FOUND' : 'LOST'"
         :category-id="record.categoryId"
       />
     </template>
-
-    <RouterLink :to="{ name: 'RecordList' }" class="record-detail__back">← 返回列表</RouterLink>
   </section>
 </template>
 
 <style scoped>
 .record-detail__created {
   margin-bottom: var(--sp-4);
-  padding: var(--sp-3) var(--sp-4);
-  border: 1px solid var(--color-success);
-  border-radius: var(--radius-md);
-  background-color: var(--color-success-soft);
-  color: var(--color-success);
-  font-size: var(--fs-sm);
-}
-
-.record-detail__card {
-  padding: var(--sp-5);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  background-color: var(--color-surface);
 }
 
 .record-detail__tags {
@@ -185,22 +203,26 @@ const justCreated = computed(() => route.query.created === '1')
 }
 
 .record-detail__id {
-  color: var(--color-text-muted);
+  margin-left: auto;
+  color: var(--color-text-subtle);
+  font-family: var(--font-mono);
   font-size: var(--fs-xs);
 }
 
 .record-detail__title {
   margin-top: var(--sp-3);
-  font-size: var(--fs-xxl);
+  font-size: var(--fs-2xl);
   font-weight: var(--fw-bold);
+  letter-spacing: -0.01em;
   line-height: var(--lh-tight);
 }
 
 .record-detail__facts {
   display: grid;
-  grid-template-columns: 1fr;
-  gap: var(--sp-3);
-  margin-top: var(--sp-5);
+  /* 320px 两列；平板三列；宽屏四列（时间戳不会被挤断行） */
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--sp-3) var(--sp-4);
+  margin-top: var(--sp-4);
   padding-top: var(--sp-4);
   border-top: 1px solid var(--color-border);
 }
@@ -211,9 +233,9 @@ const justCreated = computed(() => route.query.created === '1')
 }
 
 .record-detail__fact dd {
-  margin: 0;
-  margin-top: var(--sp-1);
+  margin-top: 2px;
   font-size: var(--fs-md);
+  font-variant-numeric: tabular-nums;
 }
 
 .record-detail__body {
@@ -223,14 +245,17 @@ const justCreated = computed(() => route.query.created === '1')
 }
 
 .record-detail__section-title {
-  font-size: var(--fs-md);
-  font-weight: var(--fw-medium);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-semibold);
+  color: var(--color-text-muted);
+  letter-spacing: 0.02em;
 }
 
 .record-detail__description {
+  max-width: var(--content-max);
   margin-top: var(--sp-2);
   white-space: pre-wrap;
-  line-height: var(--lh-normal);
+  line-height: var(--lh-relaxed);
 }
 
 .record-detail__actions {
@@ -248,15 +273,24 @@ const justCreated = computed(() => route.query.created === '1')
   font-size: var(--fs-sm);
 }
 
-.record-detail__back {
-  display: inline-block;
-  margin-top: var(--sp-5);
-  font-size: var(--fs-sm);
+.record-detail__status-error {
+  margin-top: var(--sp-3);
+}
+
+.record-detail__match {
+  margin-top: var(--sp-4);
 }
 
 @media (min-width: 768px) {
+  /* 3/4 列而非 7 列：时间戳 14px 约 146px，7 列会把 "2026-10-19 17:30:00" 挤成两行 */
   .record-detail__facts {
     grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1120px) {
+  .record-detail__facts {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 }
 </style>

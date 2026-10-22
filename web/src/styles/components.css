@@ -1,0 +1,654 @@
+/* ==========================================================================
+   组件基线层（Primitives）——4.2 交付的可复用样式片段
+   --------------------------------------------------------------------------
+   这些类是三个页面的"同类元素只写一次"的事实源，规格见 docs/ui-baseline.md §3：
+     .btn      按钮（4 变体 × 3 尺寸 + 加载/禁用/块级）
+     .control  表单控件（input / select / textarea 共用一套高度与边框）
+     .field    字段容器（label + 控件 + 提示 + 错误）
+     .field-error 字段级错误文案
+     .panel    内容面板（列表页筛选、详情正文、提交表单、匹配区共用）
+     .badge    标签/徽标（类型 + 状态，带色点，不只靠颜色）
+     .alert    页级/区级提示（错误、成功、警告、信息）
+     .empty    空态
+     .skeleton 加载骨架
+     .score    相似度分值
+     .page-head 页面标题区
+   组件里只允许写布局差异（grid/flex/间距），外观一律回到这里。
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   1. 按钮
+   -------------------------------------------------------------------------- */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-2);
+  min-height: var(--control-height);
+  padding: 0 var(--sp-4);
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm); /* 与面板/控件同族圆角，比全圆更"工具感" */
+  background-color: transparent;
+  color: var(--color-text);
+  font-size: var(--fs-md);
+  font-weight: var(--fw-medium);
+  line-height: 1;
+  text-align: center;
+  text-decoration: none;
+  white-space: nowrap;
+  transition:
+    background-color var(--dur-fast) var(--ease-standard),
+    border-color var(--dur-fast) var(--ease-standard),
+    color var(--dur-fast) var(--ease-standard);
+}
+
+.btn:hover {
+  text-decoration: none;
+}
+
+.btn--primary {
+  background-color: var(--color-primary);
+  color: var(--color-on-primary);
+}
+
+.btn--primary:hover {
+  background-color: var(--color-primary-strong);
+}
+
+.btn--primary:active {
+  background-color: var(--color-primary-strong);
+  /* 用内阴影代替位移，避免按钮在点击时抖动 */
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.18);
+}
+
+.btn--ghost {
+  border-color: var(--color-border-strong);
+  background-color: var(--color-surface);
+  color: var(--color-text);
+}
+
+.btn--ghost:hover {
+  border-color: var(--color-primary);
+  color: var(--color-primary-strong);
+}
+
+.btn--subtle {
+  color: var(--color-primary);
+}
+
+.btn--subtle:hover {
+  background-color: var(--color-primary-soft);
+}
+
+.btn--danger {
+  border-color: var(--color-danger);
+  background-color: var(--color-surface);
+  color: var(--color-danger);
+}
+
+.btn--danger:hover {
+  background-color: var(--color-danger-soft);
+}
+
+.btn--sm {
+  min-height: var(--control-height-sm);
+  padding: 0 var(--sp-3);
+  font-size: var(--fs-sm);
+}
+
+/* 触屏上把小按钮撑到可点尺寸（指针粗细比屏幕宽度更接近"手指还是鼠标"） */
+@media (pointer: coarse) {
+  .btn--sm {
+    min-height: var(--control-height);
+  }
+}
+
+.btn--lg {
+  min-height: var(--control-height-lg);
+  padding: 0 var(--sp-5);
+  font-size: var(--fs-lg);
+}
+
+.btn--block {
+  width: 100%;
+}
+
+/* 文字按钮：用于错误摘要里"跳到某个字段"这类不离开当前页的动作 */
+.btn--link {
+  min-height: auto;
+  padding: 0;
+  color: inherit;
+  font-size: inherit;
+  font-weight: var(--fw-medium);
+  text-align: left;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  white-space: normal;
+}
+
+.btn--link:hover {
+  text-decoration-thickness: 2px;
+}
+
+/* 禁用：不用 opacity（会把对比度一起拉低），改用中性色 */
+.btn:disabled,
+.btn[aria-disabled='true'] {
+  border-color: var(--color-border);
+  background-color: var(--color-surface-muted);
+  color: var(--color-text-muted);
+  cursor: not-allowed;
+}
+
+.btn[data-loading='true'] {
+  cursor: progress;
+}
+
+.btn__spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: ui-spin 700ms linear infinite;
+}
+
+@keyframes ui-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* --------------------------------------------------------------------------
+   2. 表单控件
+   -------------------------------------------------------------------------- */
+.control {
+  width: 100%;
+  min-height: var(--control-height);
+  padding: 0 var(--sp-3);
+  border: 1px solid var(--color-control-border);
+  border-radius: var(--radius-sm);
+  background-color: var(--color-surface);
+  color: var(--color-text);
+  font-size: var(--fs-md);
+  line-height: var(--lh-snug);
+  transition:
+    border-color var(--dur-fast) var(--ease-standard),
+    box-shadow var(--dur-fast) var(--ease-standard);
+}
+
+.control:hover:not(:disabled) {
+  border-color: var(--color-text-muted);
+}
+
+.control:focus-visible {
+  border-color: var(--color-primary);
+  outline: 2px solid transparent; /* 用 box-shadow 环替掉 outline，圆角不出缺口 */
+  box-shadow: var(--ring);
+}
+
+/* 原生 select 保留系统外观：不引 SVG 箭头，跨内核/内嵌 WebView 行为最稳 */
+select.control {
+  padding-right: var(--sp-2);
+  cursor: pointer;
+}
+
+textarea.control {
+  min-height: calc(var(--control-height) * 2);
+  padding: var(--sp-2) var(--sp-3);
+  line-height: var(--lh-normal);
+  resize: vertical;
+}
+
+.control::placeholder {
+  color: var(--color-text-subtle);
+}
+
+.control:disabled {
+  border-color: var(--color-border);
+  background-color: var(--color-surface-muted);
+  color: var(--color-text-muted);
+  cursor: not-allowed;
+}
+
+/* 校验失败：边框变色 + 下方文案（双通道，不只靠颜色） */
+.control[aria-invalid='true'] {
+  border-color: var(--color-danger);
+}
+
+.control[aria-invalid='true']:focus-visible {
+  box-shadow: 0 0 0 3px var(--color-danger-soft);
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+  min-width: 0; /* 允许在 grid/flex 里收缩，窄屏不撑出横向滚动 */
+}
+
+.field__label {
+  display: flex;
+  align-items: baseline;
+  gap: var(--sp-2);
+  color: var(--color-text);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-medium);
+}
+
+.field__req {
+  color: var(--color-danger);
+  font-weight: var(--fw-regular);
+}
+
+.field__counter {
+  margin-left: auto;
+  color: var(--color-text-subtle);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-regular);
+  font-variant-numeric: tabular-nums;
+}
+
+.field__hint {
+  color: var(--color-text-subtle);
+  font-size: var(--fs-xs);
+}
+
+.field-error {
+  color: var(--color-danger);
+  font-size: var(--fs-xs);
+  line-height: var(--lh-snug);
+}
+
+.field-error > li {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sp-1);
+}
+
+.field-error > li + li {
+  margin-top: var(--sp-1);
+}
+
+/* 用文字符号而非纯色块表达"这是错误"，色盲用户也能读到 */
+.field-error > li::before {
+  content: '!';
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+  margin-top: 1px;
+  border-radius: 50%;
+  background-color: var(--color-danger);
+  color: var(--color-text-inverse);
+  font-size: 10px;
+  font-weight: var(--fw-bold);
+  line-height: 1;
+}
+
+/* radio 组：label 包控件，点击区域整块可点 */
+.radio {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  min-height: var(--control-height);
+  padding: 0 var(--sp-3);
+  border: 1px solid var(--color-control-border);
+  border-radius: var(--radius-sm);
+  background-color: var(--color-surface);
+  font-size: var(--fs-md);
+  cursor: pointer;
+}
+
+.radio:hover {
+  border-color: var(--color-primary);
+}
+
+.radio:has(input:checked) {
+  border-color: var(--color-primary);
+  background-color: var(--color-primary-softer);
+  color: var(--color-primary-strong);
+  font-weight: var(--fw-medium);
+}
+
+.radio:has(input:focus-visible) {
+  box-shadow: var(--ring);
+}
+
+.radio input {
+  accent-color: var(--color-primary);
+  margin: 0;
+}
+
+/* --------------------------------------------------------------------------
+   3. 面板
+   -------------------------------------------------------------------------- */
+.panel {
+  padding: var(--sp-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background-color: var(--color-surface);
+}
+
+.panel__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  margin-bottom: var(--sp-4);
+}
+
+.panel__title {
+  font-size: var(--fs-lg);
+  font-weight: var(--fw-semibold);
+  line-height: var(--lh-snug);
+}
+
+.panel__desc {
+  margin-top: var(--sp-1);
+  color: var(--color-text-muted);
+  font-size: var(--fs-sm);
+}
+
+@media (min-width: 768px) {
+  .panel {
+    padding: var(--sp-5);
+  }
+}
+
+/* --------------------------------------------------------------------------
+   4. 标签 / 徽标（颜色 + 文字 + 色点，三通道）
+   -------------------------------------------------------------------------- */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-1);
+  min-height: 22px;
+  padding: 0 var(--sp-2);
+  border-radius: var(--radius-pill);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-medium);
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.badge--dot::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: currentColor;
+}
+
+.badge--lost {
+  color: var(--color-type-lost-fg);
+  background-color: var(--color-type-lost-bg);
+}
+
+.badge--found {
+  color: var(--color-type-found-fg);
+  background-color: var(--color-type-found-bg);
+}
+
+.badge--pending {
+  color: var(--color-status-pending-fg);
+  background-color: var(--color-status-pending-bg);
+}
+
+.badge--claimed {
+  color: var(--color-status-claimed-fg);
+  background-color: var(--color-status-claimed-bg);
+}
+
+.badge--closed {
+  color: var(--color-status-closed-fg);
+  background-color: var(--color-status-closed-bg);
+}
+
+.badge--neutral {
+  color: var(--color-text-muted);
+  background-color: var(--color-surface-muted);
+}
+
+/* --------------------------------------------------------------------------
+   5. 提示条（错误态 / 成功态 / 警告 / 信息）
+   -------------------------------------------------------------------------- */
+.alert {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--sp-2);
+  padding: var(--sp-3) var(--sp-4);
+  border: 1px solid currentColor;
+  border-left-width: 3px;
+  border-radius: var(--radius-md);
+  font-size: var(--fs-sm);
+  line-height: var(--lh-snug);
+}
+
+.alert__title {
+  font-weight: var(--fw-semibold);
+}
+
+.alert__text {
+  min-width: 0;
+}
+
+.alert__meta {
+  color: var(--color-text-muted);
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+}
+
+.alert__action {
+  margin-left: auto;
+}
+
+.alert--danger {
+  background-color: var(--color-danger-soft);
+  color: var(--color-danger);
+}
+
+.alert--warning {
+  background-color: var(--color-warning-soft);
+  color: var(--color-warning);
+}
+
+.alert--success {
+  background-color: var(--color-success-soft);
+  color: var(--color-success);
+}
+
+.alert--info {
+  background-color: var(--color-info-soft);
+  color: var(--color-info);
+}
+
+/* --------------------------------------------------------------------------
+   6. 空态
+   -------------------------------------------------------------------------- */
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: var(--sp-8) var(--sp-4);
+  border: 1px dashed var(--color-border-strong);
+  border-radius: var(--radius-md);
+  background-color: var(--color-surface);
+  text-align: center;
+}
+
+.empty::before {
+  content: '';
+  width: var(--sp-7);
+  height: 3px;
+  margin-bottom: var(--sp-2);
+  border-radius: var(--radius-pill);
+  background-color: var(--color-primary-soft);
+}
+
+.empty__title {
+  font-size: var(--fs-lg);
+  font-weight: var(--fw-medium);
+}
+
+.empty__desc {
+  max-width: 42ch;
+  color: var(--color-text-muted);
+  font-size: var(--fs-sm);
+}
+
+.empty__action {
+  margin-top: var(--sp-2);
+}
+
+/* --------------------------------------------------------------------------
+   7. 骨架屏（加载态）
+   -------------------------------------------------------------------------- */
+.skeleton {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--radius-sm);
+  background-color: var(--color-skeleton-base);
+}
+
+.skeleton::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: linear-gradient(
+    90deg,
+    transparent,
+    var(--color-skeleton-sheen),
+    transparent
+  );
+  transform: translateX(-100%);
+  animation: skeleton-sheen 1400ms var(--ease-standard) infinite;
+}
+
+@keyframes skeleton-sheen {
+  to {
+    transform: translateX(100%);
+  }
+}
+
+/* 减少动效时静态显示（base.css 已把 animation 降到 0.01ms，这里再关掉 sheen） */
+@media (prefers-reduced-motion: reduce) {
+  .skeleton::after {
+    display: none;
+  }
+}
+
+.skeleton__line {
+  height: var(--sp-3);
+}
+
+.skeleton__line--title {
+  height: var(--sp-5);
+  width: 62%;
+}
+
+.skeleton__line--short {
+  width: 40%;
+}
+
+/* --------------------------------------------------------------------------
+   8. 相似度分值（/api/match 结果）
+   -------------------------------------------------------------------------- */
+.score {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  min-width: 0;
+}
+
+.score__bar {
+  position: relative;
+  flex: 1 1 auto;
+  min-width: 56px;
+  height: 6px;
+  border-radius: var(--radius-pill);
+  background-color: var(--color-score-track);
+  overflow: hidden;
+}
+
+.score__fill {
+  display: block;
+  height: 100%;
+  width: var(--score, 0%);
+  border-radius: inherit;
+  background-color: var(--color-score-band, var(--color-primary));
+  /* 刻意不给 width 加 transition：宽度是布局属性，动它会触发布局。
+     分值在渲染时就定了，没有"从 0 长出来"的必要（见 ui-baseline §2.5）。 */
+}
+
+.score__value {
+  flex: 0 0 auto;
+  color: var(--color-score-band, var(--color-primary-strong));
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-semibold);
+  font-variant-numeric: tabular-nums;
+}
+
+.score[data-band='high'] {
+  --color-score-band: var(--color-score-high);
+}
+
+.score[data-band='mid'] {
+  --color-score-band: var(--color-score-mid);
+}
+
+.score[data-band='low'] {
+  --color-score-band: var(--color-score-low);
+}
+
+/* --------------------------------------------------------------------------
+   9. 页面标题区（三页统一入口）
+   -------------------------------------------------------------------------- */
+.page-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  margin-bottom: var(--sp-5);
+}
+
+.page-head__title {
+  font-size: var(--fs-display);
+  font-weight: var(--fw-bold);
+  letter-spacing: -0.01em;
+  line-height: var(--lh-tight);
+}
+
+.page-head__desc {
+  margin-top: var(--sp-1);
+  color: var(--color-text-muted);
+  font-size: var(--fs-sm);
+}
+
+.page-head__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-2);
+}
+
+.hint {
+  color: var(--color-text-muted);
+  font-size: var(--fs-sm);
+}
+
+/* 窄屏：标题区动作占满一行、按钮等分，避免"半个按钮漂在左上角"和过小点按区域 */
+@media (max-width: 767px) {
+  .page-head__actions {
+    width: 100%;
+  }
+
+  .page-head__actions > .btn {
+    flex: 1 1 auto;
+  }
+}

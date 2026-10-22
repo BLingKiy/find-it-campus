@@ -1,5 +1,6 @@
 <script setup lang="ts">
-// 页码窗口算法（当前页 ±2）集中在这里，页面不各写一套（基线 §6）
+// 页码窗口算法（当前页 ±2）集中在这里，页面不各写一套（基线 §6）。
+// 4.2 只改外观：按钮复用 .btn 原始类，当前页用 color + border + 字重三通道标识。
 import { computed } from 'vue'
 
 const props = defineProps<{ page: number; pageSize: number; total: number }>()
@@ -36,19 +37,27 @@ function go(target: number): void {
 
 <template>
   <nav v-if="total > 0" class="pagination-bar" aria-label="列表分页">
-    <button type="button" class="pagination-bar__step" :disabled="page <= 1" @click="go(page - 1)">
+    <button
+      type="button"
+      class="btn btn--ghost btn--sm"
+      :disabled="page <= 1"
+      @click="go(page - 1)"
+    >
       上一页
     </button>
 
     <template v-for="(item, index) in pages">
-      <span v-if="item === null" :key="`gap-${index}`" class="pagination-bar__gap">…</span>
+      <span v-if="item === null" :key="`gap-${index}`" class="pagination-bar__gap" aria-hidden="true">
+        …
+      </span>
       <button
         v-else
         :key="item"
         type="button"
-        class="pagination-bar__page"
+        class="btn btn--ghost btn--sm pagination-bar__page"
         :class="{ 'is-active': item === page }"
         :aria-current="item === page ? 'page' : undefined"
+        :aria-label="`第 ${item} 页`"
         @click="go(item)"
       >
         {{ item }}
@@ -57,7 +66,7 @@ function go(target: number): void {
 
     <button
       type="button"
-      class="pagination-bar__step"
+      class="btn btn--ghost btn--sm"
       :disabled="page >= totalPages"
       @click="go(page + 1)"
     >
@@ -76,30 +85,22 @@ function go(target: number): void {
   gap: var(--sp-2);
 }
 
-.pagination-bar__step,
 .pagination-bar__page {
-  padding: var(--sp-1) var(--sp-3);
-  border: 1px solid var(--color-border-strong);
-  border-radius: var(--radius-sm);
-  background-color: var(--color-surface);
-  font-size: var(--fs-sm);
+  min-width: var(--control-height-sm);
+  padding: 0 var(--sp-2);
+  font-variant-numeric: tabular-nums;
 }
 
-.pagination-bar__step:disabled {
-  color: var(--color-text-muted);
-  border-color: var(--color-border);
-  cursor: not-allowed;
-}
-
+/* 当前页：底色 + 边框 + 字重，不只靠颜色（无障碍基线） */
 .pagination-bar__page.is-active {
   border-color: var(--color-primary);
   background-color: var(--color-primary-soft);
   color: var(--color-primary-strong);
-  font-weight: var(--fw-medium);
+  font-weight: var(--fw-semibold);
 }
 
 .pagination-bar__gap {
-  color: var(--color-text-muted);
+  color: var(--color-text-subtle);
   font-size: var(--fs-sm);
 }
 
@@ -107,5 +108,6 @@ function go(target: number): void {
   margin-left: auto;
   color: var(--color-text-muted);
   font-size: var(--fs-sm);
+  font-variant-numeric: tabular-nums;
 }
 </style>

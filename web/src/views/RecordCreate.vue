@@ -1,6 +1,8 @@
 <script setup lang="ts">
 // 提交页（基线 §2）：前端先校验（契约 §5.1 的字段与长度），后端 fieldErrors 为准再兜一层。
 // FieldError 的入参就是契约的 fieldErrors 形状，所以前后端两类错误共用同一个展示组件。
+// 4.2 改动仅限外观与可访问性：控件统一 .control、错误用 aria-invalid + aria-describedby 关联、
+// 校验失败时给出页级错误摘要（可点回字段）；校验规则、请求、跳转一律沿用 4.1。
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { createRecord } from '@/api/records'
@@ -21,6 +23,18 @@ const CONTACT_MAX = 64
 const PUBLISHER_MAX = 32
 /** 契约 §5.1：occurredAt 允许略晚于当前时间以容忍时钟偏差 */
 const FUTURE_TOLERANCE_MS = 5 * 60 * 1000
+
+/** 错误摘要里用的中文字段名（只用于展示，键与契约 fieldErrors.field 一致） */
+const FIELD_LABELS: Record<string, string> = {
+  type: '类型',
+  title: '标题',
+  description: '详细描述',
+  categoryId: '分类',
+  location: '地点',
+  occurredAt: '发生时间',
+  contact: '联系方式',
+  publisherName: '联系人称呼'
+}
 
 const presetType = computed(() => {
   const raw = route.query.type
@@ -57,6 +71,16 @@ const fieldErrors = computed<FieldErrorItem[]>(() => {
   }
   return merged
 })
+
+/** 字段是否处于校验失败态：控制 aria-invalid 与红边框 */
+function isInvalid(field: string): boolean {
+  return fieldErrors.value.some((item) => item.field === field)
+}
+
+/** 校验失败时把 aria-describedby 指向 FieldError 的 ul（id 约定见 FieldError.vue） */
+function describedBy(field: string): string | undefined {
+  return isInvalid(field) ? `field-${field}-error` : undefined
+}
 
 function validate(): FieldErrorItem[] {
   const errors: FieldErrorItem[] = []
@@ -98,11 +122,20 @@ function toApiDateTime(value: string): string | null {
   return `${yyyy}-${mm}-${dd} ${hh}:${min}:00`
 }
 
-function focusFirstError(errors: FieldErrorItem[]): void {
-  const target = document.getElementById(`field-${errors[0].field}`)
+function focusField(field: string): void {
+  const target = document.getElementById(`field-${field}`)
   if (!target) return
   target.scrollIntoView({ block: 'center', behavior: 'smooth' })
-  target.focus()
+  target.focus({ preventScroll: true })
+}
+
+/**
+ * 4.2 修复：网络失败时 fieldErrors 为空数组，原实现直接 errors[0].field 会抛 TypeError，
+ * 表现为点了提交什么都没发生（控制台一条未处理异常）。现在空数组直接返回。
+ */
+function focusFirstError(errors: FieldErrorItem[]): void {
+  if (errors.length === 0) return
+  focusField(errors[0].field)
 }
 
 async function submit(): Promise<void> {
@@ -149,64 +182,87 @@ watch(presetType, (type) => {
 
 <template>
   <section class="record-create">
-    <h1 class="record-create__title">发布启事</h1>
-    <p class="record-create__hint">带 * 的为必填项；描述越具体，语义匹配越准。</p>
+    <header class="page-head">
+      <div>
+        <h1 class="page-head__title">发布启事</h1>
+        <p class="page-head__desc">带 <span class="field__req">*</span> 的为必填项；描述越具体，语义匹配越准。</p>
+      </div>
+    </header>
 
-    <form class="record-create__form" novalidate @submit.prevent="submit">
-      <div class="record-create__field">
-        <label class="record-create__label" for="field-type">类型 *</label>
+    <form class="panel record-create__form" novalidate @submit.prevent="submit">
+      <!-- 校验失败摘要：一条提示告诉用户"有几处、第一处是什么"，每条都能点回字段 -->
+      <div v-if="submitted && fieldErrors.length > 0" class="alert alert--danger" role="alert">
+        <span class="alert__title">有 {{ fieldErrors.length }} 处需要修改</span>
+        <ul class="record-create__summary-list">
+          <li v-for="item in fieldErrors" :key="`${item.field}-${item.reason}`">
+            <button type="button" class="btn btn--link" @click="focusField(item.field)">
+              {{ FIELD_LABELS[item.field] ?? item.field }}：{{ item.reason }}
+            </button>
+          </li>
+        </ul>
+      </div>
+
+      <fieldset class="record-create__fieldset" :aria-describedby="describedBy('type')">
+        <legend class="field__label">类型 <span class="field__req">*</span></legend>
         <div id="field-type" class="record-create__radios" tabindex="-1">
-          <label class="record-create__radio">
+          <label class="radio">
             <input v-model="form.type" type="radio" name="type" value="LOST" />
             寻物启事（我丢了东西）
           </label>
-          <label class="record-create__radio">
+          <label class="radio">
             <input v-model="form.type" type="radio" name="type" value="FOUND" />
             招领启事（我捡到东西）
           </label>
         </div>
         <FieldError :errors="fieldErrors" field="type" />
-      </div>
+      </fieldset>
 
-      <div class="record-create__field">
-        <label class="record-create__label" for="field-title">
-          标题 *
-          <span class="record-create__counter">{{ form.title.length }}/{{ TITLE_MAX }}</span>
+      <div class="field">
+        <label class="field__label" for="field-title">
+          标题 <span class="field__req">*</span>
+          <span class="field__counter">{{ form.title.length }}/{{ TITLE_MAX }}</span>
         </label>
         <input
           id="field-title"
           v-model="form.title"
-          class="record-create__control"
+          class="control"
           type="text"
-          maxlength="80"
+          :maxlength="TITLE_MAX"
           placeholder="例：图书馆丢了黑色钱包"
+          :aria-invalid="isInvalid('title') ? 'true' : undefined"
+          :aria-describedby="describedBy('title')"
         />
         <FieldError :errors="fieldErrors" field="title" />
       </div>
 
-      <div class="record-create__field">
-        <label class="record-create__label" for="field-description">
-          详细描述 *
-          <span class="record-create__counter">{{ form.description.length }}/{{ DESC_MAX }}</span>
+      <div class="field">
+        <label class="field__label" for="field-description">
+          详细描述 <span class="field__req">*</span>
+          <span class="field__counter">{{ form.description.length }}/{{ DESC_MAX }}</span>
         </label>
         <textarea
           id="field-description"
           v-model="form.description"
-          class="record-create__control record-create__control--area"
+          class="control"
           rows="5"
+          :maxlength="DESC_MAX"
           placeholder="写清丢失/捡到的时间、地点、物品特征，这些都会参与语义匹配"
+          :aria-invalid="isInvalid('description') ? 'true' : undefined"
+          :aria-describedby="describedBy('description')"
         ></textarea>
         <FieldError :errors="fieldErrors" field="description" />
       </div>
 
       <div class="record-create__grid">
-        <div class="record-create__field">
-          <label class="record-create__label" for="field-categoryId">分类</label>
+        <div class="field">
+          <label class="field__label" for="field-categoryId">分类</label>
           <select
             id="field-categoryId"
             v-model="form.categoryId"
-            class="record-create__control"
+            class="control"
             :disabled="categories.length === 0"
+            :aria-invalid="isInvalid('categoryId') ? 'true' : undefined"
+            :aria-describedby="describedBy('categoryId')"
           >
             <option value="">暂不分类</option>
             <option v-for="item in categories" :key="item.id" :value="String(item.id)">
@@ -216,163 +272,154 @@ watch(presetType, (type) => {
           <FieldError :errors="fieldErrors" field="categoryId" />
         </div>
 
-        <div class="record-create__field">
-          <label class="record-create__label" for="field-location">地点 *</label>
+        <div class="field">
+          <label class="field__label" for="field-location">
+            地点 <span class="field__req">*</span>
+          </label>
           <input
             id="field-location"
             v-model="form.location"
-            class="record-create__control"
+            class="control"
             type="text"
+            :maxlength="LOCATION_MAX"
             placeholder="例：图书馆三楼自习区"
+            :aria-invalid="isInvalid('location') ? 'true' : undefined"
+            :aria-describedby="describedBy('location')"
           />
           <FieldError :errors="fieldErrors" field="location" />
         </div>
 
-        <div class="record-create__field">
-          <label class="record-create__label" for="field-occurredAt">发生时间 *</label>
+        <div class="field">
+          <label class="field__label" for="field-occurredAt">
+            发生时间 <span class="field__req">*</span>
+          </label>
           <input
             id="field-occurredAt"
             v-model="form.occurredAt"
-            class="record-create__control"
+            class="control"
             type="datetime-local"
+            :aria-invalid="isInvalid('occurredAt') ? 'true' : undefined"
+            :aria-describedby="describedBy('occurredAt')"
           />
           <FieldError :errors="fieldErrors" field="occurredAt" />
         </div>
 
-        <div class="record-create__field">
-          <label class="record-create__label" for="field-contact">联系方式</label>
+        <div class="field">
+          <label class="field__label" for="field-contact">联系方式</label>
           <input
             id="field-contact"
             v-model="form.contact"
-            class="record-create__control"
+            class="control"
             type="text"
+            :maxlength="CONTACT_MAX"
             placeholder="手机 / QQ / 微信号"
+            :aria-invalid="isInvalid('contact') ? 'true' : undefined"
+            :aria-describedby="describedBy('contact')"
           />
           <FieldError :errors="fieldErrors" field="contact" />
         </div>
 
-        <div class="record-create__field">
-          <label class="record-create__label" for="field-publisherName">联系人称呼</label>
+        <div class="field">
+          <label class="field__label" for="field-publisherName">联系人称呼</label>
           <input
             id="field-publisherName"
             v-model="form.publisherName"
-            class="record-create__control"
+            class="control"
             type="text"
+            :maxlength="PUBLISHER_MAX"
             placeholder="例：李同学"
+            :aria-invalid="isInvalid('publisherName') ? 'true' : undefined"
+            :aria-describedby="describedBy('publisherName')"
           />
           <FieldError :errors="fieldErrors" field="publisherName" />
         </div>
       </div>
 
-      <p v-if="categoryHint" class="record-create__field-hint">{{ categoryHint }}</p>
-      <ErrorBanner v-if="error && backendErrors.length === 0" :error="error" />
+      <p v-if="categoryHint" class="field__hint">{{ categoryHint }}</p>
+
+      <!-- 非字段级失败（网络/服务端错误）才用页级提示；字段错误由上方摘要与字段红字承担 -->
+      <ErrorBanner
+        v-if="error && backendErrors.length === 0"
+        :error="error"
+        title="提交失败"
+        retry-label="再试一次"
+        @retry="submit"
+      />
 
       <div class="record-create__actions">
-        <button type="submit" class="btn btn--primary" :disabled="loading">
+        <button
+          type="submit"
+          class="btn btn--primary btn--lg"
+          :disabled="loading"
+          :data-loading="loading"
+        >
+          <span v-if="loading" class="btn__spinner" aria-hidden="true"></span>
           {{ loading ? '提交中…' : '提交启事' }}
         </button>
-        <RouterLink :to="{ name: 'RecordList' }" class="btn btn--ghost">返回列表</RouterLink>
+        <RouterLink :to="{ name: 'RecordList' }" class="btn btn--ghost btn--lg">取消并返回</RouterLink>
       </div>
     </form>
   </section>
 </template>
 
 <style scoped>
-.record-create__title {
-  font-size: var(--fs-xxl);
-  font-weight: var(--fw-bold);
-  line-height: var(--lh-tight);
-}
-
-.record-create__hint {
-  margin-top: var(--sp-2);
-  color: var(--color-text-muted);
-  font-size: var(--fs-sm);
-}
-
 .record-create__form {
-  margin-top: var(--sp-4);
-  padding: var(--sp-5);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  background-color: var(--color-surface);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+  max-width: var(--content-max);
 }
 
-.record-create__field {
+.record-create__summary-list {
+  flex-basis: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+  margin-top: var(--sp-1);
+  font-size: var(--fs-xs);
+}
+
+/* 用 fieldset/legend 而不是 <label for> 包一组 radio：for 必须指向可标注控件，
+   指向 div 是无效 HTML，读屏也读不出这组单选在问什么。这里去掉浏览器默认边框。 */
+.record-create__fieldset {
   display: flex;
   flex-direction: column;
   gap: var(--sp-1);
   min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.record-create__fieldset legend {
+  display: block; /* legend 上用 flex 会打乱 fieldset 布局，这里回到块级 */
+  padding: 0;
+}
+
+.record-create__radios {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+  padding: var(--sp-1) 0;
+}
+
+/* 窄屏两个单选各占一行，宽屏并排；都不换行截断 */
+.record-create__radios .radio {
+  flex: 1 1 220px;
 }
 
 .record-create__grid {
   display: grid;
   grid-template-columns: 1fr;
   gap: var(--sp-4);
-  margin-top: var(--sp-4);
-}
-
-.record-create__label {
-  display: flex;
-  align-items: center;
-  gap: var(--sp-2);
-  font-size: var(--fs-sm);
-  font-weight: var(--fw-medium);
-}
-
-.record-create__counter {
-  color: var(--color-text-muted);
-  font-size: var(--fs-xs);
-  font-weight: var(--fw-regular);
-}
-
-.record-create__control {
-  width: 100%;
-  padding: var(--sp-2) var(--sp-3);
-  border: 1px solid var(--color-border-strong);
-  border-radius: var(--radius-sm);
-  background-color: var(--color-surface);
-  color: var(--color-text);
-  font: inherit;
-  font-size: var(--fs-md);
-}
-
-.record-create__control:disabled {
-  background-color: var(--color-surface-muted);
-  color: var(--color-text-muted);
-}
-
-.record-create__control--area {
-  resize: vertical;
-  line-height: var(--lh-normal);
-}
-
-.record-create__radios {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--sp-4);
-  padding: var(--sp-2) 0;
-}
-
-.record-create__radio {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--sp-2);
-  font-size: var(--fs-md);
-  font-weight: var(--fw-regular);
-}
-
-.record-create__field-hint {
-  margin-top: var(--sp-3);
-  color: var(--color-text-muted);
-  font-size: var(--fs-sm);
 }
 
 .record-create__actions {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: var(--sp-3);
-  margin-top: var(--sp-5);
+  padding-top: var(--sp-2);
 }
 
 @media (min-width: 768px) {

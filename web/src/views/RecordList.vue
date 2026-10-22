@@ -1,5 +1,7 @@
 <script setup lang="ts">
-// 列表页 = 首页（基线 §2）。数据只经由 api/records.ts 的 listRecords，页面里不出现 fetch
+// 列表页 = 首页（基线 §2）。数据只经由 api/records.ts 的 listRecords，页面里不出现 fetch。
+// 4.2 只改结构与外观：统一 page-head / .control 筛选区 / 卡片网格 / 三段状态；
+// 请求、URL 状态、竞态丢弃一律沿用 4.1 实现（未改业务逻辑）。
 import { computed, watch } from 'vue'
 import { listRecords } from '@/api/records'
 import RecordCard from '@/components/record/RecordCard.vue'
@@ -58,78 +60,79 @@ function updateFilter(next: ListFilterState): void {
 function updatePage(nextPage: number): void {
   state.value = { ...state.value, page: nextPage }
 }
+
+/** 错误态的重试：重发当前筛选条件下的同一个请求（不引入新的调用路径） */
+function reload(): void {
+  void run(apiQuery.value)
+}
 </script>
 
 <template>
   <section class="record-list">
-    <header class="record-list__head">
-      <h1 class="record-list__title">启事列表</h1>
-      <RouterLink :to="{ name: 'RecordCreate' }" class="btn btn--primary record-list__cta">
-        + 发布启事
-      </RouterLink>
+    <header class="page-head">
+      <div>
+        <h1 class="page-head__title">启事列表</h1>
+        <p class="page-head__desc">按类型、状态、分类筛选；点卡片看详情并匹配相关启事。</p>
+      </div>
+      <div class="page-head__actions">
+        <RouterLink :to="{ name: 'RecordCreate' }" class="btn btn--primary">
+          + 发布启事
+        </RouterLink>
+      </div>
     </header>
 
     <!-- 不用 v-model：筛选变化要同时重置页码，交给 updateFilter 一处处理 -->
-    <RecordFilterBar
-      :model-value="state"
-      @update:model-value="updateFilter"
-    />
+    <RecordFilterBar :model-value="state" @update:model-value="updateFilter" />
 
-    <ErrorBanner v-if="error" :error="error" class="u-mt" />
-    <LoadingBlock v-if="loading" :rows="3" class="u-mt" />
-    <EmptyState
-      v-else-if="!error && items.length === 0"
-      class="u-mt"
-      title="暂无符合条件的启事"
-      description="换个筛选条件，或发布一条新的启事"
-      action-text="点上方「重置」清空筛选试试"
-    />
+    <div class="record-list__body">
+      <ErrorBanner v-if="error" :error="error" retry-label="重试" @retry="reload" />
 
-    <ul v-else class="record-list__grid">
-      <li v-for="item in items" :key="item.id">
-        <RecordCard :item="item" />
-      </li>
-    </ul>
+      <LoadingBlock v-else-if="loading" :rows="3" label="正在加载启事列表" />
 
-    <PaginationBar
-      class="u-mt"
-      :page="page"
-      :page-size="pageSize"
-      :total="total"
-      @update:page="updatePage"
-    />
+      <EmptyState
+        v-else-if="items.length === 0"
+        title="暂无符合条件的启事"
+        description="换个筛选条件，或发布一条新的启事"
+        action-text="也可以点上方「重置筛选」清空全部条件"
+        action-label="去发布一条启事"
+        :to="{ name: 'RecordCreate' }"
+      />
+
+      <ul v-else class="record-list__grid">
+        <li v-for="item in items" :key="item.id">
+          <RecordCard :item="item" />
+        </li>
+      </ul>
+
+      <PaginationBar
+        v-if="!loading && !error && items.length > 0"
+        :page="page"
+        :page-size="pageSize"
+        :total="total"
+        @update:page="updatePage"
+      />
+    </div>
   </section>
 </template>
 
 <style scoped>
-.record-list__head {
+.record-list__body {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--sp-3);
-  margin-bottom: var(--sp-4);
-}
-
-.record-list__title {
-  font-size: var(--fs-xxl);
-  font-weight: var(--fw-bold);
-  line-height: var(--lh-tight);
-}
-
-.record-list__cta {
-  white-space: nowrap;
+  flex-direction: column;
+  gap: var(--sp-4);
+  margin-top: var(--sp-4);
 }
 
 .record-list__grid {
   display: grid;
   grid-template-columns: 1fr;
-  gap: var(--sp-4);
-  margin-top: var(--sp-4);
+  gap: var(--sp-3);
 }
 
 @media (min-width: 768px) {
   .record-list__grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--sp-4);
   }
 }
 

@@ -1,5 +1,6 @@
 <script setup lang="ts">
-// 状态 → 颜色/文案的映射表集中一处（基线 §6）；除颜色外必须带文字
+// 状态 → 颜色/文案的映射表集中一处（基线 §6）。
+// 视觉走 components.css 的 .badge（文字 + 色点 + 底色三通道），不只靠颜色分状态。
 import type { RecordStatus } from '@/types/api'
 
 const props = defineProps<{ status: RecordStatus }>()
@@ -12,35 +13,7 @@ const LABELS: Record<RecordStatus, string> = {
 </script>
 
 <template>
-  <span class="status-tag" :class="`status-tag--${props.status.toLowerCase()}`">
+  <span class="badge badge--dot" :class="`badge--${props.status.toLowerCase()}`">
     {{ LABELS[props.status] }}
   </span>
 </template>
-
-<style scoped>
-.status-tag {
-  display: inline-flex;
-  align-items: center;
-  padding: 0 var(--sp-2);
-  border-radius: var(--radius-pill);
-  font-size: var(--fs-xs);
-  font-weight: var(--fw-medium);
-  line-height: var(--lh-tight);
-  white-space: nowrap;
-}
-
-.status-tag--pending {
-  color: var(--color-status-pending-fg);
-  background-color: var(--color-status-pending-bg);
-}
-
-.status-tag--claimed {
-  color: var(--color-status-claimed-fg);
-  background-color: var(--color-status-claimed-bg);
-}
-
-.status-tag--closed {
-  color: var(--color-status-closed-fg);
-  background-color: var(--color-status-closed-bg);
-}
-</style>

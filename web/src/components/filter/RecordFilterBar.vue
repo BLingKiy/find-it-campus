@@ -1,6 +1,7 @@
 <script setup lang="ts">
 // 筛选表单 ↔ URL query（基线 §6）：v-model 进来的就是列表页那一份 state，
-// 因此「筛选条件写进 URL → 详情后退能回到原结果」不需要任何额外代码。
+// 因此"筛选条件写进 URL → 详情后退能回到原结果"不需要任何额外代码。
+// 4.2 只改外观：控件统一用 .control / .field，与提交页同一套高度与边框。
 import { onMounted, ref } from 'vue'
 import { loadCategories } from '@/api/categoryCache'
 import type { CategoryItem } from '@/types/api'
@@ -46,13 +47,13 @@ onMounted(async () => {
 
 <template>
   <!-- 筛选即时生效，回车不应触发表单默认提交导致整页刷新 -->
-  <form class="filter-bar" role="search" @submit.prevent>
+  <form class="filter-bar" role="search" aria-label="筛选启事" @submit.prevent>
     <div class="filter-bar__row">
-      <div class="filter-bar__field">
-        <label class="filter-bar__label" for="filter-type">类型</label>
+      <div class="field">
+        <label class="field__label" for="filter-type">类型</label>
         <select
           id="filter-type"
-          class="filter-bar__control"
+          class="control"
           :value="modelValue.type"
           @change="patch({ type: ($event.target as HTMLSelectElement).value as ListFilterState['type'] })"
         >
@@ -62,11 +63,11 @@ onMounted(async () => {
         </select>
       </div>
 
-      <div class="filter-bar__field">
-        <label class="filter-bar__label" for="filter-status">状态</label>
+      <div class="field">
+        <label class="field__label" for="filter-status">状态</label>
         <select
           id="filter-status"
-          class="filter-bar__control"
+          class="control"
           :value="modelValue.status"
           @change="patch({ status: ($event.target as HTMLSelectElement).value as ListFilterState['status'] })"
         >
@@ -76,11 +77,11 @@ onMounted(async () => {
         </select>
       </div>
 
-      <div class="filter-bar__field">
-        <label class="filter-bar__label" for="filter-category">分类</label>
+      <div class="field">
+        <label class="field__label" for="filter-category">分类</label>
         <select
           id="filter-category"
-          class="filter-bar__control"
+          class="control"
           :disabled="categories.length === 0"
           :value="modelValue.categoryId"
           @change="patch({ categoryId: ($event.target as HTMLSelectElement).value })"
@@ -92,11 +93,11 @@ onMounted(async () => {
         </select>
       </div>
 
-      <div class="filter-bar__field filter-bar__field--grow">
-        <label class="filter-bar__label" for="filter-keyword">关键词</label>
+      <div class="field filter-bar__field--grow">
+        <label class="field__label" for="filter-keyword">关键词</label>
         <input
           id="filter-keyword"
-          class="filter-bar__control"
+          class="control"
           type="search"
           placeholder="标题 / 描述里的内容"
           :value="modelValue.keyword"
@@ -104,10 +105,14 @@ onMounted(async () => {
         />
       </div>
 
-      <button type="button" class="btn btn--ghost filter-bar__reset" @click="reset">重置</button>
+      <div class="filter-bar__actions">
+        <button type="button" class="btn btn--ghost filter-bar__reset" @click="reset">
+          重置筛选
+        </button>
+      </div>
     </div>
 
-    <p v-if="categoryHint" class="filter-bar__hint">{{ categoryHint }}</p>
+    <p v-if="categoryHint" class="field__hint filter-bar__hint">{{ categoryHint }}</p>
   </form>
 </template>
 
@@ -121,52 +126,43 @@ onMounted(async () => {
 
 .filter-bar__row {
   display: grid;
-  grid-template-columns: 1fr;
+  /* 手机两列：4 个控件压到 2 行，列表页首屏才看得到卡片 */
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: var(--sp-3);
 }
 
-.filter-bar__field {
-  display: flex;
-  flex-direction: column;
-  gap: var(--sp-1);
+.filter-bar__field--grow,
+.filter-bar__actions {
   min-width: 0;
 }
 
-.filter-bar__label {
-  color: var(--color-text-muted);
-  font-size: var(--fs-xs);
+.filter-bar__actions {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: flex-end;
 }
 
-.filter-bar__control {
+.filter-bar__reset {
   width: 100%;
-  padding: var(--sp-2) var(--sp-3);
-  border: 1px solid var(--color-border-strong);
-  border-radius: var(--radius-sm);
-  background-color: var(--color-surface);
-  color: var(--color-text);
-  font: inherit;
-  font-size: var(--fs-md);
-}
-
-.filter-bar__control:disabled {
-  background-color: var(--color-surface-muted);
-  color: var(--color-text-muted);
 }
 
 .filter-bar__hint {
-  margin-top: var(--sp-2);
-  color: var(--color-text-muted);
-  font-size: var(--fs-xs);
+  margin-top: var(--sp-3);
 }
 
 @media (min-width: 768px) {
+  /* 6 列 + 自动列：类型/状态/分类各 1 列，关键词 2 列（最常用），重置按钮占剩余 */
   .filter-bar__row {
-    grid-template-columns: repeat(4, minmax(0, 1fr)) auto;
+    grid-template-columns: repeat(6, minmax(0, 1fr)) auto;
     align-items: end;
   }
 
   .filter-bar__field--grow {
-    grid-column: auto;
+    grid-column: span 2;
+  }
+
+  .filter-bar__reset {
+    width: auto;
   }
 }
 </style>

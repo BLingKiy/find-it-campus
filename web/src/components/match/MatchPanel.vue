@@ -1,6 +1,7 @@
 <script setup lang="ts">
-// 匹配区三段状态（未开始 / 结果 / 不可用）。基线 §6 硬要求：
+// 匹配区四段状态（未开始 / 加载 / 不可用 / 结果 / 空）。基线 §6 硬要求：
 // 30002/30003 只降级本区，详情主体照常可用，不许整页报错。
+// 4.2：结果区补上「排序可见」——名次 + 明确的排序说明 + 引擎与时延。
 import { computed } from 'vue'
 import { match } from '@/api/match'
 import EmptyState from '@/components/common/EmptyState.vue'
@@ -39,83 +40,77 @@ async function findRelated(): Promise<void> {
 </script>
 
 <template>
-  <section class="match-panel">
-    <header class="match-panel__head">
+  <section class="match-panel panel" aria-labelledby="match-panel-title">
+    <header class="panel__head">
       <div>
-        <h2 class="match-panel__title">帮我找找相关启事</h2>
-        <p class="match-panel__hint">按这段描述在本地候选池里找相似启事，排除本条自身</p>
+        <h2 id="match-panel-title" class="panel__title">帮我找找相关启事</h2>
+        <p class="panel__desc">
+          按这段描述在候选池里找相似启事，排除本条自身；结果按相似度从高到低排列。
+        </p>
       </div>
       <button type="button" class="btn btn--primary" :disabled="loading" @click="findRelated">
-        {{ loading ? '匹配中…' : '开始匹配' }}
+        <span v-if="loading" class="btn__spinner" aria-hidden="true"></span>
+        {{ loading ? '匹配中…' : data ? '重新匹配' : '开始匹配' }}
       </button>
     </header>
 
-    <!-- 错误只在本区内展示（含 30002/30003 的降级文案，见 describeError） -->
-    <ErrorBanner v-if="error" :error="error" class="u-mt" />
-    <LoadingBlock v-else-if="loading" :rows="2" class="u-mt" />
+    <!-- 4 段状态：错误只在本区内展示（含 30002/30003 的降级文案，见 describeError） -->
+    <ErrorBanner
+      v-if="error"
+      :error="error"
+      title="匹配服务暂不可用"
+      retry-label="重试"
+      @retry="findRelated"
+    />
+
+    <LoadingBlock v-else-if="loading" variant="inline" :rows="2" label="正在匹配相似启事" />
+
     <EmptyState
       v-else-if="data && items.length === 0"
-      class="u-mt"
       title="暂无匹配结果"
       description="没有相似度达到阈值的启事，换个描述或稍后再试"
     />
 
-    <template v-else-if="items.length > 0">
-      <p class="match-panel__summary u-mt">
-        共 {{ data?.total }} 条，用时 {{ data?.tookMs }}ms，引擎：{{ engineText }}
+    <template v-else-if="items.length > 0 && data">
+      <p class="match-panel__summary" role="status">
+        共 {{ data.total }} 条候选 · 用时 {{ data.tookMs }}ms · 引擎：{{ engineText }} ·
+        阈值 {{ Math.round(data.minScore * 100) }}%
       </p>
-      <ul class="match-panel__list">
-        <li v-for="item in items" :key="item.recordId">
-          <MatchItemCard :item="item" />
+      <ol class="match-panel__list">
+        <li v-for="(item, index) in items" :key="item.recordId">
+          <MatchItemCard :item="item" :rank="index + 1" />
         </li>
-      </ul>
+      </ol>
     </template>
 
-    <p v-else class="match-panel__idle u-mt">点「开始匹配」后这里会列出相似度最高的几条启事。</p>
+    <p v-else class="match-panel__idle">
+      点「开始匹配」后，这里会按相似度从高到低列出最相近的几条启事，并说明每条为什么被选中。
+    </p>
   </section>
 </template>
 
 <style scoped>
-.match-panel {
-  padding: var(--sp-4);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  background-color: var(--color-surface);
-}
-
-.match-panel__head {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--sp-3);
-}
-
-.match-panel__title {
-  font-size: var(--fs-lg);
-  font-weight: var(--fw-medium);
-}
-
-.match-panel__hint {
-  margin-top: var(--sp-1);
-  color: var(--color-text-muted);
-  font-size: var(--fs-sm);
-}
-
 .match-panel__summary {
+  margin-bottom: var(--sp-3);
   color: var(--color-text-muted);
-  font-size: var(--fs-sm);
+  font-size: var(--fs-xs);
+  font-variant-numeric: tabular-nums;
 }
 
 .match-panel__list {
   display: grid;
   grid-template-columns: 1fr;
   gap: var(--sp-3);
-  margin-top: var(--sp-2);
 }
 
 .match-panel__idle {
   color: var(--color-text-muted);
   font-size: var(--fs-sm);
+}
+
+@media (min-width: 768px) {
+  .match-panel__list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 </style>
