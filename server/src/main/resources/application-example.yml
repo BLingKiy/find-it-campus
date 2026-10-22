@@ -1,0 +1,33 @@
+# =====================================================================
+# application-example.yml —— 提交到仓库的样例，复制成本机文件后改本地值
+#
+# 用法：cp src/main/resources/application-example.yml src/main/resources/application-local.yml
+#      然后 java -jar target/find-it-campus-0.0.1-SNAPSHOT.jar --spring.profiles.active=local
+#      application-local.yml 已被 .gitignore 忽略，**不要提交**（里面会写本机 DB 密码）。
+#
+# 原则：敏感配置只从环境变量读；环境变量缺失时用默认值（本地开发），生产/演示环境用真实环境变量覆盖。
+# =====================================================================
+
+# 本机 MySQL 连接信息（不得提交真实密码，这里只能是占位）
+# Windows PowerShell：
+#   $env:FINDIT_DB_URL = "jdbc:mysql://localhost:3306/find_it_campus?useSSL=false&serverTimezone=Asia/Shanghai"
+#   $env:FINDIT_DB_USER = "root"
+#   $env:FINDIT_DB_PASSWORD = "你的本机密码"
+# Linux / macOS / Git Bash：
+#   export FINDIT_DB_PASSWORD=你的本机密码
+
+spring:
+  datasource:
+    url: '${FINDIT_DB_URL:jdbc:mysql://localhost:3306/find_it_campus?useSSL=false&serverTimezone=Asia/Shanghai}'
+    username: '${FINDIT_DB_USER:root}'
+    password: '${FINDIT_DB_PASSWORD:}'
+
+findit:
+  match:
+    # local=本地关键词实现（默认，离线可用）；external=外部 embedding 实现
+    engine: local
+    external:
+      # 外部引擎凭据：只在环境变量里给，仓库内保持空串
+      base-url: '${FINDIT_EMBED_BASE_URL:}'
+      api-key: '${FINDIT_EMBED_API_KEY:}'
+      timeout-ms: 3000

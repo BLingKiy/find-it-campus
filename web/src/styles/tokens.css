@@ -1,0 +1,84 @@
+/* 设计变量（基线 §7 样式约定的事实源）。4.2 调配色只改这里，组件不写死十六进制 */
+:root {
+  /* 颜色 · 基础 */
+  --color-bg: #f6f7f9;
+  --color-surface: #ffffff;
+  --color-surface-muted: #f1f3f6;
+  --color-border: #e3e6ea;
+  --color-border-strong: #c9ced6;
+
+  --color-text: #1f2328;
+  --color-text-muted: #6b7280;
+  --color-text-inverse: var(--color-bg);
+
+  /* 颜色 · 语义 */
+  --color-primary: #2f6fed;
+  --color-primary-strong: #1d4fd0;
+  --color-primary-soft: #e8f0ff;
+  --color-danger: #d64545;
+  --color-danger-soft: #fdecec;
+  --color-warning: #b26a00;
+  --color-warning-soft: #fdf1dc;
+  --color-success: #1f9254;
+  --color-success-soft: #e6f6ed;
+  --color-info: #0b7285;
+  --color-info-soft: #e2f4f7;
+
+  /* 颜色 · 类型标签（寻物 / 招领） */
+  --color-type-lost-fg: var(--color-danger);
+  --color-type-lost-bg: var(--color-danger-soft);
+  --color-type-found-fg: var(--color-success);
+  --color-type-found-bg: var(--color-success-soft);
+
+  /* 颜色 · 状态标签 */
+  --color-status-pending-fg: var(--color-info);
+  --color-status-pending-bg: var(--color-info-soft);
+  --color-status-claimed-fg: var(--color-warning);
+  --color-status-claimed-bg: var(--color-warning-soft);
+  --color-status-closed-fg: var(--color-text-muted);
+  --color-status-closed-bg: var(--color-surface-muted);
+
+  /* 字号 */
+  --fs-xs: 12px;
+  --fs-sm: 13px;
+  --fs-md: 14px;
+  --fs-lg: 16px;
+  --fs-xl: 20px;
+  --fs-xxl: 24px;
+
+  /* 字重与行高 */
+  --fw-regular: 400;
+  --fw-medium: 500;
+  --fw-bold: 700;
+  --lh-tight: 1.25;
+  --lh-normal: 1.6;
+
+  /* 间距 */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 20px;
+  --sp-6: 24px;
+  --sp-7: 32px;
+  --sp-8: 40px;
+
+  /* 圆角 */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  --radius-pill: 999px;
+
+  /* 阴影 */
+  --shadow-sm: 0 1px 2px rgba(31, 35, 40, 0.06);
+  --shadow-md: 0 4px 16px rgba(31, 35, 40, 0.08);
+
+  /* 断点（供 @media 与 matchMedia 使用，见 §7 响应式基线） */
+  --bp-md: 768px;
+  --bp-lg: 1120px;
+
+  /* 布局与动效 */
+  --container-max: var(--bp-lg);
+  --header-height: 56px;
+  --dur-fast: 120ms;
+}

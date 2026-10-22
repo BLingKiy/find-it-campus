@@ -1,0 +1,74 @@
+# =====================================================================
+# find-it-campus · server 主配置
+# 版本与约定来源：docs/architecture-baseline.md §9.2 / ADR-013 / ADR-016
+# 原则：仓库里不出现任何真实密码与密钥 —— 敏感项一律 ${VAR:默认值} 从环境变量读。
+#       本机私密覆盖写 application-local.yml（不提交），样例见 application-example.yml。
+# =====================================================================
+
+server:
+  # 18080 而非 8080：开发机上 8080 已被本机另一个服务（upload-svc）长期占用，
+  # 仓库默认端口直接对齐 18080，前端 Vite 代理同步指向它（README §五）。
+  port: 18080
+  # 返回体遇到错误时不携带堆栈（防信息泄漏），配合 GlobalExceptionHandler 使用
+  error:
+    include-stacktrace: never
+    include-message: never
+
+spring:
+  application:
+    name: find-it-campus
+  datasource:
+    url: '${FINDIT_DB_URL:jdbc:mysql://localhost:3306/find_it_campus?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai&characterEncoding=utf8&connectTimeout=3000&socketTimeout=10000}'
+    username: '${FINDIT_DB_USER:root}'
+    password: '${FINDIT_DB_PASSWORD:}'
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    hikari:
+      pool-name: findit-pool
+      maximum-pool-size: 10
+      # 健康检查不许 hang：拿不到连接就尽快失败，由 /api/health 报 DOWN
+      connection-timeout: 3000
+      validation-timeout: 1000
+  jackson:
+    # 时间与 JacksonConfig 同口径：yyyy-MM-dd HH:mm:ss，本地时区，无毫秒
+    date-format: yyyy-MM-dd HH:mm:ss
+    time-zone: Asia/Shanghai
+    serialization:
+      write-dates-as-timestamps: false
+  mvc:
+    # 让 404 走 GlobalExceptionHandler，返回统一 body（10003），而不是默认错误页
+    throw-exception-if-no-handler-found: true
+  web:
+    resources:
+      add-mappings: false
+  servlet:
+    multipart:
+      max-file-size: 2MB
+      max-request-size: 2MB
+
+mybatis:
+  # 骨架阶段无 Mapper；3.1 起 XML 放 src/main/resources/mapper/**/*.xml
+  mapper-locations: classpath*:/mapper/**/*.xml
+  configuration:
+    # DB snake_case ↔ JSON camelCase（ADR-013）
+    map-underscore-to-camel-case: true
+    log-impl: org.apache.ibatis.logging.slf4j.Slf4jImpl
+
+findit:
+  # 与 pom.xml 的 <version> 保持同值：这里刻意写死而不是用 Maven 资源过滤 ——
+  # 打开 filtering 后 Maven 会把 Spring 的 ${VAR:默认} 占位符一并替换掉，得不偿失。
+  version: 0.0.1-SNAPSHOT
+  match:
+    # local | external —— 取值非法时启动直接失败，不带病运行（MatchEngineConfig）
+    engine: '${FINDIT_MATCH_ENGINE:local}'
+    external:
+      base-url: '${FINDIT_EMBED_BASE_URL:}'
+      api-key: '${FINDIT_EMBED_API_KEY:}'
+      timeout-ms: 3000
+
+logging:
+  level:
+    root: INFO
+    com.findit.campus: INFO
+  pattern:
+    # requestId 贯穿日志与响应体，一个 id 从浏览器报错查到 SQL
+    console: '%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [%thread] %logger{36} - [%X{requestId}] %msg%n'
