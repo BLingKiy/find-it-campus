@@ -1,36 +1,63 @@
-/* 设计变量（基线 §7 样式约定的事实源）。4.2 调配色只改这里，组件不写死十六进制 */
+/* ==========================================================================
+   设计变量（Design Tokens）——4.2 视觉基线的事实源，详见 docs/ui-baseline.md
+   --------------------------------------------------------------------------
+   规则（基线 §7）：
+   1. 组件里不写死颜色/字号/间距/圆角/阴影，一律引用本文件变量。
+   2. 新增语义 = 新增变量，不许在组件里就地造颜色。
+   3. 变量命名：--{类别}-{语义}-{变体}，类别只有 color/fw/lh/fs/sp/radius/shadow/dur/ease/z/bp。
+   4. 深色模式：本期不做（见 docs/ui-baseline.md §2.3 待确认项）。若将来要开，
+      只需在本文件追加 @media (prefers-color-scheme: dark) 的同名覆盖，组件不动。
+   ========================================================================== */
 :root {
-  /* 颜色 · 基础 */
-  --color-bg: #f6f7f9;
+  /* ---- 颜色 · 中性（向品牌色微偏的冷灰，避免灰得发脏） ------------------ */
+  --color-bg: #f4f6fb;
+  --color-bg-elevated: #ffffff;
   --color-surface: #ffffff;
-  --color-surface-muted: #f1f3f6;
-  --color-border: #e3e6ea;
-  --color-border-strong: #c9ced6;
+  --color-surface-muted: #eef1f7;
+  --color-surface-sunken: #e6eaf3;
+  --color-border: #e0e5ef;
+  --color-border-strong: #c6cddc;
+  /* 表单控件描边单独一档：白底 3.06:1，满足 WCAG 1.4.11「控件边界可辨识」；
+     --color-border-strong 只有 1.6:1，仅用于装饰性分隔，不能拿来画输入框 */
+  --color-control-border: #8b94a4;
 
-  --color-text: #1f2328;
-  --color-text-muted: #6b7280;
-  --color-text-inverse: var(--color-bg);
+  --color-text: #1a2033; /* 白底对比 16.2:1 */
+  --color-text-muted: #5b6478; /* 白底 5.9:1 / 页面底 5.5:1，AA 正文可用 */
+  --color-text-subtle: #687185; /* 白底 4.9:1 / 页面底 4.5:1，12px 辅助信息也过 AA */
+  --color-text-inverse: #ffffff;
 
-  /* 颜色 · 语义 */
-  --color-primary: #2f6fed;
-  --color-primary-strong: #1d4fd0;
-  --color-primary-soft: #e8f0ff;
-  --color-danger: #d64545;
-  --color-danger-soft: #fdecec;
-  --color-warning: #b26a00;
-  --color-warning-soft: #fdf1dc;
-  --color-success: #1f9254;
-  --color-success-soft: #e6f6ed;
-  --color-info: #0b7285;
-  --color-info-soft: #e2f4f7;
+  /* ---- 颜色 · 品牌与语义 ------------------------------------------------ */
+  --color-primary: #2450d0;
+  --color-primary-strong: #1a3ca6;
+  --color-primary-soft: #e7eefc;
+  --color-primary-softer: #f2f6fe;
+  --color-on-primary: #ffffff;
 
-  /* 颜色 · 类型标签（寻物 / 招领） */
+  --color-danger: #c2352b;
+  --color-danger-strong: #9d281f;
+  --color-danger-soft: #fdecea;
+
+  --color-warning: #8a5300;
+  --color-warning-soft: #fdf3e2;
+
+  --color-success: #17784a;
+  --color-success-strong: #115e39;
+  --color-success-soft: #e6f5ec;
+
+  --color-info: #0b6373;
+  --color-info-soft: #e3f2f5;
+
+  /* 焦点环：与品牌同色，白/浅底上都要够醒目（3:1 以上） */
+  --color-focus: var(--color-primary);
+  --color-overlay: rgba(18, 24, 38, 0.45);
+
+  /* ---- 颜色 · 类型标签（寻物 / 招领） ---------------------------------- */
   --color-type-lost-fg: var(--color-danger);
   --color-type-lost-bg: var(--color-danger-soft);
   --color-type-found-fg: var(--color-success);
   --color-type-found-bg: var(--color-success-soft);
 
-  /* 颜色 · 状态标签 */
+  /* ---- 颜色 · 状态标签 ------------------------------------------------ */
   --color-status-pending-fg: var(--color-info);
   --color-status-pending-bg: var(--color-info-soft);
   --color-status-claimed-fg: var(--color-warning);
@@ -38,22 +65,45 @@
   --color-status-closed-fg: var(--color-text-muted);
   --color-status-closed-bg: var(--color-surface-muted);
 
-  /* 字号 */
+  /* ---- 颜色 · 骨架屏 -------------------------------------------------- */
+  --color-skeleton-base: var(--color-surface-sunken);
+  --color-skeleton-sheen: rgba(255, 255, 255, 0.72);
+
+  /* ---- 颜色 · 相似度分值档位（match 结果的可读呈现，见 §4.5） ---------- */
+  --color-score-high: var(--color-success);
+  --color-score-mid: var(--color-warning);
+  --color-score-low: var(--color-text-muted);
+  --color-score-track: var(--color-surface-sunken);
+
+  /* ---- 字体 ----------------------------------------------------------- */
+  /* 不引 Web 字体：CJK 子集化成本高、弱网下拖 LCP 且必带 CLS。系统 UI 栈在
+     Windows / Android / iOS 都是本地字体，0 下载、0 抖动（见 §2.4）。 */
+  --font-sans: system-ui, -apple-system, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei',
+    'Noto Sans CJK SC', sans-serif;
+  --font-mono: ui-monospace, 'SF Mono', 'Cascadia Mono', Consolas, monospace;
+
+  /* ---- 字号（固定档，正文 14px 起，避免小屏 12px 正文） ---------------- */
   --fs-xs: 12px;
   --fs-sm: 13px;
   --fs-md: 14px;
   --fs-lg: 16px;
   --fs-xl: 20px;
   --fs-xxl: 24px;
+  --fs-2xl: 24px; /* 别名，供新代码用 2xl 读法 */
+  /* 页面主标题用流体字号：320px 下 22px，1120px 下 30px，中间连续 */
+  --fs-display: clamp(22px, 5vw, 30px);
 
-  /* 字重与行高 */
+  /* ---- 字重与行高 ----------------------------------------------------- */
   --fw-regular: 400;
   --fw-medium: 500;
+  --fw-semibold: 600;
   --fw-bold: 700;
   --lh-tight: 1.25;
+  --lh-snug: 1.4;
   --lh-normal: 1.6;
+  --lh-relaxed: 1.75;
 
-  /* 间距 */
+  /* ---- 间距（4px 基准刻度，8 档够用；9/10 只给大区块呼吸） ------------- */
   --sp-1: 4px;
   --sp-2: 8px;
   --sp-3: 12px;
@@ -62,23 +112,45 @@
   --sp-6: 24px;
   --sp-7: 32px;
   --sp-8: 40px;
+  --sp-9: 48px;
+  --sp-10: 64px;
 
-  /* 圆角 */
+  /* ---- 圆角 ----------------------------------------------------------- */
+  --radius-xs: 4px;
   --radius-sm: 6px;
   --radius-md: 10px;
   --radius-lg: 16px;
   --radius-pill: 999px;
 
-  /* 阴影 */
-  --shadow-sm: 0 1px 2px rgba(31, 35, 40, 0.06);
-  --shadow-md: 0 4px 16px rgba(31, 35, 40, 0.08);
+  /* ---- 阴影（只有两级 + 一层 focus ring，避免"圆角配通用阴影"） -------- */
+  --shadow-sm: 0 1px 2px rgba(26, 32, 51, 0.06);
+  --shadow-md: 0 6px 20px -8px rgba(26, 32, 51, 0.18);
+  --shadow-lg: 0 20px 40px -24px rgba(26, 32, 51, 0.28);
+  --ring: 0 0 0 3px var(--color-primary-soft);
 
-  /* 断点（供 @media 与 matchMedia 使用，见 §7 响应式基线） */
+  /* ---- 控件尺寸（保证触控目标 ≥ 40px，主操作 44px） -------------------- */
+  --control-height-sm: 32px;
+  --control-height: 40px;
+  --control-height-lg: 44px;
+  --tap-min: 44px;
+
+  /* ---- 断点（只两档，写在 token 里由 @media / matchMedia 共用） --------- */
   --bp-md: 768px;
   --bp-lg: 1120px;
 
-  /* 布局与动效 */
+  /* ---- 布局 ----------------------------------------------------------- */
   --container-max: var(--bp-lg);
+  --content-max: 760px; /* 长文阅读宽度（详情描述、表单）≈ 65 字符 */
   --header-height: 56px;
+  --z-header: 10;
+  --z-toast: 40;
+
+  /* ---- 动效 ----------------------------------------------------------- */
   --dur-fast: 120ms;
+  --dur-base: 180ms;
+  --dur-slow: 260ms;
+  /* 进入用减速、退出用加速（docs/ui-baseline.md §2.5） */
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-in: cubic-bezier(0.55, 0, 1, 0.45);
+  --ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
 }

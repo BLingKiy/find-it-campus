@@ -9,6 +9,10 @@ const UNKNOWN_ERROR_MESSAGE = '请求失败，请稍后再试'
 
 const baseURL: string = import.meta.env.VITE_API_BASE_URL ?? '/api'
 
+// TODO(4.1): 后端 ZHYYKFX-6（3.1）就绪后删除本开关与 src/mock 目录；届时 request 只剩 fetch 一条路径。
+// 字符串比较：未设置或 =false 一律走真实接口。mock 只替换「取响应体」这一步，解包与报错逻辑共用。
+const USE_MOCK = import.meta.env.VITE_USE_MOCK === 'true'
+
 export class BizError extends Error {
   code: number
   requestId: string | null
@@ -61,18 +65,37 @@ export async function request<T>(path: string, init: RequestOptions = {}): Promi
   const url = `${baseURL}${path}${buildSearch(query)}`
 
   try {
-    const response = await fetch(url, {
-      method,
-      headers: { Accept: 'application/json' },
-      body: body === undefined ? undefined : JSON.stringify(body),
-      signal: controller.signal
-    })
+    let response: { ok: boolean; status: number }
+    let payload: Partial<ApiResponse<T>> | null
 
-    let payload: Partial<ApiResponse<T>> | null = null
-    try {
-      payload = (await response.json()) as Partial<ApiResponse<T>>
-    } catch {
+    if (USE_MOCK) {
+      const { mockApi } = await import('@/mock/server')
+      const mockQuery: Record<string, string> = {}
+      for (const [key, value] of Object.entries(query ?? {})) {
+        if (value === null || value === undefined || value === '') continue
+        mockQuery[key] = String(value)
+      }
+      const mocked = await mockApi({ path, method, query: mockQuery, body })
+      response = { ok: mocked.status >= 200 && mocked.status < 300, status: mocked.status }
+      payload = mocked.body as Partial<ApiResponse<T>>
+    } else {
+      const raw = await fetch(url, {
+        method,
+        headers: {
+          Accept: 'application/json',
+          // 写接口必须显式声明，否则 Spring Boot 的 @RequestBody 无法解析（415）
+          ...(body === undefined ? {} : { 'Content-Type': 'application/json' })
+        },
+        body: body === undefined ? undefined : JSON.stringify(body),
+        signal: controller.signal
+      })
+      response = { ok: raw.ok, status: raw.status }
       payload = null
+      try {
+        payload = (await raw.json()) as Partial<ApiResponse<T>>
+      } catch {
+        payload = null
+      }
     }
 
     const code = typeof payload?.code === 'number' ? payload.code : -1
