@@ -98,7 +98,10 @@ CREATE TABLE `t_record` (
 CREATE TABLE `t_match_result` (
   `id`                BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '快照主键，即响应体 data.matchId',
   `input_text`        TEXT            NOT NULL               COMMENT '本次输入的原始描述（复现评估用）',
-  `input_type`        VARCHAR(8)      NOT NULL               COMMENT '本次要找的记录类型 LOST/FOUND',
+  -- 3.1（2026-10-22）放宽为可空：契约 §8.1 允许调用不带 type（不限类型），而 §8.5 要求每次成功调用都写快照，
+  -- 二者在原 DDL（NOT NULL）下无解。此时"本次要找的类型"这个事实不存在，编一个 LOST/FOUND 是污染评估数据。
+  -- 变更属放宽方向（可空 → NOT NULL 才是不可逆的窄化），ALTER 见文末「附 2」。
+  `input_type`        VARCHAR(8)                DEFAULT NULL COMMENT '本次要找的记录类型 LOST/FOUND；NULL=不限类型',
   `input_category_id` BIGINT UNSIGNED          DEFAULT NULL  COMMENT '本次传入的分类过滤/加权参数',
   `impl`              VARCHAR(32)     NOT NULL               COMMENT '产出结果的引擎标识：LOCAL_KEYWORD / EXTERNAL_EMBEDDING',
   `top_n`             SMALLINT        NOT NULL               COMMENT '请求参数留痕：返回条数上限',
@@ -111,7 +114,7 @@ CREATE TABLE `t_match_result` (
   KEY `idx_match_result_created` (`created_at`),
   CONSTRAINT `fk_match_result_category` FOREIGN KEY (`input_category_id`) REFERENCES `t_category` (`id`)
     ON DELETE SET NULL ON UPDATE RESTRICT,
-  CONSTRAINT `ck_match_result_type`  CHECK (`input_type` IN ('LOST', 'FOUND')),
+  CONSTRAINT `ck_match_result_type`  CHECK (`input_type` IS NULL OR `input_type` IN ('LOST', 'FOUND')),
   CONSTRAINT `ck_match_result_impl`  CHECK (`impl` IN ('LOCAL_KEYWORD', 'EXTERNAL_EMBEDDING')),
   CONSTRAINT `ck_match_result_score` CHECK (`min_score` >= 0 AND `min_score` <= 1)
   -- 不给 candidates 加 CHECK(JSON_VALID(...))：JSON 列类型本身已在写入时校验，再加约束是纯噪声
@@ -132,4 +135,15 @@ CREATE TABLE `t_match_result` (
 --   ① 改本文件 → ② 在提交说明里写清 ALTER 语句 → ③ 本地执行 ALTER 或 TRUNCATE 重建
 --   ④ 同步改 docs/architecture-baseline.md §7 字段表 + docs/api-contract.md 字段表
 --   已入库的列不要改名/改语义：数据一旦存在即不可逆（§11 不可逆点①）
+--
+-- 已执行的变更（按时间倒序）：
+--   2026-10-22 · 3.1 后端接口：t_match_result.input_type 放宽为可空
+--     —— 契约 §8.1 允许 /api/match 不带 type（不限类型），而 §8.5 要求每次成功调用都写快照，
+--        原 DDL 的 NOT NULL 让这两条无法同时满足；此时"本次要找的类型"这个事实不存在，
+--        编一个 LOST/FOUND 会污染 5.1 的评估数据。属放宽（窄化才是不可逆方向）。
+--     ALTER TABLE t_match_result
+--       MODIFY COLUMN `input_type` VARCHAR(8) DEFAULT NULL COMMENT '本次要找的记录类型 LOST/FOUND；NULL=不限类型';
+--     ALTER TABLE t_match_result DROP CHECK `ck_match_result_type`;
+--     ALTER TABLE t_match_result ADD CONSTRAINT `ck_match_result_type`
+--       CHECK (`input_type` IS NULL OR `input_type` IN ('LOST', 'FOUND'));
 -- =====================================================================

@@ -1,0 +1,26 @@
+package com.findit.campus.record.web.dto;
+
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
+
+/**
+ * {@code PATCH /api/records/{id}/status} 的请求体（契约 §6.1）。
+ *
+ * <p>用 {@code String} 而不是 {@code RecordStatus} 枚举是有意的：枚举反序列化失败会变成
+ * "请求体不可解析"（{@code 10001} 但拿不到字段名），前端无法把错误落到"状态"这个控件上；
+ * {@code @Pattern} 能给出 {@code field=status} 的 fieldErrors。
+ */
+public class StatusUpdateRequest {
+
+    @NotBlank(message = "status 不得为空")
+    @Pattern(regexp = "PENDING|CLAIMED|CLOSED", message = "status 取值非法：PENDING / CLAIMED / CLOSED")
+    private String status;
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status == null ? null : status.strip();
+    }
+}

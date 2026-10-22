@@ -26,6 +26,8 @@ findit:
   match:
     # local=本地关键词实现（默认，离线可用）；external=外部 embedding 实现
     engine: local
+    # 候选池上限（默认 500）：匹配打分的对象数量，调大直接拉高单次请求耗时
+    pool-size: 500
     external:
       # 外部引擎凭据：只在环境变量里给，仓库内保持空串
       base-url: '${FINDIT_EMBED_BASE_URL:}'
