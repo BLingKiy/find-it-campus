@@ -1,0 +1,26 @@
+{
+  "name": "find-it-campus-web",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "type-check": "vue-tsc --noEmit -p tsconfig.json && vue-tsc --noEmit -p tsconfig.node.json"
+  },
+  "dependencies": {
+    "vue": "^3.5.44",
+    "vue-router": "^5.4.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.0",
+    "@vitejs/plugin-vue": "^6.0.10",
+    "typescript": "~5.9.3",
+    "vite": "^8.3.5",
+    "vue-tsc": "^3.3.13"
+  }
+}

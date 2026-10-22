@@ -1,0 +1,43 @@
+/* 工具类：≤10 个，禁止膨胀成第二套框架（基线 §4） */
+.u-flex {
+  display: flex;
+}
+
+.u-flex-col {
+  display: flex;
+  flex-direction: column;
+}
+
+.u-wrap {
+  flex-wrap: wrap;
+}
+
+.u-gap {
+  gap: var(--sp-3);
+}
+
+.u-between {
+  justify-content: space-between;
+}
+
+.u-center {
+  align-items: center;
+}
+
+.u-mt {
+  margin-top: var(--sp-4);
+}
+
+.u-mb {
+  margin-bottom: var(--sp-4);
+}
+
+.u-text-muted {
+  color: var(--color-text-muted);
+}
+
+.u-truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

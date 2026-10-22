@@ -1,33 +1,33 @@
-# TheClassMaterial/
-/TheClassMaterial/
-
-# 构建产物
+# 依赖与构建产物
+node_modules/
 target/
 dist/
 build/
 
 # Node
-node_modules/
 npm-debug.log*
 pnpm-debug.log*
 yarn-error.log*
-
-# Maven Wrapper：properties 必须提交，只忽略下载的二进制
-# （server/.mvn/wrapper/maven-wrapper.properties 不要加到这里）
-.mvn/wrapper/maven-wrapper.jar
 
 # 日志与临时文件
 *.log
 *.tmp
 *.swp
 
-# IDE
+# IDE / 编辑器
 .idea/
 .vscode/
 *.iml
 
-# 本机私密配置：用 application-example.yml 复制生成，不进仓库
+# Maven Wrapper：脚本与 properties 必须提交，只忽略下载的二进制
+# （server/.mvn/wrapper/maven-wrapper.properties 不要加到这里）
+.mvn/wrapper/maven-wrapper.jar
+
+# 本机私密配置：用 application-example.yml / .env.example 复制生成，不进仓库
 server/src/main/resources/application-local.yml
 .env
 .env.*
 !.env.example
+
+# 课件原始素材（仓库初始化时已有）
+/TheClassMaterial/
