@@ -1,0 +1,13 @@
+%% find-it-campus · Windows 单机部署形态（7.1 部署包的实际拓扑）
+%% 事实来源：deploy/nginx/nginx.conf、deploy/scripts/start.ps1、deploy/scripts/install.ps1、deploy/DEPLOY-WINDOWS.md
+%% 版式：与 architecture-container 一致（单行标签 + 纵向布局），宽图在 A4 页宽内会被缩到看不清
+%%{init: {"flowchart": {"wrappingWidth": 520, "nodeSpacing": 34, "rankSpacing": 46}}}%%
+flowchart TB
+  Browser["浏览器 · http://&lt;host&gt;:8088 · 唯一对外端口"]
+  Nginx["包内 Nginx 1.30.6 · listen 8088 · root=web/dist · /api/ 反代"]
+  App["包内 Spring Boot 3.5.16 · 127.0.0.1:18080 · 只绑本机，局域网不可直连"]
+  DB[("目标机预装 MySQL 8.0 · 127.0.0.1:3306 · find_it_campus（utf8mb4）· 不在包内")]
+
+  Browser -->|"HTTP 8088 · 无 TLS · 页面与 /api 同源"| Nginx
+  Nginx -->|"/api/** 原样转发 · connect_timeout=3s"| App
+  App -->|"JDBC · HikariPool · connectTimeout=3s"| DB

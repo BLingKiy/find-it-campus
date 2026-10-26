@@ -303,3 +303,37 @@ grep -n "port\|engine\|pool-size\|timeout-ms" server/src/main/resources/applicat
 ```
 
 本文档若与代码再次出现不一致，按上一节的口径处理：**先确认哪一侧是事实源，再把差异写进 B.9，而不是悄悄改文档**。
+
+---
+
+## B.12 部署口径一致性（2026-10-26 追加）
+
+> 范围：`deploy/`（7.1 交付的包与脚本）+ 本文 §3.6 的部署形态描述 + `deploy/DEPLOY-WINDOWS.md`（7.2 交付）。
+> 基线：`feat/7.1-windows-deploy` @`db59673`（`deploy/` 全部内容来自该提交，7.2 未改任何脚本）。
+> 判定口径不变：**以脚本与配置文件为准**，文档只能描述脚本的实际行为。
+
+| 检查项 | 事实源 | 文档位置 | 结论 |
+|---|---|---|---|
+| 对外端口 8088、托管目录 `web/dist`、`/api/` 反代到 `127.0.0.1:18080` | `deploy/nginx/nginx.conf:48`、`:51`、`:59-60` | §3.6 表 1 | 一致 |
+| `/api/**` 不改写路径（`proxy_pass` 不带 URI） | `nginx.conf:60` | §3.6 | 一致 |
+| 后端只绑 `127.0.0.1`、端口 18080 由启动参数传入 | `deploy/scripts/start.ps1:200-201` | §3.6 表 1 | 一致 |
+| PID 与日志落在包根 `runtime/`、`logs/` | `nginx.conf:12-13`、`start.ps1:150-154` | §3.6 正文、§3.6 表 1 注 | 一致 |
+| 健康判据 `code=0` + `status=UP` + `db=UP` | `start.ps1:43`、`:67`、`status.ps1:178` | §3.6「健康判据唯一」 | 一致 |
+| 启停幂等（已在运行则复用；未运行则跳过） | `start.ps1:163-175`、`stop.ps1:50-53`、`:129-133` | §3.6「一条命令起停」 | 一致 |
+| 端口被非本包进程占用时不抢杀 | `start.ps1:184`、`:251` | §3.6「单端口对外」段、`DEPLOY-WINDOWS.md` §9 第 6 条 | 一致 |
+| 不注册服务、不要求管理员、不改系统环境变量 | `install.ps1:6`、`start.ps1:7`、`stop.ps1:6`、`status.ps1`（无服务调用） | §3.6「不注册服务…」 | 一致 |
+| 配置项名（`$Deploy*` 与 `FINDIT_*`） | `deploy/config/deploy.env.example:13-31`、`start.ps1:107` | `DEPLOY-WINDOWS.md` §8.4 | 一致（`start.ps1` 必需的 7 个 `$Deploy*` 变量与模板一一对应） |
+| 密码只落 `config/deploy.env.ps1`、不进仓库 | `.gitignore`（`deploy/config/deploy.env.ps1`、`deploy/**/config/deploy.env.ps1`） | §3.6「密码只落本地文件」 | 一致 |
+| 部署包不含 JRE / MySQL / Node | `build-package.ps1:304-337`（只复制 jar、dist、nginx、db、config、scripts、文档） | §3.6 表 1「目标机预装」 | 一致 |
+| 出包与服务基线同源（`BUILD-INFO.txt` 记录分支/SHA） | `build-package.ps1:356-381` | §3.6「自检口径」 | 一致 |
+
+**已修正的过时表述（本次改动）**
+
+| 位置 | 原文 | 现文 | 原因 |
+|---|---|---|---|
+| 本文所属的 `program-design.md` §3.6 | 「生产打包不在本项目范围（课程演示用 dev server + 生产构建产物本地 `preview`）」 | 交付形态为 Windows 单机部署包，开发期双进程只服务开发与录屏 | 2026-10-26 人类追加「Windows 可部署」范围，7.1 已出包、本任务补文档 |
+| `program-design.md` §1.4 | 范围表无部署行 | 增加「Windows 单机部署包（8088 单端口）」与「不做 Docker / Linux / HTTPS / 服务注册」 | 同上，避免范围表与实际交付互相矛盾 |
+| `program-design.md` §1.3、§7.1 | 「一人课程项目，多 Agent 流水线」 | 四人分工：A 需求与架构 / B 后端与匹配 / C 前端与 UI / D 测试、部署与交付材料 | 项目按四人组织，部署与工程化归属成员 D；Agent 仍按阶段执行实现 |
+| `docs/frontend-baseline.md` §6（生产形态） | 「本课程版**不实现**，README 写一句『演示用 dev server』」 | 追加一行说明：该结论在 2026-10-26 被阶段 7 取代，指向 `deploy/` 与 §3.6 | 4.2 基线是阶段快照，保留原文并在原处标注后续变更，不静默改写历史 |
+
+**不在本文核对范围**（已由 7.1 / 7.3 各自取证）：部署包在目标机的实际安装与启停结果（`deploy/DEPLOY-WINDOWS.md` §12.1 有 7.2 的实测记录，7.3 会在干净目录独立复验）、Nginx 官方二进制的完整性（`build-package.ps1` 校验下载包 SHA256，并写入 `BUILD-INFO.txt`）。

@@ -229,6 +229,7 @@ export default defineConfig({
 
 - 前端**不读任何密钥**（外部模型 Key 只在后端）。若将来需要前端直连模型服务，那属于范围变更，须先报人类。
 - 生产形态（若答辩需要打包演示）：`npm run build` 后把 `dist/` 交给 `server` 静态目录或由 Nginx 反代同源；本课程版**不实现**，README 写一句"演示用 dev server"。
+  - **2026-10-26 更新**：此结论已被阶段 7（「Windows 可部署」范围追加）取代。现在有 Windows 单机部署包：`npm run build` 的 `dist/` 由包内 Nginx 在 8088 托管，`/api/` 反代到 127.0.0.1:18080，见 `docs/design/program-design.md` §3.6 与 `deploy/DEPLOY-WINDOWS.md`。本节保留原文作为 4.2 阶段的历史结论，不再作为当前事实。
 
 ---
 
