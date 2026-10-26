@@ -22,4 +22,4 @@
 4.1 真实落库 10/10 项检查通过、4.2 跨页一致性 9/9 通过。
 **放行建议：可进入阶段 6；两条缺陷均不阻塞演示，建议按 5.1-regression-checklist 在合并 main 前复测一次。**
 
-> **REG-01 复跑（2026-10-22，被测树 `feat/5.1-integration` @`d21fe78`）**：上面这两条缺陷已修复并转 PASS——接口 64/64、走查 19/19，`knownDefect` 豁免标记已移除（见 [5.1-test-report.md](./5.1-test-report.md) §1.1 与 `qa/reports/`）。当前状态：已合入集成分支 `21b033d`，`main` 合并待人类放行；另有两处遗留 P2 待拍板。
+> **REG-01 复跑（2026-10-22，被测树 `feat/5.1-integration` @`d21fe78`）**：上面这两条缺陷已修复并转 PASS——接口 64/64、走查 19/19，`knownDefect` 豁免标记已移除（见 [5.1-test-report.md](./5.1-test-report.md) §1.1 与 `qa/reports/`）。当前状态：已合入 `main` @`d38f868`（2026-10-26T01:14Z，人类批准 fast-forward）；另有两处遗留 P2 已修复（`ZHYYKFX-35` @`0278575` / `ZHYYKFX-36` @`1dfccbb`），修复分支已推送、待合入 `main`。
