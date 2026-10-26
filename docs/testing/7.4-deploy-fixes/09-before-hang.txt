@@ -1,0 +1,39 @@
+﻿=== 修复前：start.ps1 在管道下不返回（基线包 270a54b，2026-10-26 17:38–17:39） ===
+
+命令（在包根目录执行）：
+  powershell -NoProfile -ExecutionPolicy Bypass -File scripts\start.ps1 2>&1 | Tee-Object -FilePath start-pipe-before.txt
+
+观察：
+  17:38:19  调用方开始执行
+  17:38:32  脚本打印「启动完成」（下面原文的最后两行），服务已可用（health 200 / code=0 / status=UP / db=UP）
+  17:39:03  距脚本打完日志 31 s，调用方仍未返回；8088 监听 PID 7340、18080 监听 PID 5928
+  17:39:09  手工执行 stop.ps1
+  17:39:11  JVM 被杀掉后管道到 EOF，调用方才拿到退出码：exit=0 elapsed=51.9s
+
+结论：脚本逻辑早已结束，阻塞来自后端进程持有调用方 stdout 管道句柄——管道要等所有写入端关闭才到 EOF。
+（根因与修法见 05-start-modes.txt；修复后同一命令 12.0 s 返回。）
+
+=== start-pipe-before.txt 原文（脚本自身输出，末尾即「启动完成」） ===
+[2026-10-26 17:38:20] [INFO] 
+[2026-10-26 17:38:20] [STEP] ==== find-it-campus Windows 启动 ====
+[2026-10-26 17:38:20] [INFO] 部署包目录：C:\Project\deploy-accept\7.4-before\find-it-campus-windows-x64
+[2026-10-26 17:38:20] [OK] JDK 17：C:\Project\tools\jdk17\jdk-17.0.20.1+1\bin\java.exe
+[2026-10-26 17:38:20] [INFO] 后端 jar：C:\Project\deploy-accept\7.4-before\find-it-campus-windows-x64\app\find-it-campus-0.0.1-SNAPSHOT.jar
+[2026-10-26 17:38:20] [INFO] 前端目录：C:\Project\deploy-accept\7.4-before\find-it-campus-windows-x64\web\dist
+[2026-10-26 17:38:20] [INFO] Nginx：C:\Project\deploy-accept\7.4-before\find-it-campus-windows-x64\nginx\nginx.exe
+[2026-10-26 17:38:20] [INFO] 数据库：127.0.0.1:3306/findit_fix74b，引擎：local
+[2026-10-26 17:38:21] [INFO] 
+[2026-10-26 17:38:21] [STEP] ==== 启动后端（127.0.0.1:18080） ====
+[2026-10-26 17:38:21] [INFO] 已拉起后端：PID 5928，日志：C:\Project\deploy-accept\7.4-before\find-it-campus-windows-x64\logs\backend.log
+[2026-10-26 17:38:24] [INFO] 等待后端健康检查：无法连接到远程服务器
+[2026-10-26 17:38:31] [OK] 后端健康：code=0, status=UP, db=UP, engine=local
+[2026-10-26 17:38:31] [INFO] 
+[2026-10-26 17:38:31] [STEP] ==== 启动 Nginx（8088） ====
+[2026-10-26 17:38:32] [OK] Nginx 已就绪：http://127.0.0.1:8088/ → code=0, status=UP, db=UP
+[2026-10-26 17:38:32] [INFO] 
+[2026-10-26 17:38:32] [STEP] ==== 启动完成 ====
+[2026-10-26 17:38:32] [OK] 后端：PID 5928，http://127.0.0.1:18080/api/health
+[2026-10-26 17:38:32] [OK] Nginx：PID 3368，http://127.0.0.1:8088/
+[2026-10-26 17:38:32] [OK] 健康：code=0, status=UP, db=UP, engine=local
+[2026-10-26 17:38:32] [INFO] 访问：http://127.0.0.1:8088/
+[2026-10-26 17:38:32] [INFO] 启动日志：C:\Project\deploy-accept\7.4-before\find-it-campus-windows-x64\logs\start-20261026-173820.log

@@ -1,0 +1,122 @@
+=== 7.4 交付包 ===
+zip：deploy/dist/find-it-campus-windows-x64-da8b936.zip
+大小：28161794 字节（26.86 MiB）
+SHA256：abee31e4c0bec798ca4a66a90049e68225b90f15fbc105cc76134adccfdc15fd
+.sha256 文件内容：ABEE31E4C0BEC798CA4A66A90049E68225B90F15FBC105CC76134ADCCFDC15FD *find-it-campus-windows-x64-da8b936.zip
+
+=== BUILD-INFO.txt（包内） ===
+find-it-campus Windows x64 deployment package
+Package name: find-it-campus-windows-x64
+Package layout version: 7.1
+Build time: 2026-10-26T17:48:21+08:00
+Git branch: feat/7.4-deploy-fixes
+Git commit: da8b936731c6ffbe27e981c6b883e457b38a6f29
+Git dirty: false
+Git dirty files: (none)
+Build host OS: Microsoft Windows NT 10.0.19045.0
+JDK: openjdk version "17.0.20.1" 2026-08-18
+Maven: Apache Maven 3.10.0 (c43a36b8d67be7e0805a411bc0898af1a51f5472)
+Node: v22.23.3
+npm: 10.9.9
+Nginx: 1.30.6 (Windows stable, official nginx.org build)
+Nginx download: https://nginx.org/download/nginx-1.30.6.zip
+Nginx zip SHA256: C6EE35EDB0A861063323F709192AE50D1EEFAF2EA7D00678BD2B22D8542DC61E
+Nginx binary: nginx version: nginx/1.30.6
+Backend jar: app/find-it-campus-0.0.1-SNAPSHOT.jar
+Backend jar SHA256: A79B727D702D0E6680DEA854657F6E67766B7776C4CD8CC7ECBAC4DE882F2EFA
+Web entry: web/dist/index.html
+Web index SHA256: 9ACEB18DDB981D294AD52F3B19FA643562113D9F4C6AC1D89F985E63AB9A9006
+Runtime ports: 8088 (nginx, public) -> 127.0.0.1:18080 (backend)
+Build command: deploy\build-package.ps1 -SkipBuild
+
+=== 包内文件清单 ===
+BUILD-INFO.txt
+DEPLOY-WINDOWS.md
+SHA256SUMS.txt
+app/find-it-campus-0.0.1-SNAPSHOT.jar
+config/deploy.env.example
+config/deploy.env.ps1
+db/schema.sql
+db/seed.sql
+logs/.keep
+logs/backend-error.log
+logs/backend-error.log.20261026-174946.old
+logs/backend-error.log.20261026-175002.old
+logs/backend-error.log.20261026-175030.old
+logs/backend.log
+logs/backend.log.20261026-174946.old
+logs/backend.log.20261026-175002.old
+logs/backend.log.20261026-175030.old
+logs/install-20261026-174836.log
+logs/nginx-access.log
+logs/nginx-error.log
+logs/nginx-stderr.log
+logs/nginx-stdout.log
+logs/start-20261026-174858.log
+logs/start-20261026-174920.log
+logs/start-20261026-174944.log
+logs/start-20261026-175001.log
+logs/start-20261026-175029.log
+logs/status-20261026-174910.log
+logs/status-20261026-174928.log
+logs/stop-20261026-174923.log
+logs/stop-20261026-174935.log
+logs/stop-20261026-174957.log
+logs/stop-20261026-175013.log
+logs/stop-20261026-175042.log
+nginx/conf/fastcgi.conf
+nginx/conf/fastcgi_params
+nginx/conf/koi-utf
+nginx/conf/koi-win
+nginx/conf/mime.types
+nginx/conf/nginx.conf
+nginx/conf/scgi_params
+nginx/conf/uwsgi_params
+nginx/conf/win-utf
+nginx/docs/LICENSE
+nginx/docs/README.md
+nginx/logs/.keep
+nginx/logs/error.log
+nginx/nginx.exe
+nginx/temp/.keep
+runtime/.keep
+scripts/_common.ps1
+scripts/install.ps1
+scripts/start.ps1
+scripts/status.ps1
+scripts/stop.ps1
+web/dist/.gitkeep
+web/dist/assets/EmptyState-B8xKvD0r.js
+web/dist/assets/LoadingBlock-Bw46eFi3.css
+web/dist/assets/LoadingBlock-CUT7Z7kw.js
+web/dist/assets/NotFound-C-DC4MOS.css
+web/dist/assets/NotFound-DjkYB2os.js
+web/dist/assets/RecordCreate-CUM2c8gd.css
+web/dist/assets/RecordCreate-nOIq-eaQ.js
+web/dist/assets/RecordDetail-DkBmZsj_.js
+web/dist/assets/RecordDetail-ZucUoeMV.css
+web/dist/assets/RecordList-BOrPEh3t.js
+web/dist/assets/RecordList-DQK0w_4X.css
+web/dist/assets/categoryCache-MHuz3wsV.js
+web/dist/assets/index-Babl5v0z.css
+web/dist/assets/index-i_5Xvwjl.js
+web/dist/assets/useRequest-D34oXzOR.js
+web/dist/index.html
+
+=== 包内 SHA256SUMS.txt 校验 ===
+（原文件为 CRLF，GNU sha256sum -c 会因 \r 全部 FAILED——7.3 已记录的 P3 项，本次不改；这里先去掉 CR 再校验）
+web/dist/assets/RecordList-DQK0w_4X.css: OK
+web/dist/assets/useRequest-D34oXzOR.js: OK
+web/dist/index.html: OK
+OK=44  FAILED=0
+
+=== 包内 DEPLOY-WINDOWS.md 与分支版本比对（忽略行尾） ===
+无差异（仅行尾 CRLF）
+包内 md 字节数：37664；仓库 md 字节数：37664
+
+=== 包内 5 个脚本与分支版本比对（忽略行尾） ===
+_common.ps1 一致
+install.ps1 一致
+start.ps1 一致
+stop.ps1 一致
+status.ps1 一致

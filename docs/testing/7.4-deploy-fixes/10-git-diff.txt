@@ -1,0 +1,16 @@
+=== git diff --name-only 270a54b HEAD（基线 = origin/feat/7.2-windows-docs） ===
+
+deploy/DEPLOY-WINDOWS.md
+deploy/scripts/_common.ps1
+deploy/scripts/install.ps1
+deploy/scripts/start.ps1
+
+=== git diff --stat 270a54b HEAD ===
+ deploy/DEPLOY-WINDOWS.md   | 130 +++++++++++++++++++++++++++++++++++----------
+ deploy/scripts/_common.ps1 |  79 +++++++++++++++++++++++++++
+ deploy/scripts/install.ps1 |   8 +--
+ deploy/scripts/start.ps1   |  34 +++++++-----
+ 4 files changed, 208 insertions(+), 43 deletions(-)
+
+=== 业务代码零改动：git diff --name-only 270a54b HEAD -- server web db ===
+(无输出)

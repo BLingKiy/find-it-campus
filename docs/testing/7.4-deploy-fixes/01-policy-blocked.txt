@@ -1,0 +1,12 @@
+﻿=== 旧写法（7.2 文档的直接调用形式）在默认执行策略下的表现 ===
+有效执行策略：Restricted（五个作用域全 Undefined）
+解压目录：C:\Project\deploy-accept\7.4-final3\find-it-campus-windows-x64
+
+> .\scripts\install.ps1
+  异常类型：System.Management.Automation.PSSecurityException
+  原文：无法加载文件 C:\Project\deploy-accept\7.4-final3\find-it-campus-windows-x64\scripts\install.ps1，因为在此系统上禁止运行脚本。有关详细信息，请参阅 https:/go.microsoft.com/fwlink/?LinkID=135170 中的 about_Execution_Policies。
+
+> .\scripts\status.ps1
+  异常类型：System.Management.Automation.PSSecurityException
+  原文：无法加载文件 C:\Project\deploy-accept\7.4-final3\find-it-campus-windows-x64\scripts\status.ps1，因为在此系统上禁止运行脚本。有关详细信息，请参阅 https:/go.microsoft.com/fwlink/?LinkID=135170 中的 about_Execution_Policies。
+

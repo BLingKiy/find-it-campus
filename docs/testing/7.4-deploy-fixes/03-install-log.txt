@@ -1,0 +1,29 @@
+﻿[2026-10-26 17:48:37] [INFO] 
+[2026-10-26 17:48:37] [STEP] ==== find-it-campus Windows 部署安装 ====
+[2026-10-26 17:48:37] [INFO] 部署包目录：C:\Project\deploy-accept\7.4-final3\find-it-campus-windows-x64
+[2026-10-26 17:48:37] [INFO] 安装日志：C:\Project\deploy-accept\7.4-final3\find-it-campus-windows-x64\logs\install-20261026-174836.log
+[2026-10-26 17:48:37] [INFO] 目标 MySQL：127.0.0.1:3306，库：findit_74b，账号：root，引擎：local
+[2026-10-26 17:48:37] [INFO] 
+[2026-10-26 17:48:37] [STEP] ==== 检查 JDK 17 ====
+[2026-10-26 17:48:37] [OK] JDK 17 可用：C:\Project\tools\jdk17\jdk-17.0.20.1+1\bin\java.exe
+[2026-10-26 17:48:37] [INFO] openjdk version "17.0.20.1" 2026-08-18
+[2026-10-26 17:48:37] [INFO] 
+[2026-10-26 17:48:37] [STEP] ==== 检查 MySQL 8 客户端与连通性 ====
+[2026-10-26 17:48:37] [OK] MySQL 客户端：C:\Project\tools\mysql\mysql-8.0.29-winx64\bin\mysql.exe
+[2026-10-26 17:48:37] [OK] MySQL 服务端版本：8.0.29
+[2026-10-26 17:48:37] [OK] 数据库已创建（utf8mb4）：findit_74b
+[2026-10-26 17:48:37] [INFO] 
+[2026-10-26 17:48:37] [STEP] ==== 导入 schema.sql 与 seed.sql ====
+[2026-10-26 17:48:37] [INFO] 执行 schema.sql → findit_74b
+[2026-10-26 17:48:44] [INFO] 执行 seed.sql → findit_74b
+[2026-10-26 17:48:52] [OK] 导入校验：t_category=9 行，t_record=24 行
+[2026-10-26 17:48:52] [INFO] 
+[2026-10-26 17:48:52] [STEP] ==== 生成部署连接配置 ====
+[2026-10-26 17:48:52] [OK] 已生成（含真实密码，已被 .gitignore 忽略）：C:\Project\deploy-accept\7.4-final3\find-it-campus-windows-x64\config\deploy.env.ps1
+[2026-10-26 17:48:52] [INFO] 
+[2026-10-26 17:48:52] [STEP] ==== 安装完成 ====
+[2026-10-26 17:48:52] [OK] 数据库：127.0.0.1:3306/findit_74b（utf8mb4）
+[2026-10-26 17:48:52] [OK] 配置：C:\Project\deploy-accept\7.4-final3\find-it-campus-windows-x64\config\deploy.env.ps1
+[2026-10-26 17:48:52] [INFO] 下一步：powershell -NoProfile -ExecutionPolicy Bypass -File scripts\start.ps1  （启动后端 18080 与 Nginx 8088）
+[2026-10-26 17:48:52] [INFO] 访问：http://127.0.0.1:8088/
+[2026-10-26 17:48:52] [INFO] 安装日志：C:\Project\deploy-accept\7.4-final3\find-it-campus-windows-x64\logs\install-20261026-174836.log

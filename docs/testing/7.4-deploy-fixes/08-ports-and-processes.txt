@@ -1,0 +1,79 @@
+﻿=== 运行态：监听端口与进程树（2026-10-26 17:50:40）===
+
+Get-NetTCPConnection -State Listen -LocalPort 8088,18080：
+
+LocalAddress LocalPort OwningProcess
+------------ --------- -------------
+127.0.0.1        18080         11004
+0.0.0.0           8088          1248
+
+本包的 cmd 包装进程 → java.exe / nginx.exe：
+
+
+ProcessId       : 6112
+ParentProcessId : 11956
+Name            : cmd.exe
+CommandLine     : "C:\Windows\System32\cmd.exe" /c ""C:\Project\tools\jdk17\jdk-17.0.20.1+1\bin\java.exe" -jar "C:\Proj
+                  ect\deploy-accept\7.4-final3\find-it-campus-windows-x64\app\find-it-campus-0.0.1-SNAPSHOT.jar" --serv
+                  er.address=127.0.0.1 --server.port=18080 > "C:\Project\deploy-accept\7.4-final3\find-it-campus-window
+                  s-x64\logs\backend.log" 2> "C:\Project\deploy-accept\7.4-final3\find-it-campus-windows-x64\logs\backe
+                  nd-error.log""
+
+ProcessId       : 11004
+ParentProcessId : 6112
+Name            : java.exe
+CommandLine     : "C:\Project\tools\jdk17\jdk-17.0.20.1+1\bin\java.exe"  -jar "C:\Project\deploy-accept\7.4-final3\find
+                  -it-campus-windows-x64\app\find-it-campus-0.0.1-SNAPSHOT.jar" --server.address=127.0.0.1 --server.por
+                  t=18080 
+
+ProcessId       : 552
+ParentProcessId : 11956
+Name            : cmd.exe
+CommandLine     : "C:\Windows\System32\cmd.exe" /c ""C:\Project\deploy-accept\7.4-final3\find-it-campus-windows-x64\ngi
+                  nx\nginx.exe" -p "C:\Project\deploy-accept\7.4-final3\find-it-campus-windows-x64\nginx/" -c conf/ngin
+                  x.conf > "C:\Project\deploy-accept\7.4-final3\find-it-campus-windows-x64\logs\nginx-stdout.log" 2> "C
+                  :\Project\deploy-accept\7.4-final3\find-it-campus-windows-x64\logs\nginx-stderr.log""
+
+ProcessId       : 6592
+ParentProcessId : 552
+Name            : nginx.exe
+CommandLine     : "C:\Project\deploy-accept\7.4-final3\find-it-campus-windows-x64\nginx\nginx.exe"  -p "C:\Project\depl
+                  oy-accept\7.4-final3\find-it-campus-windows-x64\nginx/" -c conf/nginx.conf 
+
+ProcessId       : 1248
+ParentProcessId : 6592
+Name            : nginx.exe
+CommandLine     : "C:\Project\deploy-accept\7.4-final3\find-it-campus-windows-x64\nginx\nginx.exe"  -p "C:\Project\depl
+                  oy-accept\7.4-final3\find-it-campus-windows-x64\nginx/" -c conf/nginx.conf
+
+runtime\backend.pid 内容：11004
+runtime\nginx.pid 内容：6592
+logs 目录文件（节选）：
+
+Name                                  Length
+----                                  ------
+.keep                                      0
+backend-error.log                          0
+backend-error.log.20261026-174946.old      0
+backend-error.log.20261026-175002.old      0
+backend-error.log.20261026-175030.old      0
+backend.log                                0
+backend.log.20261026-174946.old         3867
+backend.log.20261026-175002.old         3258
+backend.log.20261026-175030.old         3256
+install-20261026-174836.log             2281
+nginx-access.log                        2966
+nginx-error.log                            0
+nginx-stderr.log                           0
+nginx-stdout.log                           0
+start-20261026-174858.log               1895
+start-20261026-174920.log               1616
+start-20261026-174944.log               1896
+start-20261026-175001.log               1892
+start-20261026-175029.log               1897
+status-20261026-174910.log               856
+status-20261026-174928.log               809
+stop-20261026-174923.log                1347
+stop-20261026-174935.log                1088
+stop-20261026-174957.log                1348
+stop-20261026-175013.log                1336

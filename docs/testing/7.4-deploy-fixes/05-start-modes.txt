@@ -1,0 +1,87 @@
+﻿=== start.ps1 三种调用方式回归 + 管道场景修复前后对比（7.4 P2） ===
+环境：Windows 10 22H2 x64（10.0.19045），非管理员，有效执行策略 Restricted；最终包 da8b936。
+
+【修复前】基线包 270a54b，同一条命令接管道：
+  命令：powershell -NoProfile -ExecutionPolicy Bypass -File scripts\start.ps1 2>&1 | Tee-Object -FilePath start-pipe-before.txt
+  脚本 17:38:32 已打印「启动完成」（见 09-before-hang-start-output.txt 末尾两行），
+  调用方直到 17:39:11 才拿到退出码 = 51.9 s；期间 17:39:09 手工执行 stop.ps1 杀掉 JVM 才解开阻塞。
+  即：管道场景下调用方被 JVM 持有 stdout 管道句柄拖住，脚本早已退出逻辑。
+
+【修复后】最终包 da8b936，三种调用方式（每种都从停止态开始）：
+
+① 直接执行（不带参数，等价于在控制台手敲）：
+  命令：powershell -NoProfile -ExecutionPolicy Bypass -File scripts\start.ps1
+  退出码 0，12.8 s 返回；紧接着重跑幂等，2.9 s 返回「已在运行（PID xxxx），不重复拉起」
+
+② 参数齐全非交互：
+  命令：powershell -NoProfile -ExecutionPolicy Bypass -File scripts\start.ps1 -TimeoutSec 120
+  退出码 0，12.1 s 返回
+
+③ 管道捕获：
+  命令：powershell -NoProfile -ExecutionPolicy Bypass -File scripts\start.ps1 2>&1 | Tee-Object -FilePath start-pipe.txt
+  退出码 0，12.0 s 返回
+
+三种方式都验到：后端 127.0.0.1:18080 与 Nginx 8088 起来，8088 /api/health = code=0 / status=UP / db=UP。
+（修复前 51.9 s → 修复后 12.0 s，且不再依赖进程被杀。）
+
+=== 逐次耗时（见 timings.txt） ===
+=== 7.4 最终包验收时序（局部时间 HH:mm:ss）=== 2026-10-26
+[17:48:52] install.ps1 退出码 0，耗时 16.0s
+[17:49:10] 方式① start.ps1（直接执行）退出码 0，耗时 12.8s
+[17:49:13] status.ps1（运行中）退出码 0，耗时 2.9s
+[17:49:23] 方式① 幂等重跑 退出码 0，耗时 2.9s
+[17:49:27] stop.ps1 退出码 0，耗时 4.4s
+[17:49:34] status.ps1（停止后）退出码 1
+[17:49:37] stop.ps1（重复，幂等）退出码 0
+[17:49:56] 方式② start.ps1 -TimeoutSec 120 退出码 0，耗时 12.1s
+[17:50:13] 方式③ 管道捕获（2>&1 | Tee-Object）退出码 0，耗时 12.0s
+
+=== 方式② 脚本输出（logs\start-20261026-174944.log） ===
+[2026-10-26 17:49:44] [INFO] 
+[2026-10-26 17:49:44] [STEP] ==== find-it-campus Windows 启动 ====
+[2026-10-26 17:49:44] [INFO] 部署包目录：C:\Project\deploy-accept\7.4-final3\find-it-campus-windows-x64
+[2026-10-26 17:49:45] [OK] JDK 17：C:\Project\tools\jdk17\jdk-17.0.20.1+1\bin\java.exe
+[2026-10-26 17:49:45] [INFO] 后端 jar：C:\Project\deploy-accept\7.4-final3\find-it-campus-windows-x64\app\find-it-campus-0.0.1-SNAPSHOT.jar
+[2026-10-26 17:49:45] [INFO] 前端目录：C:\Project\deploy-accept\7.4-final3\find-it-campus-windows-x64\web\dist
+[2026-10-26 17:49:45] [INFO] Nginx：C:\Project\deploy-accept\7.4-final3\find-it-campus-windows-x64\nginx\nginx.exe
+[2026-10-26 17:49:45] [INFO] 数据库：127.0.0.1:3306/findit_74b，引擎：local
+[2026-10-26 17:49:46] [INFO] 
+[2026-10-26 17:49:46] [STEP] ==== 启动后端（127.0.0.1:18080） ====
+[2026-10-26 17:49:46] [INFO] 已拉起后端：PID 8048，日志：C:\Project\deploy-accept\7.4-final3\find-it-campus-windows-x64\logs\backend.log
+[2026-10-26 17:49:48] [INFO] 等待后端健康检查：无法连接到远程服务器
+[2026-10-26 17:49:55] [OK] 后端健康：code=0, status=UP, db=UP, engine=local
+[2026-10-26 17:49:56] [INFO] 
+[2026-10-26 17:49:56] [STEP] ==== 启动 Nginx（8088） ====
+[2026-10-26 17:49:56] [OK] Nginx 已就绪：http://127.0.0.1:8088/ → code=0, status=UP, db=UP
+[2026-10-26 17:49:56] [INFO] 
+[2026-10-26 17:49:56] [STEP] ==== 启动完成 ====
+[2026-10-26 17:49:56] [OK] 后端：PID 8048，http://127.0.0.1:18080/api/health
+[2026-10-26 17:49:56] [OK] Nginx：PID 13200，http://127.0.0.1:8088/
+[2026-10-26 17:49:56] [OK] 健康：code=0, status=UP, db=UP, engine=local
+[2026-10-26 17:49:56] [INFO] 访问：http://127.0.0.1:8088/
+[2026-10-26 17:49:56] [INFO] 启动日志：C:\Project\deploy-accept\7.4-final3\find-it-campus-windows-x64\logs\start-20261026-174944.log
+
+=== 方式③ 管道捕获的原始输出（Tee-Object 落到 start-pipe.txt，UTF-16 转存为 UTF-8） ===
+[2026-10-26 17:50:01] [INFO] 
+[2026-10-26 17:50:01] [STEP] ==== find-it-campus Windows 启动 ====
+[2026-10-26 17:50:01] [INFO] 部署包目录：C:\Project\deploy-accept\7.4-final3\find-it-campus-windows-x64
+[2026-10-26 17:50:01] [OK] JDK 17：C:\Project\tools\jdk17\jdk-17.0.20.1+1\bin\java.exe
+[2026-10-26 17:50:01] [INFO] 后端 jar：C:\Project\deploy-accept\7.4-final3\find-it-campus-windows-x64\app\find-it-campus-0.0.1-SNAPSHOT.jar
+[2026-10-26 17:50:01] [INFO] 前端目录：C:\Project\deploy-accept\7.4-final3\find-it-campus-windows-x64\web\dist
+[2026-10-26 17:50:01] [INFO] Nginx：C:\Project\deploy-accept\7.4-final3\find-it-campus-windows-x64\nginx\nginx.exe
+[2026-10-26 17:50:01] [INFO] 数据库：127.0.0.1:3306/findit_74b，引擎：local
+[2026-10-26 17:50:02] [INFO] 
+[2026-10-26 17:50:02] [STEP] ==== 启动后端（127.0.0.1:18080） ====
+[2026-10-26 17:50:03] [INFO] 已拉起后端：PID 72，日志：C:\Project\deploy-accept\7.4-final3\find-it-campus-windows-x64\logs\backend.log
+[2026-10-26 17:50:05] [INFO] 等待后端健康检查：无法连接到远程服务器
+[2026-10-26 17:50:12] [OK] 后端健康：code=0, status=UP, db=UP, engine=local
+[2026-10-26 17:50:12] [INFO] 
+[2026-10-26 17:50:12] [STEP] ==== 启动 Nginx（8088） ====
+[2026-10-26 17:50:13] [OK] Nginx 已就绪：http://127.0.0.1:8088/ → code=0, status=UP, db=UP
+[2026-10-26 17:50:13] [INFO] 
+[2026-10-26 17:50:13] [STEP] ==== 启动完成 ====
+[2026-10-26 17:50:13] [OK] 后端：PID 72，http://127.0.0.1:18080/api/health
+[2026-10-26 17:50:13] [OK] Nginx：PID 12680，http://127.0.0.1:8088/
+[2026-10-26 17:50:13] [OK] 健康：code=0, status=UP, db=UP, engine=local
+[2026-10-26 17:50:13] [INFO] 访问：http://127.0.0.1:8088/
+[2026-10-26 17:50:13] [INFO] 启动日志：C:\Project\deploy-accept\7.4-final3\find-it-campus-windows-x64\logs\start-20261026-175001.log

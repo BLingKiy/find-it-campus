@@ -1,0 +1,21 @@
+﻿=== 7.4 验收环境 ===
+时间：2026-10-26 17:50:27 +08:00
+主机：Microsoft Windows 10 专业工作站版 / 10.0.19045
+PowerShell：5.1.19041.7802（Desktop）
+管理员：False
+有效执行策略：Restricted（未做任何修改）
+
+
+        Scope ExecutionPolicy
+        ----- ---------------
+MachinePolicy       Undefined
+   UserPolicy       Undefined
+      Process       Undefined
+  CurrentUser       Undefined
+ LocalMachine       Undefined
+
+java：openjdk version "17.0.20.1" 2026-08-18
+mysql：C:\Project\tools\mysql\mysql-8.0.29-winx64\bin\mysql.exe  Ver 8.0.29 for Win64 on x86_64 (MySQL Community Server - GPL)
+PATH 中 java.exe / mysql.exe：0（0 → 用 -JavaBin / -MysqlBin 指定绝对路径）
+解压目录：C:\Project\deploy-accept\7.4-final3\find-it-campus-windows-x64
+Nginx：nginx version: nginx/1.30.6

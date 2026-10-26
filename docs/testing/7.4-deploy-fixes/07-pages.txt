@@ -1,0 +1,3 @@
+﻿/ -> HTTP 200
+/records/1 -> HTTP 200
+/records/new -> HTTP 200
