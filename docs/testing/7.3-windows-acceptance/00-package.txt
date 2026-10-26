@@ -1,0 +1,119 @@
+# zip 与包内完整性
+
+zip: C:\Project\deploy-selftest\deliver-270a54b\find-it-campus-windows-x64-270a54b.zip
+size: 28158005 bytes
+sha256(本次复算): 2060e4cc8a49c3d779aab23ecca21d0ef8ef71c09b1d48d9eab8103719960986
+sha256(7.2 提供的 .sha256): 2060E4CC8A49C3D779AAB23ECCA21D0EF8EF71C09B1D48D9EAB8103719960986
+=> MATCH
+
+## 解压位置（开发工作区之外，非管理员）
+C:\Project\deploy-accept\7.3-20261026T090657Z\find-it-campus-windows-x64
+
+## 包内文件清单（58 个文件）
+      1102  ./BUILD-INFO.txt
+     30755  ./DEPLOY-WINDOWS.md
+      4108  ./SHA256SUMS.txt
+  28280089  ./app/find-it-campus-0.0.1-SNAPSHOT.jar
+      1610  ./config/deploy.env.example
+      1643  ./config/deploy.env.ps1
+     12291  ./db/schema.sql
+     13889  ./db/seed.sql
+         0  ./logs/.keep
+         0  ./logs/backend-error.log
+      5713  ./logs/backend.log
+      2306  ./logs/install-20261026-170956.log
+      9864  ./logs/nginx-access.log
+         0  ./logs/nginx-error.log
+         0  ./logs/nginx-stderr.log
+         0  ./logs/nginx-stdout.log
+      1961  ./logs/start-20261026-171045.log
+       864  ./logs/status-20261026-171650.log
+       809  ./logs/status-20261026-171724.log
+      1368  ./logs/stop-20261026-171712.log
+      1103  ./nginx/conf/fastcgi.conf
+      1032  ./nginx/conf/fastcgi_params
+      2946  ./nginx/conf/koi-utf
+      2326  ./nginx/conf/koi-win
+      5448  ./nginx/conf/mime.types
+      3101  ./nginx/conf/nginx.conf
+       653  ./nginx/conf/scgi_params
+       681  ./nginx/conf/uwsgi_params
+      3737  ./nginx/conf/win-utf
+      1319  ./nginx/docs/LICENSE
+     14571  ./nginx/docs/README.md
+         0  ./nginx/logs/.keep
+        65  ./nginx/logs/error.log
+   6619648  ./nginx/nginx.exe
+         0  ./nginx/temp/.keep
+         0  ./runtime/.keep
+     20165  ./scripts/_common.ps1
+     15680  ./scripts/install.ps1
+     17203  ./scripts/start.ps1
+     13050  ./scripts/status.ps1
+      9015  ./scripts/stop.ps1
+        84  ./web/dist/.gitkeep
+       678  ./web/dist/assets/EmptyState-B8xKvD0r.js
+      1209  ./web/dist/assets/LoadingBlock-Bw46eFi3.css
+      1543  ./web/dist/assets/LoadingBlock-CUT7Z7kw.js
+        58  ./web/dist/assets/NotFound-C-DC4MOS.css
+       674  ./web/dist/assets/NotFound-DjkYB2os.js
+       976  ./web/dist/assets/RecordCreate-CUM2c8gd.css
+      9750  ./web/dist/assets/RecordCreate-nOIq-eaQ.js
+      8041  ./web/dist/assets/RecordDetail-DkBmZsj_.js
+      4052  ./web/dist/assets/RecordDetail-ZucUoeMV.css
+      8037  ./web/dist/assets/RecordList-BOrPEh3t.js
+      3432  ./web/dist/assets/RecordList-DQK0w_4X.css
+       235  ./web/dist/assets/categoryCache-MHuz3wsV.js
+     17743  ./web/dist/assets/index-Babl5v0z.css
+     94969  ./web/dist/assets/index-i_5Xvwjl.js
+      2963  ./web/dist/assets/useRequest-D34oXzOR.js
+       967  ./web/dist/index.html
+
+## 包内 SHA256SUMS.txt 校验
+manifest 为 CRLF 行尾：GNU sha256sum -c 直接读会把 CR 当文件名一部分，44 条全报 FAILED（见 _sums-verify-crlf.txt）；
+把行尾规范为 LF 后复算 44/44 OK，0 FAILED。
+
+app/find-it-campus-0.0.1-SNAPSHOT.jar: OK
+BUILD-INFO.txt: OK
+config/deploy.env.example: OK
+db/schema.sql: OK
+db/seed.sql: OK
+DEPLOY-WINDOWS.md: OK
+logs/.keep: OK
+nginx/conf/fastcgi.conf: OK
+nginx/conf/fastcgi_params: OK
+nginx/conf/koi-utf: OK
+nginx/conf/koi-win: OK
+nginx/conf/mime.types: OK
+nginx/conf/nginx.conf: OK
+nginx/conf/scgi_params: OK
+nginx/conf/uwsgi_params: OK
+nginx/conf/win-utf: OK
+nginx/docs/LICENSE: OK
+nginx/docs/README.md: OK
+nginx/logs/.keep: OK
+nginx/nginx.exe: OK
+nginx/temp/.keep: OK
+runtime/.keep: OK
+scripts/_common.ps1: OK
+scripts/install.ps1: OK
+scripts/start.ps1: OK
+scripts/status.ps1: OK
+scripts/stop.ps1: OK
+web/dist/.gitkeep: OK
+web/dist/assets/categoryCache-MHuz3wsV.js: OK
+web/dist/assets/EmptyState-B8xKvD0r.js: OK
+web/dist/assets/index-Babl5v0z.css: OK
+web/dist/assets/index-i_5Xvwjl.js: OK
+web/dist/assets/LoadingBlock-Bw46eFi3.css: OK
+web/dist/assets/LoadingBlock-CUT7Z7kw.js: OK
+web/dist/assets/NotFound-C-DC4MOS.css: OK
+web/dist/assets/NotFound-DjkYB2os.js: OK
+web/dist/assets/RecordCreate-CUM2c8gd.css: OK
+web/dist/assets/RecordCreate-nOIq-eaQ.js: OK
+web/dist/assets/RecordDetail-DkBmZsj_.js: OK
+web/dist/assets/RecordDetail-ZucUoeMV.css: OK
+web/dist/assets/RecordList-BOrPEh3t.js: OK
+web/dist/assets/RecordList-DQK0w_4X.css: OK
+web/dist/assets/useRequest-D34oXzOR.js: OK
+web/dist/index.html: OK
