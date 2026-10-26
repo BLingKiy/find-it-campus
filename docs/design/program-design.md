@@ -3,7 +3,7 @@
 | 项 | 内容 |
 |---|---|
 | 文档版本 | v1.0 |
-| 对应代码基线 | `d38f868`（= `main`；2026-10-26T01:14Z 人类批准 fast-forward 合入，含 DEF-01/DEF-02 修复、REG-01 回归与阶段 6 文档口径同步 `e41dacf`） |
+| 对应代码基线 | `baf9e44`（`main` 已包含 `baf9e44`；DEF-01/DEF-02 修复与阶段 6 文档口径同步 `e41dacf` 随 `d38f868` 合入，Z-35 / Z-36 两处 P2 修复随合并提交 `821423e` / `a7abde6` 合入，Z-37 文档口径同步随合并提交 `baf9e44` 合入；本文件随本次最终同步提交合入） |
 | 适用仓库 | https://github.com/BLingKiy/find-it-campus |
 | 编写日期 | 2026-10-22 |
 | 编写 | 文通通（文档 Agent），内容取自各阶段交付物与仓库实际代码 |
@@ -759,7 +759,7 @@ MatchEngine keywordMatchEngine(MatchCandidatePoolPort pool, CategoryMapper categ
 
 ### 7.2 阶段推进与时间线
 
-时间为 commit 时间（CST，2026 年）；最后一行为人类批准合入 `main` 的时间（`d38f868` 本身提交于 08:33）。
+时间为 commit 时间（CST，2026 年）；表末三行为 2026-10-26 的 `main` 合并提交（`baf9e44` 之后仍有本次最终同步提交）。
 
 | 时间 | 阶段 | 分支 / commit | 结论 |
 |---|---|---|---|
@@ -782,6 +782,9 @@ MatchEngine keywordMatchEngine(MatchCandidatePoolPort pool, CategoryMapper categ
 | 10-22 17:47 | REG-01 回归（去豁免） | `d2d7d36` | 移除 `API-C-08` / `E2E-L-04` 两处 `knownDefect` 后全量复跑：接口 64/64、走查 19/19 |
 | 10-22 19:03 | 阶段 6 收口合并 | `346bad1`、`21b033d` | 两次 `--no-ff`，先合 REG-01 报告（`d2d7d36`）再合演示资产（`9c4c7d5`）；改动只落在 `docs/` 与 `qa/`，集成分支头 = `21b033d` |
 | 10-26 09:14 | 阶段 6 收口合并 main | `d38f868` | 人类批准 **fast-forward**，`main` `6c68c01` → `d38f868`（= `feat/5.1-integration` @`d38f868`，含 `ZHYYKFX-27` 文档口径同步 `e41dacf`；区间 21 提交 / 192 文件） |
+| 10-26 11:17 | Z-35 P2 修复合入 main | `821423e` | `--no-ff` 合并 `0278575`（重置筛选时 `page` 显式回第 1 页） |
+| 10-26 11:17 | Z-36 P2 修复合入 main | `a7abde6` | `--no-ff` 合并 `1dfccbb`（请求体不可解析时 `10001` 回可读 `fieldErrors`） |
+| 10-26 11:17 | Z-37 文档口径同步合入 main | `baf9e44` | `--no-ff` 合并 `89cd738`；`main` 已包含 `baf9e44`，本文件随本次最终同步提交合入 |
 
 关键路径是 `1.2 契约 → 2.1 骨架 → 3.1 接口 → 3.2 引擎 → 4.1 页面 → 5.1 测试 → 6.1 文档`。3.1 与 3.2 串行（3.2 要按 3.1 的接口签名实现），4.1 与 4.2 串行（4.2 要按 4.1 的 DOM 结构加样式），其余可并行。
 
@@ -839,12 +842,12 @@ MatchEngine keywordMatchEngine(MatchCandidatePoolPort pool, CategoryMapper categ
 - **现象**：logback 的 MDC 前缀与代码里手写的前缀叠加，日志出现 `[abc][abc]` 形式的重复。
 - **处置**：复审时判定「新出口沿用既有写法，取舍正确，但重复未解决」，建议单独立一条任务统一交给 logback pattern。**本文不声称已修复**。
 
-### 7.4 缺陷与观察项（5.1 登记；DEF-01 / DEF-02 已修复，剩余未修项见本节末）
+### 7.4 缺陷与观察项（5.1 登记；DEF-01 / DEF-02 与两处 P2 均已修复，剩余未修项见本节末）
 
 | 编号 | 级别 | 位置 | 现象（修复前） | 影响 | 状态 |
 |---|---|---|---|---|---|
-| DEF-01 | P2 | `RecordCreateRequest.occurredAtAsDateTime`（`RecordCreateRequest.java:129`） | `occurredAt` 传日历上不存在的值（如 `2026-13-40 25:61:61`）返回 `500/10005`，契约 §5.3 要求 `400/10001` | UI 的 `datetime-local` 造不出非法日历值，**不阻塞演示**；脚本/第三方调用方会拿到 500，且日志被 ERROR 污染 | **已修复**：`3548a27`（`@StrictDateTime` + `ResolverStyle.STRICT`，合入 `d21fe78`），用例 `API-C-08` 于 REG-01 转 PASS（`qa/reports/api-5.1.txt:35`），已合入 `main` @`d38f868` |
-| DEF-02 | P2 | `web/src/composables/useRouteQueryState.ts` | 点「重置筛选」后 URL 仍带 `?keyword=钱包`，刷新后筛选复活 | 当次显示正确；影响链接分享、刷新、收藏三种场景 | **已修复**：`1349f09`（写回 URL 前先删掉本次 state 管辖的全部键，合入 `5d05961`），用例 `E2E-L-04` 于 REG-01 转 PASS（`qa/reports/e2e-5.1.txt:7`），已合入 `main` @`d38f868` |
+| DEF-01 | P2 | `RecordCreateRequest.occurredAtAsDateTime`（`RecordCreateRequest.java:129`） | `occurredAt` 传日历上不存在的值（如 `2026-13-40 25:61:61`）返回 `500/10005`，契约 §5.3 要求 `400/10001` | UI 的 `datetime-local` 造不出非法日历值，**不阻塞演示**；脚本/第三方调用方会拿到 500，且日志被 ERROR 污染 | **已修复**：`3548a27`（`@StrictDateTime` + `ResolverStyle.STRICT`，合入 `d21fe78`），用例 `API-C-08` 于 REG-01 转 PASS（`qa/reports/api-5.1.txt:35`），已合入 `main`（合入点 `d38f868`） |
+| DEF-02 | P2 | `web/src/composables/useRouteQueryState.ts` | 点「重置筛选」后 URL 仍带 `?keyword=钱包`，刷新后筛选复活 | 当次显示正确；影响链接分享、刷新、收藏三种场景 | **已修复**：`1349f09`（写回 URL 前先删掉本次 state 管辖的全部键，合入 `5d05961`），用例 `E2E-L-04` 于 REG-01 转 PASS（`qa/reports/e2e-5.1.txt:7`），已合入 `main`（合入点 `d38f868`） |
 | DEF-03 | P3 | `MatchPanel` 标题与 `describeError()` 文案 | 503 时提示条上同一句话出现两次 | 纯观感，降级行为正常 | 未修复，可延后 |
 
 
@@ -853,14 +856,14 @@ MatchEngine keywordMatchEngine(MatchCandidatePoolPort pool, CategoryMapper categ
 | OBS-01 | `/api/match` 服务端耗时抖动：24 行数据下连续 8 次为 375/18/357/367/379/359/14/12 ms，而列表接口稳定 5–8 ms | 性能不在本期范围。`tookMs` 显示引擎本身 0–1 ms，怀疑点在快照写入或连接池，不建议先改算法 |
 | OBS-02 | 详情页「最后更新」显示 seed 导入时间 | `db/seed.sql` 只写 `created_at`，`updated_at` 走默认值；建议 seed 显式写 `updated_at = created_at` |
 | OBS-03 | 前端没有 `data-testid`，E2E 靠类名/文案定位 | 改文案会让用例失败——维护成本，不是产品回归 |
-| OBS-04 | 请求体不是合法 JSON 时，`10001` 的 `fieldErrors` 是空数组 | 契约未规定此场景，前端只 toast，行为可接受；2026-10-26 已按 P2 修复（`ZHYYKFX-36` @`1dfccbb`），修复分支已推送、待合入 `main` |
+| OBS-04 | 请求体不是合法 JSON 时，`10001` 的 `fieldErrors` 是空数组 | 契约未规定此场景，前端只 toast，行为可接受；2026-10-26 已按 P2 修复（`ZHYYKFX-36` @`1dfccbb`），已合入 `main`（合并提交 `a7abde6`） |
 
 > **两处 P2 遗留的处置（2026-10-26）**
 >
-> 1. 请求体不是合法 JSON 时 `10001` 的 `fieldErrors` 是空数组（即上表 OBS-04）：**已修复**（`ZHYYKFX-36` @`1dfccbb`），修复分支 `hifox-agent/pan-shi-shi/ZHYYKFX-36-p2-fielderrors` 已推送，待合入 `main`。
-> 2. 点「重置筛选」在「先翻页、后重置」时 `page` 不回退：**已修复**（`ZHYYKFX-35` @`0278575`），修复分支 `hifox-agent/wu-ba-ge/ZHYYKFX-35-p2-page` 已推送，待合入 `main`。
+> 1. 请求体不是合法 JSON 时 `10001` 的 `fieldErrors` 是空数组（即上表 OBS-04）：**已修复**（`ZHYYKFX-36` @`1dfccbb`，修复分支 `hifox-agent/pan-shi-shi/ZHYYKFX-36-p2-fielderrors`），**已合入 `main`（合并提交 `a7abde6`）**。
+> 2. 点「重置筛选」在「先翻页、后重置」时 `page` 不回退：**已修复**（`ZHYYKFX-35` @`0278575`，修复分支 `hifox-agent/wu-ba-ge/ZHYYKFX-35-p2-page`），**已合入 `main`（合并提交 `821423e`）**。
 >
-> 两条修复均基于 `main` @`d38f868` 提交，并各自附有修复前/修复后同路径实测（见 `ZHYYKFX-35` / `ZHYYKFX-36` 任务评论）。`main` @`d38f868` 上仍是这两处修复前的状态。
+> 两条修复均基于当时的 `main` 基线 `d38f868` 提交，并各自附有修复前/修复后同路径实测（见 `ZHYYKFX-35` / `ZHYYKFX-36` 任务评论）。`main` 已包含 `baf9e44`，两处修复均在文档所指的代码基线内。
 
 ### 7.5 缺陷处置与未修复项的影响
 
@@ -868,15 +871,15 @@ MatchEngine keywordMatchEngine(MatchCandidatePoolPort pool, CategoryMapper categ
 
 | 项 | 修复提交 | 怎么验的 | 结论 |
 |---|---|---|---|
-| DEF-01 | 后端 `3548a27`（合入 `d21fe78`，`ZHYYKFX-20`） | 去掉 `API-C-08` 的 `knownDefect` 标记后重跑 `node qa/api/run.mjs`：64/64，该用例 PASS | 已修复、已回归、**已合入 `main` @`d38f868`**（2026-10-26T01:14Z，人类批准 fast-forward） |
+| DEF-01 | 后端 `3548a27`（合入 `d21fe78`，`ZHYYKFX-20`） | 去掉 `API-C-08` 的 `knownDefect` 标记后重跑 `node qa/api/run.mjs`：64/64，该用例 PASS | 已修复、已回归、**已合入 `main`**（合入点 `d38f868`，2026-10-26T01:14Z 人类批准 fast-forward） |
 | DEF-02 | 前端 `1349f09`（合入 `5d05961`，`ZHYYKFX-21`） | 去掉 `E2E-L-04` 的标记后重跑 `node qa/e2e/walkthrough.mjs`：19/19，该用例 PASS | 同上 |
 
-**2026-10-26 新增修复项**（修复分支已推送；`main` @`d38f868` 尚未包含）
+**2026-10-26 新增修复项**（已合入 `main`：`821423e` / `a7abde6`；`main` 已包含 `baf9e44`）
 
 | 项 | 修复提交 | 怎么验的 | 结论 |
 |---|---|---|---|
-| `fieldErrors` 空数组（OBS-04） | 后端 `1dfccbb`（`ZHYYKFX-36`，基于 `main` @`d38f868`） | 同一非法 JSON 请求体修复前后逐字节对比：`HTTP 400` + `10001`，`fieldErrors` 由 `[]` → `[{field,reason}]`；`mvn test` 55/55 | 已修复；分支 `hifox-agent/pan-shi-shi/ZHYYKFX-36-p2-fielderrors` 已推送、待合入 `main` |
-| 重置筛选后 `page` 残留 | 前端 `0278575`（`ZHYYKFX-35`，基于 `main` @`d38f868`） | 同一 Playwright 脚本修复前后对比：先翻到第 2/3 页再点「重置筛选」，URL 与页码均回第 1 页 | 已修复；分支 `hifox-agent/wu-ba-ge/ZHYYKFX-35-p2-page` 已推送、待合入 `main` |
+| `fieldErrors` 空数组（OBS-04） | 后端 `1dfccbb`（`ZHYYKFX-36`，基于当时的 `main` 基线 `d38f868`） | 同一非法 JSON 请求体修复前后逐字节对比：`HTTP 400` + `10001`，`fieldErrors` 由 `[]` → `[{field,reason}]`；`mvn test` 55/55 | 已修复；已合入 `main`（合并提交 `a7abde6`，分支 `hifox-agent/pan-shi-shi/ZHYYKFX-36-p2-fielderrors`） |
+| 重置筛选后 `page` 残留 | 前端 `0278575`（`ZHYYKFX-35`，基于当时的 `main` 基线 `d38f868`） | 同一 Playwright 脚本修复前后对比：先翻到第 2/3 页再点「重置筛选」，URL 与页码均回第 1 页 | 已修复；已合入 `main`（合并提交 `821423e`，分支 `hifox-agent/wu-ba-ge/ZHYYKFX-35-p2-page`） |
 
 **未修复项**
 
@@ -975,7 +978,7 @@ node qa/run-all.mjs     # 前置：MySQL 已起、后端 18080、前端 5173（V
 3. **匹配**：产品调用方式下 top1 10/10、top3 10/10；不限类型时 top1 6/10 但 top3 仍 10/10，差异来自「同事件两侧」的排序歧义，说明分数口径可信、方向过滤是该带的。
 4. **可替换性**：调用方零 diff 的替换路径已被测试固定；外部实现本身未落地，属已知范围而非缺陷。
 
-**放行判断**：阶段 6 收口条件已满足，代码已合入 `main` @`d38f868`（2026-10-26T01:14Z，人类批准 fast-forward）。DEF-01 / DEF-02 已修复、已回归、已合入 `main`；剩余两处 P2 已修复（`ZHYYKFX-35` @`0278575` / `ZHYYKFX-36` @`1dfccbb`），修复分支已推送、待合入 `main`，`main` @`d38f868` 上仍是修复前状态。后续合并按 `docs/testing/5.1-regression-checklist.md` 复跑 `node qa/run-all.mjs`。
+**放行判断**：阶段 6 收口条件已满足，代码已合入 `main`（合入点 `d38f868`，2026-10-26T01:14Z 人类批准 fast-forward），`main` 已包含 `baf9e44`。DEF-01 / DEF-02 已修复、已回归、已合入 `main`；剩余两处 P2 也已修复并合入 `main`（`ZHYYKFX-35` @`0278575` → 合并提交 `821423e`；`ZHYYKFX-36` @`1dfccbb` → 合并提交 `a7abde6`）。后续合并按 `docs/testing/5.1-regression-checklist.md` 复跑 `node qa/run-all.mjs`。
 
 ---
 
