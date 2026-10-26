@@ -192,8 +192,8 @@
 | 种子数据 24 条记录 | `db/seed.sql:9`（注释）+ `:43` 起的 `INSERT` | 与文档 §5.3.2 一致 |
 | 默认列表 `total=21` | `db/seed.sql:13` 的推导 + 5.1 接口用例 `ENV-01` | 实测通过 |
 | 分类 9 条（8 启用 + 1 停用） | `db/seed.sql:28-38` | 文档 §3.2「三张表」不涉及数量，`api-list.md` A.2.8 示例取了其中 2 条 |
-| 接口用例 64 / 通过 63 | `docs/testing/5.1-test-report.md:12`、`qa/reports/run-all-output.txt` | 一致 |
-| 走查 19 / 18、一致性 9/9、落库 10/10 | 同上，第 13–15 行 | 一致 |
+| 接口用例 64 / 通过 63（首次跑）→ 64 / 64（REG-01） | `docs/testing/5.1-test-report.md:12`（首次跑）与 `:30`（§1.1 复测）；`qa/reports/api-5.1.txt:2` | 一致 |
+| 走查 19 / 18（首次跑）→ 19 / 19（REG-01），一致性 9/9、落库 10/10 | 同上 §1 与 §1.1；`qa/reports/e2e-5.1.txt:2` | 一致 |
 | 匹配 top1 10/10（P1）、6/10（P2）、top3 10/10 | `docs/testing/5.1-match-evaluation.md:70-77` | 一致 |
 | `tookMs` 0/0/0 与 0.2/1/1 | 同上第 76 行 | 一致 |
 | 后端单测 32 个（3.1）/ 51 个（3.2） | 3.1 交付评论、3.2 交付评论 | 一致 |
@@ -202,18 +202,20 @@
 
 ---
 
-## B.9 偏差清单（必须说明的 10 处）
+## B.9 偏差清单（必须说明的 10 处；C-01 / C-02 已随 DEF-01 / DEF-02 修复闭合，条目保留）
 
 ### C-01 `occurredAt` 非法日历值 → 500，契约要求 400
 
 - **实现**：`RecordCreateRequest.occurredAtAsDateTime()`（`:129`）里 `LocalDateTime.parse` 抛 `DateTimeParseException`，无对应出口，落到兜底 `10005`。
 - **文档处理**：§5.3.4 与 `api-list.md` A.2.4 按**契约**写 `400/10001`，并显式标注「已知实现偏差：DEF-01」。
 - **为什么不改文档迁就实现**：契约是事实源，缺陷不该被文档合法化；修复后文档无需再改。
+- **现状（2026-10-22）**：DEF-01 已在 `3548a27` 修复（合入 `d21fe78`；新增 `@StrictDateTime` + `ResolverStyle.STRICT`），`API-C-08` 于 REG-01 转 PASS（`qa/reports/api-5.1.txt:35`）。**实现已与契约一致，偏差闭合**；`api-list.md` A.2.4 的偏差标注同步改为「已修复」。
 
 ### C-02 重置筛选后 URL 残留（DEF-02）
 
 - **实现**：`web/src/composables/useRouteQueryState.ts` 写回时 `{...route.query, ...prune(next)}` 只删值不删键。
 - **文档处理**：文档未声称「重置筛选会清空 URL」。§2.1 R-06 只要求空态与失败提示；§5.4 未涉及。**无冲突**，但读者若按「URL 即状态」推断需知道此缺陷，故登记。
+- **现状（2026-10-22）**：DEF-02 已在 `1349f09` 修复（合入 `5d05961`；写回 URL 前先删掉本次 state 管辖的全部键），`E2E-L-04` 于 REG-01 转 PASS（`qa/reports/e2e-5.1.txt:7`）。**偏差闭合**；仍遗留一处 P2：重置只清筛选项，`page` 在「先翻页、后重置」时不回退（见 `program-design.md` §7.4 节末）。
 
 ### C-03 匹配 503 文案重复（DEF-03）
 
