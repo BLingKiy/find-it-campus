@@ -33,10 +33,22 @@ docs/testing/7.4-deploy-fixes/timings.txt
  docs/testing/7.4-deploy-fixes/07-pages.txt         |   3 +
  .../7.4-deploy-fixes/08-ports-and-processes.txt    |  79 ++++++++++
  docs/testing/7.4-deploy-fixes/09-before-hang.txt   |  39 +++++
- docs/testing/7.4-deploy-fixes/10-git-diff.txt      |  16 ++
+ docs/testing/7.4-deploy-fixes/10-git-diff.txt      |  42 ++++++
  docs/testing/7.4-deploy-fixes/README.md            |  69 +++++++++
  docs/testing/7.4-deploy-fixes/timings.txt          |  10 ++
- 17 files changed, 862 insertions(+), 43 deletions(-)
+ 17 files changed, 888 insertions(+), 43 deletions(-)
 
 === 业务代码零改动：git diff --name-only 270a54b HEAD -- server web db ===
 (无输出)
+
+=== 交付包 BUILD-INFO 的 commit 与分支 HEAD 的关系 ===
+BUILD-INFO 记录 commit：da8b936731c6ffbe27e981c6b883e457b38a6f29（zip 名 da8b936 取此前 7 位，交付的包即由该提交构建）
+该提交之后只有证据提交（只动 docs/testing/7.4-deploy-fixes/），deploy/ 内容与它逐字节相同：
+
+$ git diff --stat da8b936 HEAD -- deploy
+(无输出：deploy/ 逐字节相同，zip 无需重建)
+
+$ git log --oneline da8b936..HEAD
+430c591 test(7.4): 变更范围证据按证据入库后的提交重算
+f10ff8d test(7.4): Windows 部署包缺陷修复(7.4) 干净目录实测证据——Restricted 下四条命令、管道前后耗时、三种 start 方式
+（本条结论不随证据文件的后续提交变化：之后的新提交同样只改本目录。）

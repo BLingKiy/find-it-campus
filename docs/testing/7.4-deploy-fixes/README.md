@@ -1,6 +1,7 @@
 # 7.4 部署包缺陷修复验收（ZHYYKFX-41）
 
 - 交付包：`deploy/dist/find-it-campus-windows-x64-da8b936.zip`，28,161,794 字节（26.86 MiB），SHA256 `ABEE31E4C0BEC798CA4A66A90049E68225B90F15FBC105CC76134ADCCFDC15FD`
+- 构建提交：`da8b936`（即包内 `BUILD-INFO.txt` 记录的 commit）；该提交之后只有证据提交，`deploy/` 逐字节相同，故 zip 无需按最新 HEAD 重建（`10-git-diff.txt` 末段有 `git diff --stat da8b936 HEAD -- deploy` 的空输出）
 - 源分支：`feat/7.4-deploy-fixes` @ `da8b936731c6ffbe27e981c6b883e457b38a6f29`
 - 基线：`origin/feat/7.2-windows-docs` = `270a54bf958ae107bf7eb5ba522c714743b0d639`
 - 变更范围：`deploy/DEPLOY-WINDOWS.md`、`deploy/scripts/{_common,install,start}.ps1`、本目录；`server/` `web/` `db/` 零改动（`10-git-diff.txt`）
