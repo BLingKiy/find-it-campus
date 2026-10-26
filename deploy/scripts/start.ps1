@@ -26,6 +26,8 @@ $publicHealthUrl = 'http://127.0.0.1:8088/api/health'
 $startedBackend = $false
 $startedNginx = $false
 $backendPid = 0
+$backendLauncher = $null
+$nginxLauncher = $null
 
 function Wait-BackendHealthy {
     param([int]$Seconds, [System.Diagnostics.Process]$Process)
@@ -200,15 +202,18 @@ try {
             '--server.address=127.0.0.1',
             '--server.port=18080'
         )
-        $backendProcess = Start-Process -FilePath $javaExe -ArgumentList $javaArguments `
-            -WorkingDirectory $pkgRoot -RedirectStandardOutput $backendLog -RedirectStandardError $backendErrLog `
-            -WindowStyle Hidden -PassThru
-        $backendPid = [int]$backendProcess.Id
+        $backendLauncher = Start-DetachedProcess -FilePath $javaExe -Arguments $javaArguments `
+            -WorkingDirectory $pkgRoot -StdOutPath $backendLog -StdErrPath $backendErrLog
+        $backendPid = Wait-ChildProcessId -ParentId ([int]$backendLauncher.Id) -Name 'java.exe' -TimeoutSec 20
+        if ($backendPid -le 0) {
+            foreach ($line in (Get-FileTail -Path $backendErrLog -Lines 20)) { Write-Log ('stderr | ' + $line) 'ERROR' }
+            throw '后端进程未能启动：java.exe 没有起来。请检查 JDK17 与 logs\backend-error.log。'
+        }
         $startedBackend = $true
         [System.IO.File]::WriteAllText($backendPidFile, [string]$backendPid, (New-Object System.Text.UTF8Encoding($false)))
         Write-Log ('已拉起后端：PID {0}，日志：{1}' -f $backendPid, $backendLog)
 
-        $health = Wait-BackendHealthy -Seconds $TimeoutSec -Process $backendProcess
+        $health = Wait-BackendHealthy -Seconds $TimeoutSec -Process (Get-Process -Id $backendPid -ErrorAction SilentlyContinue)
         if (-not $health.Ok) {
             Write-Log ('后端未就绪：' + $health.Reason) 'ERROR'
             foreach ($line in (Get-FileTail -Path $backendErrLog -Lines 20)) { Write-Log ('stderr | ' + $line) 'ERROR' }
@@ -261,9 +266,8 @@ try {
         )
         $nginxStdoutLog = Join-Path $logsDir 'nginx-stdout.log'
         $nginxStderrLog = Join-Path $logsDir 'nginx-stderr.log'
-        $nginxProcess = Start-Process -FilePath $nginxExe -ArgumentList $nginxArguments `
-            -WorkingDirectory $nginxPrefix -WindowStyle Hidden `
-            -RedirectStandardOutput $nginxStdoutLog -RedirectStandardError $nginxStderrLog -PassThru
+        $nginxLauncher = Start-DetachedProcess -FilePath $nginxExe -Arguments $nginxArguments `
+            -WorkingDirectory $nginxPrefix -StdOutPath $nginxStdoutLog -StdErrPath $nginxStderrLog
 
         # nginx.conf 里 pid 指向 runtime\nginx.pid；等待 nginx 自己写。
         $pidDeadline = (Get-Date).AddSeconds(10)
@@ -274,10 +278,12 @@ try {
             $pidText = (Get-Content -LiteralPath $nginxPidFile -Raw -ErrorAction SilentlyContinue)
             if ($pidText -and $pidText.Trim() -match '^\d+$') { $nginxPid = [int]$pidText.Trim() }
         }
-        if ($nginxPid -le 0 -and -not $nginxProcess.HasExited) {
-            # 兜底：极少数情况下 pid 文件未落盘，但 master 进程还在。
-            $nginxPid = [int]$nginxProcess.Id
-            [System.IO.File]::WriteAllText($nginxPidFile, [string]$nginxPid, (New-Object System.Text.UTF8Encoding($false)))
+        if ($nginxPid -le 0) {
+            # 兜底：pid 文件未落盘时，按 cmd 包装进程的子进程找 nginx.exe。
+            $nginxPid = Wait-ChildProcessId -ParentId ([int]$nginxLauncher.Id) -Name 'nginx.exe' -TimeoutSec 5
+            if ($nginxPid -gt 0) {
+                [System.IO.File]::WriteAllText($nginxPidFile, [string]$nginxPid, (New-Object System.Text.UTF8Encoding($false)))
+            }
         }
         $startedNginx = $true
 
@@ -330,6 +336,10 @@ try {
         }
         Stop-OwnedProcess -ProcessId $failedPid -Label ' Nginx'
     }
+    # cmd 包装进程正常情况下随子进程一起退出；失败路径上按 PID 兜底收尾，
+    # 避免留下孤立的 cmd.exe。
+    Stop-LauncherProcess -Launcher $backendLauncher -KnownChildPid $backendPid
+    Stop-LauncherProcess -Launcher $nginxLauncher
     if ($script:LogFile) { Write-Log ('详细日志：' + $script:LogFile) 'ERROR' }
     exit 1
 }

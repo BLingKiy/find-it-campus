@@ -608,3 +608,82 @@ function Get-Sha256 {
     param([Parameter(Mandatory = $true)][string]$Path)
     return (Get-FileHash -LiteralPath $Path -Algorithm SHA256).Hash
 }
+
+function Start-DetachedProcess {
+    param(
+        [Parameter(Mandatory = $true)][string]$FilePath,
+        [Parameter(Mandatory = $true)][string[]]$Arguments,
+        [Parameter(Mandatory = $true)][string]$WorkingDirectory,
+        [Parameter(Mandatory = $true)][string]$StdOutPath,
+        [Parameter(Mandatory = $true)][string]$StdErrPath
+    )
+
+    # 长驻进程（java / nginx）不能用 Start-Process -RedirectStandardOutput 拉起。
+    # 一旦带重定向，Start-Process 会走 UseShellExecute=$false，.NET Framework 以
+    # bInheritHandles=$true 创建进程：子进程除了拿到重定向后的文件句柄，还连带继承
+    # 本 PowerShell 进程的 stdout/stderr 句柄。调用方用管道捕获输出时
+    # （powershell -File start.ps1 2>&1 | Tee-Object ...）要等所有写入端关闭才拿到
+    # 退出码，而后端/Nginx 一直活着，于是调用方一直挂到进程被杀为止。
+    #
+    # 这里改用 ShellExecute（不继承任何句柄）拉起 cmd.exe，由 cmd 自己在命令行里
+    # 完成 > 与 2> 重定向：长驻进程的 stdout/stderr 仍然落在原来那两个日志文件里，
+    # 端口、PID 文件、日志位置都不变。返回 cmd.exe 的进程对象，它一直等到子进程
+    # 退出才结束；实际工作进程的 PID 用 Wait-ChildProcessId 发现。
+    $comSpec = Join-Path $env:SystemRoot 'System32\cmd.exe'
+    if (-not (Test-Path -LiteralPath $comSpec -PathType Leaf)) { $comSpec = 'cmd.exe' }
+
+    $inner = '"{0}" {1} > "{2}" 2> "{3}"' -f $FilePath, ($Arguments -join ' '), $StdOutPath, $StdErrPath
+    # cmd /c 的引号规则：命令串以引号开头时，最外层一对引号会被剥掉；因此在整条
+    # 命令外面再包一层，剥掉后正好剩下去掉外层引号的完整命令。
+    $wrapped = '"' + $inner + '"'
+
+    $psi = New-Object System.Diagnostics.ProcessStartInfo
+    $psi.FileName = $comSpec
+    $psi.Arguments = '/c ' + $wrapped
+    $psi.UseShellExecute = $true
+    $psi.WindowStyle = 'Hidden'
+    $psi.WorkingDirectory = $WorkingDirectory
+
+    return [System.Diagnostics.Process]::Start($psi)
+}
+
+function Wait-ChildProcessId {
+    param(
+        [Parameter(Mandatory = $true)][int]$ParentId,
+        [Parameter(Mandatory = $true)][string]$Name,
+        [int]$TimeoutSec = 20
+    )
+
+    $deadline = (Get-Date).AddSeconds($TimeoutSec)
+    while ($true) {
+        try {
+            $child = Get-CimInstance Win32_Process -Filter ("ParentProcessId={0}" -f $ParentId) -ErrorAction Stop |
+                Where-Object { $_.Name -ieq $Name } | Select-Object -First 1
+        } catch {
+            $child = $null
+        }
+        if ($child) { return [int]$child.ProcessId }
+        if ((Get-Date) -ge $deadline) { return 0 }
+        Start-Sleep -Milliseconds 200
+    }
+}
+
+function Stop-LauncherProcess {
+    param([AllowNull()]$Launcher, [int]$KnownChildPid = 0)
+
+    if (-not $Launcher) { return }
+    try {
+        if ($Launcher.HasExited) { return }
+    } catch {
+        return
+    }
+    # 先结束工作进程，cmd 包装进程随之退出；仍存活时再按 PID 收尾。
+    if ($KnownChildPid -gt 0) {
+        Stop-Process -Id $KnownChildPid -Force -ErrorAction SilentlyContinue
+    }
+    Start-Sleep -Milliseconds 500
+    try {
+        if (-not $Launcher.HasExited) { Stop-Process -Id ([int]$Launcher.Id) -Force -ErrorAction SilentlyContinue }
+    } catch {
+    }
+}

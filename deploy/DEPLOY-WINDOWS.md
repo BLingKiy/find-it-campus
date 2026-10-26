@@ -1,8 +1,9 @@
 # find-it-campus · Windows 部署说明
 
-> 适用版本：`0.0.1-SNAPSHOT`（部署包布局版本 7.1，文档版本 7.2）
+> 适用版本：`0.0.1-SNAPSHOT`（部署包布局版本 7.1，文档版本 7.4）
 > 本文所有命令、参数名、端口、路径与包内 `scripts/*.ps1`、`nginx/conf/nginx.conf` 逐字对应；
 > 示例输出取自 2026-10-26 的真实运行（见 §12 自检记录）。脚本改动后本文必须同步，否则按缺陷处理。
+> 全文的脚本命令都带 `powershell -NoProfile -ExecutionPolicy Bypass -File`，可以直接照抄；原因见 §2.1。
 
 ## 1 这是什么
 
@@ -16,7 +17,7 @@
 |---|---|
 | 它做什么 | 把仓库里的前后端产物装成一台机器上的单端口网站：`http://<host>:8088` |
 | 为什么需要它 | 课程交付要求「可部署」，而不是只能在一台装了 Node 和 Maven 的开发机上 `npm run dev` |
-| 怎么开始 | 装 JDK 17 与 MySQL 8 → `scripts\install.ps1` → `scripts\start.ps1`（§3） |
+| 怎么开始 | 装 JDK 17 与 MySQL 8 → 按 §3 的四条命令执行（每条都带 `-ExecutionPolicy Bypass`，见 §2.1） |
 
 **本包不包含**：Docker、Linux 部署、HTTPS/域名、MSI 安装器、开机自启、服务注册。这些都在本期范围之外（§11）。
 
@@ -25,6 +26,7 @@
 | 组件 | 要求 | 校验命令 | 不满足时 |
 |---|---|---|---|
 | Windows | Windows 10 / 11 x64，自带 Windows PowerShell 5.1 | `$PSVersionTable.PSVersion`（主版本应为 5） | 脚本按 5.1 编写并自检；PowerShell 7（`pwsh`）未验证，请用系统自带的 `powershell.exe` |
+| 执行策略 | 不需要预先修改；用本文的命令形式（带 `-ExecutionPolicy Bypass`）即可 | `Get-ExecutionPolicy -List`（出厂机器五个作用域通常是 Undefined，有效值为 `Restricted`） | 直接写 `.\scripts\install.ps1` 会报「在此系统上禁止运行脚本」，见 §2.1 |
 | JDK | **17**（主版本必须正好是 17） | `java -version` | `install.ps1` 报「需要 JDK 17，当前 java 主版本为 N」 |
 | MySQL | **8.x 服务端** + `mysql.exe` 客户端；`FULLTEXT ... WITH PARSER ngram` 需 8.0.14+ | `mysql --version`，并确认服务已启动 | `install.ps1` 报「需要 MySQL 8.x」或连接失败 |
 | 端口 | **8088**、**18080** 空闲 | `Get-NetTCPConnection -State Listen -LocalPort 8088,18080` | `start.ps1` 报端口被占用并给出 PID，不抢杀 |
@@ -41,27 +43,58 @@ openjdk version "17.0.20.1" 2026-08-18
 
 目标机**不需要** Node.js、npm、Maven；这三样只在构建机打包时使用。
 
+### 2.1 首次部署：执行策略
+
+出厂 Windows 客户端的执行策略五个作用域通常全是 `Undefined`，有效值因此是 **`Restricted`**：在这个取值下，双击不出问题，但在 PowerShell 里直接调用脚本会被拦下：
+
+```
+无法加载文件 D:\apps\find-it-campus-windows-x64\scripts\install.ps1，因为在此系统上禁止运行脚本。
+有关详细信息，请参阅 about_Execution_Policies ...
+```
+
+本文所有脚本命令都写成这样，照抄即可跑通：
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts\install.ps1 <参数…>
+```
+
+- `-ExecutionPolicy Bypass` **只对这一次 `powershell` 进程生效**，命令结束即失效；没有改机器策略，没有写注册表，**不需要管理员权限**。
+- `-NoProfile` 让子进程跳过用户 profile，避免目标机上不可控的 profile 脚本干扰。
+- 退出码就是脚本本身的退出码，可以直接给自动化验收用。
+
+嫌每条命令都带参数太长，也可以只在当前窗口临时放开，之后 `.\scripts\start.ps1` 这类写法在本窗口内可直接用：
+
+```powershell
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+```
+
+`-Scope Process` 只影响这一个 PowerShell 窗口，关掉即恢复，同样不需要管理员。**不要**用 `-Scope LocalMachine` / `CurrentUser` 改全局策略——部署包没有理由动它。
+
+> 只有一种情况例外：机器或用户的**组策略**（`MachinePolicy` / `UserPolicy`）已显式设置了执行策略——组策略优先级高于命令行参数，`-ExecutionPolicy Bypass` 不生效。这类机器由管理员统一放开，部署包不越权处理。
+
 ## 3 快速开始
 
-把 zip 解压到任意目录（示例：`D:\apps\find-it-campus-windows-x64`），在该目录打开 PowerShell，按顺序执行：
+把 zip 解压到任意目录（示例：`D:\apps\find-it-campus-windows-x64`），在该目录打开 PowerShell，按顺序执行这四条（每条都带 `-ExecutionPolicy Bypass`，原因见 §2.1）：
 
 ```powershell
 # 1) 安装：校验 JDK/MySQL → 建库（utf8mb4）→ 导入 schema/seed → 生成 config\deploy.env.ps1
-.\scripts\install.ps1 `
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts\install.ps1 `
   -DbHost 127.0.0.1 -DbPort 3306 -DbName find_it_campus `
   -DbUser root -DbPassword '你的数据库密码' -Engine local `
   -MysqlBin 'C:\mysql\bin\mysql.exe' `
   -JavaBin 'C:\jdk17\bin\java.exe'
 
 # 2) 启动：后端 18080 → 等健康 → Nginx 8088
-.\scripts\start.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts\start.ps1
 
 # 3) 查看状态（全绿时退出码 0）
-.\scripts\status.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts\status.ps1
 
 # 4) 停止（幂等，可重复执行）
-.\scripts\stop.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts\stop.ps1
 ```
+
+四条命令的退出码分别是 `0` / `0` / `0` / `0`（§12.1 有逐条转录）。反引号是 PowerShell 的续行符，必须行尾跟一个空格再接换行；不想续行就写成一行。
 
 浏览器访问 <http://127.0.0.1:8088/>。健康检查 <http://127.0.0.1:8088/api/health> 期望 `code=0`、`data.status=UP`、`data.db=UP`。
 
@@ -96,6 +129,8 @@ find-it-campus-windows-x64/
 包根目录就是「安装目录」：脚本用自身所在位置推算包根（`scripts\` 的上一级），因此**整个目录可以整体移动**，但移动后需要重新执行 `start.ps1`（`runtime\*.pid` 里记的是进程，不是路径）。
 
 ## 5 安装：`scripts\install.ps1`
+
+调用形式见 §3 第 1 条（`powershell -NoProfile -ExecutionPolicy Bypass -File scripts\install.ps1 …`）；本节只列参数与行为。
 
 ### 5.1 参数
 
@@ -157,9 +192,9 @@ MySQL 端口 [3306]:
 ### 6.1 `scripts\start.ps1`
 
 ```powershell
-.\scripts\start.ps1                 # 默认等待后端健康 60 秒
-.\scripts\start.ps1 -TimeoutSec 120 # 冷启动慢（机械盘/杀软扫描）时放宽
-.\scripts\start.ps1 -JavaBin 'D:\jdk17\bin\java.exe'  # 覆盖配置里的 JDK
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts\start.ps1                  # 默认等待后端健康 60 秒
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts\start.ps1 -TimeoutSec 120  # 冷启动慢（机械盘/杀软扫描）时放宽
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts\start.ps1 -JavaBin 'D:\jdk17\bin\java.exe'  # 覆盖配置里的 JDK
 ```
 
 | 参数 | 默认值 | 说明 |
@@ -176,6 +211,14 @@ MySQL 端口 [3306]:
 5. 启动 Nginx（`-p <包根>\nginx\ -c conf/nginx.conf`），等 `runtime\nginx.pid` 落盘，再要求 `GET http://127.0.0.1:8088/` 返回 200 且 8088 的 `/api/health` 同样三项成立。
 6. 退出码 `0`。任一步失败退出码 `1`，且**回滚本次启动的进程**（只停本次拉起的那个 PID）。
 
+**非交互**：脚本不读标准输入，参数齐全时完全非交互。可以安全地把输出接到管道里——脚本打印「启动完成」后立即返回退出码 `0`，不会等后端/Nginx 退出：
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts\start.ps1 2>&1 | Tee-Object -FilePath start.txt
+```
+
+（CI / 验收脚本用这种写法即可。7.2 版本在管道下会一直挂到后端被杀才返回，7.4 已修复，见 §12.2。）
+
 **幂等**：已在运行的后端/Nginx 会被识别并复用，输出「已在运行（PID xxxx），不重复拉起」。第二次执行 `start.ps1` 是安全的。
 
 **端口占用**：18080 或 8088 被**非本包**进程占用时直接失败，输出里带 PID、进程名与可执行文件路径，例如：
@@ -189,7 +232,7 @@ MySQL 端口 [3306]:
 ### 6.2 `scripts\stop.ps1`
 
 ```powershell
-.\scripts\stop.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts\stop.ps1
 ```
 
 无参数。顺序：先 `nginx.exe -s quit` 让 Nginx 优雅退出（15 秒未退再按已校验 PID 强停），再按 `runtime\backend.pid` 停止后端（先普通终止，20 秒未退再强制），最后分别等 8088 与 18080 释放，各 20 秒。
@@ -203,7 +246,7 @@ MySQL 端口 [3306]:
 ### 6.3 `scripts\status.ps1`
 
 ```powershell
-.\scripts\status.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts\status.ps1
 ```
 
 无参数。输出一张组件表，健康判据统一走 8088：
@@ -402,17 +445,18 @@ MySQL    OK 127.0.0.1:3306 / MySQL 8.0.29             -     -
 | 14 | `config\deploy.env.ps1 仍是模板占位内容，请重新运行 install.ps1。` | `config\deploy.env.ps1` 是否含 `__` | 安装没跑完或文件被替换成模板；重跑 `install.ps1` |
 | 15 | 状态表 `8088 监听 CONFLICT` | 该行 PID | 8088 被非本包进程占用；`start.ps1` 不会抢，先停占用者 |
 | 16 | 停止后 `RESULT: PORT_NOT_RELEASED`（退出码 1） | 8088 / 18080 的占用 PID | 有进程没退干净；先确认是不是本包的残留（`status.ps1` 的 `CONFLICT` 行），必要时手工结束该 PID 后重跑 `stop.ps1` |
+| 17 | `无法加载文件 …\scripts\xxx.ps1，因为在此系统上禁止运行脚本。`（`UnauthorizedAccess` / `PSSecurityException`） | 有效执行策略：`Get-ExecutionPolicy` | 用了 `.\scripts\xxx.ps1` 直接调用，而有效值是 `Restricted`。改用 §2.1 的命令形式：`powershell -NoProfile -ExecutionPolicy Bypass -File scripts\xxx.ps1 …` |
 
 ## 10 升级、回滚与卸载
 
 ### 10.1 升级（保留数据）
 
 ```powershell
-.\scripts\stop.ps1                     # 1) 先停，避免文件占用
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts\stop.ps1    # 1) 先停，避免文件占用
 # 2) 覆盖三类文件：app\*.jar、web\dist\*、nginx\*（若 Nginx 也升级）
 # 3) 保留 config\deploy.env.ps1、db\、logs\、runtime\
-.\scripts\start.ps1                    # 4) 用原配置重新启动
-.\scripts\status.ps1                   # 5) 全绿即完成
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts\start.ps1   # 4) 用原配置重新启动
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts\status.ps1  # 5) 全绿即完成
 ```
 
 `config\deploy.env.ps1` 是**不要覆盖**的那一个：它含本机密码，且新包解压出来只有 `deploy.env.example`。如果新版本改了配置项名，`start.ps1` 会报缺变量，此时按 §8.4 补齐后再启动。
@@ -426,12 +470,14 @@ MySQL    OK 127.0.0.1:3306 / MySQL 8.0.29             -     -
 2. 把旧目录换回来（或用上一版 jar/dist 覆盖回去）；
 3. `start.ps1`。
 
+（三步都用 §3 的命令形式。）
+
 数据库若被升级脚本改过，回滚软件不会自动回滚数据——改结构前先 `mysqldump` 备份。
 
 ### 10.3 卸载
 
 ```powershell
-.\scripts\stop.ps1        # 确保进程退出、端口释放
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts\stop.ps1   # 确保进程退出、端口释放
 # 删除整个包目录
 ```
 
@@ -454,6 +500,7 @@ mysqldump -h 127.0.0.1 -P 3306 -u root -p --databases find_it_campus --single-tr
 | 对外端口 | 只有 8088（Nginx） | 后端 18080 绑定 `127.0.0.1`，局域网无法直连后端 |
 | 传输加密 | **无 HTTPS** | 明文 HTTP；只在可信内网/本机使用，不做公网暴露 |
 | 进程形态 | 普通进程，不注册服务 | 不开机自启，机器重启后需手工 `start.ps1`；不做崩溃自动拉起 |
+| 启动方式 | 隐藏的 `cmd.exe` 包装进程 | `start.ps1` 用它拉起后端与 Nginx，并把两者的 stdout/stderr 重定向到 `logs\`（7.4 起，见 §12.2）；`runtime\*.pid` 记的仍是 `java.exe` / `nginx.exe` 自身的 PID，不是包装进程 |
 | 权限 | 不需要管理员 | 不为安装提权，不写系统目录，不改系统环境变量 |
 | 密码 | 只落 `config\deploy.env.ps1` | 该文件不进仓库、不进 zip（zip 里只有 `deploy.env.example`）；ACL 尽力收窄到当前用户 |
 | 运行身份 | 当前登录用户 | Nginx 与 JVM 都以该用户身份运行，没有单独的守护账号 |
@@ -470,20 +517,46 @@ mysqldump -h 127.0.0.1 -P 3306 -u root -p --databases find_it_campus --single-tr
 
 ### 12.1 实测环境与结果
 
-- 环境：Windows 10 Pro for Workstations x64；Windows PowerShell 5.1；Temurin JDK 17.0.20.1；MySQL 8.0.29（本机 3306）；Nginx 1.30.6（包内）；非管理员身份。
-- 跑了两次，同一套命令：
-  1. `deploy\build-package.ps1` 从 `feat/7.1-windows-deploy` 头（`db59673`）构建的包，用于校订本文；
-  2. **最终交付的 zip 本身**（含本文、`BUILD-INFO.txt` 记录 `Git dirty: false`），重新解压到工作区之外的干净目录复跑一遍。
-- 结果（两次一致）：`install.ps1` 退出码 0（自定义库名 `findit_deploy72` / `findit_final72`，避开本机既有库）→ `start.ps1` 退出码 0 → `/api/health` 200 且 `status=UP`/`db=UP` → `/`、`/records/1`、`/records/new` 均 200 → `POST /api/match` 200，`recordId=13`、95% → `status.ps1` 退出码 0 且 `RESULT: HEALTHY` → `stop.ps1` 退出码 0、8088/18080 均释放 → 停止后 `status.ps1` 退出码 1、`RESULT: UNHEALTHY` → 再次 `stop.ps1` 退出码 0（幂等）。
-- 额外验证：库已存在时 `install.ps1` 按预期拒绝并给出 `-Force` 提示；8088 被占用时 `start.ps1` 报出占用 PID 并回滚已拉起的后端（18080 随之释放）。
+- 环境：Windows 10 Pro for Workstations x64；Windows PowerShell 5.1（5.1.19041）；Temurin JDK 17.0.20.1；MySQL 8.0.29（本机 3306，root 空密码）；Nginx 1.30.6（包内）；非管理员身份。
+- **执行策略：五个作用域全为 `Undefined`，有效值 `Restricted`**（`Get-ExecutionPolicy` → `Restricted`）——与出厂 Windows 客户端一致。§2.1、§3 的命令就是在这个环境下**逐字照抄**执行的，没有先改机器策略。
+- 跑法：把最终交付的 zip 解压到工作区之外的干净目录，在该目录按 §3 顺序执行四条命令：
 
-### 12.2 未实测、依据为读脚本/读配置的条目
+| 命令 | 退出码 | 观察输出 |
+|---|---|---|
+| §3 第 1 条 `install.ps1`（自定义库名，避开本机既有库） | `0` | JDK 17 → MySQL 8.0.29 → 建库 utf8mb4 → `t_category=9` / `t_record=24` → 生成 `config\deploy.env.ps1` |
+| §3 第 2 条 `start.ps1` | `0` | 后端 18080 健康 → Nginx 8088 → 「启动完成」，12 秒级返回 |
+| §3 第 3 条 `status.ps1` | `0` | 六行组件全绿，`RESULT: HEALTHY` |
+| §3 第 4 条 `stop.ps1` | `0` | `RESULT: STOPPED`，8088 / 18080 均释放 |
+
+- 另外验证：`GET /api/health` 200 且 `code=0` / `status=UP` / `db=UP`；`/`、`/records/1`、`/records/new` 均 200；停止后 `status.ps1` 退出码 `1`、`RESULT: UNHEALTHY`；再次 `stop.ps1` 退出码 `0`（幂等）。
+- 逐条命令转录与退出码、health 响应、包校验值都在 `docs/testing/7.4-deploy-fixes/`。
+
+### 12.2 管道与非交互回归（文档版本 7.4 的修复项）
+
+7.2 的 `start.ps1` 在输出被管道捕获时不返回：脚本 17:38:32 已打印「启动完成」，调用方直到 17:39:11 JVM 被杀才拿到退出码，**51.9 秒**——其中 39 秒是纯空等。
+
+原因：`Start-Process` 一旦带 `-RedirectStandardOutput/-RedirectStandardError` 就走 `UseShellExecute=$false`，.NET Framework 以 `bInheritHandles=$true` 创建进程；后端与 Nginx 除了拿到重定向后的日志文件句柄，还连带继承调用方的 stdout 管道句柄。管道要等**所有**写入端关闭才到 EOF，而后端一直活着，于是调用方永久阻塞。
+
+7.4 改为由 `cmd.exe` 在自己的命令行里完成 `>` / `2>` 重定向（ShellExecute 创建的进程不继承调用方句柄），后端与 Nginx 的 stdout/stderr 仍然写进原来的 `logs\backend.log`、`logs\backend-error.log`、`logs\nginx-stdout.log`、`logs\nginx-stderr.log`；`runtime\backend.pid` 仍然记 `java.exe` 的 PID，端口与启停语义未变。
+
+同一台机器、同一条命令的三种调用方式（全部退出码 `0`，后端 127.0.0.1:18080 与 Nginx 8088 起来，health `code=0` / `status=UP` / `db=UP`）：
+
+| 调用方式 | 实测 |
+|---|---|
+| 直接执行（不带参数，等价于在控制台手敲） | 12.5 秒返回；紧接着重跑幂等，2.9 秒（「已在运行（PID xxxx），不重复拉起」） |
+| 参数齐全非交互 `-TimeoutSec 120` | 12.4 秒返回 |
+| 管道捕获 `… 2>&1 \| Tee-Object -FilePath …` | 12.8 秒返回（修复前 51.9 秒，且只有 JVM 被杀才返回） |
+
+耗时是同一台机器 2026-10-26 的一次实测，随机器波动；判据是「30 秒内返回退出码 `0`」。
+
+### 12.3 未实测、依据为读脚本/读配置的条目
 
 | 条目 | 依据 | 说明 |
 |---|---|---|
-| JDK 版本不符、MySQL 版本不符的报错原文 | `scripts\_common.ps1:169`、`scripts\install.ps1:146` | 本机只装了 17 与 8.0.29，未构造错误版本环境；原文逐字取自代码 |
-| `-Force` 的 DROP 重建、`-DbPassword` 与 `-EmptyDbPassword` 互斥 | `install.ps1:62-63`、`:155-162` | 未在既有库上执行 DROP（避免破坏其他任务的数据） |
-| 非交互模式的交互提示文本 | `install.ps1:66-95` | 本次全部按非交互执行，提示文本取自代码 |
-| Nginx 403 / 502、`bind() failed` 等系统级报错 | `nginx/conf/nginx.conf`、§9 通用经验 | 未逐一制造；表格中给出的是定位方向，不是逐字原文 |
-| `engine=external` 的行为 | `install.ps1:277-279`、`MatchService` | 本期无外部实现，只验证了 `local` |
+| JDK 版本不符、MySQL 版本不符的报错原文 | `scripts\_common.ps1`、`scripts\install.ps1` | 本机只装了 17 与 8.0.29，未构造错误版本环境；原文逐字取自代码 |
+| `-Force` 的 DROP 重建、`-DbPassword` 与 `-EmptyDbPassword` 互斥 | `install.ps1` | 未在既有库上执行 DROP（避免破坏其他任务的数据） |
+| 非交互模式的交互提示文本 | `install.ps1` | 本次全部按非交互执行，提示文本取自代码 |
+| Nginx 403 / 502、`bind() failed` 等系统级报错 | `nginx\conf\nginx.conf`、§9 通用经验 | 未逐一制造；表格中给出的是定位方向，不是逐字原文 |
+| `engine=external` 的行为 | `install.ps1`、`MatchService` | 本期无外部实现，只验证了 `local` |
 | 升级/回滚/卸载/备份 | 脚本行为与目录结构 | 只验证了「停止 → 保留配置」这一半，未做整包替换演练 |
+| 组策略显式设置执行策略的机器（`MachinePolicy` / `UserPolicy` 已定义） | PowerShell 执行策略优先级 | 未构造组策略环境；这类机器由管理员统一放开，部署包不处理 |
