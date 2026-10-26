@@ -8,7 +8,12 @@ import type { CategoryItem } from '@/types/api'
 import type { ListFilterState } from '@/types/domain'
 
 const props = defineProps<{ modelValue: ListFilterState }>()
-const emit = defineEmits<{ 'update:modelValue': [value: ListFilterState] }>()
+const emit = defineEmits<{
+  'update:modelValue': [value: ListFilterState]
+  // 重置是「清空全部条件 + 页码归位」的原子操作，四个筛选字段表达不了：
+  // 默认筛选下翻页后点重置，四字段与当前值相同，父组件会把页码误判成「仅翻页」而保留。
+  reset: []
+}>()
 
 const TYPE_OPTIONS = [
   { value: '', label: '全部' },
@@ -32,7 +37,7 @@ function patch(next: Partial<ListFilterState>): void {
 }
 
 function reset(): void {
-  emit('update:modelValue', { type: '', status: 'PENDING', categoryId: '', keyword: '' })
+  emit('reset')
 }
 
 onMounted(async () => {

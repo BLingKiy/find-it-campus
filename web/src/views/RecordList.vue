@@ -61,6 +61,14 @@ function updatePage(nextPage: number): void {
   state.value = { ...state.value, page: nextPage }
 }
 
+/**
+ * 重置筛选 = 清空全部条件 + 页码归位，必须显式回第 1 页。
+ * 不能复用 updateFilter：默认筛选下翻页后四字段与当前值相同，会被当成「仅翻页」保留页码。
+ */
+function resetFilter(): void {
+  state.value = { ...DEFAULT_FILTER, page: DEFAULT_PAGING.page, pageSize: state.value.pageSize }
+}
+
 /** 错误态的重试：重发当前筛选条件下的同一个请求（不引入新的调用路径） */
 function reload(): void {
   void run(apiQuery.value)
@@ -81,8 +89,12 @@ function reload(): void {
       </div>
     </header>
 
-    <!-- 不用 v-model：筛选变化要同时重置页码，交给 updateFilter 一处处理 -->
-    <RecordFilterBar :model-value="state" @update:model-value="updateFilter" />
+    <!-- 不用 v-model：改筛选走 updateFilter（回第 1 页），重置走 resetFilter（显式归位） -->
+    <RecordFilterBar
+      :model-value="state"
+      @update:model-value="updateFilter"
+      @reset="resetFilter"
+    />
 
     <div class="record-list__body">
       <ErrorBanner v-if="error" :error="error" retry-label="重试" @retry="reload" />
