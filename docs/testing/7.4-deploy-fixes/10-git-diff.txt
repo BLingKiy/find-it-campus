@@ -4,13 +4,39 @@ deploy/DEPLOY-WINDOWS.md
 deploy/scripts/_common.ps1
 deploy/scripts/install.ps1
 deploy/scripts/start.ps1
+docs/testing/7.4-deploy-fixes/00-environment.txt
+docs/testing/7.4-deploy-fixes/01-policy-blocked.txt
+docs/testing/7.4-deploy-fixes/02-package.txt
+docs/testing/7.4-deploy-fixes/03-install-log.txt
+docs/testing/7.4-deploy-fixes/04-four-commands.txt
+docs/testing/7.4-deploy-fixes/05-start-modes.txt
+docs/testing/7.4-deploy-fixes/06-health-8088.json
+docs/testing/7.4-deploy-fixes/07-pages.txt
+docs/testing/7.4-deploy-fixes/08-ports-and-processes.txt
+docs/testing/7.4-deploy-fixes/09-before-hang.txt
+docs/testing/7.4-deploy-fixes/10-git-diff.txt
+docs/testing/7.4-deploy-fixes/README.md
+docs/testing/7.4-deploy-fixes/timings.txt
 
 === git diff --stat 270a54b HEAD ===
- deploy/DEPLOY-WINDOWS.md   | 130 +++++++++++++++++++++++++++++++++++----------
- deploy/scripts/_common.ps1 |  79 +++++++++++++++++++++++++++
- deploy/scripts/install.ps1 |   8 +--
- deploy/scripts/start.ps1   |  34 +++++++-----
- 4 files changed, 208 insertions(+), 43 deletions(-)
+ deploy/DEPLOY-WINDOWS.md                           | 130 ++++++++++++----
+ deploy/scripts/_common.ps1                         |  79 ++++++++++
+ deploy/scripts/install.ps1                         |   8 +-
+ deploy/scripts/start.ps1                           |  34 +++--
+ docs/testing/7.4-deploy-fixes/00-environment.txt   |  21 +++
+ .../testing/7.4-deploy-fixes/01-policy-blocked.txt |  12 ++
+ docs/testing/7.4-deploy-fixes/02-package.txt       | 122 +++++++++++++++
+ docs/testing/7.4-deploy-fixes/03-install-log.txt   |  29 ++++
+ docs/testing/7.4-deploy-fixes/04-four-commands.txt | 166 +++++++++++++++++++++
+ docs/testing/7.4-deploy-fixes/05-start-modes.txt   |  87 +++++++++++
+ docs/testing/7.4-deploy-fixes/06-health-8088.json  |   1 +
+ docs/testing/7.4-deploy-fixes/07-pages.txt         |   3 +
+ .../7.4-deploy-fixes/08-ports-and-processes.txt    |  79 ++++++++++
+ docs/testing/7.4-deploy-fixes/09-before-hang.txt   |  39 +++++
+ docs/testing/7.4-deploy-fixes/10-git-diff.txt      |  16 ++
+ docs/testing/7.4-deploy-fixes/README.md            |  69 +++++++++
+ docs/testing/7.4-deploy-fixes/timings.txt          |  10 ++
+ 17 files changed, 862 insertions(+), 43 deletions(-)
 
 === 业务代码零改动：git diff --name-only 270a54b HEAD -- server web db ===
 (无输出)
