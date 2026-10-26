@@ -89,6 +89,47 @@ class RecordApiValidationTest {
     }
 
     @Test
+    @DisplayName("POST 提交：请求体不是合法 JSON → 400 + 10001 + fieldErrors 非空（不再是空数组）")
+    void malformedJsonBodyCarriesFieldErrors() throws Exception {
+        mockMvc.perform(post("/api/records")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"type\":"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value(10001))
+                // 契约 §6.2：10001 必须带 fieldErrors[{field,reason}]；空数组等于用户看不到原因
+                .andExpect(jsonPath("$.data.fieldErrors.length()").value(1))
+                .andExpect(jsonPath("$.data.fieldErrors[0].field").value("body"))
+                .andExpect(jsonPath("$.data.fieldErrors[0].reason").isNotEmpty());
+        verifyNoInteractions(recordService);
+    }
+
+    @Test
+    @DisplayName("POST 提交：请求体缺失 → 400 + 10001 + fieldErrors 非空")
+    void missingBodyCarriesFieldErrors() throws Exception {
+        mockMvc.perform(post("/api/records").contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value(10001))
+                .andExpect(jsonPath("$.data.fieldErrors.length()").value(1))
+                .andExpect(jsonPath("$.data.fieldErrors[0].field").value("body"))
+                .andExpect(jsonPath("$.data.fieldErrors[0].reason").isNotEmpty());
+        verifyNoInteractions(recordService);
+    }
+
+    @Test
+    @DisplayName("POST 提交：某字段类型不符 → 400 + 10001 + fieldErrors 指向该字段（能定位就不退回 body）")
+    void wrongFieldTypePointsAtTheField() throws Exception {
+        mockMvc.perform(post("/api/records")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"type":"LOST","title":"丢了一个灰色背包","description":"今天下午在第一教学楼 305 落下","location":"第一教学楼305","occurredAt":"2026-10-21 15:20:00","categoryId":{"nested":1}}
+                                """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value(10001))
+                .andExpect(jsonPath("$.data.fieldErrors[*].field", containsInAnyOrder("categoryId")));
+        verifyNoInteractions(recordService);
+    }
+
+    @Test
     @DisplayName("POST 提交：缺必填字段 → 400 + 10001，fieldErrors 一次给全（契约 §1.1 / §5.3）")
     void missingRequiredFieldsReturnAllFieldErrors() throws Exception {
         mockMvc.perform(post("/api/records")
