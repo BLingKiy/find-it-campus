@@ -471,8 +471,10 @@ mysqldump -h 127.0.0.1 -P 3306 -u root -p --databases find_it_campus --single-tr
 ### 12.1 实测环境与结果
 
 - 环境：Windows 10 Pro for Workstations x64；Windows PowerShell 5.1；Temurin JDK 17.0.20.1；MySQL 8.0.29（本机 3306）；Nginx 1.30.6（包内）；非管理员身份。
-- 包来源：用 `deploy\build-package.ps1` 从 `feat/7.1-windows-deploy` 头（`db59673`，即最终 zip 的基线）重新构建并解压到工作区之外的干净目录执行。最终 zip 与自检时唯一的差别是本文档本体（7.2 重写了它）以及随之重算的 `SHA256SUMS.txt`，`app/`、`web/dist/`、`nginx/`、`db/`、`scripts/` 完全一致。
-- 结果：`install.ps1` 退出码 0（自定义库名 `findit_deploy72`，避开本机既有库）→ `start.ps1` 退出码 0 → `/api/health` 200 且 `status=UP`/`db=UP` → `/`、`/records/1`、`/records/new` 均 200 → `POST /api/match` 200，`recordId=13`、95% → `status.ps1` 退出码 0 且 `RESULT: HEALTHY` → `stop.ps1` 退出码 0、8088/18080 均释放 → 停止后 `status.ps1` 退出码 1、`RESULT: UNHEALTHY` → 再次 `stop.ps1` 退出码 0（幂等）。
+- 跑了两次，同一套命令：
+  1. `deploy\build-package.ps1` 从 `feat/7.1-windows-deploy` 头（`db59673`）构建的包，用于校订本文；
+  2. **最终交付的 zip 本身**（含本文、`BUILD-INFO.txt` 记录 `Git dirty: false`），重新解压到工作区之外的干净目录复跑一遍。
+- 结果（两次一致）：`install.ps1` 退出码 0（自定义库名 `findit_deploy72` / `findit_final72`，避开本机既有库）→ `start.ps1` 退出码 0 → `/api/health` 200 且 `status=UP`/`db=UP` → `/`、`/records/1`、`/records/new` 均 200 → `POST /api/match` 200，`recordId=13`、95% → `status.ps1` 退出码 0 且 `RESULT: HEALTHY` → `stop.ps1` 退出码 0、8088/18080 均释放 → 停止后 `status.ps1` 退出码 1、`RESULT: UNHEALTHY` → 再次 `stop.ps1` 退出码 0（幂等）。
 - 额外验证：库已存在时 `install.ps1` 按预期拒绝并给出 `-Force` 提示；8088 被占用时 `start.ps1` 报出占用 PID 并回滚已拉起的后端（18080 随之释放）。
 
 ### 12.2 未实测、依据为读脚本/读配置的条目
