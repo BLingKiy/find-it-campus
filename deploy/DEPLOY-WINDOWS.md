@@ -45,12 +45,13 @@ openjdk version "17.0.20.1" 2026-08-18
 
 ### 2.1 首次部署：执行策略
 
-出厂 Windows 客户端的执行策略五个作用域通常全是 `Undefined`，有效值因此是 **`Restricted`**：在这个取值下，双击不出问题，但在 PowerShell 里直接调用脚本会被拦下：
+出厂 Windows 客户端的执行策略五个作用域通常全是 `Undefined`，有效值因此是 **`Restricted`**。在这个取值下，`.ps1` 脚本不能在 PowerShell 里直接运行：
 
 ```
-无法加载文件 D:\apps\find-it-campus-windows-x64\scripts\install.ps1，因为在此系统上禁止运行脚本。
-有关详细信息，请参阅 about_Execution_Policies ...
+无法加载文件 D:\apps\find-it-campus-windows-x64\scripts\install.ps1，因为在此系统上禁止运行脚本。有关详细信息，请参阅 https:/go.microsoft.com/fwlink/?LinkID=135170 中的 about_Execution_Policies。
 ```
+
+（原文照录，只把路径换成本文示例目录。完整异常类型是 `System.Management.Automation.PSSecurityException`。）
 
 本文所有脚本命令都写成这样，照抄即可跑通：
 
@@ -62,7 +63,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts\install.ps1 <参数�
 - `-NoProfile` 让子进程跳过用户 profile，避免目标机上不可控的 profile 脚本干扰。
 - 退出码就是脚本本身的退出码，可以直接给自动化验收用。
 
-嫌每条命令都带参数太长，也可以只在当前窗口临时放开，之后 `.\scripts\start.ps1` 这类写法在本窗口内可直接用：
+如果不想每条命令都带这么长的前缀，也可以只在当前窗口临时放开，之后 `.\scripts\start.ps1` 这类写法在本窗口内可直接用：
 
 ```powershell
 Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass

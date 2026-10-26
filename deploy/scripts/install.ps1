@@ -5,8 +5,10 @@
 #       → 由 config/deploy.env.example 生成 config/deploy.env.ps1。
 # 边界：不注册 Windows 服务、不修改系统环境变量、不需要管理员权限。
 #
-# 示例（完全非交互，供自动验收）：
-#   .\scripts\install.ps1 -DbHost 127.0.0.1 -DbPort 3306 -DbName find_it_campus `
+# 示例（完全非交互，供自动验收；带 -ExecutionPolicy Bypass 是为了在默认
+#       Restricted 的机器上也能直接跑，见 DEPLOY-WINDOWS.md §2.1）：
+#   powershell -NoProfile -ExecutionPolicy Bypass -File scripts\install.ps1 `
+#       -DbHost 127.0.0.1 -DbPort 3306 -DbName find_it_campus `
 #       -DbUser root -DbPassword '你的密码' -Engine local `
 #       -MysqlBin 'C:\mysql\bin\mysql.exe' -JavaBin 'C:\jdk17\bin\java.exe'
 #
@@ -281,7 +283,7 @@ try {
         Write-Section '安装完成'
         Write-Log ('数据库：{0}:{1}/{2}（utf8mb4）' -f $DbHost, $DbPort, $DbName) 'OK'
         Write-Log ('配置：' + $configPath) 'OK'
-        Write-Log '下一步：.\scripts\start.ps1  （启动后端 18080 与 Nginx 8088）'
+        Write-Log '下一步：powershell -NoProfile -ExecutionPolicy Bypass -File scripts\start.ps1  （启动后端 18080 与 Nginx 8088）'
         Write-Log '访问：http://127.0.0.1:8088/'
         Write-Log ('安装日志：' + (Get-ScriptLogPath))
         exit 0
