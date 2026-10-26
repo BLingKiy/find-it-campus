@@ -31,3 +31,12 @@ server/src/main/resources/application-local.yml
 
 # 课件原始素材（仓库初始化时已有）
 /TheClassMaterial/
+
+# 7.1 Windows 部署包：构建缓存、staging、zip 产物不入库
+deploy/.cache/
+deploy/.staging/
+deploy/dist/
+
+# install.ps1 生成的真实连接配置（含数据库密码），绝不提交
+deploy/config/deploy.env.ps1
+deploy/**/config/deploy.env.ps1
