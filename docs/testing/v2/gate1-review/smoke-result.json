@@ -1,0 +1,22 @@
+[
+  {
+    "name": "1 登录页渲染",
+    "ok": true,
+    "detail": "title=\"登录\""
+  },
+  {
+    "name": "2 列表页有数据",
+    "ok": true,
+    "detail": "卡片链接 19 个，首个 /records/26，标题「启事列表」"
+  },
+  {
+    "name": "3 详情页渲染",
+    "ok": true,
+    "detail": "path=/records/26 title=\"启事详情\" bodyLen=461"
+  },
+  {
+    "name": "4 /my 页渲染",
+    "ok": true,
+    "detail": "path=/my title=\"我的启事\" 我的启事链接 0 个"
+  }
+]
