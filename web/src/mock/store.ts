@@ -14,10 +14,10 @@ import type {
   RecordStatus
 } from '@/types/api'
 
-/** 状态流转表（契约 §6.1）：模拟后端 RecordStatusPolicy，前端不自行推导 */
+/** 状态流转表（契约 §4.5）：模拟后端 RecordStatusPolicy，前端不自行推导 */
 const TRANSITIONS: Record<RecordStatus, RecordStatus[]> = {
-  PENDING: ['CLAIMED', 'CLOSED'],
-  CLAIMED: ['CLOSED'],
+  PENDING: ['COMPLETED', 'CLOSED'],
+  COMPLETED: [],
   CLOSED: []
 }
 
@@ -47,7 +47,14 @@ export const MOCK_CATEGORIES: CategoryItem[] = [
   { id: 9, code: 'SPORTS', name: '运动器材', sortOrder: 80, active: false }
 ]
 
-type MockRecord = RecordDetail & { deleted: boolean }
+/**
+ * mock 只补 v1 就有的字段：v2 新增字段（isMine / completedAt / pair 计数）在 toDetail 里给默认值，
+ * 免得每条种子都抄一遍。mock 没有登录态，isMine 恒 false。
+ */
+type MockRecord = Omit<
+  RecordDetail,
+  'isMine' | 'completedAt' | 'hasMatchedPair' | 'matchedPairCount' | 'pairState' | 'lowConfidenceCount'
+> & { deleted: boolean }
 
 /** 演示期用 sessionStorage 续命：整页刷新后仍能看到刚创建的记录（仅本标签页）。 */
 const STORAGE_KEY = 'find-it-campus:mock-records:v1'
@@ -126,7 +133,7 @@ const SEED_RECORDS: MockRecord[] = [
   {
     id: 9,
     type: 'LOST',
-    status: 'CLAIMED',
+    status: 'COMPLETED',
     title: '丢了一个灰色双肩背包',
     description: '第一教学楼 305 下课后落在座位上，灰色双肩背包，侧面有个水杯袋，里面有一本线性代数课本。',
     categoryId: 5,
@@ -135,7 +142,7 @@ const SEED_RECORDS: MockRecord[] = [
     occurredAt: '2026-10-19 15:20:00',
     contact: '13800000009',
     publisherName: '张同学',
-    allowedStatuses: allowedStatuses('CLAIMED'),
+    allowedStatuses: allowedStatuses('COMPLETED'),
     createdAt: '2026-10-19 16:05:00',
     updatedAt: '2026-10-19 18:20:00',
     deleted: false
@@ -160,7 +167,7 @@ const SEED_RECORDS: MockRecord[] = [
   {
     id: 23,
     type: 'FOUND',
-    status: 'CLAIMED',
+    status: 'COMPLETED',
     title: '食堂捡到一串钥匙挂小熊挂件',
     description: '第二食堂二楼餐桌上捡到一串钥匙，挂着棕色小熊挂件和一枚门禁卡。',
     categoryId: 3,
@@ -169,7 +176,7 @@ const SEED_RECORDS: MockRecord[] = [
     occurredAt: '2026-10-17 12:15:00',
     contact: '13800000023',
     publisherName: '赵同学',
-    allowedStatuses: allowedStatuses('CLAIMED'),
+    allowedStatuses: allowedStatuses('COMPLETED'),
     createdAt: '2026-10-17 12:48:00',
     updatedAt: '2026-10-17 14:10:00',
     deleted: false
@@ -245,12 +252,32 @@ function persist(): void {
 
 function toListItem(record: MockRecord): RecordListItem {
   const { id, type, status, title, categoryId, categoryName, location, occurredAt, createdAt } = record
-  return { id, type, status, title, categoryId, categoryName, location, occurredAt, createdAt }
+  return {
+    id,
+    type,
+    status,
+    title,
+    categoryId,
+    categoryName,
+    location,
+    occurredAt,
+    createdAt,
+    isMine: false
+  }
 }
 
 function toDetail(record: MockRecord): RecordDetail {
   const { deleted: _deleted, ...rest } = record
-  return rest
+  // mock 不模拟登录态：一律按遮蔽视角给默认值（真实遮蔽由后端负责）
+  return {
+    ...rest,
+    isMine: false,
+    completedAt: null,
+    hasMatchedPair: false,
+    matchedPairCount: 0,
+    pairState: null,
+    lowConfidenceCount: 0
+  }
 }
 
 /** GET /api/records（契约 §3）：status 默认 PENDING，ALL 表示不限 */

@@ -60,8 +60,8 @@
   /* ---- 颜色 · 状态标签 ------------------------------------------------ */
   --color-status-pending-fg: var(--color-info);
   --color-status-pending-bg: var(--color-info-soft);
-  --color-status-claimed-fg: var(--color-warning);
-  --color-status-claimed-bg: var(--color-warning-soft);
+  --color-status-completed-fg: var(--color-success);
+  --color-status-completed-bg: var(--color-success-soft);
   --color-status-closed-fg: var(--color-text-muted);
   --color-status-closed-bg: var(--color-surface-muted);
 

@@ -2,7 +2,8 @@
 // 后端只回枚举原值，中文文案由前端映射（components/record/*Tag.vue）
 
 export type RecordType = 'LOST' | 'FOUND'
-export type RecordStatus = 'PENDING' | 'CLAIMED' | 'CLOSED'
+/** v2 三态（契约 §1）：CLAIMED 已作废，后端收到即 10001 */
+export type RecordStatus = 'PENDING' | 'COMPLETED' | 'CLOSED'
 export type SortBy = 'createdAt' | 'occurredAt'
 export type SortOrder = 'asc' | 'desc'
 export type MatchEngineKind = 'LOCAL_KEYWORD' | 'EXTERNAL_EMBEDDING'
@@ -28,20 +29,37 @@ export interface RecordListItem {
   id: number
   type: RecordType
   status: RecordStatus
+  /** 非本人行已被服务端打码；本人行是原文 */
   title: string
   categoryId: number | null
   categoryName: string | null
+  /** 非本人行已被服务端截断（末尾带 …） */
   location: string
   occurredAt: string
   createdAt: string
+  /**
+   * v2 所有权标记：判断依据是 publisher_id，不是展示名。
+   * 前端只据它决定是否渲染「编辑 / 关闭」入口 —— 真正的越权拦截在服务端。
+   */
+  isMine: boolean
 }
 
 export interface RecordDetail extends RecordListItem {
   description: string
+  /** 非所有者一律 null（服务端整体置空，不做 138****0001 类部分掩码） */
   contact: string | null
+  /** 非所有者已被服务端脱敏为「林**」；空值兜底「匿名同学」 */
   publisherName: string | null
+  /** 完成时间只对所有者返回；非所有者与未完成记录均为 null */
+  completedAt: string | null
   updatedAt: string
+  /** 服务端状态机给出；非所有者恒为空数组 */
   allowedStatuses: RecordStatus[]
+  /** 是否已有有效 MATCHED pair：决定「标记完成」能不能点（服务端同一判断） */
+  hasMatchedPair: boolean
+  matchedPairCount: number
+  pairState: string | null
+  lowConfidenceCount: number
 }
 
 export interface RecordCreatePayload {
@@ -111,4 +129,17 @@ export interface CategoryItem {
 export interface FieldErrorItem {
   field: string
   reason: string
+}
+
+/** GET /api/auth/me、POST /api/auth/login 的 data（契约 §4.9/§4.11，只有三个字段） */
+export interface UserInfo {
+  id: number
+  studentNo: string
+  displayName: string
+}
+
+/** POST /api/auth/login 请求体（契约 §4.9） */
+export interface LoginPayload {
+  studentNo: string
+  password: string
 }

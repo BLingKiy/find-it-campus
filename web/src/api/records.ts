@@ -29,11 +29,15 @@ export function updateRecord(id: number, payload: RecordCreatePayload): Promise<
   return request<RecordDetail>(`/records/${id}`, { method: 'PUT', body: payload })
 }
 
-/** PATCH /api/records/{id}/status（契约 §6.1，只发一个字段） */
+/** PATCH /api/records/{id}/status（契约 §4.5，只发一个字段） */
 export function patchStatus(id: number, status: RecordStatus): Promise<{
   id: number
   status: RecordStatus
+  completedAt: string | null
+  updatedAt: string
   allowedStatuses: RecordStatus[]
+  hasMatchedPair: boolean
+  matchedPairCount: number
 }> {
   return request(`/records/${id}/status`, { method: 'PATCH', body: { status } })
 }

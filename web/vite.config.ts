@@ -18,5 +18,13 @@ export default defineConfig({
       '/api': { target: 'http://localhost:18080', changeOrigin: true }
     }
   },
+  // 预览（dist 产物）也走同一条 /api 代理：C2 的 DOM 扫描必须在生产构建上做，
+  // dev server 会给脚本 URL 带 `?t=<13 位毫秒>` 热更新戳，那也是 11 位数字串（误报）。
+  preview: {
+    port: 4173,
+    proxy: {
+      '/api': { target: 'http://localhost:18080', changeOrigin: true }
+    }
+  },
   build: { outDir: 'dist', sourcemap: false }
 })
