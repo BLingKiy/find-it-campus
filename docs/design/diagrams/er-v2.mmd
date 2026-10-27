@@ -1,6 +1,7 @@
 %% find-it-campus v2 · 7 表 ER 图（关系与关键约束列）
 %% 事实来源：docs/design/v2-architecture.md §4 + db/schema.sql（B1 落地）
 %% 取舍：图只画关系与关键列；完整列、CHECK、索引见正文 §4.2 DDL 草案。
+%% 终态模型（v2.1）：t_record 三态 + completed_at；t_pair_score 四态 + 两端 confirmed_at。
 erDiagram
   t_user ||--o{ t_record : "publisher_id（RESTRICT，可空仅迁移期）"
   t_category ||--o{ t_record : "category_id（RESTRICT，可空）"
@@ -31,9 +32,10 @@ erDiagram
   t_record {
     BIGINT id PK "对外资源 id"
     VARCHAR type "LOST / FOUND"
-    VARCHAR status "PENDING / CLAIMED / CLOSED"
+    VARCHAR status "PENDING / COMPLETED / CLOSED（三态；CLAIMED 作废）"
+    DATETIME completed_at "本人标记完成时间；保留期起点；COMPLETED 时非空"
     BIGINT publisher_id FK "发布者；应用层强制非空"
-    VARCHAR pair_state "PENDING / SCORING / READY / DEGRADED"
+    VARCHAR pair_state "PENDING / SCORING / READY / DEGRADED（系统派生，非业务状态）"
     DATETIME pair_scored_at "最后一次打分完成时间"
     DATETIME deleted_at "非空 = 逻辑删除"
     DATETIME updated_at "只由本人写路径更新；系统任务不写"
@@ -60,7 +62,9 @@ erDiagram
     DATETIME found_unlocked_at "FOUND 端授权公开时间"
     VARCHAR lost_unlock_note "LOST 端附言，已打码，<=200"
     VARCHAR found_unlock_note "FOUND 端附言，已打码，<=200"
-    VARCHAR status "NEW / CONTACTED / IGNORED（无已解决态）"
+    DATETIME lost_confirmed_at "LOST 端确认时间；两端均非空 ⇔ MATCHED"
+    DATETIME found_confirmed_at "FOUND 端确认时间；两端均非空 ⇔ MATCHED"
+    VARCHAR status "NEW / CONTACTED / MATCHED / IGNORED（无已解决态）"
   }
 
   t_notification {
@@ -79,6 +83,6 @@ erDiagram
     VARCHAR viewer_side "LOST / FOUND"
     VARCHAR target_side "LOST / FOUND"
     DECIMAL score "查看时分数快照"
-    VARCHAR result "GRANTED / DENIED_*"
+    VARCHAR result "GRANTED / DENIED_*（含 DENIED_PAIR_INVALID）"
     VARCHAR request_id "关联请求追踪号"
   }

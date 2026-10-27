@@ -1,6 +1,6 @@
 # 附录 A · 接口清单
 
-> **v2 提示（2026-10-27）**：本清单是 v1（9 个接口、无鉴权）的代码核对附录。v2（身份/置信度/通知）的 17 个业务接口与权限矩阵以 `docs/api-contract-v2.md` 为准；不要按本表实现 v2 的鉴权与字段可见性。
+> **v2 提示（2026-10-27，v2.1 终态口径）**：本清单是 v1（9 个接口、无鉴权）的代码核对附录。v2（身份/置信度/通知）的 17 个业务接口与权限矩阵以 `docs/api-contract-v2.md` 为准；不要按本表实现 v2 的鉴权与字段可见性。v2 的记录状态是 `PENDING/COMPLETED/CLOSED`（`CLAIMED` 作废），pair 四态含 `MATCHED`；本表的 `CLAIMED` 流转只属于 v1。
 >
 > 本节是独立成表的接口清单，可直接对照代码核对。事实源：`server/src/main/java/com/findit/campus/**/web/*Controller.java`、`**/web/dto/*.java`、`docs/api-contract.md`。
 > 核对结果（每条路径与字段的 `file:line`）见附录 B `consistency-checklist.md`。

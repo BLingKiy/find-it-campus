@@ -1,6 +1,6 @@
 # API 契约（1.2 交付物 2）
 
-> **v2 提示（2026-10-27）**：v2（身份 / 置信度 / 通知）的接口、字段、鉴权、遮蔽与 contact 校验以 `docs/api-contract-v2.md` 为准；本文仅保留 v1 基线。v2 已变更的点：写接口要求登录、匿名/非所有者走遮蔽、`contact` 新写入只接受 11 位手机号、CORS 允许 credentials、`/api/match` 需登录且不自动降级。
+> **v2 提示（2026-10-27，v2.1 终态口径）**：v2（身份 / 置信度 / 通知）的接口、字段、鉴权、遮蔽与 contact 校验以 `docs/api-contract-v2.md` 为准；本文仅保留 v1 基线。v2 的记录状态是 `PENDING/COMPLETED/CLOSED`（`CLAIMED` 作废），pair 是 `NEW/CONTACTED/MATCHED/IGNORED` 四态；本文所有 `CLAIMED` 表述都只属于 v1，不得用于 v2 实现。v2 已变更的点：写接口要求登录、匿名/非所有者走遮蔽、`contact` 新写入只接受 11 位手机号、CORS 允许 credentials、`/api/match` 需登录且不自动降级。
 >
 > 适用范围：`server` 全部 REST 接口 + `web` 请求层。3.1 后端与 4.1 前端**并行开发时以本文为准**，出现分歧以本文胜出，改动须先改本文再改代码。
 > 记法：`必填` = 缺字段即 `10001`；`可空` = 允许 null；字符串长度上限与 `db/schema.sql` 列长度**必须一致**（改了 DDL 就要改这里）。
