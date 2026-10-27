@@ -71,5 +71,5 @@ C:/Project/tools/mysql/mysql-8.0.29-winx64/bin/mysql.exe --default-character-set
 
 > 下游注意：v1 的 `RecordStatus` 枚举仍是 `PENDING/CLAIMED/CLOSED`，而 v2 库已改为
 > `PENDING/COMPLETED/CLOSED`。公共列表（默认 `status=PENDING`）不受影响；
-> `status=ALL|COMPLETED` 与 `PATCH status=COMPLETED` 需要 C1/B2 同步枚举后再上线，
+> `status=ALL|COMPLETED` 与 `PATCH status=COMPLETED` 需要 C1 同步枚举后再上线，
 > 不要只把 B1 的库结构单独发到运行环境。

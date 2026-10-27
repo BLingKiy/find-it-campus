@@ -1,6 +1,6 @@
 # B1 数据层 v2 · 7 表 + seed 执行记录
 
-- 任务：[ZHYYKFX-49](mention://task/582daf80-2b01-453c-a41f-3e89046d5dc1) · B1 数据层 v2（7 表 + seed）｜磐石石
+- 任务：[ZHYYKFX-49](https://app.hifox.com/nhnok/task/ZHYYKFX-49) · B1 数据层 v2（7 表 + seed）｜磐石石
 - 分支：`feat/v2-B1-data-layer`（从 `origin/main` @ `21784f6` 切出，未合并 main）
 - 契约：`docs/design/v2-architecture.md` §4.2（A1 冻结稿，`feat/v2-A1-arch-contract` @ `b90270e`）
 - 执行日期：2026-10-27
@@ -709,7 +709,7 @@ matched_invariant_bad: 0
    需文档侧更新 TERM-06 / PAIR-07；B1 不改 A1 文档。
 5. **v1 后端枚举未同步**：`RecordStatus` 仍是 `PENDING/CLAIMED/CLOSED`，数据库 CHECK 已删
    `CLAIMED`、新增 `COMPLETED`。默认公共列表（`status=PENDING`）不受影响（本验收已过），
-   但 `GET /api/records?status=ALL|COMPLETED` 和 `PATCH status=COMPLETED` 需要 C1/B2 同步枚举，
+   但 `GET /api/records?status=ALL|COMPLETED` 和 `PATCH status=COMPLETED` 需要 C1 同步枚举，
    否则会出现枚举映射失败或 CHECK 拒绝。**B1 与 C1 必须同批上线，不能只发 B1 到运行环境。**
 6. **t_match_result / t_access_log 故意为空**：真实的匹配快照与审计由运行期写入；
    预置假数据会污染评估与审计证据链。
