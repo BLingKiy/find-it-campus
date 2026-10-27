@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!--
+  t_access_log 只插不改不删；没有 contact / note 列，审计不复制敏感值。
+  所有文本都在 Java 侧截断到列宽（request_id 64 / ip 45 / user_agent 255），
+  避免严格模式下超长插入把一次「查看联系方式」变成 500。
+-->
+<mapper namespace="com.findit.campus.pair.mapper.AccessLogMapper">
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO t_access_log
+            (pair_id, viewer_id, viewer_side, target_side, score, result, request_id, ip, user_agent)
+        VALUES
+            (#{pairId}, #{viewerId}, #{viewerSide}, #{targetSide}, #{score}, #{result},
+             #{requestId}, #{ip}, #{userAgent})
+    </insert>
+
+</mapper>

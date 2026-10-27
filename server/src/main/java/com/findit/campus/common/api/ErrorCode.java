@@ -45,6 +45,13 @@ public enum ErrorCode {
     RECORD_ILLEGAL_STATUS_TRANSITION(20002, HttpStatus.CONFLICT, "状态流转非法"),
     RECORD_OPERATION_NOT_ALLOWED(20003, HttpStatus.CONFLICT, "记录当前状态不可执行该操作"),
     /**
+     * 配对不存在或任一端记录已删除（契约 §4.13 / §4.14 / §4.15）。
+     *
+     * <p>与 50005 刻意分流：20004 是「这一行/这一端已经没了」；50005 是「行还在，但所属记录
+     * CLOSED 或 COMPLETED 到期，pair 失效」。CLOSED 一律走 50005，不用 20004。
+     */
+    PAIR_NOT_FOUND(20004, HttpStatus.NOT_FOUND, "配对不存在或任一端记录已删除"),
+    /**
      * 标记完成的前置未满足（契约 §4.5：HTTP 409，body code 20005，<b>零写入</b>）。
      *
      * <p>{@code data} 固定带 {@code currentStatus/required/matchedPairCount}：
@@ -63,6 +70,14 @@ public enum ErrorCode {
     CATEGORY_INACTIVE(40002, HttpStatus.CONFLICT, "分类停用不可选"),
 
     // ---- 5xxxx 配对（D1 起）----
+    /** 档位不足：{@code score < contact_unlock_threshold}（契约 §4.13/§4.14/§4.15）。 */
+    CONTACT_TIER_INSUFFICIENT(50002, HttpStatus.FORBIDDEN, "匹配度不足，无法查看联系方式"),
+    /** pair 已处于 MATCHED / IGNORED 终态，再改一律 409（契约 §4.13）。 */
+    PAIR_STATE_CONFLICT(50003, HttpStatus.CONFLICT, "配对状态已变更，无法执行该操作"),
+    /** 通知不存在（契约 §4.17）。 */
+    NOTIFICATION_NOT_FOUND(50004, HttpStatus.NOT_FOUND, "通知不存在"),
+    /** 所属记录 CLOSED 或 COMPLETED 到期，pair 失效（契约 §4.13/§4.14/§4.15）。 */
+    PAIR_INVALID(50005, HttpStatus.FORBIDDEN, "该配对已失效"),
     /**
      * 兜底扫描单飞：已有一轮在跑（契约 §4.18 的 409）。
      *

@@ -50,6 +50,15 @@
         WHERE lost_id = #{lostId} AND found_id = #{foundId}
     </select>
 
+    <select id="selectById" resultMap="pairScoreMap">
+        SELECT id, lost_id, found_id, score, engine, degraded_reason, prompt_version,
+               latency_ms, prompt_tokens, completion_tokens, lost_hash, found_hash,
+               lost_unlocked_at, found_unlocked_at, lost_unlock_note, found_unlock_note,
+               lost_confirmed_at, found_confirmed_at, status, created_at, updated_at
+        FROM t_pair_score
+        WHERE id = #{id}
+    </select>
+
     <!--
       幂等写入：唯一键 (lost_id, found_id) 命中时只更新分数类列。
       VALUES(col) 在 MySQL 8.0.20+ 被标记为 deprecated 但仍可用；换成 `AS new` 语法会
@@ -106,5 +115,76 @@
         ORDER BY updated_at ASC, id ASC
         LIMIT #{limit}
     </select>
+
+    <!--
+      ===================== E1：用户动作写路径 =====================
+      这三组 SQL 只被 PairActionService / PairUnlockService 调用；D1 的重算 upsert 不碰这些列。
+      所有 UPDATE 都带 status 条件：并发下影响 0 行 = 状态已被别人改过，由 service 回读再判定，
+      不在这里用 SELECT ... FOR UPDATE 加锁（pair 进展不是资金，行锁只会把接口串行化）。
+    -->
+
+    <update id="markContacted">
+        UPDATE t_pair_score
+        SET status = 'CONTACTED'
+        WHERE id = #{id} AND status = 'NEW'
+    </update>
+
+    <update id="markIgnored">
+        UPDATE t_pair_score
+        SET status = 'IGNORED'
+        WHERE id = #{id} AND status IN ('NEW', 'CONTACTED')
+    </update>
+
+    <!--
+      confirmed_at 用 COALESCE：重复 CONFIRM 不刷新第一次的时间（契约 §4.13 幂等）。
+      status 赋值刻意放在两个 confirmed_at 之后：MySQL 的 SET 子句从左到右求值，
+      status 的 CASE 能看到前面刚写入的确认时间，并与行内另一端的当前值一起判断是否 MATCHED。
+      这样「两端并发各确认一端」在行锁下也能得到 MATCHED，而不是被 CHECK 约束打回 500。
+    -->
+    <update id="confirmOwned">
+        UPDATE t_pair_score
+        <set>
+            <if test="ownsLost">
+                lost_confirmed_at = COALESCE(lost_confirmed_at, #{at}),
+            </if>
+            <if test="ownsFound">
+                found_confirmed_at = COALESCE(found_confirmed_at, #{at}),
+            </if>
+            status = CASE
+                WHEN lost_confirmed_at IS NOT NULL AND found_confirmed_at IS NOT NULL THEN 'MATCHED'
+                ELSE 'CONTACTED'
+            END
+        </set>
+        WHERE id = #{id} AND status IN ('NEW', 'CONTACTED')
+    </update>
+
+    <update id="publishLost">
+        UPDATE t_pair_score
+        SET lost_unlocked_at = COALESCE(lost_unlocked_at, #{at}),
+            lost_unlock_note = #{note}
+        WHERE id = #{id}
+    </update>
+
+    <update id="publishFound">
+        UPDATE t_pair_score
+        SET found_unlocked_at = COALESCE(found_unlocked_at, #{at}),
+            found_unlock_note = #{note}
+        WHERE id = #{id}
+    </update>
+
+    <!-- 两列在同一条语句里一起置空，满足 ck_pair_lost_note「有附言 ⇒ 有授权时间」的终态要求 -->
+    <update id="revokeLost">
+        UPDATE t_pair_score
+        SET lost_unlock_note = NULL,
+            lost_unlocked_at = NULL
+        WHERE id = #{id}
+    </update>
+
+    <update id="revokeFound">
+        UPDATE t_pair_score
+        SET found_unlock_note = NULL,
+            found_unlocked_at = NULL
+        WHERE id = #{id}
+    </update>
 
 </mapper>
