@@ -9,10 +9,11 @@
 | 项 | 值 | 取得方式 |
 |---|---|---|
 | 集成分支 | `feat/v2-integration` | `git ls-remote origin refs/heads/feat/v2-integration` |
-| 分支头（merge commit） | `b1ecfa3f662a37b60ccf5c25df8bfe64c8a1db6c` | 同上 |
-| merge 的两个 parent | `0fff831bb044cdb95069e34de818abc3538404e4`（C1）+ `acf98dd539687642922eced495ad153ddcbd576b`（C2） | `git log -1 --pretty=%P` |
+| 分支头（本文提交后） | `618c1ba42143bfdb51ca6f700b0be120852eea1c`（证据提交，父为 merge commit） | 同上 |
+| merge commit（集成点） | `b1ecfa3f662a37b60ccf5c25df8bfe64c8a1db6c` | `git log -1 b1ecfa3 --pretty=%H` |
+| merge 的两个 parent | `0fff831bb044cdb95069e34de818abc3538404e4`（C1）+ `acf98dd539687642922eced495ad153ddcbd576b`（C2） | `git log -1 --pretty=%P b1ecfa3` |
 | merge 方式 | `git merge --no-ff`，**0 冲突**，无人工改动 | `git log --oneline --graph` |
-| `origin/main` | `21784f674ca3a5915aaa86dc95edd7a0e55e973d`（未动，仍是 21784f6） | `git ls-remote origin refs/heads/main` |
+| `origin/main` | `21784f674ca3a5915aaa86dc95edd7a0e55e973d`（提交前后均未动，仍是 21784f6） | `git ls-remote origin refs/heads/main` |
 
 `git ls-remote` 实读的五个功能分支（与任务书基线逐字符一致，无漂移）：
 
