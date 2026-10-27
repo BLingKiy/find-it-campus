@@ -671,7 +671,7 @@ SELECT status, completed_at, updated_at FROM t_record WHERE id = ?;
 | pair 不存在 / 任一端记录已删 | 404 | 20004 |
 | `action` 非法 / note 超 200 | 400 | 10001 |
 
-> **撤回与失效的边界：** CLOSED/到期后 pair 失效，`REVOKE` 也返回 403/50005；此时对端本来就看不到号码，撤回不再有安全意义。附言（写入前已打码）随 pair 行保留供审计，不做定时清空；要彻底移除需走数据保留/删除流程（v2 范围外）。
+> **撤回与失效的边界：** CLOSED/到期后 pair 失效，`REVOKE` 也返回 403/50005；此时对端本来就看不到号码，撤回不再有安全意义。`REVOKE` 在一条 UPDATE 里把本端 `*_unlocked_at` 与 `*_unlock_note` 同时置空，**附言随撤回清空**；`t_access_log` 只记查看事实，不复制附言或号码。
 
 **幂等：** `(pair,side,action,noteHash)` 自然幂等：重复 `PUBLISH` 同 note 返回 200 且 `unlockedAt` 不变、不重复通知；重复 `REVOKE` 返回 200 且保持 null。
 
@@ -729,8 +729,9 @@ SELECT status, completed_at, updated_at FROM t_record WHERE id = ?;
 #### `POST /api/ops/pair-scan`
 
 - 仅当环境变量 `OPS_SCAN_TOKEN` 非空时启用；请求头 `X-Ops-Token` 必须匹配，否则 **404**（隐藏入口）。
-- 成功：200，`data={scanned,rescored,degraded,skipped,elapsedMs}`。
-- 并发：已有扫描在跑 → 409。
+- 成功：200，`data={scanned,rescored,degraded,skipped,expired,limited,elapsedMs}`。
+- 实现另附 `trigger`（`http/scan`）与 `counters`（进程内计数器快照），属于排障附加信息，不参与扫描结果口径。
+- 并发：已有扫描在跑 → 409，body `code=50006`（`PAIR_SCAN_IN_PROGRESS`），`message=兜底扫描正在运行，请稍后重试`。
 - 不写 `t_record.status/deleted_at/updated_at`；只补配对与通知。
 - 不属于 17 个业务接口，不参与三态矩阵。
 
@@ -805,6 +806,7 @@ SELECT status, completed_at, updated_at FROM t_record WHERE id = ?;
 | 50003 | 409 | 配对状态流转非法 | PATCH pair（MATCHED/IGNORED 再改） |
 | 50004 | 404 | 通知不存在 | notification read |
 | 50005 | 403 | 配对因记录终态失效 | 任一端 CLOSED / COMPLETED 到期：contact / contact-unlock / PATCH pair |
+| 50006 | 409 | 兜底扫描正在运行 | ops/pair-scan（body code；契约 §4.18） |
 
 **403 两个 code 必须分流：** `50002` = 分数不够；`50005` = 记录已关闭/已完成到期（分数再高也不行）。前端文案不同，不能合并成“无权限”。
 

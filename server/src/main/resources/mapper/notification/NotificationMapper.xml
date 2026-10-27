@@ -34,6 +34,19 @@
         SELECT COUNT(*) FROM t_notification WHERE user_id = #{userId} AND read_at IS NULL
     </select>
 
+    <select id="selectById" resultMap="notificationMap">
+        SELECT id, user_id, pair_id, type, title, body, read_at, created_at
+        FROM t_notification
+        WHERE id = #{id}
+    </select>
+
+    <!-- 已读只写一次：read_at IS NULL 是幂等条件，第二次 update 返回 0 且时间不变 -->
+    <update id="markRead">
+        UPDATE t_notification
+        SET read_at = #{at}
+        WHERE id = #{id} AND user_id = #{userId} AND read_at IS NULL
+    </update>
+
     <!--
       幂等写入：唯一键 (user_id, pair_id, type) 命中时 id = id 是 no-op。
       标题/正文由调用方在写入前打码（D1 的 PairNotificationPublisher），本文件不做脱敏 ——
