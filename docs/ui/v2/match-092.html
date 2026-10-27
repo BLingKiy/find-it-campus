@@ -46,7 +46,7 @@
               <div>
                 <div class="record-kicker">
                   <span class="badge badge--lost badge--dot">寻物</span>
-                  <span class="badge badge--pending badge--dot">待认领</span>
+                  <span class="badge badge--pending badge--dot">进行中</span>
                   <span class="mono">#13</span>
                   <span class="mono">发布于 10 月 20 日 15:12</span>
                 </div>
@@ -97,7 +97,7 @@
                       <span class="pair-side__role">寻物方 · 你的启事</span>
                       <div class="row-wrap">
                         <span class="badge badge--lost badge--dot">寻物</span>
-                        <span class="badge badge--pending badge--dot">待认领</span>
+                        <span class="badge badge--pending badge--dot">进行中</span>
                       </div>
                       <h3 id="pair-1-title" class="pair-side__title">黑色钱包（图书馆三楼）</h3>
                       <p class="pair-side__meta">钱包卡证 · 图书馆三楼自习区 · 丢失 10-20 15:00</p>
@@ -115,7 +115,7 @@
                       <span class="pair-side__role">招领方 · 对方启事</span>
                       <div class="row-wrap">
                         <span class="badge badge--found badge--dot">招领</span>
-                        <span class="badge badge--pending badge--dot">待认领</span>
+                        <span class="badge badge--completed badge--dot">已完成</span>
                       </div>
                       <h3 class="pair-side__title">图书馆拾到黑色钱包，内有校园卡</h3>
                       <p class="pair-side__meta">钱包卡证 · 图书馆三楼服务台 · 拾到 10-20 15:40</p>
@@ -157,6 +157,7 @@
         <li class="notes__item"><b>档位落在高档</b>92% ≥ 90%，服务端下发「高置信度」；前端不按百分比二次分档，避免 89.6% 四舍五入成 90% 的边界错误。</li>
         <li class="notes__item"><b>双端可看</b>两侧手机号都直接展示，没有授权开关；号码旁保留「请自行核实」，高置信度不等于身份验证。</li>
         <li class="notes__item"><b>一条 pair 只改自己</b>「标记为已联系 / 忽略」只写这一条配对，不触碰 #13 的记录状态，也不影响另外两条。</li>
+        <li class="notes__item"><b>已完成的记录仍可能在保留期</b>对方 #27 是「已完成」记录：公共列表与搜索不出现，但保留期内仍进召回；本条 92% ≥ 90%，所以这条配对能看到它。徽标只描述记录状态，不代表这条 pair 已结束。</li>
         <li class="notes__item"><b>动作层级</b>页面唯一主按钮是「重新分析」；卡片内动作全部 ghost / subtle，避免一屏出现多个主按钮。</li>
       </ol>
       <div class="notes__rule"></div>

@@ -38,13 +38,13 @@ $pages = @(
   @{ h = 'my-records.html';          p = 'my-records.png';          w = 1280; t = 1220 },
   @{ h = 'notifications.html';       p = 'notifications.png';       w = 1280; t = 860  },
   @{ h = 'notifications-empty.html'; p = 'notifications-empty.png'; w = 1000; t = 800  },
-  @{ h = 'match-092.html';           p = 'match-092.png';           w = 1280; t = 1050 },
+  @{ h = 'match-092.html';           p = 'match-092.png';           w = 1280; t = 1120 },
   @{ h = 'match-080.html';           p = 'match-080.png';           w = 1280; t = 1050 },
   @{ h = 'match-060.html';           p = 'match-060.png';           w = 1280; t = 960  },
   @{ h = 'authorize.html';           p = 'authorize.png';           w = 1280; t = 1040 },
   @{ h = 'publish-phone.html';       p = 'publish-phone.png';       w = 1280; t = 1260 },
   @{ h = 'masked-board.html';        p = 'masked-board.png';        w = 1280; t = 1360 },
-  @{ h = 'state-matrix.html';        p = 'state-matrix.png';        w = 1280; t = 940  }
+  @{ h = 'state-matrix.html';        p = 'state-matrix.png';        w = 1280; t = 1120 }
 )
 foreach ($p in $pages) {
   $uri = 'file:///' + ((Resolve-Path "$dir/$($p.h)").Path -replace '\\','/')
@@ -64,7 +64,26 @@ foreach ($p in $pages) {
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File docs/ui/v2/check-copy.ps1
 ```
 
-脚本用 Unicode 码点拼出两个禁用短语，扫描 `docs/ui-baseline.md` 与 `docs/ui/v2/**`，输出禁用短语 0 处、“可能相关”>0、结论 PASS。脚本本身不包含连续禁用串，避免自查命中。运行结果见 `copy-check.txt`。
+脚本用 Unicode 码点拼出两个禁用短语与三个旧状态词，扫描 `docs/ui-baseline.md` 与 `docs/ui/v2/**`（排除脚本自己的输出 `copy-check.txt`，避免自计数与自命中），输出：
+
+- 禁用短语 0 处
+- 旧状态词 0 处（作废的英文枚举 + 两个旧中文状态标签）
+- “可能相关”>0
+- 结论 PASS
+
+脚本本身不包含连续的禁用串，避免自查命中；运行结果见 `copy-check.txt`。
+
+## 记录状态文案
+
+`docs/ui-baseline.md` §2.1 / §3.3 与全部稿面统一为三值：
+
+| 枚举 | 文案 | 徽标 |
+|---|---|---|
+| `PENDING` | 进行中 | `.badge--pending`（info） |
+| `COMPLETED` | 已完成 | `.badge--completed`（success，本稿新增，实现时由 E2 补进 `components.css`） |
+| `CLOSED` | 已关闭 | `.badge--closed`（text-muted） |
+
+「已完成」与「已关闭」不是同义词：前者是本人确认拿到结果后的收尾，后者是本人主动下架。`state-matrix.png` 顶部有这条三值对照。
 
 ## 验收映射
 
@@ -72,6 +91,7 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File docs/ui/v2/check-copy.ps
 |---|---|
 | 0.92 / 0.80 / 0.60 各自落到对应档位，文案与可用按钮正确 | `match-092.png` / `match-080.png` / `match-060.png`；规范 §15.4–§15.6 |
 | 候选描述只用“可能相关” | `copy-check.txt`；规范 §18 |
+| 状态徽标只用三值，旧状态词 0 命中 | `copy-check.txt` 的 C1–C3；`state-matrix.png` 顶部对照；规范 §2.1 / §3.3 |
 | 手机号旁有“自行填写，请自行核实” | `publish-phone.png`；规范 §19.2 |
 | 已知限制三条齐全 | `my-records.png` 底部；规范 §19.1 |
 | 不改代码：`web/` 0 行 | `git diff --stat origin/main...HEAD -- web/` 为空 |

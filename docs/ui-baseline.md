@@ -68,9 +68,11 @@
 |---|---|---|
 | 寻物 LOST | 寻物 | `--color-type-lost-fg/bg` → danger / danger-soft |
 | 招领 FOUND | 招领 | `--color-type-found-fg/bg` → success / success-soft |
-| 待认领 PENDING | 待认领 | info / info-soft |
-| 已认领 CLAIMED | 已认领 | warning / warning-soft |
+| 进行中 PENDING | 进行中 | info / info-soft |
+| 已完成 COMPLETED | 已完成 | success / success-soft |
 | 已关闭 CLOSED | 已关闭 | text-muted / surface-muted |
+
+**记录状态只有三值**：`PENDING` / `COMPLETED` / `CLOSED`，中文文案固定为「进行中 / 已完成 / 已关闭」。`PENDING` 用「进行中」是为了与 `/my` 页签现有文案一致。**「已完成」不是「已关闭」的别名**：前者是本人确认拿到结果后的收尾，后者是本人主动下架；两态的徽标颜色（success / text-muted）、文案与入口都必须能区分。旧状态枚举与两个旧中文标签在本轮全部清除，`check-copy.ps1` 会做 0 命中检查。
 
 **对比度（脚本实测，非估算）**
 
@@ -84,8 +86,8 @@
 | 主按钮白字 / `#2450d0` | 6.70:1 | 4.5:1 | ✅ |
 | 寻物徽标 / danger-soft | 4.78:1 | 4.5:1 | ✅ |
 | 招领徽标 / success-soft | 4.88:1 | 4.5:1 | ✅ |
-| 待认领 / info-soft | 6.00:1 | 4.5:1 | ✅ |
-| 已认领 / warning-soft | 5.76:1 | 4.5:1 | ✅ |
+| 进行中 / info-soft | 6.00:1 | 4.5:1 | ✅ |
+| 已完成 / success-soft | 4.88:1 | 4.5:1 | ✅（与招领徽标同一对实测值） |
 | 已关闭 / surface-muted | 5.24:1 | 4.5:1 | ✅ |
 | 错误红字 / danger-soft | 4.78:1 | 4.5:1 | ✅ |
 | 控件描边 / 白面板 | 3.06:1 | 3:1（SC 1.4.11） | ✅ |
@@ -213,7 +215,9 @@
 | props | 类型 | 说明 |
 |---|---|---|
 | `type` | `'LOST' \| 'FOUND'` | 文案 `寻物 / 招领` 的唯一映射点 |
-| `status` | `'PENDING' \| 'CLAIMED' \| 'CLOSED'` | 文案 `待认领 / 已认领 / 已关闭` 的唯一映射点 |
+| `status` | `'PENDING' \| 'COMPLETED' \| 'CLOSED'` | 文案 `进行中 / 已完成 / 已关闭` 的唯一映射点 |
+
+三值语义固定：`PENDING` = 正常发布（进行中），`COMPLETED` = 本人手动标记完成（已完成），`CLOSED` = 本人手动关闭（已关闭）。徽标 class 对应 `.badge--pending` / `.badge--completed` / `.badge--closed`；`COMPLETED` 用 success 语义，`CLOSED` 用 text-muted，**不允许**把两者画成同一套颜色。`.badge--completed` 是 v2 新增，本次只在稿面 `mockup.css` 定义，实现时由 E2 补进 `web/src/styles/components.css`（本轮 `web/` 0 行改动）。
 
 高度 22px、内距 8px、12px/500、色点 6px。**三通道表达状态**：颜色 + 文字 + 圆点，色盲与灰度打印都能读。
 
@@ -365,7 +369,7 @@ form.panel                  最大宽 760
 单条候选（`MatchItemCard.vue`，props `item: MatchItem`、`rank: number`）：
 
 ```
-┌ ①1 ②招领 ③待认领 ───────────────────── #13 ┐   ① 名次（mono、tabular-nums，aria-hidden：顺序本身已表达）
+┌ ①1 ②招领 ③进行中 ───────────────────── #13 ┐   ① 名次（mono、tabular-nums，aria-hidden：顺序本身已表达）
 │ 图书馆拾到黑色钱包                          │   ② 类型徽标  ③ 状态徽标   #id 编号
 │ 相似度 ████████████████████ 100%            │   ④ 进度条 + 百分比（值只来自后端 scorePercent）
 │ 钱包卡证 · 图书馆三楼自习区 · 发生 2026-10-20 15:00:00 │  ⑤ 分类 / 地点 / 发生时间
@@ -498,7 +502,7 @@ form.panel                  最大宽 760
 - [ ] 状态是不是只靠颜色表达？有没有文字或形状做第二通道？
 - [ ] 动的东西是不是只有 `transform` 和颜色/阴影？有没有动 `width/height/top/left`？
 - [ ] 异步失败时用户能做什么？有没有一条"重试"或"回退"的路？
-- [ ] 新文案是给用户看的词，还是系统的词？（例：「标记为已认领」而不是「PATCH status=CLAIMED」）
+- [ ] 新文案是给用户看的词，还是系统的词？（例：「标记为已联系」而不是「PATCH pair.status=CONTACTED」）
 
 ---
 
@@ -608,6 +612,7 @@ form.panel                  最大宽 760
 | **置信度** | v2 配对分数，0–1，界面显示整数百分比 | 配对卡片、档位轨、通知 | 与“相似度”混用 |
 | **相似度** | v1 `/api/match` 的文本相似分数 | 详情页 v1 匹配区（若保留） | 拿来当 pair 的置信度 |
 | **配对（pair）** | 一条寻物 ↔ 一条招领的 1:1 匹配单元 | `/my` 条数、卡片、通知 | “已解决”“锁定”“占用” |
+| **记录状态** | `PENDING / COMPLETED / CLOSED` 的唯一中文映射：进行中 / 已完成 / 已关闭 | `/my` 卡片、详情页页头、状态矩阵稿 | 旧状态词；把「已完成」当「已关闭」的同义词 |
 | **授权** | 本人在中档 pair 里公开自己的联系方式 | 开关、附言、撤回 | “解锁”“申请”“审批” |
 | **遮蔽** | 匿名浏览时用占位块替代真实字段 | 详情页 | “打码”（打码是后端写入前的脱敏，不是 UI 占位） |
 | **撤回** | 关闭授权并清空附言 | 授权交互 | “删除”（不删除启事，也不删除配对） |
@@ -722,7 +727,7 @@ pagination       PaginationBar（复用 v1）
 | 元素 | 内容 | 说明 |
 |---|---|---|
 | 类型徽标 | 寻物 / 招领 | 复用 `RecordTypeTag` |
-| 状态徽标 | 待认领 / 已认领 / 已关闭 | 复用 `RecordStatusTag` |
+| 状态徽标 | 进行中 / 已完成 / 已关闭 | 复用 `RecordStatusTag`；三态都可达，`已完成` 与 `已关闭` 的文案与颜色必须能区分 |
 | 编号与时间 | `#13 · 发布于 10 月 20 日 15:12` | `tabular-nums`；绝对时间 |
 | 标题 | 记录标题 | `h2`，可换行；`overflow-wrap: anywhere` |
 | 元信息 | 分类 · 地点 · 发生时间 | 单行，窄屏换行 |
@@ -853,7 +858,7 @@ pagination       PaginationBar
 ```
 ┌ ①1 ②[高置信度] ③置信度 92% ④[新配对] ─────────── #13 ↔ #27 ┐
 │ ┌ 寻物方 · 你的启事 ────────┐  ↔  ┌ 招领方 · 对方启事 ───────┐ │
-│ │ [寻物] [待认领]            │     │ [招领] [待认领]            │ │
+│ │ [寻物] [进行中]            │     │ [招领] [已完成]            │ │
 │ │ 黑色钱包（图书馆三楼）       │     │ 图书馆拾到黑色钱包…        │ │
 │ │ 钱包卡证 · 图书馆三楼 · 15:00│     │ 钱包卡证 · 图书馆三楼 · 15:40│ │
 │ │ ┌ 我的联系方式 ─────────┐ │     │ ┌ 对方联系方式 ─────────┐ │ │
@@ -1000,7 +1005,7 @@ pagination       PaginationBar
 - `textarea maxlength="200"`；粘贴超长时**截断到 200** 并显示 `已截断到 200 字。`（`role="status"` 播报一次），不让用户以为内容完整保存。
 - 服务端仍会校验 200 上限；如果服务端拒绝，字段级错误固定为 `附言最多 200 字，请删减 {n} 字后再保存。`，`aria-invalid="true"` + `aria-describedby` 关联，焦点落到 textarea。
 - 字数按 **Unicode 码点**计（`[...value].length`），与后端同口径；换行计入，连续空格不折叠显示（`white-space: pre-wrap`）。
-- 提示固定：`会随授权一起展示给对方；撤回时一并清空。请勿填写与认领无关的隐私信息。`
+- 提示固定：`会随授权一起展示给对方；撤回时一并清空。请勿填写与配对无关的隐私信息。`
 - 附言会过 A1 的打码规则（手机号/QQ/证件号/相对时间等）；UI 不自己发明打码正则，但要在预览里显示“打码后”的文本——**预览即对方看到的文本**，不能预览原文、后端再打码。
 
 **超限提示的三种入口**都要有：输入到 200（计数器提示）、粘贴超长（截断提示）、服务端拒绝（字段错误）。只做 `maxlength` 会让“为什么没保存”变成一个谜。
@@ -1047,7 +1052,7 @@ pagination       PaginationBar
 | `auth.their.hidden` | 对方尚未公开 |
 | `auth.their.hint` | 对方公开后，这里会显示号码；你无法替对方公开。 |
 | `auth.note.label` | 附言（选填） |
-| `auth.note.hint` | 会随授权一起展示给对方；撤回时一并清空。请勿填写与认领无关的隐私信息。 |
+| `auth.note.hint` | 会随授权一起展示给对方；撤回时一并清空。请勿填写与配对无关的隐私信息。 |
 | `auth.note.limit` | 最多 200 字；超出上限时保存按钮禁用并提示删减字数。 |
 | `auth.note.over` | 附言最多 200 字，请删减 {n} 字后再保存。 |
 | `auth.note.truncated` | 已截断到 200 字。 |
@@ -1397,7 +1402,7 @@ pagination       PaginationBar
 | 07 | `authorize.png` | 1280 | 公开 / 撤回 + 附言 ≤200 + 超限提示 |
 | 08 | `publish-phone.png` | 1280 | 手机号旁的“自行填写，请自行核实”；无短信验证 |
 | 09 | `masked-board.png` | 1280（内含 390 / 320 两个真实视口） | 遮蔽占位、登录 CTA、320 无横向溢出 |
-| 10 | `state-matrix.png` | 1280 | 三档 × 四态（正常/禁用/空/降级）12 格 |
+| 10 | `state-matrix.png` | 1280 | 三档 × 四态（正常/禁用/空/降级）12 格 + 顶部「进行中 / 已完成 / 已关闭」三值徽标对照 |
 
 源文件：同名 `.html` + `mockup.css`；复跑命令见 `docs/ui/v2/README.md`。
 
@@ -1411,17 +1416,18 @@ pagination       PaginationBar
 | 已知限制区块明确列出三条 | §19.1 | `my-records.png` 底部“使用说明与已知限制”：手机号 / 不自动下架 / 内存 session |
 | 不改代码：`web/` 0 行 | 全篇 | `git diff --stat origin/main...HEAD -- web/` 为空；提交只含 `docs/ui-baseline.md` 与 `docs/ui/v2/**` |
 | 三档各一张实际稿面 | §22.1 | 04 / 05 / 06 三张 PNG，均非 ASCII 或 mermaid |
+| 状态文案只用「进行中 / 已完成 / 已关闭」，旧状态词 0 命中 | §2.1、§3.3、§11.4；本轮 §24 | 用交付评论里的旧状态词 grep 复跑，输出为空；`copy-check.txt` 的 C1–C3 全为 0；`state-matrix.png` 顶部三值对照 |
 
 ### 22.3 文案检索（可复跑）
 
-`docs/ui/v2/check-copy.ps1` 用 Unicode 码点拼出两个禁用短语，扫描 `docs/ui-baseline.md` 与 `docs/ui/v2/**` 的文本文件，输出：
+`docs/ui/v2/check-copy.ps1` 用 Unicode 码点拼出两个禁用短语与三个旧状态词，扫描 `docs/ui-baseline.md` 与 `docs/ui/v2/**` 的文本文件（排除脚本自己的输出 `copy-check.txt`，避免自计数与自命中），输出：
 
-- 禁用短语 A：0
-- 禁用短语 B：0
+- 禁用短语 A / B：0
+- 旧状态词 C1（作废的英文枚举）/ C2 / C3（两个旧中文标签）：0
 - “可能相关”：>0
 - 结论：PASS
 
-脚本**不把禁用短语写成连续字符串**，避免检查脚本自己成为命中项。运行：
+旧状态词同样用码点拼出，**不把旧词写成连续字符串**，避免检查脚本自己成为命中项。
 
 ```powershell
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File docs/ui/v2/check-copy.ps1
@@ -1460,3 +1466,49 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File docs/ui/v2/check-copy.ps
 - 没有 axe、真机、读屏、CWV 数据；§20.5 已列实现后要测的项。
 - 稿面的通知行是 `<a>` 内含块级 `<span>`；生产实现若用 `<a>` 包 `<div>`，需要确认 HTML 合法性（a 可以包含 flow content，但不要嵌套交互元素）。
 - “已降级”与“分析失败”的视觉在稿面里分得开，但颜色对比在灰度打印下需要复核；当前靠文字 + 形状，理论上可读。
+- `/my` 页签仍只有「全部 / 进行中 / 已关闭」，缺「已完成」；启事卡片仍只有「关闭启事」入口，缺 A3 正文 vF 要求的「标记完成」入口与置灰原因。**这两项属于交互与页面结构，本轮（文案修正）不动，等人类拍板后单独排期。**
+- `.badge--completed` 目前只定义在稿面 `docs/ui/v2/mockup.css`；`web/src/styles/components.css` 还没有这个类，实现时由 E2 补上（本轮 `web/` 0 行改动）。
+- 文内仍有旧口径残留：§13.5「已有配对仍可查看」、§15.4/§15.5「记录 CLOSED 时卡片保留、号码保留」、§16.5「已关闭后开关禁用但号码仍可见」，与 vF「CLOSED 不召回、不显示、任何身份详情 404」冲突。本轮只改文案，未改这些行为描述；需要人类确认后统一改写。
+
+---
+
+## 24. 2026-10-27 第三轮：状态文案三值化（本轮范围）
+
+**背景**：本任务首轮交付 `1070d89` 的稿面与规范仍用旧状态枚举；人类第三轮指令把 `t_record.status` 定为 `PENDING / COMPLETED / CLOSED`，只改文案、不改交互。
+
+### 24.1 改了什么
+
+| 位置 | 改动 |
+|---|---|
+| §2.1 语义映射表 | 三行：进行中 PENDING（info）/ 已完成 COMPLETED（success）/ 已关闭 CLOSED（text-muted）；补「已完成不是已关闭的别名」 |
+| §2.1 对比度表 | 前两行改为 进行中 / 已完成（复用 success-soft 实测 4.88:1） |
+| §3.3 `RecordStatusTag` props | `'PENDING' \| 'COMPLETED' \| 'CLOSED'` → `进行中 / 已完成 / 已关闭`；补三值语义与 `.badge--completed` 实现归属 |
+| §4.5 线框、§7 自检例、§11.4 术语表、§13.2、§15.2 线框、§16.3/§16.7 附言提示 | 旧状态词与无关的旧词族全部替换 |
+| `docs/ui/v2/*.html` | 11 处徽标改为「进行中」；`match-092.html` 对方记录改为「已完成」（0.92 ≥ 0.90，符合 COMPLETED 保留期可见规则）；`state-matrix.html` 顶部新增三值徽标对照 |
+| `docs/ui/v2/mockup.css` | 新增 `.badge--completed`（success）与 `.status-legend` 样式；`web/` 未改 |
+| `docs/ui/v2/check-copy.ps1` | 新增 C1–C3 旧状态词检查；排除自身输出，避免自计数 |
+
+### 24.2 复跑命令与预期
+
+```powershell
+# 1) 旧状态词 0 命中（模式由作废的英文枚举与两个旧中文标签组成；
+#    为避免规范自身成为命中样本，命令写在交付评论里，此处不重复列出）
+git grep -nE "<旧状态词模式>" -- docs/ui-baseline.md docs/ui/v2/   # 预期无输出
+
+# 2) 文案检查同时覆盖两组规则，结论 PASS
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File docs/ui/v2/check-copy.ps1
+
+# 3) 本轮不碰前端代码，输出必须为空
+git diff --stat origin/main...HEAD -- web/
+```
+
+### 24.3 稿面更新
+
+`docs/ui/v2/README.md` 里的 11 张 PNG 全部按同一命令重跑；三张档位稿的徽标、按钮与布局未改，只换状态文案。`state-matrix.png` 顶部新增三值徽标对照，作为「已完成 ≠ 已关闭」的视觉证据。
+
+### 24.4 没做
+
+- 不加「标记完成」按钮、不改 `/my` 页签数量、不改任何页面结构（见 §23 已知缺口）。
+- 不把 `COMPLETED` 画进公共列表 / 搜索稿，也不在低档卡片露出对方状态：前者 0 命中，后者服务端不返回。
+- 档位稿不画「已关闭」：按 vF，CLOSED 不召回、任何身份详情 404，不能出现在详情页的三档卡片里；三值徽标对照放在 `state-matrix.png` 与 `/my` 规范中。
+- 不改 `web/` 一行。
