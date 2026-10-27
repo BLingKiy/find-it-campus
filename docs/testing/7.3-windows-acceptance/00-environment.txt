@@ -1,0 +1,62 @@
+# 验收环境（模拟目标机）
+
+时间窗：2026-10-26 17:07–17:21（UTC+8），独立目录 `C:\Project\deploy-accept\7.3-20261026T090657Z`
+
+## OS / 权限
+
+- Microsoft Windows 10 专业工作站版 64 位（10.0.19045）
+- IsAdmin = **False**（用户 NHNOK\NhNoK），全程无提权
+
+## 验收 shell 的 PATH（已去掉 Node / Maven）
+
+```
+C:\Windows\System32;C:\Windows;C:\Windows\System32\Wbem;C:\Windows\System32\WindowsPowerShell\v1.0;C:\Project\tools\jdk17\jdk-17.0.20.1+1\bin;C:\Project\tools\mysql\mysql-8.0.29-winx64\bin
+```
+
+解析结果：
+
+```
+java   -> C:\Project\tools\jdk17\jdk-17.0.20.1+1\bin\java.exe
+mysql  -> C:\Project\tools\mysql\mysql-8.0.29-winx64\bin\mysql.exe
+node   -> NOT FOUND
+npm    -> NOT FOUND
+mvn    -> NOT FOUND
+```
+
+## 版本
+
+```
+openjdk version "17.0.20.1" 2026-08-18   (Temurin-17.0.20.1+1)
+mysql  Ver 8.0.29 for Win64 on x86_64
+powershell 5.1.19041.7802
+```
+
+## ExecutionPolicy（首轮踩到的环境坑，非包缺陷）
+
+```
+MachinePolicy=Undefined  UserPolicy=Undefined  Process=Undefined
+CurrentUser=Undefined    LocalMachine=Undefined     → 有效策略 = Restricted（Windows 客户端默认）
+```
+
+直接 `.\scripts\install.ps1 ...` 被拒绝：
+
+```
+无法加载文件 ...\scripts\install.ps1，因为在此系统上禁止运行脚本。
+```
+
+本次统一改用 `powershell -NoProfile -ExecutionPolicy Bypass -File <脚本>`（仅进程级，不改机器策略、不需管理员）。
+**这条是目标机首次部署的真实摩擦，建议在 DEPLOY-WINDOWS.md §3 增一行说明。**
+
+## MySQL 实例
+
+```
+mysqld 8.0.29  --datadir=C:/Project/tools/mysql-data  --bind-address=127.0.0.1  --port=3306
+root / 空密码（-EmptyDbPassword）
+acceptance 库：findit_accept73（utf8mb4），未使用 -Force，未触碰任何既有库
+```
+
+## 采集编码说明
+
+脚本在启动时把 Console 输出编码切到 UTF-8（`_common.ps1` 的 `Initialize-ConsoleEncoding`），
+因此**从 PowerShell 管道二次捕获**（`& powershell.exe ... 2>&1 | ...`）时，切换之前的少量中文行会显示为乱码。
+真实控制台渲染正常；`logs\*.log` 始终是干净的 UTF-8。本文证据中的脚本输出均取自 `logs\`。

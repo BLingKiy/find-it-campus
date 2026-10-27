@@ -1,0 +1,41 @@
+# 判据 10：业务代码零改动
+
+基线 main = 544e24ac99a5ae04e3cae2e87102133f1d4ebc06
+7.2 分支 feat/7.2-windows-docs = 270a54bf958ae107bf7eb5ba522c714743b0d639（git fetch 后 origin 确认）
+
+## git diff --stat 544e24a 270a54b -- server web db
+(以上空 —— 无改动)
+
+## git diff --name-only 544e24a 270a54b -- server web db qa
+(以上空 —— 无改动)
+
+## git diff --name-status 544e24a 270a54b（全量）
+M	.gitignore
+A	deploy/DEPLOY-WINDOWS.md
+A	deploy/build-package.ps1
+A	deploy/config/deploy.env.example
+A	deploy/nginx/nginx.conf
+A	deploy/scripts/_common.ps1
+A	deploy/scripts/install.ps1
+A	deploy/scripts/start.ps1
+A	deploy/scripts/status.ps1
+A	deploy/scripts/stop.ps1
+A	deploy/tools/download.mjs
+M	docs/delivery/6.2-claims-evidence.md
+M	docs/delivery/6.2-defense-ppt.md
+M	"docs/delivery/6.2-\347\255\224\350\276\251PPT.pptx"
+M	docs/design/consistency-checklist.md
+A	docs/design/diagrams/deploy-windows.mmd
+A	docs/design/diagrams/deploy-windows.png
+A	docs/design/diagrams/deploy-windows.svg
+M	docs/design/program-design.docx
+M	docs/design/program-design.md
+M	docs/frontend-baseline.md
+
+## 包内脚本与分支 blob 一致性（CRLF 规范化后逐字节比对）
+deploy/scripts/install.ps1  MATCH
+deploy/scripts/start.ps1  MATCH
+deploy/scripts/status.ps1  MATCH
+deploy/scripts/stop.ps1  MATCH
+deploy/scripts/_common.ps1  MATCH
+deploy/nginx/nginx.conf  MATCH

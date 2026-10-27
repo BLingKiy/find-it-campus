@@ -1,0 +1,17 @@
+=== 启动前（第一轮，17:07 UTC+8）===
+netstat -ano | grep ':8088|:18080'  → 无输出：两端口空闲，无开发进程
+
+=== 启动后监听（第二轮 17:19:1x 实测）===
+  TCP    0.0.0.0:8088           0.0.0.0:0              LISTENING       1572
+  TCP    127.0.0.1:18080        0.0.0.0:0              LISTENING       3096
+
+解读：8088 绑定 0.0.0.0（唯一对外端口，Nginx worker 持有）；18080 只绑 127.0.0.1（后端不对局域网暴露）。
+
+=== 进程树（Win32_Process 实测，第一轮）===
+java.exe   PID 5028  PPID 5744   "...\jdk17\bin\java.exe" -jar "<pkg>\app\find-it-campus-0.0.1-SNAPSHOT.jar" --server.address=127.0.0.1 --server.port=18080
+nginx.exe  PID 13036 PPID 5744   "<pkg>\nginx\nginx.exe" -p "<pkg>\nginx/" -c conf/nginx.conf   ← master
+nginx.exe  PID 4972  PPID 13036  同上                                       ← worker（持有 8088 socket）
+
+=== 停止后 ===
+Get-NetTCPConnection -State Listen -LocalPort 8088,18080 → 8088/18080 NO LISTENER
+runtime\backend.pid、runtime\nginx.pid 已删除（runtime\ 只剩 .keep）
