@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>A3 · 登录页三态</title>
+  <link rel="stylesheet" href="../../../web/src/styles/tokens.css" />
+  <link rel="stylesheet" href="../../../web/src/styles/base.css" />
+  <link rel="stylesheet" href="../../../web/src/styles/components.css" />
+  <link rel="stylesheet" href="mockup.css" />
+  <style>
+    .login-card { min-height: 520px; display: flex; flex-direction: column; flex: 1 1 auto; }
+    .login-form { flex: 1 1 auto; }
+    .pw-row { position: relative; }
+    .pw-row .control { padding-right: 56px; }
+    .pw-toggle { position: absolute; top: 4px; right: 4px; min-height: 32px; padding: 0 var(--sp-2); color: var(--color-primary); font-size: var(--fs-xs); }
+    .is-focus { border-color: var(--color-primary); box-shadow: var(--ring); outline: none; }
+  </style>
+</head>
+<body class="board">
+  <header class="board__head">
+    <div>
+      <p class="board__kicker">A3 · v2 UI Baseline · /login</p>
+      <h1 class="board__title">登录页：默认 / 凭证错误 / 锁定，三种状态同一骨架</h1>
+    </div>
+    <p class="board__meta">界面稿 01 / 学号 + 密码，不开放注册。错误态不提示「学号不存在」还是「密码错误」，避免账号枚举。</p>
+  </header>
+
+  <div class="login-layout">
+    <section class="login-slot" aria-labelledby="login-default">
+      <p class="login-slot__label"><b id="login-default">① 默认</b><span>未提交</span></p>
+      <div class="login-card">
+        <div class="login-card__brand"><span class="app-header__logo" aria-hidden="true">FI</span>校园失物招领</div>
+        <h2 class="login-card__title">登录</h2>
+        <p class="login-card__desc">用学号和密码登录，查看你发布的启事、可能相关的启事与联系方式。</p>
+        <form class="login-form" novalidate>
+          <div class="field">
+            <label class="field__label" for="sid-default">学号</label>
+            <input id="sid-default" class="control" type="text" inputmode="numeric" autocomplete="username" placeholder="请输入学号" />
+          </div>
+          <div class="field">
+            <label class="field__label" for="pwd-default">密码</label>
+            <div class="pw-row">
+              <input id="pwd-default" class="control" type="password" autocomplete="current-password" placeholder="请输入密码" />
+              <button class="btn btn--link pw-toggle" type="button">显示</button>
+            </div>
+          </div>
+          <button class="btn btn--primary btn--block btn--lg" type="submit">登录</button>
+        </form>
+        <div class="login-card__foot">
+          <p>本课程不开放注册，请使用统一发放的学号与密码。</p>
+          <p>忘记密码？请联系课程助教重置。</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="login-slot" aria-labelledby="login-error">
+      <p class="login-slot__label"><b id="login-error">② 凭证错误</b><span>焦点落到密码</span></p>
+      <div class="login-card">
+        <div class="login-card__brand"><span class="app-header__logo" aria-hidden="true">FI</span>校园失物招领</div>
+        <h2 class="login-card__title">登录</h2>
+        <p class="login-card__desc">用学号和密码登录，查看你发布的启事、可能相关的启事与联系方式。</p>
+        <div class="alert alert--danger" role="alert" style="margin-bottom: var(--sp-3);">
+          <span class="alert__title">登录失败</span>
+          <span class="alert__text">学号或密码不正确，请重新输入。</span>
+        </div>
+        <form class="login-form" novalidate>
+          <div class="field">
+            <label class="field__label" for="sid-error">学号</label>
+            <input id="sid-error" class="control" type="text" inputmode="numeric" autocomplete="username" value="2023010101" />
+          </div>
+          <div class="field">
+            <label class="field__label" for="pwd-error">密码</label>
+            <div class="pw-row">
+              <input id="pwd-error" class="control is-focus" type="password" autocomplete="current-password" placeholder="请输入密码" aria-invalid="false" />
+              <button class="btn btn--link pw-toggle" type="button">显示</button>
+            </div>
+            <p class="field__hint">密码已清空，请重新输入。连续失败次数过多会暂时锁定登录。</p>
+          </div>
+          <button class="btn btn--primary btn--block btn--lg" type="submit">登录</button>
+        </form>
+        <div class="login-card__foot">
+          <p>本课程不开放注册，请使用统一发放的学号与密码。</p>
+          <p>忘记密码？请联系课程助教重置。</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="login-slot" aria-labelledby="login-locked">
+      <p class="login-slot__label"><b id="login-locked">③ 暂时锁定</b><span>倒计时 09:58</span></p>
+      <div class="login-card">
+        <div class="login-card__brand"><span class="app-header__logo" aria-hidden="true">FI</span>校园失物招领</div>
+        <h2 class="login-card__title">登录</h2>
+        <p class="login-card__desc">用学号和密码登录，查看你发布的启事、可能相关的启事与联系方式。</p>
+        <div class="alert alert--warning" role="alert" style="margin-bottom: var(--sp-3);">
+          <span class="alert__title">登录已暂时锁定</span>
+          <span class="alert__text">尝试次数过多。请在 <strong>09:58</strong> 后再试，或联系课程助教。</span>
+        </div>
+        <form class="login-form" novalidate>
+          <div class="field">
+            <label class="field__label" for="sid-locked">学号</label>
+            <input id="sid-locked" class="control" type="text" inputmode="numeric" autocomplete="username" value="2023010101" disabled />
+          </div>
+          <div class="field">
+            <label class="field__label" for="pwd-locked">密码</label>
+            <div class="pw-row">
+              <input id="pwd-locked" class="control" type="password" autocomplete="current-password" value="........" disabled />
+              <button class="btn btn--link pw-toggle" type="button" disabled>显示</button>
+            </div>
+            <p class="field__hint">锁定只影响登录，不会影响已发布的数据；到时自动解除，无需联系管理员。</p>
+          </div>
+          <button class="btn btn--primary btn--block btn--lg" type="button" disabled aria-disabled="true">已锁定 · 09:58</button>
+        </form>
+        <div class="login-card__foot">
+          <p>本课程不开放注册，请使用统一发放的学号与密码。</p>
+          <p>忘记密码？请联系课程助教重置。</p>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <div class="login-notes">
+    <div class="notes">
+      <p class="notes__title">错误态 <span class="notes__tag">共同规则</span></p>
+      <ol class="notes__list">
+        <li class="notes__item"><b>不泄露账号是否存在</b>只给「学号或密码不正确」；不区分「学号不存在」「密码错误」。</li>
+        <li class="notes__item"><b>保留学号、清空密码</b>焦点落到密码框；页级 role="alert" 只播报一次。</li>
+        <li class="notes__item"><b>字段为空是客户端校验</b>逐字段报错 + 顶部摘要，焦点落到第一个空字段。</li>
+      </ol>
+    </div>
+    <div class="notes">
+      <p class="notes__title">锁定态 <span class="notes__tag">B2 策略</span></p>
+      <ol class="notes__list">
+        <li class="notes__item"><b>阈值由后端定</b>UI 不写死「5 次」；只展示 B2 返回的剩余秒数与锁定文案。</li>
+        <li class="notes__item"><b>倒计时可见</b>视觉 09:58；读屏只在开始与结束时播报，不每秒打断。</li>
+        <li class="notes__item"><b>仍可行动</b>文案给出「联系课程助教」，不是死路。</li>
+      </ol>
+    </div>
+    <div class="notes">
+      <p class="notes__title">无障碍 <span class="notes__tag">登录页</span></p>
+      <ol class="notes__list">
+        <li class="notes__item"><b>autocomplete</b>学号 username、密码 current-password；学号 inputmode=numeric。</li>
+        <li class="notes__item"><b>显示密码</b>真实按钮、aria-pressed，键盘可达；不改变字段值。</li>
+        <li class="notes__item"><b>焦点可见</b>错误态密码框的焦点环用 --ring；锁定态控件 disabled，不伪装成可编辑。</li>
+      </ol>
+    </div>
+  </div>
+</body>
+</html>

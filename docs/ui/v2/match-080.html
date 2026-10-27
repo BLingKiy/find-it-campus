@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>A3 · 0.80 可授权配对</title>
+  <link rel="stylesheet" href="../../../web/src/styles/tokens.css" />
+  <link rel="stylesheet" href="../../../web/src/styles/base.css" />
+  <link rel="stylesheet" href="../../../web/src/styles/components.css" />
+  <link rel="stylesheet" href="mockup.css" />
+</head>
+<body class="board">
+  <header class="board__head">
+    <div>
+      <p class="board__kicker">A3 · v2 UI Baseline · Match / Mid</p>
+      <h1 class="board__title">0.80 · 可授权：只有本人能公开自己的联系方式</h1>
+    </div>
+    <p class="board__meta">界面稿 05 / 场景：失主打开「黑色钱包」详情，看到一条 80% 的可能相关。示例数据均为虚构。</p>
+  </header>
+
+  <div class="board__grid">
+    <div class="app-frame">
+      <div class="app-frame__bar" aria-hidden="true">
+        <span class="app-frame__dot"></span><span class="app-frame__dot"></span><span class="app-frame__dot"></span>
+        <span class="app-frame__url">find-it-campus / records/13</span>
+      </div>
+      <div class="app-shell">
+        <header class="app-header">
+          <div class="app-header__inner">
+            <span class="app-header__brand"><span class="app-header__logo" aria-hidden="true">FI</span><span class="app-header__brand-text">校园失物招领</span></span>
+            <nav class="app-header__nav" aria-label="主导航">
+              <a class="app-header__link is-active" href="#" aria-current="page">启事列表</a>
+              <a class="app-header__link" href="#">我的启事</a>
+              <a class="app-header__link nav-dot" href="#">通知<span class="nav-dot__badge">3</span></a>
+              <a class="app-header__link app-header__link--cta" href="#">发布启事</a>
+              <span class="app-header__user"><span class="app-header__avatar" aria-hidden="true">陈</span>陈同学</span>
+            </nav>
+          </div>
+        </header>
+
+        <main class="app-main">
+          <div class="container">
+            <a class="back-link" href="#">← 返回我的启事</a>
+
+            <div class="page-head">
+              <div>
+                <div class="record-kicker">
+                  <span class="badge badge--lost badge--dot">寻物</span>
+                  <span class="badge badge--pending badge--dot">待认领</span>
+                  <span class="mono">#13</span>
+                  <span class="mono">发布于 10 月 20 日 15:12</span>
+                </div>
+                <h1 class="page-head__title">启事详情</h1>
+                <p class="page-head__desc">黑色钱包（图书馆三楼）· 你是这条启事的发布者</p>
+              </div>
+              <div class="page-head__actions">
+                <button class="btn btn--ghost" type="button">关闭启事</button>
+              </div>
+            </div>
+
+            <section class="panel" aria-labelledby="match-title">
+              <header class="panel__head">
+                <div>
+                  <h2 id="match-title" class="panel__title">可能相关的启事</h2>
+                  <p class="panel__desc">共 3 条 · 按置信度从高到低排列 · 每条配对相互独立，处理一条不影响其余</p>
+                </div>
+                <button class="btn btn--ghost" type="button">重新分析</button>
+              </header>
+
+              <div class="tier-rail" aria-label="置信度档位：当前 80%，属于中档">
+                <div class="tier-rail__cell" data-tier="low">
+                  <span class="tier-rail__class">仅显示条数</span>
+                  <span class="tier-rail__range">&lt; 75%</span>
+                </div>
+                <div class="tier-rail__cell is-active" data-tier="mid">
+                  <span class="tier-rail__class">可授权查看 <span class="tier-rail__now">当前 80%</span></span>
+                  <span class="tier-rail__range">75% – 89%</span>
+                </div>
+                <div class="tier-rail__cell" data-tier="high">
+                  <span class="tier-rail__class">高置信度 · 直接可见</span>
+                  <span class="tier-rail__range">≥ 90%</span>
+                </div>
+              </div>
+
+              <div class="pair-list">
+                <article class="pair pair--mid" aria-labelledby="pair-2-title">
+                  <header class="pair__head">
+                    <span class="pair__rank" aria-hidden="true">1</span>
+                    <span class="badge badge--tier-mid badge--dot">可授权查看</span>
+                    <span class="pair__score">置信度 <strong>80%</strong></span>
+                    <span class="badge badge--pending badge--dot">新配对</span>
+                    <span class="pair__ids">#13 ↔ #31</span>
+                  </header>
+
+                  <div class="pair__sides">
+                    <section class="pair-side pair-side--mine">
+                      <span class="pair-side__role">寻物方 · 你的启事</span>
+                      <div class="row-wrap">
+                        <span class="badge badge--lost badge--dot">寻物</span>
+                        <span class="badge badge--pending badge--dot">待认领</span>
+                      </div>
+                      <h3 id="pair-2-title" class="pair-side__title">黑色钱包（图书馆三楼）</h3>
+                      <p class="pair-side__meta">钱包卡证 · 图书馆三楼自习区 · 丢失 10-20 15:00</p>
+
+                      <div class="contact contact--hidden">
+                        <span class="contact__label">我的联系方式</span>
+                        <span class="contact__value">138 0000 1234</span>
+                        <span class="contact__state">未公开</span>
+                        <span class="contact__hint">对方现在看不到这个号码。公开后，对方可以在这一条配对里查看。</span>
+                        <button class="btn btn--primary btn--sm contact__action" type="button">公开我的联系方式</button>
+                      </div>
+                    </section>
+
+                    <span class="pair__link" aria-hidden="true">↔</span>
+
+                    <section class="pair-side pair-side--theirs">
+                      <span class="pair-side__role">招领方 · 对方启事</span>
+                      <div class="row-wrap">
+                        <span class="badge badge--found badge--dot">招领</span>
+                        <span class="badge badge--pending badge--dot">待认领</span>
+                      </div>
+                      <h3 class="pair-side__title">10 月 20 日下午在图书馆捡到黑色钱包</h3>
+                      <p class="pair-side__meta">钱包卡证 · 图书馆三楼 · 拾到 10-20 15:40</p>
+
+                      <div class="contact contact--hidden">
+                        <span class="contact__label">对方联系方式</span>
+                        <span class="contact__value">对方尚未公开</span>
+                        <span class="contact__state">等待对方授权</span>
+                        <span class="contact__hint">你无法替对方公开。对方公开后，这里会显示号码；也可以先通过「查看对方启事」里的其他线索联系。</span>
+                      </div>
+                    </section>
+                  </div>
+
+                  <p class="pair__reason">判断依据：黑色钱包、图书馆三楼、10 月 20 日下午；描述重合度中等，建议先核对钱包内物品。</p>
+
+                  <div class="row-wrap" style="margin: 0 var(--sp-4) var(--sp-3); padding: var(--sp-2) var(--sp-3); border-radius: var(--radius-sm); background-color: var(--color-primary-softer); color: var(--color-primary-strong); font-size: var(--fs-xs);">
+                    授权只对 #13 ↔ #31 这一条配对生效，不改变启事状态，也不影响另外两条配对。
+                  </div>
+
+                  <footer class="pair__actions">
+                    <button class="btn btn--ghost btn--sm" type="button">查看对方启事</button>
+                    <button class="btn btn--ghost btn--sm" type="button">标记为已联系</button>
+                    <button class="btn btn--subtle btn--sm" type="button">忽略这条</button>
+                    <span class="pair__hint">只影响这一条配对</span>
+                  </footer>
+                  <p class="pair__note">只有启事发布者本人能公开自己的联系方式；公开与撤回都会即时生效。平台不发送短信验证码，请自行核实对方身份。</p>
+                </article>
+              </div>
+
+              <p class="tiny subtle" style="margin-top: var(--sp-3);">置信度由 AI 语义比对给出，仅供参考。另有 1 条直接可见、1 条仅显示条数。</p>
+            </section>
+          </div>
+        </main>
+
+        <footer class="app-footer">
+          <div class="app-footer__inner"><span>find-it-campus · 校园失物招领</span><span>匿名可读 · 写操作需登录</span></div>
+        </footer>
+      </div>
+    </div>
+
+    <aside class="notes" aria-label="设计说明">
+      <p class="notes__title">这一稿要说明什么 <span class="notes__tag">05 / 06</span></p>
+      <ol class="notes__list">
+        <li class="notes__item"><b>档位落在中档</b>75% ≤ 80% &lt; 90%：双方能看到这条配对与对方的启事摘要，但看不到对方手机号。</li>
+        <li class="notes__item"><b>只能公开自己的</b>「公开我的联系方式」只出现在「我的联系方式」一侧；对方那一侧没有按钮，也没有「替对方公开」的入口。</li>
+        <li class="notes__item"><b>未授权文案固定</b>对方侧显示「对方尚未公开」，不是错误、不是 403；页面不出现「无权限」这类系统词。</li>
+        <li class="notes__item"><b>授权不改变配对状态</b>公开号码只影响可见性；「标记为已联系 / 忽略」是另一条独立操作，仍只作用于这一条 pair。</li>
+      </ol>
+      <div class="notes__rule"></div>
+      <p class="notes__foot">与 0.92 稿的唯一结构差异：联系方式条从「已公开」变为「未公开 + 公开按钮」，其余骨架完全一致，E2 可复用同一个 PairCard。</p>
+    </aside>
+  </div>
+</body>
+</html>

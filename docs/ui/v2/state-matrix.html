@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>A3 · 三档 × 四态矩阵</title>
+  <link rel="stylesheet" href="../../../web/src/styles/tokens.css" />
+  <link rel="stylesheet" href="../../../web/src/styles/base.css" />
+  <link rel="stylesheet" href="../../../web/src/styles/components.css" />
+  <link rel="stylesheet" href="mockup.css" />
+  <style>
+    .mini .badge { font-size: 11px; }
+    .mini .contact { padding: var(--sp-1) var(--sp-2); }
+    .mini .contact__label { font-size: 10px; }
+    .mini .contact__value { font-size: 11px; }
+    .mini .contact__state { font-size: 10px; }
+    .mini__warn { padding: var(--sp-1) var(--sp-2); border-left: 2px solid var(--color-warning); background-color: var(--color-warning-soft); color: var(--color-warning); font-size: 10px; line-height: 1.4; }
+    .mini__disabled-note { color: var(--color-text-muted); font-size: 10px; line-height: 1.4; }
+    .mini__count { display: flex; align-items: baseline; gap: var(--sp-1); }
+    .mini__count strong { font-family: var(--font-mono); font-size: 26px; line-height: 1; }
+    .mini__count span { color: var(--color-text-muted); font-size: 10px; }
+  </style>
+</head>
+<body class="board">
+  <header class="board__head">
+    <div>
+      <p class="board__kicker">A3 · v2 UI Baseline · State Matrix</p>
+      <h1 class="board__title">三档 × 四态：正常 / 禁用 / 空 / 降级</h1>
+    </div>
+    <p class="board__meta">同一套 PairCard 骨架，只换状态与可用动作；没有为某个状态单独发明一套卡片。</p>
+  </header>
+
+  <div class="matrix">
+    <div class="matrix__row-label">高档 · 置信度 ≥ 90% <span>双端可直接查看联系方式</span></div>
+
+    <article class="mini">
+      <p class="mini__state"><span>正常</span><span class="badge badge--tier-high">92% · 高</span></p>
+      <div class="mini__body">
+        <p class="mini__title">黑色钱包 · #13 ↔ #27</p>
+        <div class="contact contact--visible"><span class="contact__label">我的</span><span class="contact__value">138 0000 1234</span><span class="contact__state">双方可见</span></div>
+        <div class="contact contact--visible"><span class="contact__label">对方</span><span class="contact__value">139 0000 5678</span><span class="contact__state">双方可见</span></div>
+        <p class="tiny subtle">双方直接可见，无需授权。</p>
+      </div>
+      <div class="mini__actions">
+        <button class="btn btn--ghost" type="button">标记为已联系</button>
+        <button class="btn btn--subtle" type="button">忽略</button>
+      </div>
+    </article>
+
+    <article class="mini">
+      <p class="mini__state"><span>禁用 · 已联系</span><span class="badge badge--tier-high">92% · 高</span></p>
+      <div class="mini__body">
+        <p class="mini__title">黑色钱包 · #13 ↔ #27</p>
+        <div class="contact contact--visible"><span class="contact__label">对方</span><span class="contact__value">139 0000 5678</span><span class="contact__state">双方可见</span></div>
+        <p class="mini__disabled-note">已标记为「已联系」，这条配对只读；号码仍可见，方便回看。</p>
+      </div>
+      <div class="mini__actions">
+        <button class="btn btn--ghost" type="button" disabled aria-disabled="true">已联系</button>
+        <button class="btn btn--subtle" type="button" disabled aria-disabled="true">忽略</button>
+      </div>
+    </article>
+
+    <article class="mini">
+      <p class="mini__state"><span>空 · 无高档结果</span><span class="badge badge--tier-high">≥ 90%</span></p>
+      <div class="mini__body">
+        <div class="empty">
+          <p class="empty__title">暂无高置信度结果</p>
+          <p class="empty__desc">没有 ≥90% 的可能相关；中档与低档结果不受影响。</p>
+        </div>
+      </div>
+    </article>
+
+    <article class="mini">
+      <p class="mini__state"><span>降级 · 本地关键词</span><span class="badge badge--tier-high">92% · 高</span></p>
+      <div class="mini__body">
+        <p class="mini__warn">AI 服务暂不可用，本次由本地关键词引擎分析，置信度可能偏低。</p>
+        <p class="mini__title">黑色钱包 · #13 ↔ #27</p>
+        <div class="contact contact--visible"><span class="contact__label">对方</span><span class="contact__value">139 0000 5678</span><span class="contact__state">双方可见</span></div>
+      </div>
+      <div class="mini__actions">
+        <button class="btn btn--ghost" type="button">重试分析</button>
+        <button class="btn btn--subtle" type="button">忽略</button>
+      </div>
+    </article>
+
+    <div class="matrix__row-label">中档 · 置信度 75%–89% <span>只能由本人公开自己的联系方式</span></div>
+
+    <article class="mini">
+      <p class="mini__state"><span>正常</span><span class="badge badge--tier-mid">80% · 中</span></p>
+      <div class="mini__body">
+        <p class="mini__title">黑色钱包 · #13 ↔ #31</p>
+        <div class="contact contact--hidden"><span class="contact__label">我的</span><span class="contact__value">未公开</span><span class="contact__state">仅本人可公开</span></div>
+        <div class="contact contact--hidden"><span class="contact__label">对方</span><span class="contact__value">对方尚未公开</span></div>
+      </div>
+      <div class="mini__actions">
+        <button class="btn btn--primary" type="button">公开我的联系方式</button>
+      </div>
+    </article>
+
+    <article class="mini">
+      <p class="mini__state"><span>禁用 · 启事已关闭</span><span class="badge badge--tier-mid">80% · 中</span></p>
+      <div class="mini__body">
+        <p class="mini__title">黑色钱包 · #13 ↔ #31</p>
+        <div class="contact contact--hidden"><span class="contact__label">我的</span><span class="contact__value">已公开</span><span class="contact__state">撤回不可用</span></div>
+        <p class="mini__disabled-note">启事已关闭，不能再公开或撤回；已公开的号码仍对对方可见。</p>
+      </div>
+      <div class="mini__actions">
+        <button class="btn btn--ghost" type="button" disabled aria-disabled="true">公开我的联系方式</button>
+        <button class="btn btn--subtle" type="button" disabled aria-disabled="true">撤回公开</button>
+      </div>
+    </article>
+
+    <article class="mini">
+      <p class="mini__state"><span>空 · 无中档结果</span><span class="badge badge--tier-mid">75%–89%</span></p>
+      <div class="mini__body">
+        <div class="empty">
+          <p class="empty__title">暂无可授权查看的结果</p>
+          <p class="empty__desc">没有 75%–89% 的可能相关；高档与低档结果各自独立。</p>
+        </div>
+      </div>
+    </article>
+
+    <article class="mini">
+      <p class="mini__state"><span>降级 · 本地关键词</span><span class="badge badge--tier-mid">80% · 中</span></p>
+      <div class="mini__body">
+        <p class="mini__warn">本次由本地关键词引擎分析，置信度可能偏低；公开前请先核对。</p>
+        <p class="mini__title">黑色钱包 · #13 ↔ #31</p>
+        <div class="contact contact--hidden"><span class="contact__label">对方</span><span class="contact__value">对方尚未公开</span></div>
+      </div>
+      <div class="mini__actions">
+        <button class="btn btn--ghost" type="button">公开我的联系方式</button>
+        <button class="btn btn--subtle" type="button">重试分析</button>
+      </div>
+    </article>
+
+    <div class="matrix__row-label">低档 · 置信度 &lt; 75% <span>只给条数，不展示对方任何字段</span></div>
+
+    <article class="mini">
+      <p class="mini__state"><span>正常</span><span class="badge badge--tier-low">60% · 低</span></p>
+      <div class="mini__body">
+        <div class="mini__count"><strong>1</strong><span>条可能相关</span></div>
+        <p class="mini__title">置信度不足，暂不展示详情</p>
+        <p class="tiny subtle">低于 75%；不返回标题、地点、时间与联系方式。</p>
+      </div>
+      <div class="mini__actions">
+        <button class="btn btn--ghost" type="button">补充描述</button>
+        <button class="btn btn--subtle" type="button">重新分析</button>
+      </div>
+    </article>
+
+    <article class="mini">
+      <p class="mini__state"><span>禁用 · 分析中</span><span class="badge badge--tier-low">—</span></p>
+      <div class="mini__body">
+        <div class="mini__count"><strong>—</strong><span>条数待定</span></div>
+        <p class="mini__title">正在分析，暂不能查看条数</p>
+        <p class="tiny subtle">分析完成后，低档只显示条数；不会因为等待而展示详情。</p>
+      </div>
+      <div class="mini__actions">
+        <button class="btn btn--ghost" type="button" disabled aria-disabled="true">补充描述</button>
+      </div>
+    </article>
+
+    <article class="mini">
+      <p class="mini__state"><span>空 · 无低档结果</span><span class="badge badge--tier-low">&lt; 75%</span></p>
+      <div class="mini__body">
+        <div class="empty">
+          <p class="empty__title">没有更多低置信度结果</p>
+          <p class="empty__desc">当前没有低于 75% 的候选；这不影响高、中档结果。</p>
+        </div>
+      </div>
+    </article>
+
+    <article class="mini">
+      <p class="mini__state"><span>降级 · 本地关键词</span><span class="badge badge--tier-low">60% · 低</span></p>
+      <div class="mini__body">
+        <p class="mini__warn">AI 服务暂不可用，本次用本地关键词分析；低档仍然只给条数。</p>
+        <div class="mini__count"><strong>1</strong><span>条可能相关</span></div>
+        <p class="tiny subtle">不展示对方任何字段，也不提供授权入口。</p>
+      </div>
+      <div class="mini__actions">
+        <button class="btn btn--ghost" type="button">重试分析</button>
+      </div>
+    </article>
+  </div>
+</body>
+</html>

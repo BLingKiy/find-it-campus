@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>A3 · 匿名遮蔽态（390）</title>
+  <link rel="stylesheet" href="../../../web/src/styles/tokens.css" />
+  <link rel="stylesheet" href="../../../web/src/styles/base.css" />
+  <link rel="stylesheet" href="../../../web/src/styles/components.css" />
+  <link rel="stylesheet" href="mockup.css" />
+  <style>
+    .masked-line { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-1); }
+    .masked-line .masked { max-width: 100%; }
+    .detail-facts { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--sp-2); margin-top: var(--sp-3); padding-top: var(--sp-3); border-top: 1px solid var(--color-border); }
+    .fact { display: grid; grid-template-columns: 64px minmax(0, 1fr); gap: var(--sp-2); font-size: var(--fs-xs); }
+    .fact dt { color: var(--color-text-subtle); }
+    .fact dd { min-width: 0; color: var(--color-text-muted); }
+  </style>
+</head>
+<body class="board board--phone">
+  <div class="app-shell">
+    <header class="app-header">
+      <div class="app-header__inner">
+        <span class="app-header__brand"><span class="app-header__logo" aria-hidden="true">FI</span><span class="app-header__brand-text">校园失物招领</span></span>
+        <nav class="app-header__nav" aria-label="主导航">
+          <a class="app-header__link app-header__link--cta" href="#">登录</a>
+        </nav>
+      </div>
+    </header>
+
+    <main class="app-main">
+      <div class="container">
+        <a class="back-link" href="#">← 返回列表</a>
+
+        <div class="page-head" style="margin-bottom: var(--sp-3);">
+          <div>
+            <div class="record-kicker">
+              <span class="badge badge--found badge--dot">招领</span>
+              <span class="badge badge--pending badge--dot">待认领</span>
+              <span class="mono">#27</span>
+            </div>
+            <h1 class="page-head__title">启事详情</h1>
+            <p class="page-head__desc">匿名浏览 · 只显示可公开的部分</p>
+          </div>
+        </div>
+
+        <div class="alert alert--info" role="status" style="margin-bottom: var(--sp-3);">
+          <span class="alert__title">你正在匿名浏览</span>
+          <span class="alert__text">登录后可查看完整描述、联系方式与可能相关的启事。</span>
+          <a class="alert__action" href="#" style="white-space: nowrap;">去登录</a>
+        </div>
+
+        <article class="panel">
+          <div class="record-kicker">
+            <span class="badge badge--found badge--dot">招领</span>
+            <span class="badge badge--pending badge--dot">待认领</span>
+            <span class="mono">#27 · 10-21 09:40</span>
+          </div>
+          <h2 style="font-size: var(--fs-xl); line-height: var(--lh-snug);">图书馆拾到黑色钱包，内有校园卡</h2>
+
+          <dl class="detail-facts">
+            <div class="fact"><dt>分类</dt><dd>钱包卡证</dd></div>
+            <div class="fact">
+              <dt>地点</dt>
+              <dd class="masked-line">图书馆三楼 <span class="masked masked--inline">登录后可查看</span></dd>
+            </div>
+            <div class="fact"><dt>拾到时间</dt><dd>10 月 21 日 09:20</dd></div>
+            <div class="fact"><dt>发布者</dt><dd>林**</dd></div>
+          </dl>
+
+          <div class="masked masked--block" style="margin-top: var(--sp-3);">
+            <span class="masked__title">登录后可查看完整描述</span>
+            <span class="masked__desc">匿名浏览只显示标题与基本信息。描述、地点细节与联系方式在登录后加载。</span>
+            <a class="btn btn--ghost btn--sm masked__action" href="#">登录后查看</a>
+          </div>
+
+          <div class="masked masked--block" style="margin-top: var(--sp-2);">
+            <span class="masked__title">登录后可查看联系方式</span>
+            <span class="masked__desc">为保护发布者，号码不在匿名页面渲染；登录后按档位规则展示。</span>
+          </div>
+        </article>
+
+        <section class="panel" style="margin-top: var(--sp-3);">
+          <h2 class="panel__title" style="font-size: var(--fs-md);">可能相关的启事</h2>
+          <div class="masked masked--block" style="margin-top: var(--sp-2);">
+            <span class="masked__title">登录后可查看与这条启事可能相关的启事</span>
+            <span class="masked__desc">匹配结果与联系方式按置信度分档展示；低于 75% 只给条数。</span>
+            <a class="btn btn--primary btn--sm masked__action" href="#">登录查看</a>
+          </div>
+        </section>
+
+        <p class="tiny subtle" style="margin-top: var(--sp-3);">平台不发送短信验证码；手机号由发布者自行填写，请登录后自行核实。</p>
+      </div>
+    </main>
+
+    <footer class="app-footer">
+      <div class="app-footer__inner"><span>find-it-campus · 校园失物招领</span></div>
+    </footer>
+  </div>
+</body>
+</html>
