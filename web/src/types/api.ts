@@ -112,3 +112,16 @@ export interface FieldErrorItem {
   field: string
   reason: string
 }
+
+/** GET /api/auth/me、POST /api/auth/login 的 data（契约 §4.9/§4.11，只有三个字段） */
+export interface UserInfo {
+  id: number
+  studentNo: string
+  displayName: string
+}
+
+/** POST /api/auth/login 请求体（契约 §4.9） */
+export interface LoginPayload {
+  studentNo: string
+  password: string
+}

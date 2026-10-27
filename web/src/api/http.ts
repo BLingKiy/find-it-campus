@@ -45,6 +45,37 @@ export interface RequestOptions {
   body?: unknown
   /** 默认 8000ms；POST /api/match 传 12000 */
   timeoutMs?: number
+  /**
+   * 401 不触发全局登录引导，由调用方自己处理。
+   * 只给 /auth/login（凭证错）与 /auth/me（登录态探测）用；业务请求一律走全局引导。
+   */
+  silentAuth?: boolean
+}
+
+/** 401 事件的载荷：path 只用于日志，引导落点是当前页面而不是发起请求的接口 */
+export interface UnauthorizedEvent {
+  path: string
+  method: string
+}
+
+type UnauthorizedHandler = (event: UnauthorizedEvent) => void
+
+let unauthorizedHandler: UnauthorizedHandler | null = null
+let lastPromptAt = 0
+/** 并发 401 的合并窗口：同一批请求只引导一次（不重复弹、不并发弹） */
+const PROMPT_COOLDOWN_MS = 2000
+
+/** main.ts 在拿到 router 后注册：清本地登录态 + 跳 /login?redirect=<当前地址> */
+export function setUnauthorizedHandler(handler: UnauthorizedHandler | null): void {
+  unauthorizedHandler = handler
+}
+
+function notifyUnauthorized(path: string, method: string): void {
+  if (!unauthorizedHandler) return
+  const now = Date.now()
+  if (now - lastPromptAt < PROMPT_COOLDOWN_MS) return
+  lastPromptAt = now
+  unauthorizedHandler({ path, method })
 }
 
 function buildSearch(query: RequestOptions['query']): string {
@@ -81,6 +112,8 @@ export async function request<T>(path: string, init: RequestOptions = {}): Promi
     } else {
       const raw = await fetch(url, {
         method,
+        // 契约 §1.1：不写这一行，跨端口/代理场景浏览器不带 Cookie，表现为"登录成功但下一个请求 401"
+        credentials: 'include',
         headers: {
           Accept: 'application/json',
           // 写接口必须显式声明，否则 Spring Boot 的 @RequestBody 无法解析（415）
@@ -107,6 +140,10 @@ export async function request<T>(path: string, init: RequestOptions = {}): Promi
     // 唯一成功判据：2xx 且 code === 0（契约 §1）
     if (response.ok && code === 0) {
       return payload?.data as T
+    }
+    // 401 统一出口（契约 §1.1）：清登录态并引导到 /login，业务页面不各自处理
+    if (response.status === 401 && !init.silentAuth) {
+      notifyUnauthorized(path, method)
     }
     throw new BizError({ message, code, status: response.status, requestId, fieldErrors })
   } catch (err) {

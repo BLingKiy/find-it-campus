@@ -1,6 +1,36 @@
 <script setup lang="ts">
 // 布局壳：跳过导航 → 顶部栏 → <RouterView/> → 页脚（基线 §4 main.ts/App.vue 职责）
 // 4.2：只改视觉与结构（吸顶、当前页高亮、安全区、100dvh），不动路由与数据流
+// B3：顶部栏承载登录态（学号 + 退出 / 登录入口）；启动时探一次 /api/auth/me，刷新后恢复登录态
+import { onMounted, ref } from 'vue'
+import { useRouter } from 'vue-router'
+import ErrorBanner from '@/components/common/ErrorBanner.vue'
+import { useAuth } from '@/composables/useAuth'
+
+const router = useRouter()
+const { user, status, isAuthenticated, ensureSession, signOut } = useAuth()
+
+const loggingOut = ref(false)
+const logoutError = ref<unknown>(null)
+
+async function handleLogout(): Promise<void> {
+  if (loggingOut.value) return
+  loggingOut.value = true
+  logoutError.value = null
+  try {
+    await signOut()
+    await router.push({ name: 'RecordList' })
+  } catch (err) {
+    // 登出失败保留登录态，不能出现"界面退了、会话还在"
+    logoutError.value = err
+  } finally {
+    loggingOut.value = false
+  }
+}
+
+onMounted(() => {
+  void ensureSession()
+})
 </script>
 
 <template>
@@ -19,12 +49,41 @@
           <RouterLink :to="{ name: 'RecordCreate' }" class="app-header__link app-header__link--cta">
             发布启事
           </RouterLink>
+
+          <span
+            v-if="status === 'unknown'"
+            class="app-header__skeleton"
+            aria-hidden="true"
+          ></span>
+          <template v-else-if="isAuthenticated && user">
+            <span class="app-header__user" title="当前登录学号" data-testid="header-student-no">
+              <span class="app-header__user-label">学号</span>
+              <span class="app-header__user-value">{{ user.studentNo }}</span>
+            </span>
+            <button
+              type="button"
+              class="app-header__link app-header__logout"
+              :disabled="loggingOut"
+              @click="handleLogout"
+            >
+              {{ loggingOut ? '退出中…' : '退出' }}
+            </button>
+          </template>
+          <RouterLink v-else :to="{ name: 'Login' }" class="app-header__link app-header__login">
+            登录
+          </RouterLink>
         </nav>
       </div>
     </header>
 
     <main id="main" class="app-main" tabindex="-1">
       <div class="container">
+        <ErrorBanner
+          v-if="logoutError"
+          class="app-main__alert"
+          :error="logoutError"
+          title="退出失败"
+        />
         <RouterView />
       </div>
     </main>
@@ -146,6 +205,56 @@
   color: var(--color-primary-strong);
 }
 
+/* ---- 顶部栏 · 登录态（B3） ------------------------------------------------ */
+.app-header__user {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-1);
+  min-height: 36px;
+  padding: 0 var(--sp-2);
+  border-radius: var(--radius-sm);
+  background-color: var(--color-primary-soft);
+  color: var(--color-primary-strong);
+  font-weight: var(--fw-semibold);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.app-header__user-label {
+  color: var(--color-text-muted);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-regular);
+}
+
+.app-header__logout {
+  border: 0;
+  background-color: transparent;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.app-header__logout:disabled {
+  opacity: 0.6;
+  cursor: progress;
+}
+
+/* 登录态探测中：占位骨架，避免先闪一下「登录」再变成学号 */
+.app-header__skeleton {
+  width: 88px;
+  height: 20px;
+  border-radius: var(--radius-pill);
+  background-color: var(--color-skeleton-base);
+}
+
+.app-header__login {
+  color: var(--color-primary-strong);
+  font-weight: var(--fw-semibold);
+}
+
+.app-main__alert {
+  margin-bottom: var(--sp-4);
+}
+
 /* ---- 主体与页脚 ---------------------------------------------------------- */
 .app-main {
   flex: 1 1 auto;
@@ -195,6 +304,20 @@
 
   .app-header__link {
     padding: 0 var(--sp-3);
+  }
+}
+
+/* 窄屏登录态多占两块（学号 + 退出），允许导航换行，不许把品牌挤到溢出 */
+@media (max-width: 767px) {
+  .app-header__inner {
+    flex-wrap: wrap;
+    padding: var(--sp-2) 0;
+    row-gap: 0;
+  }
+
+  .app-header__nav {
+    flex-wrap: wrap;
+    justify-content: flex-end;
   }
 }
 
