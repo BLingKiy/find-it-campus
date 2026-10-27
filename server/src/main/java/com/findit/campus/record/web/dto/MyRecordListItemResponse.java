@@ -1,6 +1,7 @@
 package com.findit.campus.record.web.dto;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 import com.findit.campus.common.config.JacksonConfig;
 import com.findit.campus.record.domain.MyPairCounts;
@@ -17,8 +18,9 @@ import com.fasterxml.jackson.annotation.JsonFormat;
  * COMPLETED 按 A9 字面"所有者详情也 404"，前端据此不渲染详情入口；本类与详情出口共用
  * {@code RecordVisibilityPolicy} 的口径，不会出现"列表能点、点进去 404"。
  *
- * <p>{@code pairs} 数组与 {@code PairCard} 不在 C1 范围（E1）：只给四个计数，
- * 且计数口径逐字对应契约 §4.12 的 pairCount/relatedCount/lowConfidenceCount/matchedPairCount。
+ * <p>{@code pairs} 是每条记录自己的 pair 卡片（契约 §4.12 / §5.1），顺序由服务端定
+ * （{@code score} 降序、同分 {@code pairId} 升序），前端不再排。与详情不同，<b>本接口的所有条目都是
+ * 所有者视角</b>，所以 {@code pairs} 恒存在：没有达阈值的有效 pair 时给 {@code []}（不是省略）。
  */
 public class MyRecordListItemResponse {
 
@@ -56,13 +58,16 @@ public class MyRecordListItemResponse {
     private Integer matchedPairCount;
     private Boolean detailVisible;
 
+    /** 恒存在（所有者视角）：无有效卡片时 {@code []}，不是 {@code null}。 */
+    private List<PairCard> pairs;
+
     @JsonFormat(pattern = JacksonConfig.DATE_TIME_PATTERN)
     private LocalDateTime createdAt;
 
     @JsonFormat(pattern = JacksonConfig.DATE_TIME_PATTERN)
     private LocalDateTime updatedAt;
 
-    public static MyRecordListItemResponse of(MyRecordRow row, MyPairCounts counts) {
+    public static MyRecordListItemResponse of(MyRecordRow row, MyPairCounts counts, List<PairCard> pairs) {
         MyPairCounts effective = counts == null ? MyPairCounts.EMPTY : counts;
         MyRecordListItemResponse response = new MyRecordListItemResponse();
         response.id = row.getId();
@@ -84,6 +89,7 @@ public class MyRecordListItemResponse {
         response.hasMatchedPair = effective.matched() > 0;
         response.matchedPairCount = effective.matched();
         response.detailVisible = row.getStatus() == RecordStatus.PENDING;
+        response.pairs = pairs == null ? List.of() : pairs;
         response.createdAt = row.getCreatedAt();
         response.updatedAt = row.getUpdatedAt();
         return response;
@@ -163,6 +169,10 @@ public class MyRecordListItemResponse {
 
     public Boolean getDetailVisible() {
         return detailVisible;
+    }
+
+    public List<PairCard> getPairs() {
+        return pairs;
     }
 
     public LocalDateTime getCreatedAt() {

@@ -1,6 +1,7 @@
 package com.findit.campus.record.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -14,6 +15,8 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Map;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -32,6 +35,7 @@ import com.findit.campus.record.web.dto.RecordCreateRequest;
 import com.findit.campus.record.web.dto.RecordDetailResponse;
 import com.findit.campus.record.web.dto.StatusUpdateRequest;
 import com.findit.campus.record.web.dto.StatusUpdateResponse;
+import com.findit.campus.support.PairCardFixtures;
 
 /**
  * 所有权 + 终态可见性 + 状态写入路径的 service 级断言（不依赖 MySQL）。
@@ -217,7 +221,7 @@ class RecordServiceAccessTest {
     }
 
     @Test
-    @DisplayName("详情：PENDING 非所有者 200 遮蔽；所有者 200 明文 + 计数")
+    @DisplayName("详情：PENDING 非所有者 200 遮蔽（pairs 为 null = 字段省略）；所有者 200 明文 + 计数 + 卡片")
     void pendingDetailIdentityDimension() {
         Record pending = record(RecordStatus.PENDING, OWNER, null);
         pending.setContact("13812345678");
@@ -225,16 +229,39 @@ class RecordServiceAccessTest {
         when(recordMapper.selectById(RECORD_ID)).thenReturn(pending);
         when(pairFactsPort.countValidMatched(eq(RECORD_ID), any())).thenReturn(1);
         when(pairFactsPort.countLowConfidence(eq(RECORD_ID), any(), any())).thenReturn(2);
+        when(pairFactsPort.cardsOf(any(), any(), any(), any())).thenReturn(
+                Map.of(RECORD_ID, List.of(
+                        PairCardFixtures.direct(RECORD_ID, 101L),
+                        PairCardFixtures.authorizableNotPublic(RECORD_ID, 102L))));
 
         RecordDetailResponse masked = recordService.detail(RECORD_ID, OTHER);
         assertNull(masked.getContact());
         assertEquals(Boolean.FALSE, masked.getIsMine());
+        // 非所有者：字段省略（null），不是空数组；前端用 isMine 判断
+        assertNull(masked.getPairs());
 
         RecordDetailResponse owner = recordService.detail(RECORD_ID, OWNER);
         assertEquals("13812345678", owner.getContact());
         assertEquals(Boolean.TRUE, owner.getIsMine());
         assertTrue(owner.getAllowedStatuses().contains("COMPLETED"));
         assertEquals(2, owner.getLowConfidenceCount());
+        assertNotNull(owner.getPairs());
+        assertEquals(2, owner.getPairs().size());
+        assertEquals(101L, owner.getPairs().get(0).getPairId());
+        assertEquals("DIRECT", owner.getPairs().get(0).getTier());
+        assertEquals("AUTHORIZABLE", owner.getPairs().get(1).getTier());
+    }
+
+    @Test
+    @DisplayName("详情：COMPLETED 合格对端的遮蔽视图 pairs 为 null（不是空数组）")
+    void completedPeerDetailOmitsPairs() {
+        Record completed = record(RecordStatus.COMPLETED, OWNER, LocalDateTime.now().minusDays(3));
+        when(recordMapper.selectById(RECORD_ID)).thenReturn(completed);
+        when(pairFactsPort.viewerHasQualifyingPair(eq(RECORD_ID), eq(OTHER), any(), any())).thenReturn(true);
+
+        RecordDetailResponse response = recordService.detail(RECORD_ID, OTHER);
+
+        assertNull(response.getPairs());
     }
 
     @Test
@@ -262,6 +289,9 @@ class RecordServiceAccessTest {
 
         assertEquals(77L, response.getId());
         assertEquals(Boolean.TRUE, response.getIsMine());
+        // 契约 §4.3：发布成功响应 pairs=[]（刚建的记录不可能已有达阈值的 pair）
+        assertNotNull(response.getPairs());
+        assertTrue(response.getPairs().isEmpty());
         verify(recordMapper).insert(any(Record.class));
     }
 

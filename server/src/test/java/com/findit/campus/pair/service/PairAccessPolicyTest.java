@@ -55,6 +55,32 @@ class PairAccessPolicyTest {
         assertFalse(PairAccessPolicy.isUsable(null, found, 30, now));
     }
 
+    @Test
+    @DisplayName("§5.1 contactHint 四选一 / contactAvailable / scorePercent 四舍五入")
+    void contactOverlayHelpers() {
+        // 未公开优先于「有没有号」：对方没公开时，不该告诉查看者对方填没填号
+        assertEquals("对方尚未公开", PairAccessPolicy.contactHint(ContactTier.AUTHORIZABLE, false, true));
+        assertEquals("对方尚未公开", PairAccessPolicy.contactHint(ContactTier.AUTHORIZABLE, false, false));
+        // 已公开但没填号
+        assertEquals("对方未填写联系方式", PairAccessPolicy.contactHint(ContactTier.AUTHORIZABLE, true, false));
+        assertEquals("对方已公开联系方式", PairAccessPolicy.contactHint(ContactTier.AUTHORIZABLE, true, true));
+        // 直看档不需要授权，但没填号时按钮仍不可点
+        assertEquals("匹配度较高，可直接查看", PairAccessPolicy.contactHint(ContactTier.DIRECT, false, true));
+        assertEquals("对方未填写联系方式", PairAccessPolicy.contactHint(ContactTier.DIRECT, false, false));
+        // LOW 不可达（SQL 已过滤），但若以后放宽过滤，不能给出"可看"的暗示：§4.14 会 403/50002
+        assertEquals("对方尚未公开", PairAccessPolicy.contactHint(ContactTier.LOW, true, true));
+
+        assertTrue(PairAccessPolicy.contactAvailable(ContactTier.DIRECT, false, true));
+        assertFalse(PairAccessPolicy.contactAvailable(ContactTier.DIRECT, false, false));
+        assertTrue(PairAccessPolicy.contactAvailable(ContactTier.AUTHORIZABLE, true, true));
+        assertFalse(PairAccessPolicy.contactAvailable(ContactTier.AUTHORIZABLE, false, true));
+        assertFalse(PairAccessPolicy.contactAvailable(ContactTier.LOW, true, true));
+
+        assertEquals(92, PairAccessPolicy.scorePercent(new BigDecimal("0.9200")));
+        assertEquals(90, PairAccessPolicy.scorePercent(new BigDecimal("0.8999")));
+        assertEquals(0, PairAccessPolicy.scorePercent(null));
+    }
+
     private static Record record(RecordStatus status, LocalDateTime completedAt) {
         Record record = new Record();
         record.setStatus(status);
