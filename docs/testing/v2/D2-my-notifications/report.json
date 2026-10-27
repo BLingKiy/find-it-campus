@@ -1,0 +1,230 @@
+{
+  "generatedAt": "2026-10-27T16:53:05.879Z",
+  "base": "http://127.0.0.1:5173",
+  "backend": "feat/v2-E1b-record-pairs @ 3138f8b (http://127.0.0.1:18080)",
+  "browser": "msedge",
+  "dataSource": "real API; local DB fixture only (no network/page pairs injection)",
+  "phonePattern": "1[3-9]\\d{9}",
+  "cases": [
+    {
+      "label": "刚发布样本显示「分析中」",
+      "ok": true,
+      "detail": "分析中"
+    },
+    {
+      "label": "分析中卡片给出 5 秒自动刷新说明",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "出分后自动刷新为「N 条可能相关」",
+      "ok": true,
+      "detail": "1 条可能相关"
+    },
+    {
+      "label": "N 与 t_pair_score 行数一致",
+      "ok": true,
+      "detail": "rows=1"
+    },
+    {
+      "label": "出分后渲染真实 pair 卡片",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "记录 1 显示「3 条可能相关」",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "记录 1 显示降级标记",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "记录 1 显示降级提示",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "记录 1 逐条列出 2 张可查看 pair",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "记录 1 的 N 与 t_pair_score 行数一致",
+      "ok": true,
+      "detail": "rows=3"
+    },
+    {
+      "label": "第一对操作后变为「已联系」",
+      "ok": true,
+      "detail": "已联系"
+    },
+    {
+      "label": "第二对状态保持「待联系」",
+      "ok": true,
+      "detail": "待联系"
+    },
+    {
+      "label": "第二对数据库状态仍为 NEW",
+      "ok": true,
+      "detail": "NEW"
+    },
+    {
+      "label": "无 MATCHED pair 时「标记完成」置灰",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "置灰原因可见",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "点击置灰按钮不发网络请求",
+      "ok": true,
+      "detail": "count=0"
+    },
+    {
+      "label": "记录状态未被改变",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "有 MATCHED pair 时「标记完成」可用",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "标记成功后记录进入「已完成」页签",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "已完成摘要带 completed_at",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "已完成摘要带匹配对数",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "数据库状态变 COMPLETED 且 completed_at 非空",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "31 天前完成的样本带「已过保留期」标记",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "关闭走二次确认（确认前不发请求）",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "关闭后进入「已关闭」页签",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "数据库状态变 CLOSED",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "关闭后从公共列表消失",
+      "ok": true,
+      "detail": "ids=26,22,15,3,18,19,4,1,9,31,30,8,14,2,20,17,21,5,13"
+    },
+    {
+      "label": "已完成的记录也不在公共列表",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "顶栏红点为 3",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "通知页显示未读 3 条",
+      "ok": true,
+      "detail": "未读 3 条 / 共 6 条"
+    },
+    {
+      "label": "3 条未读标记",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "通知正文不含 11 位手机号",
+      "ok": true,
+      "detail": "hits=0"
+    },
+    {
+      "label": "全部已读后未读数归零",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "红点消失",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "数据库无未读通知",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "刷新后红点仍为 0",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "刷新后未读仍为 0",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "刷新后没有未读态条目",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "320px /my 无横向滚动",
+      "ok": true,
+      "detail": "scrollWidth=320"
+    },
+    {
+      "label": "320px 卡片宽度不超出视口",
+      "ok": true,
+      "detail": "width=288"
+    },
+    {
+      "label": "320px 操作按钮换行且都在视口内",
+      "ok": true,
+      "detail": "[{\"top\":-1748,\"left\":29,\"right\":291},{\"top\":-1708,\"left\":29,\"right\":291},{\"top\":-1668,\"left\":29,\"right\":291},{\"top\":-1628,\"left\":29,\"right\":291}]"
+    },
+    {
+      "label": "320px /notifications 无横向滚动",
+      "ok": true,
+      "detail": "scrollWidth=320"
+    }
+  ],
+  "fixture": {
+    "record1Pairs": 3,
+    "unreadDemo01": 3,
+    "record26State": "PENDING/PENDING"
+  },
+  "summary": {
+    "total": 42,
+    "passed": 42,
+    "failed": 0
+  }
+}
