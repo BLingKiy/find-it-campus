@@ -1,0 +1,16 @@
+=== 5.1 未达 MATCHED 就标完成 -> 期望 409/20005，status/completed_at/updated_at 全不变 ===
+[5.1a demo01 发布孤立记录] POST /api/records -> HTTP 200
+        body: {"code":0,"message":"已提交","data":{"id":30,"type":"LOST","status":"PENDING","title":"丢失一把黄铜色口琴","description":"装在棕色绒布袋里，袋口有磨损，可能在老图书馆后门附近遗失。","categoryId":8,"categoryName":"其他","location":"老图书馆后门","occurredAt":"2026-10-26 18:00:00","completedAt":null,"contact":"13900005555","publisherName":"演示甲","allowedStatuses":["CLOSED"],"hasMatchedPair":false,"matchedPairCount":0,"isMine":true,"pairState":"PENDING","lowConfidenceCount":0,"pairs":[],"createdAt":"2026-10-28 01:21:18","updatedAt":"2026-10-28 01:21:18"},"requestId":"5021dcfb196c4595"}
+LONELY_ID=30
+  改前: 30	PENDING	NULL	2026-10-28 01:21:18
+[5.1b PATCH /api/records/30/status COMPLETED] PATCH /api/records/30/status -> HTTP 409
+        body: {"code":20005,"message":"需双方确认匹配后才能标记完成","data":{"currentStatus":"PENDING","required":"MATCHED_PAIR","matchedPairCount":0},"requestId":"2422d6f73f5f45c3"}
+  改后: 30	PENDING	NULL	2026-10-28 01:21:18
+
+=== 5.2 夹具：0.75~0.90 的一对（同描述同地点、不同标题、无分类），用来验证 completed_visible_threshold=0.90 ===
+[5.2a demo01 发布 MID-LOST] POST /api/records -> HTTP 200
+        body: {"code":0,"message":"已提交","data":{"id":31,"type":"LOST","status":"PENDING","title":"丢了一个充电宝","description":"黑色外壳带白色星星贴纸，昨天落在靠窗座位上，好心人捡到请联系我。","categoryId":null,"categoryName":null,"location":"图书馆三楼靠窗座位","occurredAt":"2026-10-27 19:00:00","completedAt":null,"contact":"13900006666","publisherName":"演示甲","allowedStatuses":["CLOSED"],"hasMatchedPair":false,"matchedPairCount":0,"isMine":true,"pairState":"PENDING","lowConfidenceCount":0,"pairs":[],"createdAt":"2026-10-28 01:21:20","updatedAt":"2026-10-28 01:21:20"},"requestId":"2fba7dc31dfe4c08"}
+[5.2b demo02 发布 MID-FOUND] POST /api/records -> HTTP 200
+        body: {"code":0,"message":"已提交","data":{"id":32,"type":"FOUND","status":"PENDING","title":"捡到充电设备一件","description":"黑色外壳带白色星星贴纸，昨天落在靠窗座位上，好心人捡到请联系我。","categoryId":null,"categoryName":null,"location":"图书馆三楼靠窗座位","occurredAt":"2026-10-27 19:00:00","completedAt":null,"contact":"13900007777","publisherName":"演示乙","allowedStatuses":["CLOSED"],"hasMatchedPair":false,"matchedPairCount":0,"isMine":true,"pairState":"PENDING","lowConfidenceCount":0,"pairs":[],"createdAt":"2026-10-28 01:21:21","updatedAt":"2026-10-28 01:21:21"},"requestId":"8b9062dcb48d4f25"}
+MIDL_ID=31 MIDF_ID=32
+  pair 行: 74	31	32	0.5800	LOCAL_KEYWORD	EMPTY_KEY	NEW

@@ -1,0 +1,86 @@
+=== 前置：登录 ===
+login demo01 -> {"code":0,"message":"ok","data":{"id":1,"studentNo":"demo01","displayName":"演示甲"},"requestId":"ebcaf4b992e649d1"}
+login demo02 -> {"code":0,"message":"ok","data":{"id":2,"studentNo":"demo02","displayName":"演示乙"},"requestId":"e02f6e6488b84b34"}
+login demo03 -> {"code":0,"message":"ok","data":{"id":3,"studentNo":"demo03","displayName":"演示丙"},"requestId":"a7fdacc1ffc34bf8"}
+
+=== 6.1 无 session（匿名）四接口 -> 期望 401 / 10006 ===
+[6.1a anon GET contact] GET /api/pairs/1/contact -> HTTP 401
+        body: {"code":10006,"message":"请先登录","data":null,"requestId":"5ed86ea43e034d11"}
+[6.1b anon POST unlock] POST /api/pairs/1/contact-unlock -> HTTP 401
+        body: {"code":10006,"message":"请先登录","data":null,"requestId":"1229ea95b06f447a"}
+[6.1c anon PATCH pair] PATCH /api/pairs/1 -> HTTP 401
+        body: {"code":10006,"message":"请先登录","data":null,"requestId":"f18114b933e14e3f"}
+[6.1d anon PATCH notif read] PATCH /api/notifications/2/read -> HTTP 401
+        body: {"code":10006,"message":"请先登录","data":null,"requestId":"447d27257c9d4d5a"}
+
+=== 6.2 非参与方 demo03（pair 1 = demo01 LOST / demo02 FOUND）四接口 -> 期望 403 / 10007 ===
+t_access_log 总行数(调用前) = 0
+[6.2a outsider GET contact] GET /api/pairs/1/contact -> HTTP 403
+        body: {"code":10007,"message":"无权操作该资源","data":null,"requestId":"1a10aeabc5894609"}
+[6.2b outsider POST unlock] POST /api/pairs/1/contact-unlock -> HTTP 403
+        body: {"code":10007,"message":"无权操作该资源","data":null,"requestId":"0e60660b64d444aa"}
+[6.2c outsider PATCH pair] PATCH /api/pairs/1 -> HTTP 403
+        body: {"code":10007,"message":"无权操作该资源","data":null,"requestId":"a81c4ecde1594bba"}
+[6.2d outsider PATCH notif read] PATCH /api/notifications/2/read -> HTTP 403
+        body: {"code":10007,"message":"无权操作该资源","data":null,"requestId":"316b6945d0d2424f"}
+t_access_log 总行数(调用后) = 1 ；GRANTED 行 = 0
+新增行明细（若有）:
+id	pair_id	viewer_id	viewer_side	target_side	score	result	created_at
+1	1	3	LOST	FOUND	0.9600	DENIED_NOT_OWNER	2026-10-28 01:16:01
+
+=== 6.3 不存在 / 超界 / 非数字 id -> 期望 404，不 500 ===
+[6.3 GET contact id=999999] GET /api/pairs/999999/contact -> HTTP 404
+        body: {"code":20004,"message":"配对不存在或任一端记录已删除","data":null,"requestId":"8820d5c725fd467f"}
+[6.3 POST unlock id=999999] POST /api/pairs/999999/contact-unlock -> HTTP 404
+        body: {"code":20004,"message":"配对不存在或任一端记录已删除","data":null,"requestId":"776d66e15302497d"}
+[6.3 PATCH pair id=999999] PATCH /api/pairs/999999 -> HTTP 404
+        body: {"code":20004,"message":"配对不存在或任一端记录已删除","data":null,"requestId":"b20fed318536417c"}
+[6.3 GET contact id=9223372036854775807] GET /api/pairs/9223372036854775807/contact -> HTTP 404
+        body: {"code":20004,"message":"配对不存在或任一端记录已删除","data":null,"requestId":"14cf80e3dea04bc1"}
+[6.3 POST unlock id=9223372036854775807] POST /api/pairs/9223372036854775807/contact-unlock -> HTTP 404
+        body: {"code":20004,"message":"配对不存在或任一端记录已删除","data":null,"requestId":"929ad8ad07fa42eb"}
+[6.3 PATCH pair id=9223372036854775807] PATCH /api/pairs/9223372036854775807 -> HTTP 404
+        body: {"code":20004,"message":"配对不存在或任一端记录已删除","data":null,"requestId":"a91015f1c77c4c8f"}
+[6.3 GET contact id=99999999999999999999] GET /api/pairs/99999999999999999999/contact -> HTTP 404
+        body: {"code":20004,"message":"配对不存在或任一端记录已删除","data":null,"requestId":"289ce623a7584482"}
+[6.3 POST unlock id=99999999999999999999] POST /api/pairs/99999999999999999999/contact-unlock -> HTTP 404
+        body: {"code":20004,"message":"配对不存在或任一端记录已删除","data":null,"requestId":"59727744b7f74c96"}
+[6.3 PATCH pair id=99999999999999999999] PATCH /api/pairs/99999999999999999999 -> HTTP 404
+        body: {"code":20004,"message":"配对不存在或任一端记录已删除","data":null,"requestId":"0c358a1ec702404f"}
+[6.3 GET contact id=abc] GET /api/pairs/abc/contact -> HTTP 404
+        body: {"code":20004,"message":"配对不存在或任一端记录已删除","data":null,"requestId":"4eb1d33ec9214e9c"}
+[6.3 POST unlock id=abc] POST /api/pairs/abc/contact-unlock -> HTTP 404
+        body: {"code":20004,"message":"配对不存在或任一端记录已删除","data":null,"requestId":"bda63e1bdfdf4162"}
+[6.3 PATCH pair id=abc] PATCH /api/pairs/abc -> HTTP 404
+        body: {"code":20004,"message":"配对不存在或任一端记录已删除","data":null,"requestId":"cc8adc3a9bf247b9"}
+[6.3 GET contact id=-1] GET /api/pairs/-1/contact -> HTTP 404
+        body: {"code":20004,"message":"配对不存在或任一端记录已删除","data":null,"requestId":"5995a2cd1eec478c"}
+[6.3 POST unlock id=-1] POST /api/pairs/-1/contact-unlock -> HTTP 404
+        body: {"code":20004,"message":"配对不存在或任一端记录已删除","data":null,"requestId":"fbadff5c14b848a9"}
+[6.3 PATCH pair id=-1] PATCH /api/pairs/-1 -> HTTP 404
+        body: {"code":20004,"message":"配对不存在或任一端记录已删除","data":null,"requestId":"6ecb752022294ff5"}
+[6.3 GET contact id=0] GET /api/pairs/0/contact -> HTTP 404
+        body: {"code":20004,"message":"配对不存在或任一端记录已删除","data":null,"requestId":"7ad619e049b84072"}
+[6.3 POST unlock id=0] POST /api/pairs/0/contact-unlock -> HTTP 404
+        body: {"code":20004,"message":"配对不存在或任一端记录已删除","data":null,"requestId":"5fe43a70578d477b"}
+[6.3 PATCH pair id=0] PATCH /api/pairs/0 -> HTTP 404
+        body: {"code":20004,"message":"配对不存在或任一端记录已删除","data":null,"requestId":"d320661aace746ca"}
+[6.3 PATCH notif id=999999] PATCH /api/notifications/999999/read -> HTTP 404
+        body: {"code":50004,"message":"通知不存在","data":null,"requestId":"aeb3206425be4413"}
+[6.3 PATCH notif id=abc] PATCH /api/notifications/abc/read -> HTTP 404
+        body: {"code":50004,"message":"通知不存在","data":null,"requestId":"542ad43151bc4530"}
+[6.3 PATCH notif id=-1] PATCH /api/notifications/-1/read -> HTTP 404
+        body: {"code":50004,"message":"通知不存在","data":null,"requestId":"99f8b539d3504a8d"}
+
+=== 6.4 标记他人通知已读（notif 2 属于 demo02）-> 期望 403 / 10007 ===
+[6.4 demo01 PATCH notif 2] PATCH /api/notifications/2/read -> HTTP 403
+        body: {"code":10007,"message":"无权操作该资源","data":null,"requestId":"e2a67f0c37bd4858"}
+notif 2 现状: 2	2	NULL
+
+=== 6.5 反向对照：合法参与方调通（证明不是全站 403）===
+[6.5a demo01 GET contact pair1] GET /api/pairs/1/contact -> HTTP 200
+        body: {"code":0,"message":"ok","data":{"pairId":1,"score":0.9600,"scorePercent":96,"tier":"DIRECT","viewerSide":"LOST","targetSide":"FOUND","available":true,"contact":"13800000101","reason":null,"message":"匹配度较高，可直接查看","unlockedAt":null,"note":null},"requestId":"a00cd813f0464a61"}
+[6.5b demo01 PATCH pair1 CONTACT] PATCH /api/pairs/1 -> HTTP 200
+        body: {"code":0,"message":"已联系","data":{"pairId":1,"status":"CONTACTED","matched":false,"mySide":"LOST","myConfirmed":false,"otherConfirmed":false,"lostConfirmedAt":null,"foundConfirmedAt":null,"updatedAt":"2026-10-23 09:00:00"},"requestId":"98cd2e8c3e184676"}
+[6.5c demo01 PATCH own notif 1] PATCH /api/notifications/1/read -> HTTP 200
+        body: {"code":0,"message":"ok","data":{"id":1,"read":true,"readAt":"2026-10-28 01:16:07","unreadCount":4},"requestId":"e470544442864a2e"}

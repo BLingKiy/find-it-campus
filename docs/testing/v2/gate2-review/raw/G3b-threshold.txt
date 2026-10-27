@@ -1,0 +1,16 @@
+=== 3.5 阈值改配置：contact_direct_threshold 0.90 -> 0.85，contact_unlock_threshold 0.75 -> 0.40 ===
+-- 服务端启动参数：--findit.pair.contact_direct_threshold=0.85 --findit.pair.contact_unlock_threshold=0.40
+-- pair 4  score=0.8600（改前 AUTHORIZABLE）
+[3.5a pair4 demo01 GET contact] GET /api/pairs/4/contact -> HTTP 200
+        body: {"code":0,"message":"ok","data":{"pairId":4,"score":0.8600,"scorePercent":86,"tier":"DIRECT","viewerSide":"LOST","targetSide":"FOUND","available":true,"contact":"13800000104","reason":null,"message":"匹配度较高，可直接查看","unlockedAt":"2026-10-28 01:18:32","note":"周六下午三点图书馆三楼见，看到请联系我 [手机号已隐藏]"},"requestId":"762159a4e7d04ad4"}
+-- pair 10 score=0.4200（改前 403/50002）
+[3.5b pair10 demo01 GET contact] GET /api/pairs/10/contact -> HTTP 200
+        body: {"code":0,"message":"ok","data":{"pairId":10,"score":0.4200,"scorePercent":42,"tier":"AUTHORIZABLE","viewerSide":"LOST","targetSide":"FOUND","available":false,"contact":null,"reason":"NOT_PUBLIC","message":"对方尚未公开","unlockedAt":null,"note":null},"requestId":"9a0ace05f6b34937"}
+[3.5c pair10 demo01 POST unlock] POST /api/pairs/10/contact-unlock -> HTTP 200
+        body: {"code":0,"message":"ok","data":{"pairId":10,"side":"LOST","unlockedAt":"2026-10-28 01:19:09","note":"阈值下探验证","public":true},"requestId":"3f890041014f416d"}
+-- pair 8  score=0.3400（仍低于 0.40，应继续 403/50002）
+[3.5d pair8 demo01 GET contact] GET /api/pairs/8/contact -> HTTP 403
+        body: {"code":50002,"message":"匹配度不足，无法查看联系方式","data":null,"requestId":"6d285235fe8443fc"}
+-- pair 3  score=0.9200（仍 DIRECT，确认高分档未被改坏）
+[3.5e pair3 demo01 GET contact] GET /api/pairs/3/contact -> HTTP 200
+        body: {"code":0,"message":"ok","data":{"pairId":3,"score":0.9200,"scorePercent":92,"tier":"DIRECT","viewerSide":"LOST","targetSide":"FOUND","available":true,"contact":"13800000103","reason":null,"message":"匹配度较高，可直接查看","unlockedAt":null,"note":null},"requestId":"e596159d21f3488e"}
