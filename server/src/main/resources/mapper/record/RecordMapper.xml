@@ -3,11 +3,13 @@
 <!--
   t_record 的显式 SQL（ADR-004：原生 MyBatis + XML，不用 MyBatis-Plus / PageHelper）。
 
-  三条写在文件头的纪律：
+  四条写在文件头的纪律：
   1. 所有读路径带 deleted_at IS NULL（ADR-006）。漏一条等于让已删记录重新出现在列表/详情/匹配结果里。
   2. 所有 ${} 一律为零 —— ORDER BY 的列名与方向由 <choose> 硬编码，入参只允许影响"选哪个分支"
      （ADR-014：这是本项目唯一现实的注入面，堵死它只需要不在 SQL 里拼请求字符串）。
-  3. 写路径返回影响行数，由 service 把 0 行翻译成 20001；不在 SQL 里做"存在性判断"。
+  3. 写路径返回影响行数，由 service 把 0 行翻译成 20001/20002；不在 SQL 里做"存在性判断"。
+  4. t_record.status 只有三条写语句：insert（初始化 PENDING）、markCompleted、close。
+     updateContent 不碰 status，markDeleted 不碰 status —— 系统任务没有写 status 的 SQL。
 -->
 <mapper namespace="com.findit.campus.record.mapper.RecordMapper">
 
@@ -15,11 +17,13 @@
         <id property="id" column="id"/>
         <result property="type" column="type"/>
         <result property="status" column="status"/>
+        <result property="completedAt" column="completed_at"/>
         <result property="title" column="title"/>
         <result property="categoryId" column="category_id"/>
         <result property="categoryName" column="category_name"/>
         <result property="location" column="location"/>
         <result property="occurredAt" column="occurred_at"/>
+        <result property="publisherId" column="publisher_id"/>
         <result property="createdAt" column="created_at"/>
     </resultMap>
 
@@ -27,6 +31,7 @@
         <id property="id" column="id"/>
         <result property="type" column="type"/>
         <result property="status" column="status"/>
+        <result property="completedAt" column="completed_at"/>
         <result property="title" column="title"/>
         <result property="description" column="description"/>
         <result property="categoryId" column="category_id"/>
@@ -35,6 +40,8 @@
         <result property="occurredAt" column="occurred_at"/>
         <result property="contact" column="contact"/>
         <result property="publisherName" column="publisher_name"/>
+        <result property="publisherId" column="publisher_id"/>
+        <result property="pairState" column="pair_state"/>
         <result property="deletedAt" column="deleted_at"/>
         <result property="createdAt" column="created_at"/>
         <result property="updatedAt" column="updated_at"/>
@@ -48,14 +55,41 @@
         <result property="location" column="location"/>
     </resultMap>
 
+    <resultMap id="myRecordMap" type="com.findit.campus.record.domain.MyRecordRow">
+        <id property="id" column="id"/>
+        <result property="type" column="type"/>
+        <result property="status" column="status"/>
+        <result property="completedAt" column="completed_at"/>
+        <result property="title" column="title"/>
+        <result property="categoryId" column="category_id"/>
+        <result property="categoryName" column="category_name"/>
+        <result property="location" column="location"/>
+        <result property="occurredAt" column="occurred_at"/>
+        <result property="contact" column="contact"/>
+        <result property="publisherName" column="publisher_name"/>
+        <result property="pairState" column="pair_state"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="updatedAt" column="updated_at"/>
+    </resultMap>
+
+    <!--
+      召回谓词（MATCHABLE，契约 §4.8 / 架构 §9.3）：PENDING 恒可；COMPLETED 仅保留期内；CLOSED 不可。
+      「列表隐藏 ≠ 匹配隐藏」的 SQL 落点：公共列表硬写 PENDING（见 listJoins），
+      候选池则允许保留期内的 COMPLETED —— 两处刻意不同，不是漏写。
+    -->
+    <sql id="matchablePredicate">
+        (r.status = 'PENDING'
+         OR (r.status = 'COMPLETED' AND r.completed_at &gt; #{completedCutoff}))
+    </sql>
+
     <!-- 列表与总数共用同一份条件，避免"总数 21、列表 20"这类两处条件写歪的事故 -->
     <sql id="listJoins">
         FROM t_record r
         LEFT JOIN t_category c ON c.id = r.category_id
         <where>
             r.deleted_at IS NULL
+            AND r.status = 'PENDING'
             <if test="condition.type != null">AND r.type = #{condition.type}</if>
-            <if test="condition.status != null">AND r.status = #{condition.status}</if>
             <if test="condition.categoryId != null">AND r.category_id = #{condition.categoryId}</if>
             <if test="condition.keywordPattern != null">
                 AND (r.title LIKE #{condition.keywordPattern} ESCAPE '/'
@@ -85,22 +119,66 @@
         </choose>
     </sql>
 
+    <!-- 我的启事排序：与公共列表同一套白名单，只是条件对象不同 -->
+    <sql id="myOrderByClause">
+        <choose>
+            <when test="condition.sortField == 'OCCURRED_AT'">
+                <choose>
+                    <when test="condition.sortDirection == 'ASC'">ORDER BY r.occurred_at ASC, r.id DESC</when>
+                    <otherwise>ORDER BY r.occurred_at DESC, r.id DESC</otherwise>
+                </choose>
+            </when>
+            <otherwise>
+                <choose>
+                    <when test="condition.sortDirection == 'ASC'">ORDER BY r.created_at ASC, r.id DESC</when>
+                    <otherwise>ORDER BY r.created_at DESC, r.id DESC</otherwise>
+                </choose>
+            </otherwise>
+        </choose>
+    </sql>
+
     <select id="countByCondition" resultType="long">
         SELECT COUNT(*)
         <include refid="listJoins"/>
     </select>
 
     <select id="selectSummaries" resultMap="summaryMap">
-        SELECT r.id, r.type, r.status, r.title, r.category_id, c.name AS category_name,
-               r.location, r.occurred_at, r.created_at
+        SELECT r.id, r.type, r.status, r.completed_at, r.title, r.category_id, c.name AS category_name,
+               r.location, r.occurred_at, r.publisher_id, r.created_at
         <include refid="listJoins"/>
         <include refid="orderByClause"/>
         LIMIT #{limit} OFFSET #{offset}
     </select>
 
+    <sql id="myRecordWhere">
+        FROM t_record r
+        LEFT JOIN t_category c ON c.id = r.category_id
+        <where>
+            r.deleted_at IS NULL
+            AND r.publisher_id = #{condition.publisherId}
+            <if test="condition.type != null">AND r.type = #{condition.type}</if>
+            <if test="condition.status != null">AND r.status = #{condition.status}</if>
+        </where>
+    </sql>
+
+    <select id="countByPublisher" resultType="long">
+        SELECT COUNT(*)
+        <include refid="myRecordWhere"/>
+    </select>
+
+    <select id="selectMyRecords" resultMap="myRecordMap">
+        SELECT r.id, r.type, r.status, r.completed_at, r.title, r.category_id, c.name AS category_name,
+               r.location, r.occurred_at, r.contact, r.publisher_name, r.pair_state,
+               r.created_at, r.updated_at
+        <include refid="myRecordWhere"/>
+        <include refid="myOrderByClause"/>
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+
     <select id="selectById" resultMap="recordMap">
-        SELECT r.id, r.type, r.status, r.title, r.description, r.category_id, c.name AS category_name,
-               r.location, r.occurred_at, r.contact, r.publisher_name, r.deleted_at, r.created_at, r.updated_at
+        SELECT r.id, r.type, r.status, r.completed_at, r.title, r.description, r.category_id,
+               c.name AS category_name, r.location, r.occurred_at, r.contact, r.publisher_name,
+               r.publisher_id, r.pair_state, r.deleted_at, r.created_at, r.updated_at
         FROM t_record r
         LEFT JOIN t_category c ON c.id = r.category_id
         WHERE r.id = #{id} AND r.deleted_at IS NULL
@@ -108,12 +186,17 @@
 
     <insert id="insert" useGeneratedKeys="true" keyProperty="id" keyColumn="id">
         INSERT INTO t_record
-            (type, status, title, description, category_id, location, occurred_at, contact, publisher_name)
+            (type, status, title, description, category_id, location, occurred_at, contact,
+             publisher_name, publisher_id)
         VALUES
             (#{type}, #{status}, #{title}, #{description}, #{categoryId}, #{location}, #{occurredAt},
-             #{contact}, #{publisherName})
+             #{contact}, #{publisherName}, #{publisherId})
     </insert>
 
+    <!--
+      改内容：不碰 status / completed_at（契约 §4.4）。updated_at 由本人写路径显式 NOW()；
+      pair_state 回到 PENDING 触发重算，但**不清空**已有 pair 的 status/授权/附言/confirmed_at。
+    -->
     <update id="updateContent">
         UPDATE t_record
         SET type            = #{type},
@@ -123,45 +206,62 @@
             location        = #{location},
             occurred_at     = #{occurredAt},
             contact         = #{contact},
-            publisher_name  = #{publisherName}
+            publisher_name  = #{publisherName},
+            pair_state      = 'PENDING',
+            updated_at      = NOW()
         WHERE id = #{id} AND deleted_at IS NULL
     </update>
 
-    <update id="updateStatus">
+    <!-- 同一条 UPDATE 写 status + completed_at + updated_at（契约 §4.5，避免中途崩溃的脏行） -->
+    <update id="markCompleted">
         UPDATE t_record
-        SET status = #{status}
-        WHERE id = #{id} AND deleted_at IS NULL
+        SET status       = 'COMPLETED',
+            completed_at = #{at},
+            updated_at   = #{at}
+        WHERE id = #{id} AND deleted_at IS NULL AND status = 'PENDING'
     </update>
 
-    <!-- 幂等无关：已删再删影响 0 行，service 翻译成 20001（契约 §6.2 要求明确报错而非静默成功） -->
+    <update id="close">
+        UPDATE t_record
+        SET status       = 'CLOSED',
+            completed_at = NULL,
+            updated_at   = #{at}
+        WHERE id = #{id} AND deleted_at IS NULL AND status = 'PENDING'
+    </update>
+
+    <!-- 只写 deleted_at/updated_at：删除与三态正交，删了也不会变成 CLOSED（契约 §4.6） -->
     <update id="markDeleted">
         UPDATE t_record
-        SET deleted_at = #{deletedAt}
+        SET deleted_at = #{deletedAt},
+            updated_at = #{deletedAt}
         WHERE id = #{id} AND deleted_at IS NULL
     </update>
 
     <!--
-      匹配候选池：口径与回表一致（PENDING + 未删除），两处同口径才不会出现
-      "CLAIMED 到底进不进结果"在取数与回表两个地方写法不一致（docs/ai-match-module.md §5 步骤 5）。
+      匹配候选池：MATCHABLE（PENDING + 保留期内 COMPLETED），排除 CLOSED 与已删除。
+      与 selectSummariesByIds 共用 matchablePredicate，两处口径不会分叉。
     -->
     <select id="selectCandidatePool" resultMap="candidateMap">
-        SELECT id, title, description, category_id, location
-        FROM t_record
+        SELECT r.id, r.title, r.description, r.category_id, r.location
+        FROM t_record r
         <where>
-            deleted_at IS NULL AND status = 'PENDING'
-            <if test="type != null">AND type = #{type}</if>
-            <if test="categoryId != null">AND category_id = #{categoryId}</if>
+            r.deleted_at IS NULL
+            AND <include refid="matchablePredicate"/>
+            <if test="type != null">AND r.type = #{type}</if>
+            <if test="categoryId != null">AND r.category_id = #{categoryId}</if>
         </where>
-        ORDER BY created_at DESC, id DESC
+        ORDER BY r.created_at DESC, r.id DESC
         LIMIT #{limit}
     </select>
 
     <select id="selectSummariesByIds" resultMap="summaryMap">
-        SELECT r.id, r.type, r.status, r.title, r.category_id, c.name AS category_name,
-               r.location, r.occurred_at, r.created_at
+        SELECT r.id, r.type, r.status, r.completed_at, r.title, r.category_id, c.name AS category_name,
+               r.location, r.occurred_at, r.publisher_id, r.created_at
         FROM t_record r
         LEFT JOIN t_category c ON c.id = r.category_id
-        WHERE r.deleted_at IS NULL AND r.status = 'PENDING' AND r.id IN
+        WHERE r.deleted_at IS NULL
+          AND <include refid="matchablePredicate"/>
+          AND r.id IN
         <foreach item="id" collection="ids" open="(" separator="," close=")">#{id}</foreach>
     </select>
 

@@ -31,11 +31,26 @@ public enum ErrorCode {
      * 不在这里再登记一个同 code 的枚举值（否则 10006 的含义就分裂成两条）。
      */
     UNAUTHORIZED(10006, HttpStatus.UNAUTHORIZED, "请先登录"),
+    /**
+     * 越权（契约 §6：HTTP 403，body code 10007）。
+     *
+     * <p>与 20001（404）刻意分流：403 = "这条记录对你可见，但你不是所有者"；
+     * 404 = "按可见性规则你连它存在都不该知道"（CLOSED、到期 COMPLETED、非合格对端）。
+     * 两者合并成一个码，前端就无法区分"换个人来操作"和"这条已经不可见"。
+     */
+    FORBIDDEN(10007, HttpStatus.FORBIDDEN, "无权操作该资源"),
 
     // ---- 2xxxx 记录 ----
     RECORD_NOT_FOUND(20001, HttpStatus.NOT_FOUND, "记录不存在或已删除"),
     RECORD_ILLEGAL_STATUS_TRANSITION(20002, HttpStatus.CONFLICT, "状态流转非法"),
     RECORD_OPERATION_NOT_ALLOWED(20003, HttpStatus.CONFLICT, "记录当前状态不可执行该操作"),
+    /**
+     * 标记完成的前置未满足（契约 §4.5：HTTP 409，body code 20005，<b>零写入</b>）。
+     *
+     * <p>{@code data} 固定带 {@code currentStatus/required/matchedPairCount}：
+     * 前端据此把「标记完成」置灰，而不是等用户点了才弹一个"未知原因"的 409。
+     */
+    PAIR_REQUIRED_FOR_COMPLETE(20005, HttpStatus.CONFLICT, "需双方确认匹配后才能标记完成"),
 
     // ---- 3xxxx 匹配 ----
     MATCH_INPUT_INVALID(30001, HttpStatus.BAD_REQUEST, "匹配输入无效"),

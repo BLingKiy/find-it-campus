@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!--
+  t_pair_score 的只读事实查询（C1）。三条纪律：
+  1. 只有 SELECT —— pair 的写路径属于 E1，C1 不改 pair 状态、不写审计。
+  2. 保留期窗口由 #{cutoff} 传入，SQL 里不出现 30 这类魔数（配置只有 PairPolicyProperties 一份）。
+  3. 「有效」谓词三处一致：两端 deleted_at IS NULL、status <> 'CLOSED'、COMPLETED 端 completed_at > cutoff。
+     三处写法一旦分叉，就会出现"详情说没配对、/my 说配了"的自相矛盾。
+-->
+<mapper namespace="com.findit.campus.pair.mapper.PairFactsMapper">
+
+    <select id="countValidMatched" resultType="int">
+        SELECT COUNT(*)
+        FROM t_pair_score p
+        JOIN t_record l ON l.id = p.lost_id
+        JOIN t_record f ON f.id = p.found_id
+        WHERE (p.lost_id = #{recordId} OR p.found_id = #{recordId})
+          AND p.status = 'MATCHED'
+          AND p.lost_confirmed_at IS NOT NULL
+          AND p.found_confirmed_at IS NOT NULL
+          AND l.deleted_at IS NULL AND f.deleted_at IS NULL
+          AND l.status &lt;&gt; 'CLOSED' AND f.status &lt;&gt; 'CLOSED'
+          AND (l.status = 'PENDING' OR l.completed_at &gt; #{cutoff})
+          AND (f.status = 'PENDING' OR f.completed_at &gt; #{cutoff})
+    </select>
+
+    <!--
+      合格对端：other = pair 的另一端，必须属于查看者（publisher_id），且未删/未 CLOSED/未过期。
+      排除 IGNORED：A1 补充 #2 —— 唯一关联 pair 为 IGNORED 时按 404 处理，与"没有 pair"同码同文案。
+    -->
+    <select id="countQualifyingPairs" resultType="int">
+        SELECT COUNT(*)
+        FROM t_pair_score p
+        JOIN t_record other ON other.id = IF(p.lost_id = #{targetRecordId}, p.found_id, p.lost_id)
+        WHERE (p.lost_id = #{targetRecordId} OR p.found_id = #{targetRecordId})
+          AND other.publisher_id = #{viewerId}
+          AND other.deleted_at IS NULL
+          AND other.status &lt;&gt; 'CLOSED'
+          AND (other.status = 'PENDING' OR other.completed_at &gt; #{cutoff})
+          AND p.score &gt;= #{threshold}
+          AND p.status &lt;&gt; 'IGNORED'
+    </select>
+
+    <select id="countLowConfidence" resultType="int">
+        SELECT COUNT(*)
+        FROM t_pair_score p
+        JOIN t_record other ON other.id = IF(p.lost_id = #{recordId}, p.found_id, p.lost_id)
+        WHERE (p.lost_id = #{recordId} OR p.found_id = #{recordId})
+          AND other.deleted_at IS NULL
+          AND other.status &lt;&gt; 'CLOSED'
+          AND (other.status = 'PENDING' OR other.completed_at &gt; #{cutoff})
+          AND p.score &lt; #{threshold}
+    </select>
+
+    <!--
+      批量聚合：先把"记录 id ↔ pair id"展开成 pair 归属表，再回连 pair 与两端记录。
+      不用 N 次单条查询，是因为 /my 一页最多 50 行 —— 50 次往返会把一个列表接口的 p95 拖成倍数。
+    -->
+    <select id="countByRecordIds" resultType="com.findit.campus.pair.domain.PairCountsRow">
+        SELECT t.record_id AS record_id,
+               COUNT(*) AS total,
+               SUM(CASE WHEN p.score &gt;= #{threshold} THEN 1 ELSE 0 END) AS related,
+               SUM(CASE WHEN p.score &lt; #{threshold} THEN 1 ELSE 0 END) AS low_confidence,
+               SUM(CASE WHEN p.status = 'MATCHED'
+                         AND p.lost_confirmed_at IS NOT NULL
+                         AND p.found_confirmed_at IS NOT NULL THEN 1 ELSE 0 END) AS matched
+        FROM (
+            SELECT id AS pair_id, lost_id AS record_id
+            FROM t_pair_score
+            WHERE lost_id IN
+            <foreach item="id" collection="ids" open="(" separator="," close=")">#{id}</foreach>
+            UNION ALL
+            SELECT id AS pair_id, found_id AS record_id
+            FROM t_pair_score
+            WHERE found_id IN
+            <foreach item="id" collection="ids" open="(" separator="," close=")">#{id}</foreach>
+        ) t
+        JOIN t_pair_score p ON p.id = t.pair_id
+        JOIN t_record l ON l.id = p.lost_id
+        JOIN t_record f ON f.id = p.found_id
+        JOIN t_record other ON other.id = IF(p.lost_id = t.record_id, p.found_id, p.lost_id)
+        WHERE l.deleted_at IS NULL AND f.deleted_at IS NULL
+          AND l.status &lt;&gt; 'CLOSED' AND f.status &lt;&gt; 'CLOSED'
+          AND (l.status = 'PENDING' OR l.completed_at &gt; #{cutoff})
+          AND (f.status = 'PENDING' OR f.completed_at &gt; #{cutoff})
+          AND other.deleted_at IS NULL
+          AND other.status &lt;&gt; 'CLOSED'
+          AND (other.status = 'PENDING' OR other.completed_at &gt; #{cutoff})
+        GROUP BY t.record_id
+    </select>
+
+</mapper>

@@ -16,6 +16,7 @@ public class Record {
     private Long id;
     private RecordType type;
     private RecordStatus status;
+    private LocalDateTime completedAt;
     private String title;
     private String description;
     private Long categoryId;
@@ -24,6 +25,8 @@ public class Record {
     private LocalDateTime occurredAt;
     private String contact;
     private String publisherName;
+    private Long publisherId;
+    private String pairState;
     private LocalDateTime deletedAt;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
@@ -115,6 +118,33 @@ public class Record {
 
     public void setPublisherName(String publisherName) {
         this.publisherName = publisherName;
+    }
+
+    /** 发布者；应用层新建必填。所有权判定唯一依据（不是 {@code publisherName}，那是可改的展示名）。 */
+    public Long getPublisherId() {
+        return publisherId;
+    }
+
+    public void setPublisherId(Long publisherId) {
+        this.publisherId = publisherId;
+    }
+
+    /** 标记完成的时间；{@code COMPLETED ⇔ 非空}，同时是保留期的起点。 */
+    public LocalDateTime getCompletedAt() {
+        return completedAt;
+    }
+
+    public void setCompletedAt(LocalDateTime completedAt) {
+        this.completedAt = completedAt;
+    }
+
+    /** 系统内部状态（PENDING/SCORING/READY/DEGRADED），与三态 {@code status} 无联动。 */
+    public String getPairState() {
+        return pairState;
+    }
+
+    public void setPairState(String pairState) {
+        this.pairState = pairState;
     }
 
     public LocalDateTime getDeletedAt() {

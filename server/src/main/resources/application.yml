@@ -84,6 +84,14 @@ findit:
       base-url: '${FINDIT_EMBED_BASE_URL:}'
       api-key: '${FINDIT_EMBED_API_KEY:}'
       timeout-ms: 3000
+  # 配对/可见性策略：唯一配置类 PairPolicyProperties（A1 §7.1 冻结名）。
+  # 这里只放默认值，业务语义见类注释；改口径只改这一处，禁止在代码里再写 0.90/30。
+  pair:
+    contact_direct_threshold: 0.90
+    contact_unlock_threshold: 0.75
+    completed_visible_threshold: 0.90
+    completed_retention_days: 30
+    notify_threshold: 0.75
 
 logging:
   level:

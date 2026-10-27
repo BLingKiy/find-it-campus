@@ -18,11 +18,13 @@ public class RecordSummary {
     private Long id;
     private RecordType type;
     private RecordStatus status;
+    private LocalDateTime completedAt;
     private String title;
     private Long categoryId;
     private String categoryName;
     private String location;
     private LocalDateTime occurredAt;
+    private Long publisherId;
     private LocalDateTime createdAt;
 
     public Long getId() {
@@ -47,6 +49,24 @@ public class RecordSummary {
 
     public void setStatus(RecordStatus status) {
         this.status = status;
+    }
+
+    /** COMPLETED 的保留期起点；{@code PENDING/CLOSED} 为 null。{@code /api/match} 用它判 MATCHABLE。 */
+    public LocalDateTime getCompletedAt() {
+        return completedAt;
+    }
+
+    public void setCompletedAt(LocalDateTime completedAt) {
+        this.completedAt = completedAt;
+    }
+
+    /** 发布者 id：列表的 {@code isMine} 与候选的“是否本人记录”都靠它，不能用展示名判断。 */
+    public Long getPublisherId() {
+        return publisherId;
+    }
+
+    public void setPublisherId(Long publisherId) {
+        this.publisherId = publisherId;
     }
 
     public String getTitle() {

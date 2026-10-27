@@ -89,7 +89,7 @@ class KeywordEngineSwappabilityTest {
         when(pool.load(any(), any(), anyInt())).thenReturn(SeedSamples.pool("FOUND"));
 
         RecordMapper recordMapper = mock(RecordMapper.class);
-        when(recordMapper.selectSummariesByIds(any())).thenAnswer(invocation -> {
+        when(recordMapper.selectSummariesByIds(any(), any())).thenAnswer(invocation -> {
             List<Long> ids = invocation.getArgument(0);
             return ids.stream().map(KeywordEngineSwappabilityTest::summary).toList();
         });
@@ -104,7 +104,8 @@ class KeywordEngineSwappabilityTest {
         when(engineProvider.getIfAvailable()).thenReturn(engine);
 
         return new MatchService(engineProvider, pool, recordMapper, matchResultMapper, categoryService,
-                new MatchEngineConfig("local"), new ObjectMapper(), 500);
+                new MatchEngineConfig("local"), new com.findit.campus.pair.config.PairPolicyProperties(),
+                new ObjectMapper(), 500);
     }
 
     private static MatchRequest request(String text) {
