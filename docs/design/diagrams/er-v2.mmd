@@ -1,0 +1,84 @@
+%% find-it-campus v2 · 7 表 ER 图（关系与关键约束列）
+%% 事实来源：docs/design/v2-architecture.md §4 + db/schema.sql（B1 落地）
+%% 取舍：图只画关系与关键列；完整列、CHECK、索引见正文 §4.2 DDL 草案。
+erDiagram
+  t_user ||--o{ t_record : "publisher_id（RESTRICT，可空仅迁移期）"
+  t_category ||--o{ t_record : "category_id（RESTRICT，可空）"
+  t_category ||--o{ t_match_result : "input_category_id（SET NULL，可空）"
+  t_record ||--o{ t_pair_score : "lost_id（RESTRICT）"
+  t_record ||--o{ t_pair_score : "found_id（RESTRICT）"
+  t_user ||--o{ t_notification : "user_id（RESTRICT）"
+  t_pair_score ||--o{ t_notification : "pair_id（SET NULL，可空）"
+  t_user ||--o{ t_access_log : "viewer_id（RESTRICT）"
+  t_pair_score ||--o{ t_access_log : "pair_id（RESTRICT）"
+
+  t_user {
+    BIGINT id PK "自增主键"
+    VARCHAR student_no UK "学号，登录名；不存手机号"
+    VARCHAR password_hash "bcrypt，cost >= 10"
+    VARCHAR display_name "展示名"
+    TINYINT is_active "1 启用 / 0 停用"
+  }
+
+  t_category {
+    BIGINT id PK "自增主键"
+    VARCHAR code UK "稳定编码，如 WALLET"
+    VARCHAR name "中文名"
+    SMALLINT sort_order "展示顺序"
+    TINYINT is_active "1 启用 / 0 停用"
+  }
+
+  t_record {
+    BIGINT id PK "对外资源 id"
+    VARCHAR type "LOST / FOUND"
+    VARCHAR status "PENDING / CLAIMED / CLOSED"
+    BIGINT publisher_id FK "发布者；应用层强制非空"
+    VARCHAR pair_state "PENDING / SCORING / READY / DEGRADED"
+    DATETIME pair_scored_at "最后一次打分完成时间"
+    DATETIME deleted_at "非空 = 逻辑删除"
+    DATETIME updated_at "只由本人写路径更新；系统任务不写"
+  }
+
+  t_match_result {
+    BIGINT id PK "响应体 matchId"
+    VARCHAR input_type "可空 = 不限类型"
+    BIGINT input_category_id FK "可空"
+    VARCHAR impl "LOCAL_KEYWORD / EXTERNAL_EMBEDDING"
+    JSON candidates "写入前已脱敏；无外键"
+  }
+
+  t_pair_score {
+    BIGINT id PK "pairId"
+    BIGINT lost_id FK "LOST 记录"
+    BIGINT found_id FK "FOUND 记录"
+    DECIMAL score "0.0000 - 1.0000"
+    VARCHAR engine "DEEPSEEK / LOCAL_KEYWORD"
+    VARCHAR degraded_reason "降级原因，成功时为 NULL"
+    CHAR lost_hash "lost 内容哈希，幂等键一半"
+    CHAR found_hash "found 内容哈希，幂等键一半"
+    DATETIME lost_unlocked_at "LOST 端授权公开时间"
+    DATETIME found_unlocked_at "FOUND 端授权公开时间"
+    VARCHAR lost_unlock_note "LOST 端附言，已打码，<=200"
+    VARCHAR found_unlock_note "FOUND 端附言，已打码，<=200"
+    VARCHAR status "NEW / CONTACTED / IGNORED（无已解决态）"
+  }
+
+  t_notification {
+    BIGINT id PK "通知 id"
+    BIGINT user_id FK "接收人"
+    BIGINT pair_id FK "关联 pair，可空"
+    VARCHAR type "PAIR_MATCH / PAIR_UNLOCK / SYSTEM"
+    VARCHAR body "写入前已打码，不含号码"
+    DATETIME read_at "NULL = 未读"
+  }
+
+  t_access_log {
+    BIGINT id PK "审计 id"
+    BIGINT pair_id FK "被查看的 pair"
+    BIGINT viewer_id FK "查看人"
+    VARCHAR viewer_side "LOST / FOUND"
+    VARCHAR target_side "LOST / FOUND"
+    DECIMAL score "查看时分数快照"
+    VARCHAR result "GRANTED / DENIED_*"
+    VARCHAR request_id "关联请求追踪号"
+  }
