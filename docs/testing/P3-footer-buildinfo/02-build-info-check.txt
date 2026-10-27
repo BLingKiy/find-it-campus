@@ -1,0 +1,8 @@
+﻿BUILD-INFO vs actual package files:
+  layout-version-7.4 : True
+  git-commit-4c66a22 : True
+  git-dirty-false    : True
+  jar-sha-match      : True actual=A79B727D702D0E6680DEA854657F6E67766B7776C4CD8CC7ECBAC4DE882F2EFA
+  index-sha-match    : True actual=43F2D3B44570EE67318AF296B2B7783B4A2A48664355F66470FE7B04D87CD259
+  ports-8088-18080   : True
+  build-command-full : True

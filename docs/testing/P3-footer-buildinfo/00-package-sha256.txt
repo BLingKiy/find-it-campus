@@ -1,0 +1,5 @@
+﻿package_path=C:\Project\hifox-workspaces\wubage\w43\clean\find-it-campus-windows-x64
+zip_path=C:\Project\hifox-workspaces\wubage\w43\find-it-campus\deploy\dist\find-it-campus-windows-x64-4c66a22.zip
+zip_sha256=6FC31D68CAF05F3175541C3F968E1E7EF11756840A5E4586580B26E42DE92D69
+zip_size_bytes=28161697
+extracted_at=2026-10-27T10:03:48+08:00

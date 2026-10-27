@@ -1,0 +1,71 @@
+﻿diff --git a/deploy/build-package.ps1 b/deploy/build-package.ps1
+index cbabe81..f6ab47d 100644
+--- a/deploy/build-package.ps1
++++ b/deploy/build-package.ps1
+@@ -356,7 +356,7 @@ try {
+     $buildInfo = @(
+         'find-it-campus Windows x64 deployment package',
+         ('Package name: ' + $packageName),
+-        'Package layout version: 7.1',
++        'Package layout version: 7.4',
+         ('Build time: ' + $buildTime),
+         ('Git branch: ' + $gitInfo.Branch),
+         ('Git commit: ' + $gitInfo.Sha),
+diff --git a/docs/api-contract.md b/docs/api-contract.md
+index f647d66..0c7e220 100644
+--- a/docs/api-contract.md
++++ b/docs/api-contract.md
+@@ -86,7 +86,7 @@ HTTP 状态码 = 该 code 的 `httpStatus`（见架构基线 §6.2 表）。未
+         "id": 26,
+         "type": "FOUND",
+         "status": "PENDING",
+-        "title": "捡到一张 unknown 的卡片",
++        "title": "捡到一张浅蓝色卡片",
+         "categoryId": null,
+         "categoryName": null,
+         "location": "大学生活动中心公告栏",
+@@ -330,7 +330,7 @@ HTTP 状态码 = 该 code 的 `httpStatus`（见架构基线 §6.2 表）。未
+         "reason": "地点不同，仅「卡」字重合，弱相关",
+         "type": "FOUND",
+         "status": "PENDING",
+-        "title": "捡到一张 unknown 的卡片",
++        "title": "捡到一张浅蓝色卡片",
+         "categoryName": null,
+         "location": "大学生活动中心公告栏",
+         "occurredAt": "2026-10-21 13:30:00",
+diff --git a/docs/design/program-design.md b/docs/design/program-design.md
+index ca899a8..f6da048 100644
+--- a/docs/design/program-design.md
++++ b/docs/design/program-design.md
+@@ -488,7 +488,7 @@ GET /api/records?page=1&pageSize=10&sortBy=createdAt&sortOrder=desc
+   "data": {
+     "page": 1, "pageSize": 10, "total": 21, "totalPages": 3, "hasNext": true,
+     "list": [
+-      {"id":26,"type":"FOUND","status":"PENDING","title":"捡到一张 unknown 的卡片",
++      {"id":26,"type":"FOUND","status":"PENDING","title":"捡到一张浅蓝色卡片",
+        "categoryId":null,"categoryName":null,"location":"大学生活动中心公告栏",
+        "occurredAt":"2026-10-21 13:30:00","createdAt":"2026-10-21 13:50:00"}
+     ]
+diff --git a/web/src/App.vue b/web/src/App.vue
+index 7931a67..8e37bdc 100644
+--- a/web/src/App.vue
++++ b/web/src/App.vue
+@@ -32,7 +32,6 @@
+     <footer class="app-footer">
+       <div class="container app-footer__inner">
+         <span>find-it-campus · 校园失物招领</span>
+-        <span class="app-footer__note">演示环境（dev server）</span>
+       </div>
+     </footer>
+   </div>
+@@ -180,10 +179,6 @@
+   padding-bottom: calc(var(--sp-3) + env(safe-area-inset-bottom, 0px));
+ }
+ 
+-.app-footer__note {
+-  color: var(--color-text-subtle);
+-}
+-
+ @media (min-width: 768px) {
+   .app-main {
+     padding: var(--sp-6) 0 var(--sp-8);

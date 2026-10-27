@@ -1,0 +1,23 @@
+find-it-campus Windows x64 deployment package
+Package name: find-it-campus-windows-x64
+Package layout version: 7.4
+Build time: 2026-10-27T09:56:43+08:00
+Git branch: fix/p3-footer-buildinfo
+Git commit: 4c66a22e2130547716c82dbf67b5097b550c35e2
+Git dirty: false
+Git dirty files: (none)
+Build host OS: Microsoft Windows NT 10.0.19045.0
+JDK: openjdk version "17.0.20.1" 2026-08-18
+Maven: Apache Maven 3.10.0 (c43a36b8d67be7e0805a411bc0898af1a51f5472)
+Node: v22.23.3
+npm: 10.9.9
+Nginx: 1.30.6 (Windows stable, official nginx.org build)
+Nginx download: https://nginx.org/download/nginx-1.30.6.zip
+Nginx zip SHA256: C6EE35EDB0A861063323F709192AE50D1EEFAF2EA7D00678BD2B22D8542DC61E
+Nginx binary: nginx version: nginx/1.30.6
+Backend jar: app/find-it-campus-0.0.1-SNAPSHOT.jar
+Backend jar SHA256: A79B727D702D0E6680DEA854657F6E67766B7776C4CD8CC7ECBAC4DE882F2EFA
+Web entry: web/dist/index.html
+Web index SHA256: 43F2D3B44570EE67318AF296B2B7783B4A2A48664355F66470FE7B04D87CD259
+Runtime ports: 8088 (nginx, public) -> 127.0.0.1:18080 (backend)
+Build command: deploy\build-package.ps1

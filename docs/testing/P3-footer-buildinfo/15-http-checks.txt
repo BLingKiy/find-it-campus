@@ -1,0 +1,4 @@
+﻿GET http://127.0.0.1:8088/ -> 200 (967 bytes)
+GET http://127.0.0.1:8088/records/26 -> 200 (967 bytes)
+GET http://127.0.0.1:8088/records/new -> 200 (967 bytes)
+GET /api/health -> 200 {"code":0,"message":"ok","data":{"status":"UP","db":"UP","version":"0.0.1-SNAPSHOT","engine":"local"},"requestId":"045bcdce9834450d"}

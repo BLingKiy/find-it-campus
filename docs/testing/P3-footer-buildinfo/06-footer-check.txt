@@ -1,0 +1,7 @@
+﻿page=07-list url=http://127.0.0.1:8088/
+  screenshot_exists=True size=44437
+page=08-detail url=http://127.0.0.1:8088/records/26
+  screenshot_exists=True size=26738
+page=09-create url=http://127.0.0.1:8088/records/new
+  screenshot_exists=True size=25236
+package-web-dist-hits=0

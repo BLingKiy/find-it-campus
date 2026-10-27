@@ -1,0 +1,18 @@
+﻿RESULT: ALL CHECKS PASSED
+
+[PASS] mysql-ready :: 8.0.29
+[PASS] install.ps1 :: exit=0
+[PASS] start.ps1 :: exit=0
+[PASS] status.ps1 :: exit=0 (RESULT: HEALTHY; 8088 UP, 18080 UP)
+[PASS] http-pages :: ok=3; GET / -> 200; GET /records/26 -> 200; GET /records/new -> 200
+[PASS] build-info-layout :: 7.4
+[PASS] build-info-jar-sha :: A79B727D702D0E6680DEA854657F6E67766B7776C4CD8CC7ECBAC4DE882F2EFA
+[PASS] build-info-index-sha :: 43F2D3B44570EE67318AF296B2B7783B4A2A48664355F66470FE7B04D87CD259
+[PASS] footer-07-list :: screenshot=True size=44437
+[PASS] footer-08-detail :: screenshot=True size=26738
+[PASS] footer-09-create :: screenshot=True size=25236
+[PASS] package-assets-no-dev-server :: hits=0
+[PASS] 5.1-api-regression :: exit=0 (64/64)
+[PASS] match-eval :: exit=0 (top1 10/10, top3 10/10)
+[PASS] match-smoke :: HTTP 200, total=1, recordId=13 (see 12/13)
+[PASS] stop.ps1 :: exit=0

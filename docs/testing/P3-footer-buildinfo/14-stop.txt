@@ -1,0 +1,25 @@
+﻿[2026-10-27 10:06:25] [INFO] 
+[2026-10-27 10:06:25] [STEP] ==== find-it-campus Windows 停止 ====
+[2026-10-27 10:06:25] [INFO] 部署包目录：C:\Project\hifox-workspaces\wubage\w43\clean\find-it-campus-windows-x64
+[2026-10-27 10:06:25] [INFO] 停止 Nginx：先执行 nginx -s quit（PID 8860）
+[2026-10-27 10:06:26] [OK] Nginx 已停止（nginx -s quit 成功）。
+[2026-10-27 10:06:26] [INFO] 停止后端：PID 8992
+[2026-10-27 10:06:27] [OK] 后端已停止（PID 8992）。
+[2026-10-27 10:06:27] [INFO] 
+[2026-10-27 10:06:27] [STEP] ==== 等待端口释放 ====
+[2026-10-27 10:06:29] [OK] 8088 已释放
+[2026-10-27 10:06:29] [OK] 18080 已释放
+[2026-10-27 10:06:29] [INFO] 
+[2026-10-27 10:06:29] [STEP] ==== 停止结果 ====
+
+Component Result Detail                                     
+--------- ------ ------                                     
+后端        已停止    PID 8992；Windows 无服务控制，JVM 为进程终止（非优雅 drain）
+Nginx     已停止    nginx -s quit 成功                           
+
+
+[2026-10-27 10:06:29] [INFO] 后端：已停止；Nginx：已停止；8088 释放=True；18080 释放=True
+[2026-10-27 10:06:29] [INFO] 停止日志：C:\Project\hifox-workspaces\wubage\w43\clean\find-it-campus-windows-x64\logs\stop-20261027-100625.log
+[2026-10-27 10:06:29] [OK] RESULT: STOPPED
+
+EXIT_CODE=0

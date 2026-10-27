@@ -1,0 +1,20 @@
+﻿[2026-10-27 10:05:48] [INFO] 
+[2026-10-27 10:05:48] [STEP] ==== find-it-campus Windows 状态 ====
+
+
+组件       状态 详情                                        PID   最近日志                 
+--       -- --                                        ---   ----                 
+后端       UP 127.0.0.1:18080 / db=UP / engine=local    8992  logs\backend.log     
+Nginx    UP 8088 / nginx 1.30.6                       8860  logs\nginx-error.log 
+MySQL    OK 127.0.0.1:3306 / MySQL 8.0.29             -     -                    
+8088 健康  UP code=0 / status=UP / db=UP / engine=local -     logs\nginx-access.log
+8088 监听  OK 监听 PID 10832 / nginx（master 8860）         10832 -                    
+18080 监听 OK PID 8992 / java                           8992  -                    
+
+
+日志：安装=logs\install-20261027-100520.log；启动=logs\start-20261027-100536.log；停止=logs\stop-20261027-100325.log
+进程：后端 PID=8992；Nginx PID=8860
+健康：8088=UP；18080=UP
+[2026-10-27 10:05:50] [OK] RESULT: HEALTHY
+
+EXIT_CODE=0

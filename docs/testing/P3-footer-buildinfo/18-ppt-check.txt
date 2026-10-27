@@ -1,0 +1,13 @@
+﻿=== git grep -n "unknown 的卡片" -- docs/delivery ===
+(no match)
+git_grep_exit=1
+
+=== git grep -n "unknown" -- docs/delivery ===
+(no match)
+git_grep_exit=1
+
+pptx_slides=19
+pptx_slide_text_hits_unknown_or_卡片=0
+pptx_sha256=5A91ABF0D761FC8921C631136709C11E1D873452C64EA26CA89C287313DBC04E
+
+conclusion: PPT 生成脚本与产物均不含该文案，无需重导。

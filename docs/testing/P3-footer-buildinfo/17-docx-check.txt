@@ -1,0 +1,10 @@
+﻿docx = docs/design/program-design.docx (rebuilt with docs/design/tools/build-docx.mjs)
+new_sha256=210BF66FB9E5BBF821AFDD506B2B7FDD294C6A2709F5CC21ACACBCBC7F0402A7
+new_contains_unknown_placeholder=False
+new_contains_捡到一张浅蓝色卡片=True
+new_occurrences_浅蓝色=1
+old_sha256=B15CDB51F60A8507B27372C523F35FCA44E185AA5992CFFAEE2FA392472AAF18
+old_contains_unknown_placeholder=True
+old_contains_捡到一张浅蓝色卡片=False
+source_md_occurrences_浅蓝色=1
+source_md_contains_unknown_placeholder=False
