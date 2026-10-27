@@ -1,0 +1,16 @@
+PASS  GET /api/records 返回 200/code=0 — HTTP 200
+PASS  默认列表 total=21（seed 基线未变） — total=21
+PASS  首页首条为记录 #26 — id=26
+PASS  首条标题已替换为可读中文 — title=捡到一张浅蓝色卡片
+PASS  首条标题不含 unknown — title=捡到一张浅蓝色卡片
+PASS  首条分类为空（前端回落「未分类」） — categoryId=null, categoryName=null
+PASS  GET /api/records/26 返回 200/code=0 — HTTP 200
+PASS  #26 详情可读且标题一致 — title=捡到一张浅蓝色卡片
+PASS  #26 category_id 仍为 NULL — categoryId=null
+PASS  #26 数据形状未变（FOUND/PENDING） — FOUND/PENDING
+PASS  POST /api/match 返回 200/code=0 — HTTP 200
+PASS  #26 仍作为匹配候选返回 — total=9
+PASS  匹配结果中的 #26 标题已同步 — title=捡到一张浅蓝色卡片
+PASS  匹配候选 #26 分类仍为空 — categoryName=null
+
+结论：通过

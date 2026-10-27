@@ -1,0 +1,24 @@
+{
+  "code": 0,
+  "message": "ok",
+  "data": {
+    "id": 26,
+    "type": "FOUND",
+    "status": "PENDING",
+    "title": "捡到一张浅蓝色卡片",
+    "description": "在公告栏下面捡到一张没有姓名只有编号的浅蓝色卡片，看不出用途，也不知道属于哪一类物品，暂时登记为无分类。",
+    "categoryId": null,
+    "categoryName": null,
+    "location": "大学生活动中心公告栏",
+    "occurredAt": "2026-10-21 13:30:00",
+    "contact": "13800000112",
+    "publisherName": "同学",
+    "allowedStatuses": [
+      "CLAIMED",
+      "CLOSED"
+    ],
+    "createdAt": "2026-10-21 13:50:00",
+    "updatedAt": "2026-10-27 09:09:11"
+  },
+  "requestId": "4a4f138cbc79400d"
+}

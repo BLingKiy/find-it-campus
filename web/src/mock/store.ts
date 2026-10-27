@@ -58,7 +58,7 @@ const SEED_RECORDS: MockRecord[] = [
     id: 26,
     type: 'FOUND',
     status: 'PENDING',
-    title: '捡到一张 unknown 的卡片',
+    title: '捡到一张浅蓝色卡片',
     description: '大学生活动中心公告栏下捡到一张卡片，上面姓名被涂改看不清，愿意还的同学请联系我核对信息。',
     categoryId: null,
     categoryName: null,
