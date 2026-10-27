@@ -5,6 +5,7 @@ import java.util.List;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -12,8 +13,10 @@ import com.findit.campus.auth.domain.SessionUser;
 import com.findit.campus.category.service.CategoryService;
 import com.findit.campus.common.api.ErrorCode;
 import com.findit.campus.common.api.PageResult;
+import com.findit.campus.common.api.RequestContext;
 import com.findit.campus.common.error.BizException;
 import com.findit.campus.pair.config.PairPolicyProperties;
+import com.findit.campus.pair.event.PairScoringRequested;
 import com.findit.campus.record.domain.Record;
 import com.findit.campus.record.domain.RecordSortField;
 import com.findit.campus.record.domain.RecordStatus;
@@ -59,15 +62,18 @@ public class RecordService {
     private final CategoryService categoryService;
     private final PairFactsPort pairFactsPort;
     private final PairPolicyProperties pairPolicy;
+    private final ApplicationEventPublisher eventPublisher;
 
     public RecordService(RecordMapper recordMapper,
                          CategoryService categoryService,
                          PairFactsPort pairFactsPort,
-                         PairPolicyProperties pairPolicy) {
+                         PairPolicyProperties pairPolicy,
+                         ApplicationEventPublisher eventPublisher) {
         this.recordMapper = recordMapper;
         this.categoryService = categoryService;
         this.pairFactsPort = pairFactsPort;
         this.pairPolicy = pairPolicy;
+        this.eventPublisher = eventPublisher;
     }
 
     /**
@@ -158,6 +164,7 @@ public class RecordService {
 
         recordMapper.insert(record);
         log.info("新增记录 id={} type={} publisherId={}", record.getId(), record.getType(), publisher.id());
+        publishPairScoring(record.getId(), "publish");
         return RecordDetailResponse.ownerView(requireRecord(record.getId()), 0, 0);
     }
 
@@ -195,6 +202,8 @@ public class RecordService {
             throw BizException.of(ErrorCode.RECORD_NOT_FOUND);
         }
         log.info("修改记录 id={} publisherId={}", id, viewerId);
+        // 契约 §4.4：提交后触发该记录相关 pair 重算；不清空已有 pair 的 status/授权/附言/confirmed_at
+        publishPairScoring(id, "update");
         LocalDateTime cutoff = pairPolicy.completedCutoff(now);
         return RecordDetailResponse.ownerView(requireRecord(id),
                 pairFactsPort.countValidMatched(id, cutoff),
@@ -273,6 +282,23 @@ public class RecordService {
             return BizException.of(ErrorCode.RECORD_NOT_FOUND);
         }
         return BizException.of(ErrorCode.FORBIDDEN);
+    }
+
+    /**
+     * 提交后触发配对打分（D1）。<b>只发事件，不调打分服务</b>：
+     *
+     * <p>① 事件由 {@code @TransactionalEventListener(AFTER_COMMIT)} 接收，因此打分永远发生在
+     * 本方法的事务提交之后 —— 别的连接那时才读得到新行；② 监听器再 {@code @Async} 到专用线程池，
+     * 发布请求<b>不等待</b>召回与 LLM（任务书要求，也是 P99<500ms 的前提）。
+     *
+     * <p>为什么把 {@code requestId} 塞进事件：异步线程没有 MDC，日志会断链；
+     * 带上之后"发布 → 打分"两条日志可以用同一个 id 串起来（架构 §12.3）。
+     *
+     * <p>事件发布本身不会失败（Spring 的同步事件总线），即使没有监听器也只是空转 ——
+     * 所以这里不需要 try/catch，任何异常都说明是容器坏了。
+     */
+    private void publishPairScoring(long recordId, String trigger) {
+        eventPublisher.publishEvent(new PairScoringRequested(recordId, trigger, RequestContext.requestId()));
     }
 
     /**

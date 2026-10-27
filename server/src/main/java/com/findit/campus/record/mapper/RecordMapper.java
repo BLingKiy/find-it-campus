@@ -91,4 +91,54 @@ public interface RecordMapper {
      */
     List<RecordSummary> selectSummariesByIds(@Param("ids") List<Long> ids,
                                              @Param("completedCutoff") LocalDateTime completedCutoff);
+
+    /**
+     * 按 id 批量取完整记录（D1 打分需要 description/categoryName/publisherId，候选池读模型不带这些）。
+     *
+     * <p>不做 {@code MATCHABLE} 过滤：这是"按 id 取事实"，过滤是调用方的事 —— 打分链路要能读到
+     * 一条刚被关闭/刚过期的记录，才能判断"这一对已经失效，跳过"，而不是把它当不存在。
+     * 已逻辑删除的仍然不返回（{@code deleted_at IS NULL}）。
+     */
+    List<Record> selectByIds(@Param("ids") List<Long> ids);
+
+    // ------------------------------------------------------------------
+    // pair_state：系统内部状态（不是业务状态），只有 D1 的打分链路写
+    // ------------------------------------------------------------------
+
+    /**
+     * 进入打分：{@code pair_state='SCORING'}。
+     *
+     * <p><b>不写 {@code updated_at}</b>：架构 §5.4 / DDL 注释要求"系统任务跑完 updated_at 不变"，
+     * 这是「谁改了记录」可审计的结构性保证。{@code t_record.updated_at} 刻意没有
+     * {@code ON UPDATE CURRENT_TIMESTAMP}，就是为了让这条 UPDATE 能不改它。
+     */
+    int markPairScoring(@Param("id") long id);
+
+    /**
+     * 打分结束：{@code pair_state} = READY / DEGRADED，{@code pair_scored_at=NOW()}。
+     *
+     * <p>同上，不写 {@code updated_at}/{@code status}/{@code completed_at}。
+     *
+     * @param state {@code READY}（全部 pair 由 LLM 打分）或 {@code DEGRADED}（至少一条降级）
+     */
+    int markPairScored(@Param("id") long id, @Param("state") String state, @Param("at") LocalDateTime at);
+
+    /**
+     * 每日扫描的记录候选（架构 §5.4 ①）：
+     * {@code pair_state IN ('PENDING','SCORING')} 且从未打分或停在 SCORING 超过 stale 窗口；
+     * 或 {@code pair_state='DEGRADED'}（降级行等 key 恢复后重算）。
+     *
+     * <p>排除 {@code CLOSED} 与已删除：不召回的东西没必要花 LLM 额度。
+     * 排序把"从未打分的"排在最前，保证积压不会因为一批老记录反复失败而饿死新记录。
+     */
+    List<Long> selectPairScanTargets(@Param("staleBefore") LocalDateTime staleBefore,
+                                     @Param("limit") int limit);
+
+    /**
+     * 到期 COMPLETED 计数（架构 §5.4 的"到期清扫"）：<b>只读</b>。
+     *
+     * <p>到期不改 {@code status}、不改 {@code completed_at}、不删记录 —— 可见性是读时谓词，
+     * 定时器只负责把它们<b>数出来</b>写进日志，用于容量与合规统计。返回 0 也是正常结果。
+     */
+    long countExpiredCompleted(@Param("cutoff") LocalDateTime cutoff);
 }

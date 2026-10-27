@@ -39,6 +39,16 @@ public class MyRecordListItemResponse {
     private String contact;
     private String publisherName;
     private String pairState;
+    /**
+     * 降级标志位（D1）：{@code pairState=DEGRADED} 的布尔投影。
+     *
+     * <p>为什么在已有 {@code pairState} 之外再加一个布尔：前端要显示
+     * 「智能匹配暂不可用，已用关键词匹配」，判据是"有没有降级"，而 {@code pairState}
+     * 还混着 PENDING/SCORING/READY 三种非降级值。让前端写 {@code pairState === 'DEGRADED'}
+     * 也能做，但那样"降级"这个业务事实就被编码进了字符串比较，改一个枚举值就静默失效。
+     * 服务端给一个明确的布尔，代价是一个字段，换来的是前端不必知道枚举语义。
+     */
+    private Boolean pairDegraded;
     private Integer pairCount;
     private Integer relatedCount;
     private Integer lowConfidenceCount;
@@ -67,6 +77,7 @@ public class MyRecordListItemResponse {
         response.contact = row.getContact();
         response.publisherName = row.getPublisherName();
         response.pairState = row.getPairState();
+        response.pairDegraded = "DEGRADED".equals(row.getPairState());
         response.pairCount = effective.total();
         response.relatedCount = effective.related();
         response.lowConfidenceCount = effective.lowConfidence();
@@ -124,6 +135,10 @@ public class MyRecordListItemResponse {
 
     public String getPairState() {
         return pairState;
+    }
+
+    public Boolean getPairDegraded() {
+        return pairDegraded;
     }
 
     public Integer getPairCount() {
