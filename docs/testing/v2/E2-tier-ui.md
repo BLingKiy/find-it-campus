@@ -1,9 +1,10 @@
 # E2 三档展示与授权交互 · 证据
 
-任务：[ZHYYKFX-57](https://app.hifox.com/nhnok/task/ZHYYKFX-57) · 分支 `feat/v2-E2-tier-ui` · 基线 `origin/feat/v2-E1-contact-unlock @ 17dcc9a77`
+任务：[ZHYYKFX-57](https://app.hifox.com/nhnok/task/ZHYYKFX-57) · 分支 `feat/v2-E2-tier-ui` · 前端基线 `origin/feat/v2-E1-contact-unlock @ 17dcc9a77` · 后端证据依赖 `feat/v2-E1b-record-pairs @ 3138f8b`
 
 > 分支头以**本文件所在提交**为准（不写死自身 SHA）。基线用 `git ls-remote` 实读：
 > `17dcc9a771f7dc6afa4c59f0b638a0affcc178ff refs/heads/feat/v2-E1-contact-unlock`；
+> E1b 实读 `3138f8b208b100d41266dcd24c9379cbec5df1d5`（仅作后端证据依赖，E2 分支不合并、不改后端）；
 > 同期 `main = 21784f674ca3a5915aaa86dc95edd7a0e55e973d`（未推 main、未合并）。
 > 所有手机号均为 seed 假号 `138/139…`，文档与截图不含真实号码、密钥。
 
@@ -12,8 +13,10 @@
 | 项 | 结果 |
 |---|---|
 | 前端类型检查 | `npm run type-check` 退出 0 |
-| 生产构建 | `npm run build` 退出 0（Vite 8） |
+| 生产构建 | `vite build --configLoader native` 退出 0（Vite 8） |
+| 后端 | `feat/v2-E1b-record-pairs @ 3138f8b`，18080；详情/我的启事真实返回 `pairs[]` |
 | 浏览器断言 | **40 / 40 PASS，0 FAIL**（`report.json`） |
+| 详情注入 | **无**，`report.detailPairsInjected = false` |
 | 桌面三档截图 | 0.92 / 0.80 / 0.60 各 1 张以上 |
 | 320px 三档截图 | 0.92 / 0.80 / 0.60 各 1 张 |
 | 改动范围 | 仅 `web/` + `docs/testing/v2/`；未改 `server/`、`db/`、`main` |
@@ -120,48 +123,52 @@ pair 15 的 `engine=LOCAL_KEYWORD`（真实 D1 降级产物形态）：
 - COMPLETED：详情页顶部渲染「已完成」标识（`data-testid="detail-completed-badge"`）；非所有者合格对端看到的是遮蔽视图。
 - CLOSED：后端 404/20001，前端落到「记录不存在或不可查看」；另有 `closedGuard` 兜底，不依赖详情接口返回内容做降级渲染。
 
-## 9. 必须说明的依赖缺口（E1 详情接口）
+## 9. E1b 真实 `pairs[]` 接入（本轮闭环）
 
-契约 §4.2/§5.1 要求 `GET /api/records/{id}` 对所有者返回 `pairs: PairCard[]`，但 E1 分支
-`17dcc9a77` 的 `RecordDetailResponse` 仍只有 `hasMatchedPair/matchedPairCount/lowConfidenceCount/pairState`，
-**没有 `pairs` 数组**；E1 只交付了 `GET /api/pairs/{id}/contact`、`POST .../contact-unlock`、`PATCH /api/pairs/{id}`。
-本条任务边界是「只动 web/，不改后端」，因此没有补这个字段。
+E1b（`feat/v2-E1b-record-pairs @ 3138f8b`，基线 E1 `17dcc9a77`）已让 `GET /api/records/{id}` 对所有者
+PENDING 详情返回契约 §5.1 全字段 `pairs: PairCard[]`；`GET /api/my/records` 每项也带 `pairs[]`。
+非所有者 / 匿名 / COMPLETED 合格对端省略该键，不是空数组。
 
-证据处理方式：
+本轮把 `scan.mjs` 里给 `/api/records/(1|30)` 在网络层补 `pairs[]` 的两处注入、以及构造假卡片的函数全部删除，
+`report.detailPairsInjected` 置为 **`false`**。三档、授权前后、REVOKE、多 pair 独立、降级、320 截图全部由
+真实后端响应驱动，断言仍为 **40 条，40/40 PASS**。
 
-- `scan.mjs` **只在网络层**给 `/api/records/1`、`/api/records/30` 的详情响应补 `pairs[]`（值按契约 §5.1 构造，
-  分数/对端/侧别与本地夹具一致），让真实浏览器能驱动 E2 UI；
-- `contact` / `contact-unlock` / `PATCH pair` 全部走真实 E1 后端，号码、授权、撤回、状态机都是真实响应，
-  没有 mock 这些接口；
-- 0.60 截图使用记录 #8 的真实详情响应（真实 `lowConfidenceCount=1`），没有注入。
+前端消费字段逐个对：`tier / scorePercent / contactAvailable / contactHint / myNote / otherNote / counterpart`。
+档位与顺序以服务端为准：`tier` 直接用后端值，卡片顺序沿用 `pairs[]` 的 `score DESC, pairId ASC`，前端不自己算档位、不重排。
 
-**给 F2 / 后续的明确动作**：E1 需要在详情 DTO/service 补 `pairs[]`（或另给只读 pair 列表接口），
-否则真实环境打开详情看不到卡片；补完后删掉 `scan.mjs` 的两处 `route` 注入即可原样复跑。
-这是本条唯一未闭环的集成依赖，不能用「前端已验证」掩盖。
+降级样本：`fixture.sql` 把 pair 15 设成 `engine=LOCAL_KEYWORD`、`degraded_reason=CIRCUIT_OPEN`，
+真实详情响应返回 `degraded=true`，卡片「已降级」与面板提示都由该字段驱动，不是网络层造数。
 
 ## 10. 复跑方式
 
 ```powershell
-# 1) 本地演示库（3307）+ E1 后端（18080）
+# 1) 本地演示库（3307）+ E1b 后端（18080）
 mysql --host=127.0.0.1 --port=3307 -uroot find_it_campus < docs/testing/v2/E2-tier-ui/fixture.sql
-java -jar server/target/find-it-campus-0.0.1-SNAPSHOT.jar   # FINDIT_DB_URL 指向 3307
+
+# 在 E1b 工作树构建并启动（FINDIT_DB_URL 指向 3307）
+cd <E1b-worktree>/server
+mvn -DskipTests package
+java -jar target/find-it-campus-0.0.1-SNAPSHOT.jar
 
 # 2) 前端构建 + preview（/api 代理到 18080）
-cd web
+cd <E2-worktree>/web
 npm run type-check
-npm run build
-npm run preview -- --host 127.0.0.1 --port 5173
+# 本机沙箱禁用命名管道时，Vite 默认 config bundle 会 EPERM；用 native loader 构建同一份 dist
+node node_modules/vite/bin/vite.js build --configLoader native
+node node_modules/vite/bin/vite.js preview --configLoader native --host 127.0.0.1 --port 5173
 
 # 3) 浏览器证据（Playwright 从 qa/ 读取；本机 qa/node_modules 缺失时用 QA_PACKAGE 指向可用的 qa/package.json）
+$env:QA_PACKAGE='<repo>/qa/package.json'
 node docs/testing/v2/E2-tier-ui/scan.mjs
 ```
 
-`fixture.sql` 只写本地演示库（记录 30/31、pair 15/16，并把 pair 1/8 的分数改成 0.92/0.60），
-**不修改仓库 `db/seed.sql`**。demo02 的公开/撤回会在库里留下真实时间戳与通知，重跑前重放一次 fixture 即可。
+`fixture.sql` 只写本地演示库（记录 30/31、pair 15/16，并把 pair 1/8 的分数改成 0.92/0.60，
+同时把 pair 15 设成 `LOCAL_KEYWORD` 降级样本），**不修改仓库 `db/seed.sql`**。
+demo02 的公开/撤回会在库里留下真实时间戳与通知，重跑前重放一次 fixture 即可。
 
 ## 11. 已知限制
 
-- 详情 `pairs[]` 依赖 E1 补齐（见 §9）；当前证据的卡片数据来自网络层契约夹具，其他字段与交互均真实。
+- E1b 已补详情 `pairs[]`（见 §9），本轮无网络层注入；卡片字段全部取真实响应。
 - 320px 下 `<360px` 只显示 logo（沿用现有 App.vue 规则），品牌文字不显示，但不产生横向滚动。
 - 无新增依赖、无 Pinia、无 UI 组件库；样式继续全部走 design token。
 - 未跑后端测试（本条不改后端）；未新增接口契约字段。

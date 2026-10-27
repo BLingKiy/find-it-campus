@@ -26,11 +26,13 @@ INSERT INTO t_pair_score
    lost_unlocked_at, found_unlocked_at, lost_unlock_note, found_unlock_note,
    lost_confirmed_at, found_confirmed_at, status, created_at, updated_at)
 VALUES
-  (1, 30, 0.8000, 'DEEPSEEK', NULL, REPEAT('0', 64), REPEAT('0', 64),
+  -- 0.80 同时作为降级样本：engine=LOCAL_KEYWORD 是 D1 降级的真实产物形态
+  (1, 30, 0.8000, 'LOCAL_KEYWORD', 'CIRCUIT_OPEN', REPEAT('0', 64), REPEAT('0', 64),
    NULL, NULL, NULL, NULL, NULL, NULL, 'NEW', NOW(), NOW()),
   (1, 31, 0.6000, 'DEEPSEEK', NULL, REPEAT('0', 64), REPEAT('0', 64),
    NULL, NULL, NULL, NULL, NULL, NULL, 'NEW', NOW(), NOW())
-ON DUPLICATE KEY UPDATE score = VALUES(score), status = 'NEW',
+ON DUPLICATE KEY UPDATE score = VALUES(score), engine = VALUES(engine),
+  degraded_reason = VALUES(degraded_reason), status = 'NEW',
   lost_unlocked_at = NULL, found_unlocked_at = NULL,
   lost_unlock_note = NULL, found_unlock_note = NULL;
 

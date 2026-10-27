@@ -1,15 +1,14 @@
 // E2 三档展示与授权交互 · 浏览器证据脚本
 //
 // 前置：
-//   1) 后端 feat/v2-E1-contact-unlock @ 17dcc9a 起在 18080（MySQL 3307）；
+//   1) 后端 feat/v2-E1b-record-pairs @ 3138f8b 起在 18080（MySQL 3307）；
 //   2) 已执行 docs/testing/v2/E2-tier-ui/fixture.sql（本地演示库夹具，不改仓库 seed）；
 //   3) web 已 npm run build，preview 起在 5173（代理 /api → 18080）。
 // 运行：node docs/testing/v2/E2-tier-ui/scan.mjs
 //
-// 说明（必须如实写进证据）：E1 的详情接口目前不返回 PairCard[]（契约 §4.2 要求返回，
-// 后端只给了计数）。本脚本只在网络层给 /api/records/{1,30} 的 **详情响应** 补上 pairs[]，
-// 让 E2 的 UI 能被真实浏览器驱动；contact / contact-unlock / PATCH pair 全部走真实后端，
-// 号码、授权、撤回、状态机都不是假数据。等 E1 补上 pairs[] 后，删掉注入逻辑即可复跑。
+// 数据来源：详情 pairs[] 一律取 E1b 的 GET /api/records/{id} 真实响应；
+// contact / contact-unlock / PATCH pair 也全部走真实后端。脚本不再做任何网络层注入
+// （report.detailPairsInjected=false），截图里的卡片、号码、授权与状态机都来自真实响应。
 import { createRequire } from 'node:module'
 import { mkdir, writeFile } from 'node:fs/promises'
 import { resolve, dirname } from 'node:path'
@@ -24,17 +23,11 @@ const BASE = process.env.WEB_BASE ?? 'http://127.0.0.1:5173'
 const PASSWORD = 'Demo@123456'
 const PHONE_RE = /1[3-9]\d{9}/g
 
-const state = {
-  /** demo02 是否已在 pair 15 的 FOUND 端公开联系方式（真实 POST 成功后更新） */
-  published: false,
-  note: null
-}
-
 const report = {
   generatedAt: new Date().toISOString(),
   base: BASE,
-  backend: 'feat/v2-E1-contact-unlock @ 17dcc9a (http://127.0.0.1:18080)',
-  detailPairsInjected: true,
+  backend: 'feat/v2-E1b-record-pairs @ 3138f8b (http://127.0.0.1:18080)',
+  detailPairsInjected: false,
   phonePattern: PHONE_RE.source,
   cases: []
 }
@@ -76,143 +69,6 @@ function overlaps(a, b) {
   return !(a.x + a.width <= b.x || b.x + b.width <= a.x || a.y + a.height <= b.y || b.y + b.height <= a.y)
 }
 
-function pairOne() {
-  return {
-    pairId: 1,
-    score: 0.92,
-    scorePercent: 92,
-    tier: 'DIRECT',
-    status: 'NEW',
-    matched: false,
-    myConfirmed: false,
-    otherConfirmed: false,
-    lostConfirmedAt: null,
-    foundConfirmedAt: null,
-    engine: 'DEEPSEEK',
-    degraded: false,
-    counterpart: {
-      recordId: 13,
-      type: 'FOUND',
-      title: '图书馆拾到黑色钱包',
-      location: '图书馆三楼自习区',
-      occurredAt: '2026-10-20 15:00:00',
-      createdAt: '2026-10-20 15:30:00',
-      status: 'PENDING'
-    },
-    mySide: 'LOST',
-    myUnlocked: false,
-    otherUnlocked: false,
-    myNote: null,
-    otherNote: null,
-    contactAvailable: true,
-    contactHint: '匹配度较高，可直接查看'
-  }
-}
-
-function pairFifteenForLost() {
-  return {
-    pairId: 15,
-    score: 0.8,
-    scorePercent: 80,
-    tier: 'AUTHORIZABLE',
-    status: 'NEW',
-    matched: false,
-    myConfirmed: false,
-    otherConfirmed: false,
-    lostConfirmedAt: null,
-    foundConfirmedAt: null,
-    engine: 'LOCAL_KEYWORD',
-    degraded: true,
-    counterpart: {
-      recordId: 30,
-      type: 'FOUND',
-      title: '图书馆拾到黑色钱包（E2 夹具）',
-      location: '图书馆三楼自习区',
-      occurredAt: '2026-10-19 18:00:00',
-      createdAt: '2026-10-19 18:10:00',
-      status: 'PENDING'
-    },
-    mySide: 'LOST',
-    myUnlocked: false,
-    otherUnlocked: state.published,
-    myNote: null,
-    otherNote: state.published ? state.note : null,
-    contactAvailable: state.published,
-    contactHint: state.published ? '对方已公开联系方式' : '对方尚未公开'
-  }
-}
-
-function pairFifteenForFound() {
-  return {
-    pairId: 15,
-    score: 0.8,
-    scorePercent: 80,
-    tier: 'AUTHORIZABLE',
-    status: 'NEW',
-    matched: false,
-    myConfirmed: false,
-    otherConfirmed: false,
-    lostConfirmedAt: null,
-    foundConfirmedAt: null,
-    engine: 'LOCAL_KEYWORD',
-    degraded: true,
-    counterpart: {
-      recordId: 1,
-      type: 'LOST',
-      title: '图书馆丢了黑色钱包',
-      location: '图书馆三楼自习区',
-      occurredAt: '2026-10-19 17:30:00',
-      createdAt: '2026-10-20 09:10:00',
-      status: 'PENDING'
-    },
-    mySide: 'FOUND',
-    myUnlocked: state.published,
-    otherUnlocked: false,
-    myNote: state.published ? state.note : null,
-    otherNote: null,
-    contactAvailable: false,
-    contactHint: '对方尚未公开'
-  }
-}
-
-/**
- * 只改详情响应里的 pairs[] / lowConfidenceCount；其余字段（masking、isMine、counts）
- * 全部保留真实后端返回值。仅对记录 1（demo01）与 30（demo02）注入。
- */
-async function installPairInjection(page) {
-  await page.route(/\/api\/records\/(1|30)(\?|$)/, async (route) => {
-    const url = new URL(route.request().url())
-    const match = url.pathname.match(/\/records\/(\d+)$/)
-    const id = match ? Number(match[1]) : 0
-    if (id !== 1 && id !== 30) {
-      await route.continue()
-      return
-    }
-    const response = await route.fetch()
-    const body = await response.json()
-    if (!body?.data?.isMine) {
-      await route.fulfill({ response, json: body })
-      return
-    }
-    if (id === 1) {
-      body.data.pairs = [pairOne(), pairFifteenForLost()]
-      body.data.lowConfidenceCount = 1
-      body.data.pairState = 'READY'
-      body.data.hasMatchedPair = false
-      body.data.matchedPairCount = 0
-      body.data.allowedStatuses = ['CLOSED']
-    } else {
-      body.data.pairs = [pairFifteenForFound()]
-      body.data.lowConfidenceCount = 0
-      body.data.pairState = 'READY'
-      body.data.hasMatchedPair = false
-      body.data.matchedPairCount = 0
-      body.data.allowedStatuses = ['CLOSED']
-    }
-    await route.fulfill({ response, json: body })
-  })
-}
-
 async function newContext(browser, viewport = { width: 1280, height: 1000 }) {
   return browser.newContext({ viewport, locale: 'zh-CN', timezoneId: 'Asia/Shanghai' })
 }
@@ -240,7 +96,6 @@ let demo01Context
 {
   demo01Context = await newContext(browser)
   const page = await demo01Context.newPage()
-  await installPairInjection(page)
   await login(page, 'demo01')
   await page.goto(`${BASE}/records/1`, { waitUntil: 'domcontentloaded' })
   await page.waitForSelector('[data-pair-id="1"]')
@@ -338,7 +193,6 @@ let demo02Context
 {
   demo02Context = await newContext(browser)
   const page = await demo02Context.newPage()
-  await installPairInjection(page)
   await login(page, 'demo02')
   await page.goto(`${BASE}/records/30`, { waitUntil: 'domcontentloaded' })
   await page.waitForSelector('[data-pair-id="15"]')
@@ -353,10 +207,9 @@ let demo02Context
   const published = await publishResponse
   const publishedBody = await published.json()
   check('PUBLISH 成功', published.status() === 200 && publishedBody.code === 0, JSON.stringify(publishedBody))
-  state.published = publishedBody?.data?.public === true
-  state.note = publishedBody?.data?.note ?? null
+  const publishedNote = publishedBody?.data?.note ?? null
   check('PUBLISH 后开关为已公开', (await card.locator('[data-testid="pair-publish-switch"]').getAttribute('aria-checked')) === 'true')
-  check('PUBLISH 后本端附言已打码返回', typeof state.note === 'string' && state.note.length > 0)
+  check('PUBLISH 后本端附言已打码返回', typeof publishedNote === 'string' && publishedNote.length > 0)
   report.publish = {
     response: publishedBody,
     shot: await shotElement(page, '[data-pair-id="15"]', 'auth-02-publisher-published')
@@ -366,7 +219,6 @@ let demo02Context
 // ---------------------------------------------------------------- 3. 对方公开后：按钮可用 + 拿到号码
 {
   const page = await demo01Context.newPage()
-  await installPairInjection(page)
   await page.goto(`${BASE}/records/1`, { waitUntil: 'domcontentloaded' })
   await page.waitForSelector('[data-pair-id="15"]')
   const card = page.locator('[data-pair-id="15"]')
@@ -396,7 +248,6 @@ let demo02Context
 // ---------------------------------------------------------------- 4. 320px 三档（0.92 / 0.80 已授权 / 0.60）
 {
   const page = await demo01Context.newPage()
-  await installPairInjection(page)
   await page.setViewportSize({ width: 320, height: 900 })
   await page.goto(`${BASE}/records/1`, { waitUntil: 'domcontentloaded' })
   await page.waitForSelector('[data-pair-id="1"]')
@@ -482,7 +333,6 @@ let demo02Context
 // ---------------------------------------------------------------- 5. 撤回后回到不可用
 {
   const page = await demo02Context.newPage()
-  await installPairInjection(page)
   await page.goto(`${BASE}/records/30`, { waitUntil: 'domcontentloaded' })
   await page.waitForSelector('[data-pair-id="15"]')
   const card = page.locator('[data-pair-id="15"]')
@@ -494,8 +344,6 @@ let demo02Context
   const revoked = await revokeResponse
   const revokedBody = await revoked.json()
   check('REVOKE 成功', revoked.status() === 200 && revokedBody.code === 0, JSON.stringify(revokedBody))
-  state.published = revokedBody?.data?.public === true
-  state.note = null
   check('撤回后：开关为未公开', (await card.locator('[data-testid="pair-publish-switch"]').getAttribute('aria-checked')) === 'false')
   check('撤回后：附言清空（输入框为空）', (await card.locator('[data-testid="pair-note"]').inputValue()) === '')
   report.revoke = {
@@ -507,7 +355,6 @@ let demo02Context
 
 {
   const page = await demo01Context.newPage()
-  await installPairInjection(page)
   await page.goto(`${BASE}/records/1`, { waitUntil: 'domcontentloaded' })
   await page.waitForSelector('[data-pair-id="15"]')
   const card = page.locator('[data-pair-id="15"]')
@@ -528,7 +375,6 @@ let demo02Context
 // ---------------------------------------------------------------- 6. 降级态（LOCAL_KEYWORD）
 {
   const page = await demo01Context.newPage()
-  await installPairInjection(page)
   await page.goto(`${BASE}/records/1`, { waitUntil: 'domcontentloaded' })
   await page.waitForSelector('[data-pair-id="15"]')
   const banner = await page.locator('[data-testid="pair-degraded-banner"]').innerText()
