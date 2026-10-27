@@ -2,7 +2,7 @@
 // 列表页 = 首页（基线 §2）。数据只经由 api/records.ts 的 listRecords，页面里不出现 fetch。
 // 4.2 只改结构与外观：统一 page-head / .control 筛选区 / 卡片网格 / 三段状态；
 // 请求、URL 状态、竞态丢弃一律沿用 4.1 实现（未改业务逻辑）。
-import { computed, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { listRecords } from '@/api/records'
 import RecordCard from '@/components/record/RecordCard.vue'
 import RecordFilterBar from '@/components/filter/RecordFilterBar.vue'
@@ -73,6 +73,15 @@ function resetFilter(): void {
 function reload(): void {
   void run(apiQuery.value)
 }
+
+/** 本人关闭启事后：该行不再属于公共列表，重拉当前页并给一次明确反馈 */
+const closedNotice = ref<string>('')
+
+function handleChanged(payload: { id: number; status: string }): void {
+  if (payload.status !== 'CLOSED') return
+  closedNotice.value = `启事 #${payload.id} 已关闭，不再出现在公共列表。可在「我的启事」查看。`
+  reload()
+}
 </script>
 
 <template>
@@ -97,6 +106,12 @@ function reload(): void {
     />
 
     <div class="record-list__body">
+      <p v-if="closedNotice" class="alert alert--success" role="status" data-testid="list-closed-notice">
+        <span class="alert__title">已关闭</span>
+        <span class="alert__text">{{ closedNotice }}</span>
+        <RouterLink class="alert__action" :to="{ name: 'MyRecords' }">去我的启事</RouterLink>
+      </p>
+
       <ErrorBanner v-if="error" :error="error" retry-label="重试" @retry="reload" />
 
       <LoadingBlock v-else-if="loading" :rows="3" label="正在加载启事列表" />
@@ -112,7 +127,7 @@ function reload(): void {
 
       <ul v-else class="record-list__grid">
         <li v-for="item in items" :key="item.id">
-          <RecordCard :item="item" />
+          <RecordCard :item="item" @changed="handleChanged" />
         </li>
       </ul>
 

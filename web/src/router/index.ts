@@ -87,7 +87,8 @@ export function resolveLoginRedirect(raw: unknown): string {
   return value
 }
 
-// 顺序有意为之：/records/new 必须声明在 /records/:id 之前（基线 §2）
+// 顺序有意为之：/records/new 必须声明在 /records/:id 之前（基线 §2）；
+// /records/:id/edit 同样排在 /records/:id 之前，避免被前缀规则先吃掉。
 const routes: RouteRecordRaw[] = [
   {
     path: '/',
@@ -104,6 +105,18 @@ const routes: RouteRecordRaw[] = [
     name: 'RecordCreate',
     meta: { requiresAuth: true },
     component: () => import('@/views/RecordCreate.vue')
+  },
+  {
+    path: '/my',
+    name: 'MyRecords',
+    meta: { requiresAuth: true },
+    component: () => import('@/views/MyRecords.vue')
+  },
+  {
+    path: '/records/:id/edit',
+    name: 'RecordEdit',
+    meta: { requiresAuth: true },
+    component: () => import('@/views/RecordEdit.vue')
   },
   {
     path: '/records/:id',

@@ -6,8 +6,8 @@ import type { RecordStatus } from '@/types/api'
 const props = defineProps<{ status: RecordStatus }>()
 
 const LABELS: Record<RecordStatus, string> = {
-  PENDING: '待认领',
-  CLAIMED: '已认领',
+  PENDING: '进行中',
+  COMPLETED: '已完成',
   CLOSED: '已关闭'
 }
 </script>

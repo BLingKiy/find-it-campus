@@ -24,6 +24,21 @@ export interface MatchItemVM extends MatchItem {
 }
 
 /**
+ * 发布 / 编辑表单的本地形态（C2）：
+ * categoryId 保持 string 以适配 <select>；occurredAt 是 datetime-local 的 `YYYY-MM-DDTHH:mm`。
+ */
+export interface RecordFormState {
+  type: RecordType
+  title: string
+  description: string
+  categoryId: string
+  location: string
+  occurredAt: string
+  contact: string
+  publisherName: string
+}
+
+/**
  * 列表页筛选表单的本地形态：`type`/`categoryId`/`keyword` 的 `''` = 不限，
  * 写回 URL 时被 useRouteQueryState 丢弃；`status` 的「不限」必须用 `ALL`
  * （契约 §3.1 的服务端取值），否则 URL 与表单会各说各话。

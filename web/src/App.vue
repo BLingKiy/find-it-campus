@@ -56,6 +56,14 @@ onMounted(() => {
             aria-hidden="true"
           ></span>
           <template v-else-if="isAuthenticated && user">
+            <!-- C2：登录后才有「我的启事」入口，匿名用户不展示一个点进去还要登录的链接 -->
+            <RouterLink
+              :to="{ name: 'MyRecords' }"
+              class="app-header__link"
+              data-testid="nav-my-records"
+            >
+              我的启事
+            </RouterLink>
             <span class="app-header__user" title="当前登录学号" data-testid="header-student-no">
               <span class="app-header__user-label">学号</span>
               <span class="app-header__user-value">{{ user.studentNo }}</span>

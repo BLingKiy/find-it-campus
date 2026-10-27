@@ -397,9 +397,9 @@ textarea.control {
   background-color: var(--color-status-pending-bg);
 }
 
-.badge--claimed {
-  color: var(--color-status-claimed-fg);
-  background-color: var(--color-status-claimed-bg);
+.badge--completed {
+  color: var(--color-status-completed-fg);
+  background-color: var(--color-status-completed-bg);
 }
 
 .badge--closed {
@@ -410,6 +410,53 @@ textarea.control {
 .badge--neutral {
   color: var(--color-text-muted);
   background-color: var(--color-surface-muted);
+}
+
+/* --------------------------------------------------------------------------
+   4.1 遮蔽占位（C2）
+   真实号码与完整内容不进未授权响应；这里只渲染占位块，
+   虚线 + 浅底 + 「登录后可查看」在列表/详情两个出口保持同一视觉（A3 §遮蔽态）。
+   -------------------------------------------------------------------------- */
+.masked {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-1) var(--sp-2);
+  padding: var(--sp-3);
+  border: 1px dashed var(--color-border-strong);
+  border-radius: var(--radius-sm);
+  background-color: var(--color-surface-muted);
+  color: var(--color-text-muted);
+  font-size: var(--fs-sm);
+}
+
+.masked--inline {
+  display: inline-flex;
+  padding: 2px var(--sp-2);
+  font-size: var(--fs-xs);
+  vertical-align: baseline;
+}
+
+.masked--block {
+  flex-direction: column;
+  align-items: flex-start;
+  padding: var(--sp-4);
+}
+
+.masked__title {
+  color: var(--color-text);
+  font-size: var(--fs-md);
+  font-weight: var(--fw-medium);
+}
+
+.masked__desc {
+  color: var(--color-text-subtle);
+  font-size: var(--fs-xs);
+  line-height: var(--lh-snug);
+}
+
+.masked__action {
+  margin-top: var(--sp-1);
 }
 
 /* --------------------------------------------------------------------------
