@@ -265,4 +265,60 @@
         <foreach item="id" collection="ids" open="(" separator="," close=")">#{id}</foreach>
     </select>
 
+    <!-- 打分链路按 id 取完整原文；不加 MATCHABLE（调用方要能读到"刚被关闭"的事实再决定跳过） -->
+    <select id="selectByIds" resultMap="recordMap">
+        SELECT r.id, r.type, r.status, r.completed_at, r.title, r.description, r.category_id,
+               c.name AS category_name, r.location, r.occurred_at, r.contact, r.publisher_name,
+               r.publisher_id, r.pair_state, r.deleted_at, r.created_at, r.updated_at
+        FROM t_record r
+        LEFT JOIN t_category c ON c.id = r.category_id
+        WHERE r.deleted_at IS NULL
+          AND r.id IN
+        <foreach item="id" collection="ids" open="(" separator="," close=")">#{id}</foreach>
+    </select>
+
+    <!--
+      系统状态写入：只碰 pair_state / pair_scored_at。
+      刻意不写 updated_at —— D1 的验收之一是"系统任务跑完 status 与 updated_at 不变"，
+      这条 UPDATE 的 SET 列表就是那条验收的可执行落点。
+    -->
+    <update id="markPairScoring">
+        UPDATE t_record
+        SET pair_state = 'SCORING'
+        WHERE id = #{id} AND deleted_at IS NULL
+    </update>
+
+    <update id="markPairScored">
+        UPDATE t_record
+        SET pair_state    = #{state},
+            pair_scored_at = #{at}
+        WHERE id = #{id} AND deleted_at IS NULL
+    </update>
+
+    <!--
+      扫描目标：未打分的 PENDING、卡死在 SCORING 的残留、以及 DEGRADED（key 恢复后重算）。
+      CLOSED / 已删除不扫：它们不召回，花 LLM 额度没有产出。
+      ORDER BY 把 pair_scored_at IS NULL 排最前（0 在前），确保新记录不会被老积压饿死。
+    -->
+    <select id="selectPairScanTargets" resultType="long">
+        SELECT r.id
+        FROM t_record r
+        WHERE r.deleted_at IS NULL
+          AND r.status &lt;&gt; 'CLOSED'
+          AND ( (r.pair_state IN ('PENDING', 'SCORING')
+                 AND (r.pair_scored_at IS NULL OR r.pair_scored_at &lt; #{staleBefore}))
+                OR r.pair_state = 'DEGRADED' )
+        ORDER BY (r.pair_scored_at IS NULL) DESC, r.pair_scored_at ASC, r.id ASC
+        LIMIT #{limit}
+    </select>
+
+    <!-- 到期 COMPLETED 只计数，不改写任何列（架构 §5.4 到期清扫） -->
+    <select id="countExpiredCompleted" resultType="long">
+        SELECT COUNT(*)
+        FROM t_record r
+        WHERE r.deleted_at IS NULL
+          AND r.status = 'COMPLETED'
+          AND r.completed_at &lt;= #{cutoff}
+    </select>
+
 </mapper>

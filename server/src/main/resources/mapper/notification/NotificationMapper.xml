@@ -34,4 +34,15 @@
         SELECT COUNT(*) FROM t_notification WHERE user_id = #{userId} AND read_at IS NULL
     </select>
 
+    <!--
+      幂等写入：唯一键 (user_id, pair_id, type) 命中时 id = id 是 no-op。
+      标题/正文由调用方在写入前打码（D1 的 PairNotificationPublisher），本文件不做脱敏 ——
+      脱敏只有一个实现点（MaskingPolicy），不在 SQL 里再复制一份规则。
+    -->
+    <insert id="insertIfAbsent">
+        INSERT INTO t_notification (user_id, pair_id, type, title, body)
+        VALUES (#{userId}, #{pairId}, #{type}, #{title}, #{body})
+        ON DUPLICATE KEY UPDATE id = id
+    </insert>
+
 </mapper>

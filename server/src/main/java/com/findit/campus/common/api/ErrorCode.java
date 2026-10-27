@@ -61,6 +61,16 @@ public enum ErrorCode {
     // ---- 4xxxx 分类 ----
     CATEGORY_NOT_FOUND(40001, HttpStatus.NOT_FOUND, "分类不存在"),
     CATEGORY_INACTIVE(40002, HttpStatus.CONFLICT, "分类停用不可选"),
+
+    // ---- 5xxxx 配对（D1 起）----
+    /**
+     * 兜底扫描单飞：已有一轮在跑（契约 §4.18 的 409）。
+     *
+     * <p>为什么单独给一个码而不是复用 20002/20003：运维脚本要根据这个码决定"稍后重试"，
+     * 复用记录状态码会让调用方误以为某条记录状态非法。契约 §4.18 只写了「409」没写 body code，
+     * 这里补一个码并在交付说明里点明，避免前端/脚本按 message 匹配。
+     */
+    PAIR_SCAN_IN_PROGRESS(50006, HttpStatus.CONFLICT, "兜底扫描正在运行，请稍后重试"),
     ;
 
     private final int code;

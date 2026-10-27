@@ -41,7 +41,12 @@ spring:
     driver-class-name: com.mysql.cj.jdbc.Driver
     hikari:
       pool-name: findit-pool
-      maximum-pool-size: 10
+      # 为什么是 30 而不是 10（D1 实测结论，证据 docs/testing/v2/D1-idempotency.md §并发）：
+      # 每条发布请求在 @Transactional 里持有一条连接直到提交；配对打分又固定占 2 条
+      # （每个 worker 一条命名锁连接 + 事务连接）。20 并发发布 + 后台打分时，10 条连接会排队，
+      # 实测发布 P99 528ms（阈值 500ms）；调到 30 后 P99 265ms。数字是这台 4 核机上的实测值，
+      # 换机器/换并发目标要重测；生产按 DB 的 max_connections 与实例数分摊，不要直接抄 30。
+      maximum-pool-size: '${FINDIT_DB_POOL_SIZE:30}'
       # 健康检查不许 hang：拿不到连接就尽快失败，由 /api/health 报 DOWN
       connection-timeout: 3000
       validation-timeout: 1000
@@ -92,6 +97,32 @@ findit:
     completed_visible_threshold: 0.90
     completed_retention_days: 30
     notify_threshold: 0.75
+    # 配对打分的工程参数（PairScoreProperties）。业务口径在上面的 findit.pair.*，
+    # 这里是可以按压测结果调的运行参数。
+    score:
+      top-n: 10
+      pre-score-pool-size: 200
+      scan-limit: 500
+      max-llm-calls: 500
+      scan-cron: '0 30 3 * * *'
+      stale-minutes: 10
+      degraded-retry-minutes: 60
+      # 必须明显小于 Hikari maximum-pool-size(10)：每对打分占一条连接做命名锁
+      worker-threads: 2
+      worker-queue-capacity: 200
+  # LLM 通路（LlmProperties，架构 §8.1）。
+  # **刻意没有 api-key 键**：密钥只从环境变量 DEEPSEEK_API_KEY 读（DeepSeekPairScorer），
+  # 配置文件里出现密钥字段 = 给"把 key 提交进仓库"开了一个门缝。
+  llm:
+    base-url: '${FINDIT_LLM_BASE_URL:https://api.deepseek.com/v1}'
+    model: '${FINDIT_LLM_MODEL:deepseek-chat}'
+    connect-timeout-ms: 3000
+    read-timeout-ms: 15000
+    total-timeout-ms: 20000
+    temperature: 0.0
+    max-tokens: 256
+    circuit-failure-threshold: 5
+    circuit-open-duration: 5m
 
 logging:
   level:

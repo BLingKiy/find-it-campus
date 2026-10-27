@@ -57,7 +57,8 @@ class RecordServiceAccessTest {
         recordMapper = mock(RecordMapper.class);
         categoryService = mock(CategoryService.class);
         pairFactsPort = mock(PairFactsPort.class);
-        recordService = new RecordService(recordMapper, categoryService, pairFactsPort, new PairPolicyProperties());
+        recordService = new RecordService(recordMapper, categoryService, pairFactsPort,
+                new PairPolicyProperties(), event -> { });
     }
 
     @Test
