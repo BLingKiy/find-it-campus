@@ -315,7 +315,8 @@ onMounted(() => {
   }
 }
 
-/* 窄屏登录态多占两块（学号 + 退出），允许导航换行，不许把品牌挤到溢出 */
+/* 窄屏登录态多占两块（学号 + 退出）：品牌、导航各占整行并允许内部换行，
+   否则导航的 max-content 宽度会把文档撑出横向滚动（320px 实测 367px）。 */
 @media (max-width: 767px) {
   .app-header__inner {
     flex-wrap: wrap;
@@ -323,7 +324,12 @@ onMounted(() => {
     row-gap: 0;
   }
 
+  .app-header__brand {
+    flex: 1 1 100%;
+  }
+
   .app-header__nav {
+    flex: 1 1 100%;
     flex-wrap: wrap;
     justify-content: flex-end;
   }

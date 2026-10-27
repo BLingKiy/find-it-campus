@@ -1,0 +1,285 @@
+{
+  "generatedAt": "2026-10-27T15:55:02.941Z",
+  "base": "http://127.0.0.1:5173",
+  "backend": "feat/v2-E1-contact-unlock @ 17dcc9a (http://127.0.0.1:18080)",
+  "detailPairsInjected": true,
+  "phonePattern": "1[3-9]\\d{9}",
+  "cases": [
+    {
+      "label": "0.92 卡片：分值 92%",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "0.92 卡片：直看档，联系方式按钮可用",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "0.80 卡片：显示「可能相关」",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "0.80 卡片：对方未公开时按钮禁用",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "0.80 卡片：禁用原因写给用户",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "0.80 卡片：有公开 / 撤回开关与附言输入",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "<0.75：只显示「存在 1 条可能相关」",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "页面不出现「已解决」字样",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "0.92 直看：拿到对方号码",
+      "ok": true,
+      "detail": "13800000101"
+    },
+    {
+      "label": "多 pair：标记一条后该条变「已联系」",
+      "ok": true,
+      "detail": "已联系"
+    },
+    {
+      "label": "多 pair：另一条状态不变",
+      "ok": true,
+      "detail": "待联系"
+    },
+    {
+      "label": "多 pair：另一条仍可操作",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "多 pair：页面仍无「已解决」",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "桌面 0.60：只显示条数",
+      "ok": true,
+      "detail": "存在 1 条可能相关\n\n匹配度低于 75%，仅显示数量，不展示详情与联系方式。"
+    },
+    {
+      "label": "桌面 0.60：页面无号码片段",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "0.80 端内：初始为未公开",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "PUBLISH 成功",
+      "ok": true,
+      "detail": "{\"code\":0,\"message\":\"ok\",\"data\":{\"pairId\":15,\"side\":\"FOUND\",\"unlockedAt\":\"2026-10-27 23:55:11\",\"note\":\"周六下午三点图书馆三楼见，看到请联系我\",\"public\":true},\"requestId\":\"68fe72b0a23e48f9\"}"
+    },
+    {
+      "label": "PUBLISH 后开关为已公开",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "PUBLISH 后本端附言已打码返回",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "对方公开后：0.80 按钮可用",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "对方公开后：提示改为已公开",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "对方公开后：拿到真实号码",
+      "ok": true,
+      "detail": "13800000130"
+    },
+    {
+      "label": "对方公开后：能看到对方附言",
+      "ok": true,
+      "detail": "对方附言：周六下午三点图书馆三楼见，看到请联系我"
+    },
+    {
+      "label": "320 档：无横向滚动",
+      "ok": true,
+      "detail": "{\"viewport\":320,\"scrollWidth\":320,\"bodyScrollWidth\":320}"
+    },
+    {
+      "label": "320 档 0.92：号码与按钮不重叠",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "320 档 0.80：按钮与说明不重叠",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "320 档 0.80：号码与按钮不重叠",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "320 档 0.60：无横向滚动",
+      "ok": true,
+      "detail": "{\"viewport\":320,\"scrollWidth\":320,\"bodyScrollWidth\":320}"
+    },
+    {
+      "label": "320 档 0.60：条数文案完整",
+      "ok": true,
+      "detail": "存在 1 条可能相关\n\n匹配度低于 75%，仅显示数量，不展示详情与联系方式。"
+    },
+    {
+      "label": "320 档 0.60：条数与说明换行不截断",
+      "ok": true,
+      "detail": "{\"title\":{\"scrollWidth\":228,\"clientWidth\":228,\"whiteSpace\":\"normal\",\"textOverflow\":\"clip\"},\"hint\":{\"scrollWidth\":228,\"clientWidth\":228,\"whiteSpace\":\"normal\",\"textOverflow\":\"clip\"}}"
+    },
+    {
+      "label": "0.60 页面：正则 1[3-9]\\d{9} 零命中（DOM）",
+      "ok": true,
+      "detail": "text= html="
+    },
+    {
+      "label": "撤回前：开关仍为已公开",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "REVOKE 成功",
+      "ok": true,
+      "detail": "{\"code\":0,\"message\":\"ok\",\"data\":{\"pairId\":15,\"side\":\"FOUND\",\"unlockedAt\":null,\"note\":null,\"public\":false},\"requestId\":\"15178312f3024c16\"}"
+    },
+    {
+      "label": "撤回后：开关为未公开",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "撤回后：附言清空（输入框为空）",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "撤回后：0.80 按钮回到禁用",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "撤回后：提示回到「对方尚未公开」",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "撤回后：卡片不残留号码",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "降级：卡片标注「已降级」",
+      "ok": true,
+      "detail": "已降级"
+    },
+    {
+      "label": "降级：提示「智能匹配暂不可用，已用关键词匹配」",
+      "ok": true,
+      "detail": "已降级\n智能匹配暂不可用，已用关键词匹配。分数仅供参考。"
+    }
+  ],
+  "directTier": {
+    "shot": "tier-01-direct-092.png",
+    "cardShot": "tier-01-direct-092-card.png",
+    "contact": "13800000101",
+    "contactShot": "tier-01-direct-092-contact.png"
+  },
+  "authorizableBefore": {
+    "shot": "auth-01-before-publish.png"
+  },
+  "multiPair": {
+    "pairOneStatus": "已联系",
+    "pairFifteenStatus": "待联系",
+    "shot": "multi-01-independent-pairs.png"
+  },
+  "lowTier": {
+    "text": "存在 1 条可能相关\n\n匹配度低于 75%，仅显示数量，不展示详情与联系方式。",
+    "phoneHits": [],
+    "shot": "tier-03-low-060.png"
+  },
+  "publish": {
+    "response": {
+      "code": 0,
+      "message": "ok",
+      "data": {
+        "pairId": 15,
+        "side": "FOUND",
+        "unlockedAt": "2026-10-27 23:55:11",
+        "note": "周六下午三点图书馆三楼见，看到请联系我",
+        "public": true
+      },
+      "requestId": "68fe72b0a23e48f9"
+    },
+    "shot": "auth-02-publisher-published.png"
+  },
+  "afterPublish": {
+    "contact": "13800000130",
+    "note": "对方附言：周六下午三点图书馆三楼见，看到请联系我",
+    "shot": "auth-03-after-publish.png",
+    "cardShot": "auth-03-after-publish-card.png"
+  },
+  "mobile": {
+    "directShot": "tier-320-092.png",
+    "authorizableShot": "tier-320-080.png",
+    "lowShot": "tier-320-060.png",
+    "lowPhoneHits": {
+      "text": [],
+      "html": []
+    }
+  },
+  "revoke": {
+    "response": {
+      "code": 0,
+      "message": "ok",
+      "data": {
+        "pairId": 15,
+        "side": "FOUND",
+        "unlockedAt": null,
+        "note": null,
+        "public": false
+      },
+      "requestId": "15178312f3024c16"
+    },
+    "shot": "auth-04-publisher-revoked.png"
+  },
+  "afterRevoke": {
+    "shot": "auth-05-after-revoke.png",
+    "cardShot": "auth-05-after-revoke-card.png"
+  },
+  "degraded": {
+    "badge": "已降级",
+    "banner": "已降级\n智能匹配暂不可用，已用关键词匹配。分数仅供参考。",
+    "shot": "degraded-01-card-and-banner.png"
+  },
+  "failures": 0,
+  "passed": 40,
+  "total": 40
+}
