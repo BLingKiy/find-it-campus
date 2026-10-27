@@ -10,6 +10,7 @@ import com.findit.campus.record.domain.RecordStatus;
 import com.findit.campus.record.service.RecordStatusPolicy;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonInclude;
 
 /**
  * 详情出参（契约 §4.2）。也是 {@code POST}/{@code PUT} 的返回体（与详情同构）。
@@ -20,15 +21,17 @@ import com.fasterxml.jackson.annotation.JsonFormat;
  * <ul>
  *   <li>{@link #from(Record)}：<b>遮蔽视角</b>（fail-closed 默认）。匿名/非所有者/合格对端都用它，
  *       任何新调用点即使忘了判身份，最坏也是"多打了码"，不会把号码漏出去。</li>
- *   <li>{@link #ownerView(Record, int, int)}：本人明文视角，带 pair 计数与真实的 {@code allowedStatuses}。</li>
+ *   <li>{@link #ownerView(Record, int, int, java.util.List)}：本人明文视角，带 pair 计数与真实的
+ *       {@code allowedStatuses}。</li>
  * </ul>
  *
  * <p>{@code allowedStatuses} 由 {@link RecordStatusPolicy} 给出而不是前端自己推：
  * 状态机放后端，"改流转规则要前后端一起改"这件事就不存在了。终态返回空数组。
  *
- * <p>{@code pairs}（PairCard[]）不在 C1 交付范围：它依赖 E1 的 pair 四态/授权/取号语义，
- * C1 只给 {@code hasMatchedPair}/{@code matchedPairCount} 这些"决定按钮能不能点"的计数。
- * 提前拼一个半成品卡片，会让 E1 一落地就得改返回结构，属于做了会后悔的事。
+ * <p>{@code pairs}（PairCard[]）只属于<b>所有者 PENDING 详情</b>（契约 §4.2 / §5.2）：
+ * 非所有者/匿名、COMPLETED 合格对端的遮蔽视图<b>省略该字段</b>（不是空数组）——
+ * 用 {@link JsonInclude.Include#NON_NULL} 表达"没有这个键"，而不是给前端一个空数组让它以为
+ * "查过了、确实没有配对"。字段为空数组时仍然序列化（发布成功响应要求 {@code pairs=[]}）。
  */
 public class RecordDetailResponse {
 
@@ -58,24 +61,35 @@ public class RecordDetailResponse {
     private String pairState;
     private Integer lowConfidenceCount;
 
+    /**
+     * 所有者视角的 pair 卡片（契约 §4.2 / §5.1），按匹配度降序。
+     *
+     * <p>{@code null} = 这个视角不返回该字段（非所有者 / 匿名 / COMPLETED 合格对端），
+     * 序列化时整个键被省略；空列表 = 所有者视角、确实没有达阈值的有效 pair。
+     * 两者语义不同，不能合并成 {@code []}。
+     */
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    private List<PairCard> pairs;
+
     @JsonFormat(pattern = JacksonConfig.DATE_TIME_PATTERN)
     private LocalDateTime createdAt;
 
     @JsonFormat(pattern = JacksonConfig.DATE_TIME_PATTERN)
     private LocalDateTime updatedAt;
 
-    /** 遮蔽视角（匿名 / 登录非所有者 / COMPLETED 的合格对端）。 */
+    /** 遮蔽视角（匿名 / 登录非所有者 / COMPLETED 的合格对端）。{@code pairs} 字段整体省略。 */
     public static RecordDetailResponse from(Record record) {
-        return build(record, false, 0, 0);
+        return build(record, false, 0, 0, null);
     }
 
-    /** 所有者视角：明文 + 计数 + 真实 allowedStatuses。 */
-    public static RecordDetailResponse ownerView(Record record, int matchedPairCount, int lowConfidenceCount) {
-        return build(record, true, matchedPairCount, lowConfidenceCount);
+    /** 所有者视角：明文 + 计数 + 真实 allowedStatuses + pair 卡片。 */
+    public static RecordDetailResponse ownerView(Record record, int matchedPairCount, int lowConfidenceCount,
+                                                 List<PairCard> pairs) {
+        return build(record, true, matchedPairCount, lowConfidenceCount, pairs);
     }
 
     private static RecordDetailResponse build(Record record, boolean ownerView, int matchedPairCount,
-                                              int lowConfidenceCount) {
+                                              int lowConfidenceCount, List<PairCard> pairs) {
         RecordDetailResponse response = new RecordDetailResponse();
         response.id = record.getId();
         response.type = record.getType() == null ? null : record.getType().name();
@@ -97,6 +111,7 @@ public class RecordDetailResponse {
             response.hasMatchedPair = matchedPairCount > 0;
             response.matchedPairCount = matchedPairCount;
             response.lowConfidenceCount = lowConfidenceCount;
+            response.pairs = pairs == null ? List.of() : pairs;
             response.allowedStatuses = allowedStatusesOf(record.getStatus(), matchedPairCount > 0);
         } else {
             response.title = MaskingPolicy.maskDescription(record.getTitle());
@@ -109,6 +124,8 @@ public class RecordDetailResponse {
             response.hasMatchedPair = false;
             response.matchedPairCount = 0;
             response.lowConfidenceCount = 0;
+            // null（不是空数组）：字段被 NON_NULL 省略，见类注释
+            response.pairs = null;
             response.allowedStatuses = List.of();
         }
         return response;
@@ -194,6 +211,10 @@ public class RecordDetailResponse {
 
     public Integer getLowConfidenceCount() {
         return lowConfidenceCount;
+    }
+
+    public List<PairCard> getPairs() {
+        return pairs;
     }
 
     public LocalDateTime getCreatedAt() {

@@ -1,6 +1,7 @@
 package com.findit.campus.pair.service;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDateTime;
 
 import com.findit.campus.pair.domain.ContactTier;
@@ -63,5 +64,46 @@ public final class PairAccessPolicy {
             return ContactTier.AUTHORIZABLE;
         }
         return ContactTier.LOW;
+    }
+
+    /**
+     * 契约 §5.1 的 {@code contactAvailable} 公式，<b>唯一实现</b>。
+     *
+     * <p>{@code (tier=DIRECT 或 otherUnlocked) 且对方 contact 非空}。注意这里只回答
+     * 「按钮能不能点」，号码本身不在这里出现 —— {@code PairCard} 永远拿不到 contact。
+     *
+     * <p>额外排除 {@link ContactTier#LOW}：卡片查询本身已过滤 {@code score >= contact_unlock_threshold}，
+     * 所以这是<b>不可达分支的防御</b>。为什么仍然要写：如果以后有人放宽 SQL，LOW 对即使对方
+     * 已授权取号也会被 §4.14 拒绝（403/50002），此时把按钮点成"可看"就是骗用户点一次 403。
+     */
+    public static boolean contactAvailable(ContactTier tier, boolean otherUnlocked, boolean contactPresent) {
+        return tier != ContactTier.LOW && (tier == ContactTier.DIRECT || otherUnlocked) && contactPresent;
+    }
+
+    /**
+     * 契约 §5.1 的 {@code contactHint} 四选一，<b>唯一实现</b>（§4.14 的 message 也用它）。
+     *
+     * <p>判定顺序决定文案：先看「能不能看」（档位/授权），再看「有没有号」，最后才分直看与授权。
+     * 直看档但对方没填号时给「对方未填写联系方式」而不是「匹配度较高」——
+     * 否则按钮会显示可点、点开却什么都拿不到。
+     */
+    public static String contactHint(ContactTier tier, boolean otherUnlocked, boolean contactPresent) {
+        if (tier == ContactTier.LOW || (tier != ContactTier.DIRECT && !otherUnlocked)) {
+            return "对方尚未公开";
+        }
+        if (!contactPresent) {
+            return "对方未填写联系方式";
+        }
+        return tier == ContactTier.DIRECT ? "匹配度较高，可直接查看" : "对方已公开联系方式";
+    }
+
+    /**
+     * {@code scorePercent = round(score*100)}（契约 §5.1：后端算好，前端不自己乘）。
+     *
+     * <p>{@code HALF_UP} 与 {@code PairContactService} 原实现一致；{@code null} 记 0。
+     */
+    public static int scorePercent(BigDecimal score) {
+        return score == null ? 0
+                : score.multiply(BigDecimal.valueOf(100)).setScale(0, RoundingMode.HALF_UP).intValue();
     }
 }

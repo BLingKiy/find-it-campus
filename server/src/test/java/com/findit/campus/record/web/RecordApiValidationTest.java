@@ -248,9 +248,10 @@ class RecordApiValidationTest {
     }
 
     @Test
-    @DisplayName("详情成功：所有者视角含 description/contact/allowedStatuses/hasMatchedPair（契约 §4.2）")
+    @DisplayName("详情成功：所有者视角含 description/contact/allowedStatuses/hasMatchedPair/pairs（契约 §4.2）")
     void detailResponseShape() throws Exception {
-        when(recordService.detail(eq(13L), any())).thenReturn(RecordDetailResponse.ownerView(sampleRecord(), 1, 0));
+        when(recordService.detail(eq(13L), any()))
+                .thenReturn(RecordDetailResponse.ownerView(sampleRecord(), 1, 0, List.of()));
 
         mockMvc.perform(get("/api/records/13"))
                 .andExpect(status().isOk())
@@ -261,13 +262,16 @@ class RecordApiValidationTest {
                 .andExpect(jsonPath("$.data.isMine").value(true))
                 .andExpect(jsonPath("$.data.hasMatchedPair").value(true))
                 .andExpect(jsonPath("$.data.matchedPairCount").value(1))
+                // 所有者视角：pairs 恒存在，无卡片时是空数组（不是省略）
+                .andExpect(jsonPath("$.data.pairs").isArray())
+                .andExpect(jsonPath("$.data.pairs.length()").value(0))
                 // 有有效 MATCHED 时两个动作都可选（无 MATCHED 时只给 CLOSED）
                 .andExpect(jsonPath("$.data.allowedStatuses", containsInAnyOrder("COMPLETED", "CLOSED")))
                 .andExpect(jsonPath("$.data.occurredAt").value("2026-10-20 15:00:00"));
     }
 
     @Test
-    @DisplayName("详情成功：匿名/非所有者视角 contact=null、标题与地点已打码、isMine=false（契约 §4.2）")
+    @DisplayName("详情成功：匿名/非所有者视角 contact=null、标题与地点已打码、pairs 字段省略（契约 §4.2 / §5.2）")
     void detailMaskedShape() throws Exception {
         when(recordService.detail(eq(13L), any())).thenReturn(RecordDetailResponse.from(sampleRecord()));
 
@@ -278,7 +282,10 @@ class RecordApiValidationTest {
                 .andExpect(jsonPath("$.data.hasMatchedPair").value(false))
                 .andExpect(jsonPath("$.data.allowedStatuses.length()").value(0))
                 .andExpect(jsonPath("$.data.publisherName").value("周**"))
-                .andExpect(jsonPath("$.data.location").value("图书馆三楼自习区"));
+                .andExpect(jsonPath("$.data.location").value("图书馆三楼自习区"))
+                // 字段省略 ≠ 空数组：前端用 isMine 判断，不靠「查过了、确实没有」
+                .andExpect(jsonPath("$.data.pairs").doesNotExist())
+                .andExpect(jsonPath("$.data.lowConfidenceCount").value(0));
     }
 
     @Test

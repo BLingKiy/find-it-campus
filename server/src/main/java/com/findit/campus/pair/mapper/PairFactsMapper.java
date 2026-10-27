@@ -7,6 +7,7 @@ import java.util.List;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
+import com.findit.campus.pair.domain.PairCardRow;
 import com.findit.campus.pair.domain.PairCountsRow;
 
 /**
@@ -49,4 +50,22 @@ public interface PairFactsMapper {
     List<PairCountsRow> countByRecordIds(@Param("ids") List<Long> ids,
                                          @Param("threshold") BigDecimal threshold,
                                          @Param("cutoff") LocalDateTime cutoff);
+
+    /**
+     * 批量取「一页记录」的 pair 卡片事实（契约 §4.2 / §4.12 / §5.1）。
+     *
+     * <p><b>一条 SQL 覆盖整页</b>：不是每行记录查一次。页大小 50 时那会变成 50 次往返，
+     * 把列表尾延迟拖成倍数，也让 DB 连接数被一个读接口占满。
+     *
+     * <p>入参 {@code ids} 是本人记录 id 集合；返回行里的 {@code recordId} 是这张卡片挂在哪个
+     * {@code ids} 元素下（同一条 pair 两端同主时会出现两行，{@code mySide} 不同），
+     * 调用方按它分组即可，不需要再判端。
+     *
+     * <p>过滤全部在 SQL：{@code score >= threshold}（低分只进 lowConfidenceCount，不出卡片）、
+     * 两端未删除、两端非 CLOSED、COMPLETED 端未过保留期。排序也在这里定死
+     * （{@code score DESC, pair_id ASC}）—— 契约要求"按匹配度从高到低"由服务端定序，前端不再排。
+     */
+    List<PairCardRow> selectCardsByRecordIds(@Param("ids") List<Long> ids,
+                                             @Param("threshold") BigDecimal threshold,
+                                             @Param("cutoff") LocalDateTime cutoff);
 }

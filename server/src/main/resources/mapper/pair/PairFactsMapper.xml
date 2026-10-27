@@ -89,4 +89,60 @@
         GROUP BY t.record_id
     </select>
 
+    <!--
+      pair 卡片批量查询（契约 §4.2 / §4.12 / §5.1）。纪律与上面的计数查询逐条对齐：
+      1. 一条 SQL 覆盖整页，不按记录逐条查（禁止 N+1）。
+      2. 「有效」谓词与 countByRecordIds 完全一致；两处一旦分叉，就会出现
+         "卡片 1 张、relatedCount 说 2 张"这种自己跟自己打架的界面。
+      3. 低分不返回（score < threshold 只进 lowConfidenceCount）；IGNORED 照常返回 ——
+         IGNORED 只描述这一对的进展，不隐藏卡片。
+      4. 号码永远不出现在 SELECT 列里：只取 (other.contact IS NOT NULL AND other.contact <> '')
+         这个布尔，Java 侧拿不到号码原文。
+      5. 排序在这里定死（score 降序、同分 pair_id 升序）；契约写明"按匹配度从高到低"，
+         前端不再排，所以顺序是接口语义而不是展示细节。
+    -->
+    <select id="selectCardsByRecordIds" resultType="com.findit.campus.pair.domain.PairCardRow">
+        SELECT t.record_id,
+               p.id AS pair_id,
+               p.score,
+               p.status,
+               p.engine,
+               p.lost_confirmed_at,
+               p.found_confirmed_at,
+               p.lost_unlocked_at,
+               p.found_unlocked_at,
+               p.lost_unlock_note,
+               p.found_unlock_note,
+               CASE WHEN p.lost_id = t.record_id THEN 'LOST' ELSE 'FOUND' END AS my_side,
+               other.id AS counterpart_record_id,
+               other.type AS counterpart_type,
+               other.title AS counterpart_title,
+               other.location AS counterpart_location,
+               other.occurred_at AS counterpart_occurred_at,
+               other.created_at AS counterpart_created_at,
+               other.status AS counterpart_status,
+               (other.contact IS NOT NULL AND other.contact &lt;&gt; '') AS counterpart_contact_present
+        FROM (
+            SELECT id AS pair_id, lost_id AS record_id
+            FROM t_pair_score
+            WHERE lost_id IN
+            <foreach item="id" collection="ids" open="(" separator="," close=")">#{id}</foreach>
+            UNION ALL
+            SELECT id AS pair_id, found_id AS record_id
+            FROM t_pair_score
+            WHERE found_id IN
+            <foreach item="id" collection="ids" open="(" separator="," close=")">#{id}</foreach>
+        ) t
+        JOIN t_pair_score p ON p.id = t.pair_id
+        JOIN t_record l ON l.id = p.lost_id
+        JOIN t_record f ON f.id = p.found_id
+        JOIN t_record other ON other.id = IF(p.lost_id = t.record_id, p.found_id, p.lost_id)
+        WHERE p.score &gt;= #{threshold}
+          AND l.deleted_at IS NULL AND f.deleted_at IS NULL
+          AND l.status &lt;&gt; 'CLOSED' AND f.status &lt;&gt; 'CLOSED'
+          AND (l.status = 'PENDING' OR l.completed_at &gt; #{cutoff})
+          AND (f.status = 'PENDING' OR f.completed_at &gt; #{cutoff})
+        ORDER BY t.record_id ASC, p.score DESC, p.id ASC
+    </select>
+
 </mapper>

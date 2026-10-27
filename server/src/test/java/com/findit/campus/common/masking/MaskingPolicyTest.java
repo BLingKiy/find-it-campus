@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.regex.Pattern;
 
 import org.junit.jupiter.api.DisplayName;
@@ -108,7 +109,7 @@ class MaskingPolicyTest {
         assertTrue(masked.getDescription().contains("[手机号已隐藏]"));
         assertFalse(masked.getIsMine());
 
-        RecordDetailResponse owner = RecordDetailResponse.ownerView(record, 1, 0);
+        RecordDetailResponse owner = RecordDetailResponse.ownerView(record, 1, 0, List.of());
         assertEquals("13812345678", owner.getContact());
         assertEquals("第三教学楼201", owner.getLocation());
         assertEquals("李同学", owner.getPublisherName());

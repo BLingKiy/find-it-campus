@@ -1,7 +1,5 @@
 package com.findit.campus.pair.service;
 
-import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.time.LocalDateTime;
 
 import org.springframework.stereotype.Service;
@@ -81,19 +79,19 @@ public class PairContactService {
         boolean numberPresent = target.getContact() != null && !target.getContact().isBlank();
         // 直看档不需要授权；可授权档必须对方已公开
         boolean visibleByTier = tier == ContactTier.DIRECT || targetUnlocked;
+        String message = PairAccessPolicy.contactHint(tier, targetUnlocked, numberPresent);
 
         if (!visibleByTier) {
             audit(access, AccessResult.DENIED_NOT_PUBLIC, meta);
-            return build(access, tier, false, null, "NOT_PUBLIC", "对方尚未公开", targetUnlocked);
+            return build(access, tier, false, null, "NOT_PUBLIC", message, targetUnlocked);
         }
         if (!numberPresent) {
             audit(access, AccessResult.DENIED_NOT_PROVIDED, meta);
-            return build(access, tier, false, null, "NOT_PROVIDED", "对方未填写联系方式", targetUnlocked);
+            return build(access, tier, false, null, "NOT_PROVIDED", message, targetUnlocked);
         }
 
         // 先落审计、再出号：insert 抛异常时请求以 500 结束，号码不会出现在响应里
         audit(access, AccessResult.GRANTED, meta);
-        String message = tier == ContactTier.DIRECT ? "匹配度较高，可直接查看" : "对方已公开联系方式";
         return build(access, tier, true, target.getContact(), null, message, targetUnlocked);
     }
 
@@ -102,7 +100,7 @@ public class PairContactService {
         ContactView view = new ContactView();
         view.setPairId(access.pair().getId());
         view.setScore(access.pair().getScore());
-        view.setScorePercent(percent(access.pair().getScore()));
+        view.setScorePercent(PairAccessPolicy.scorePercent(access.pair().getScore()));
         view.setTier(tier.name());
         view.setViewerSide(access.viewerEnd().name());
         view.setTargetSide(access.targetEnd().name());
@@ -118,10 +116,5 @@ public class PairContactService {
 
     private void audit(PairAccess access, AccessResult result, AuditMeta meta) {
         accessLogService.record(access, result, meta);
-    }
-
-    private static int percent(BigDecimal score) {
-        return score == null ? 0
-                : score.multiply(BigDecimal.valueOf(100)).setScale(0, RoundingMode.HALF_UP).intValue();
     }
 }

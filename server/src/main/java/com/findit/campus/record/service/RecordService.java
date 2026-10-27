@@ -25,6 +25,7 @@ import com.findit.campus.record.domain.SortDirection;
 import com.findit.campus.record.mapper.RecordCondition;
 import com.findit.campus.record.mapper.RecordMapper;
 import com.findit.campus.record.service.RecordVisibilityPolicy.DetailAccess;
+import com.findit.campus.record.web.dto.PairCard;
 import com.findit.campus.record.web.dto.RecordCreateRequest;
 import com.findit.campus.record.web.dto.RecordDetailResponse;
 import com.findit.campus.record.web.dto.RecordListItemResponse;
@@ -136,9 +137,11 @@ public class RecordService {
             throw BizException.of(ErrorCode.RECORD_NOT_FOUND);
         }
         if (access == DetailAccess.OWNER_PLAINTEXT) {
+            // 三个数/卡片共用同一个 cutoff：否则"详情说 1 条、卡片说 0 条"会出现在保留期边界上
             return RecordDetailResponse.ownerView(record,
                     pairFactsPort.countValidMatched(id, cutoff),
-                    pairFactsPort.countLowConfidence(id, pairPolicy.getContactUnlockThreshold(), cutoff));
+                    pairFactsPort.countLowConfidence(id, pairPolicy.getContactUnlockThreshold(), cutoff),
+                    pairCards(id, cutoff));
         }
         return RecordDetailResponse.from(record);
     }
@@ -165,7 +168,8 @@ public class RecordService {
         recordMapper.insert(record);
         log.info("新增记录 id={} type={} publisherId={}", record.getId(), record.getType(), publisher.id());
         publishPairScoring(record.getId(), "publish");
-        return RecordDetailResponse.ownerView(requireRecord(record.getId()), 0, 0);
+        // 契约 §4.3：发布成功响应 pairs=[]（刚建的记录不可能已有到达阈值的 pair）
+        return RecordDetailResponse.ownerView(requireRecord(record.getId()), 0, 0, List.of());
     }
 
     /**
@@ -205,9 +209,11 @@ public class RecordService {
         // 契约 §4.4：提交后触发该记录相关 pair 重算；不清空已有 pair 的 status/授权/附言/confirmed_at
         publishPairScoring(id, "update");
         LocalDateTime cutoff = pairPolicy.completedCutoff(now);
+        // 契约 §4.4：响应与详情同构（pairs 可能是重算前的旧分数，pairState=PENDING 表示分析中）
         return RecordDetailResponse.ownerView(requireRecord(id),
                 pairFactsPort.countValidMatched(id, cutoff),
-                pairFactsPort.countLowConfidence(id, pairPolicy.getContactUnlockThreshold(), cutoff));
+                pairFactsPort.countLowConfidence(id, pairPolicy.getContactUnlockThreshold(), cutoff),
+                pairCards(id, cutoff));
     }
 
     /**
@@ -317,5 +323,21 @@ public class RecordService {
 
     private static RecordType parseType(String type) {
         return type == null ? null : RecordType.valueOf(type);
+    }
+
+    /**
+     * 一条记录的全部卡片（契约 §4.2 / §5.1），按匹配度降序（顺序由 SQL 定）。
+     *
+     * <p>虽然这里只有一条记录，也不改成"按 pair 逐条查"：装配口径与 {@code /my} 走同一个
+     * {@link PairFactsPort#cardsOf}，两处出卡片的字段与顺序不会分叉。
+     */
+    private List<PairCard> pairCards(long recordId, LocalDateTime completedCutoff) {
+        return pairFactsPort.cardsOf(List.of(recordId),
+                        pairPolicy.getContactUnlockThreshold(),
+                        pairPolicy.getContactDirectThreshold(),
+                        completedCutoff)
+                .getOrDefault(recordId, List.of()).stream()
+                .map(PairCard::of)
+                .toList();
     }
 }

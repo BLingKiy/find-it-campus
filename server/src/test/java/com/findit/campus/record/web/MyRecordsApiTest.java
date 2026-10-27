@@ -28,6 +28,8 @@ import com.findit.campus.record.domain.RecordStatus;
 import com.findit.campus.record.domain.RecordType;
 import com.findit.campus.record.service.MyRecordService;
 import com.findit.campus.record.web.dto.MyRecordListItemResponse;
+import com.findit.campus.record.web.dto.PairCard;
+import com.findit.campus.support.PairCardFixtures;
 
 /**
  * {@code GET /api/my/records} 的登录门禁与响应形状。
@@ -60,15 +62,15 @@ class MyRecordsApiTest {
     }
 
     @Test
-    @DisplayName("有会话 → 200，publisherId 取自 session，本人字段原文返回")
+    @DisplayName("有会话 → 200，publisherId 取自 session，本人字段原文返回，pairs[] 逐条内嵌")
     void signedInReturnsOwnerScopedList() throws Exception {
         when(myRecordService.list(any(), eq(1L)))
-                .thenReturn(PageResult.of(1, 10, 1, List.of(sampleItem())));
+                .thenReturn(PageResult.of(1, 10, 2, List.of(sampleItem(), itemWithoutPairs())));
 
         mockMvc.perform(get("/api/my/records").session(session()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(0))
-                .andExpect(jsonPath("$.data.total").value(1))
+                .andExpect(jsonPath("$.data.total").value(2))
                 .andExpect(jsonPath("$.data.list[0].id").value(23))
                 .andExpect(jsonPath("$.data.list[0].status").value("COMPLETED"))
                 // 本人数据不遮蔽：contact/publisherName/location 原文
@@ -77,7 +79,19 @@ class MyRecordsApiTest {
                 .andExpect(jsonPath("$.data.list[0].location").value("第二教学楼楼梯口"))
                 .andExpect(jsonPath("$.data.list[0].hasMatchedPair").value(true))
                 .andExpect(jsonPath("$.data.list[0].matchedPairCount").value(1))
-                .andExpect(jsonPath("$.data.list[0].detailVisible").value(false));
+                .andExpect(jsonPath("$.data.list[0].detailVisible").value(false))
+                // 卡片：字段与契约 §5.1 同名，服务端已定序
+                .andExpect(jsonPath("$.data.list[0].pairs.length()").value(1))
+                .andExpect(jsonPath("$.data.list[0].pairs[0].pairId").value(101))
+                .andExpect(jsonPath("$.data.list[0].pairs[0].scorePercent").value(92))
+                .andExpect(jsonPath("$.data.list[0].pairs[0].tier").value("DIRECT"))
+                .andExpect(jsonPath("$.data.list[0].pairs[0].matched").value(true))
+                .andExpect(jsonPath("$.data.list[0].pairs[0].counterpart.recordId").value(123))
+                // 卡片永不含 contact 字段
+                .andExpect(jsonPath("$.data.list[0].pairs[0].contact").doesNotExist())
+                // 无有效 pair 的记录：pairs 是 []，不是省略
+                .andExpect(jsonPath("$.data.list[1].pairs").isArray())
+                .andExpect(jsonPath("$.data.list[1].pairs.length()").value(0));
         verify(myRecordService).list(any(), eq(1L));
     }
 
@@ -110,6 +124,22 @@ class MyRecordsApiTest {
         row.setOccurredAt(LocalDateTime.of(2026, 10, 12, 19, 0));
         row.setCreatedAt(LocalDateTime.of(2026, 10, 12, 19, 30));
         row.setUpdatedAt(LocalDateTime.of(2026, 10, 24, 9, 0));
-        return MyRecordListItemResponse.of(row, new MyPairCounts(2, 1, 1, 1));
+        return MyRecordListItemResponse.of(row, new MyPairCounts(2, 1, 1, 1),
+                List.of(PairCard.of(PairCardFixtures.direct(23L, 101L))));
+    }
+
+    /** 一条没有达阈值 pair 的记录：`pairs` 必须是 {@code []}，与"字段省略"区分开。 */
+    private static MyRecordListItemResponse itemWithoutPairs() {
+        MyRecordRow row = new MyRecordRow();
+        row.setId(24L);
+        row.setType(RecordType.LOST);
+        row.setStatus(RecordStatus.PENDING);
+        row.setTitle("丢了一个蓝色水杯");
+        row.setLocation("图书馆二楼");
+        row.setPairState("READY");
+        row.setOccurredAt(LocalDateTime.of(2026, 10, 12, 19, 0));
+        row.setCreatedAt(LocalDateTime.of(2026, 10, 12, 19, 30));
+        row.setUpdatedAt(LocalDateTime.of(2026, 10, 12, 19, 30));
+        return MyRecordListItemResponse.of(row, new MyPairCounts(0, 0, 0, 0), List.of());
     }
 }
