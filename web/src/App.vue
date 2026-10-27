@@ -2,13 +2,25 @@
 // 布局壳：跳过导航 → 顶部栏 → <RouterView/> → 页脚（基线 §4 main.ts/App.vue 职责）
 // 4.2：只改视觉与结构（吸顶、当前页高亮、安全区、100dvh），不动路由与数据流
 // B3：顶部栏承载登录态（学号 + 退出 / 登录入口）；启动时探一次 /api/auth/me，刷新后恢复登录态
-import { onMounted, ref } from 'vue'
+import { onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import ErrorBanner from '@/components/common/ErrorBanner.vue'
 import { useAuth } from '@/composables/useAuth'
+import { useNotificationBadge } from '@/composables/useNotificationBadge'
 
 const router = useRouter()
 const { user, status, isAuthenticated, ensureSession, signOut } = useAuth()
+const { unreadCount, refreshUnread, resetUnread } = useNotificationBadge()
+
+// D2：顶栏未读红点。只在已登录时拉一次未读数；登出/匿名立即归零，避免串会话。
+watch(
+  isAuthenticated,
+  (authenticated) => {
+    if (authenticated) void refreshUnread().catch(() => undefined)
+    else resetUnread()
+  },
+  { immediate: true }
+)
 
 const loggingOut = ref(false)
 const logoutError = ref<unknown>(null)
@@ -56,6 +68,22 @@ onMounted(() => {
             aria-hidden="true"
           ></span>
           <template v-else-if="isAuthenticated && user">
+            <!-- D2：通知入口 + 未读红点；数字来自服务端 unreadCount -->
+            <RouterLink
+              :to="{ name: 'Notifications' }"
+              class="app-header__link app-header__notifications"
+              data-testid="nav-notifications"
+            >
+              通知
+              <span
+                v-if="unreadCount > 0"
+                class="app-header__badge"
+                :aria-label="`${unreadCount} 条未读通知`"
+                data-testid="notification-badge"
+              >
+                {{ unreadCount > 99 ? '99+' : unreadCount }}
+              </span>
+            </RouterLink>
             <!-- C2：登录后才有「我的启事」入口，匿名用户不展示一个点进去还要登录的链接 -->
             <RouterLink
               :to="{ name: 'MyRecords' }"
@@ -257,6 +285,28 @@ onMounted(() => {
 .app-header__login {
   color: var(--color-primary-strong);
   font-weight: var(--fw-semibold);
+}
+
+/* D2：通知入口与未读红点（数字 + 红底，不只靠颜色） */
+.app-header__notifications {
+  gap: 2px;
+}
+
+.app-header__badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  margin-left: 2px;
+  padding: 0 5px;
+  border-radius: var(--radius-pill);
+  background-color: var(--color-danger);
+  color: var(--color-on-primary);
+  font-size: 11px;
+  font-weight: var(--fw-bold);
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
 }
 
 .app-main__alert {

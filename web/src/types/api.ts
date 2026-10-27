@@ -228,3 +228,72 @@ export interface LoginPayload {
   studentNo: string
   password: string
 }
+
+/** 配对链路状态（契约 §4.12）：PENDING/SCORING 都是「分析中」 */
+export type PairState = 'PENDING' | 'SCORING' | 'READY' | 'DEGRADED'
+
+/**
+ * GET /api/my/records 的 list[]（契约 §4.12）。
+ * `pairs` 是本人记录的逐条配对，顺序由服务端给（score DESC, pairId ASC），前端不重排。
+ */
+export interface MyRecordItem {
+  id: number
+  type: RecordType
+  status: RecordStatus
+  title: string
+  categoryId: number | null
+  categoryName: string | null
+  location: string
+  occurredAt: string
+  contact: string | null
+  publisherName: string | null
+  pairState: PairState
+  /** 服务端推导的降级标记位（pairState=DEGRADED 的布尔投影） */
+  pairDegraded: boolean
+  /** 有效 pair 行数（含 <contact_unlock_threshold 的低分），对应「N 条可能相关」 */
+  pairCount: number
+  /** score≥contact_unlock_threshold 且可用的 pair 数（可渲染卡片数） */
+  relatedCount: number
+  lowConfidenceCount: number
+  hasMatchedPair: boolean
+  matchedPairCount: number
+  /** PENDING=true；COMPLETED/CLOSED=false（所有者详情也 404） */
+  detailVisible: boolean
+  pairs: PairCard[]
+  completedAt: string | null
+  createdAt: string
+  updatedAt: string
+}
+
+/** GET /api/notifications/{id}/read 的 data（契约 §4.17） */
+export interface NotificationReadResult {
+  id: number
+  read: boolean
+  readAt: string
+  /** 更新后的总未读数，顶栏红点直接用它 */
+  unreadCount: number
+}
+
+/** GET /api/notifications 的 list[]（契约 §4.16） */
+export interface NotificationItem {
+  id: number
+  type: 'PAIR_MATCH' | 'PAIR_UNLOCK' | 'SYSTEM'
+  pairId: number | null
+  title: string
+  body: string
+  read: boolean
+  createdAt: string
+}
+
+/** GET /api/notifications 的 data：通用分页 + unreadCount（全部未读，不是本页） */
+export interface NotificationPage extends PageResult<NotificationItem> {
+  unreadCount: number
+}
+
+/** GET /api/my/records 的 query（契约 §4.12）；三态都属于本人数据 */
+export interface MyRecordQuery {
+  status?: RecordStatus | 'ALL'
+  type?: RecordType
+  page?: number
+  pageSize?: number
+}
