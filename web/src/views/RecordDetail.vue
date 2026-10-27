@@ -13,6 +13,7 @@ import RecordTypeTag from '@/components/record/RecordTypeTag.vue'
 import MaskedField from '@/components/record/MaskedField.vue'
 import OwnRecordActions from '@/components/record/OwnRecordActions.vue'
 import MatchPanel from '@/components/match/MatchPanel.vue'
+import PairPanel from '@/components/match/PairPanel.vue'
 import EmptyState from '@/components/common/EmptyState.vue'
 import ErrorBanner from '@/components/common/ErrorBanner.vue'
 import LoadingBlock from '@/components/common/LoadingBlock.vue'
@@ -97,6 +98,10 @@ const seedText = computed(() =>
   record.value ? `${record.value.title}。${record.value.description}` : ''
 )
 
+/** 前端不把 CLOSED 详情当降级内容渲染：即使拿到陈旧响应也按不可查看处理 */
+const closedGuard = computed(() => record.value?.status === 'CLOSED')
+const completed = computed(() => record.value?.status === 'COMPLETED')
+
 /** 提交页 replace 过来时带 ?created=1，只作为一次性成功反馈（刷新/回退不重复弹） */
 const justCreated = computed(() => route.query.created === '1')
 const justUpdated = computed(() => route.query.updated === '1')
@@ -140,7 +145,28 @@ function reload(): void {
 
     <ErrorBanner v-else-if="error" :error="error" retry-label="重试" @retry="reload" />
 
+    <EmptyState
+      v-else-if="closedGuard"
+      title="记录已关闭，不可查看"
+      description="已关闭的启事不再提供详情；这是我的启事时可回到「我的启事」处理其他记录"
+      action-label="回到启事列表"
+      :to="{ name: 'RecordList' }"
+    />
+
     <template v-else-if="record">
+      <!-- vF：COMPLETED 只在门槛命中时可见，详情页给明确的已完成标识 -->
+      <p
+        v-if="completed"
+        class="alert alert--success record-detail__completed"
+        role="status"
+        data-testid="detail-completed-badge"
+      >
+        <span class="alert__title">已完成</span>
+        <span class="alert__text">
+          这条启事已完成，不会再出现在公共列表；保留期内仍参与匹配，且仅合格对端可查看详情。
+        </span>
+      </p>
+
       <!-- 身份提示：匿名看遮蔽态；登录非本人看非发布者视角 -->
       <p
         v-if="!isAuthenticated"
@@ -277,7 +303,18 @@ function reload(): void {
         />
       </article>
 
+      <!-- 本人看真实配对（pairs[] 仅所有者返回）；非本人保留手动匹配用于发现候选 -->
+      <PairPanel
+        v-if="record.isMine"
+        class="record-detail__match"
+        :pairs="record.pairs ?? []"
+        :pair-state="record.pairState"
+        :low-confidence-count="record.lowConfidenceCount"
+        :record-status="record.status"
+        @refresh="reload"
+      />
       <MatchPanel
+        v-else
         class="record-detail__match"
         :seed-text="seedText"
         :exclude-record-id="record.id"
@@ -290,7 +327,8 @@ function reload(): void {
 
 <style scoped>
 .record-detail__identity,
-.record-detail__created {
+.record-detail__created,
+.record-detail__completed {
   margin-bottom: var(--sp-4);
 }
 

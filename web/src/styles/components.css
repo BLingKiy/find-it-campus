@@ -248,6 +248,11 @@ textarea.control {
   font-variant-numeric: tabular-nums;
 }
 
+.field__counter--over {
+  color: var(--color-danger);
+  font-weight: var(--fw-semibold);
+}
+
 .field__hint {
   color: var(--color-text-subtle);
   font-size: var(--fs-xs);
@@ -410,6 +415,12 @@ textarea.control {
 .badge--neutral {
   color: var(--color-text-muted);
   background-color: var(--color-surface-muted);
+}
+
+/* 降级等需要提醒但不阻断的标记（pair 链路 LOCAL_KEYWORD 回退） */
+.badge--warning {
+  color: var(--color-warning);
+  background-color: var(--color-warning-soft);
 }
 
 /* --------------------------------------------------------------------------

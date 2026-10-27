@@ -8,6 +8,89 @@ export type SortBy = 'createdAt' | 'occurredAt'
 export type SortOrder = 'asc' | 'desc'
 export type MatchEngineKind = 'LOCAL_KEYWORD' | 'EXTERNAL_EMBEDDING'
 
+/** v2 pair 四态（契约 §4.13）：不存在「已解决」，MATCHED 只由两端确认派生 */
+export type PairStatus = 'NEW' | 'CONTACTED' | 'MATCHED' | 'IGNORED'
+/** 联系方式档位（契约 §5.1）：<0.75 不出卡片，故这里只有两档 */
+export type PairTier = 'DIRECT' | 'AUTHORIZABLE'
+export type PairSide = 'LOST' | 'FOUND'
+export type PairEngine = 'DEEPSEEK' | 'LOCAL_KEYWORD'
+
+/** PairCard 的对端摘要（契约 §5.1）：title/location 已由服务端打码 */
+export interface PairCounterpart {
+  recordId: number
+  type: RecordType
+  title: string
+  location: string
+  occurredAt: string
+  createdAt: string
+  status: RecordStatus
+}
+
+/**
+ * 详情页内嵌的配对卡片（契约 §5.1）。
+ * 永远不含 contact：号码只能从 GET /api/pairs/{id}/contact 取，卡片只给按钮状态。
+ */
+export interface PairCard {
+  pairId: number
+  score: number
+  scorePercent: number
+  tier: PairTier
+  status: PairStatus
+  matched: boolean
+  myConfirmed: boolean
+  otherConfirmed: boolean
+  lostConfirmedAt: string | null
+  foundConfirmedAt: string | null
+  engine: PairEngine
+  degraded: boolean
+  counterpart: PairCounterpart
+  mySide: PairSide
+  myUnlocked: boolean
+  otherUnlocked: boolean
+  myNote: string | null
+  otherNote: string | null
+  contactAvailable: boolean
+  contactHint: string
+}
+
+/** GET /api/pairs/{id}/contact（契约 §4.14）：available=false 是业务状态，不是错误 */
+export interface PairContactView {
+  pairId: number
+  score: number
+  scorePercent: number
+  tier: PairTier
+  viewerSide: PairSide
+  targetSide: PairSide
+  available: boolean
+  contact: string | null
+  reason: 'NOT_PUBLIC' | 'NOT_PROVIDED' | null
+  message: string
+  unlockedAt: string | null
+  note: string | null
+}
+
+/** POST /api/pairs/{id}/contact-unlock（契约 §4.15） */
+export interface PairUnlockResult {
+  pairId: number
+  side: PairSide
+  public: boolean
+  unlockedAt: string | null
+  note: string | null
+}
+
+/** PATCH /api/pairs/{id}（契约 §4.13） */
+export interface PairActionResult {
+  pairId: number
+  status: PairStatus
+  matched: boolean
+  mySide: PairSide
+  myConfirmed: boolean
+  otherConfirmed: boolean
+  lostConfirmedAt: string | null
+  foundConfirmedAt: string | null
+  updatedAt: string
+}
+
 export interface ApiResponse<T> {
   code: number
   message: string
@@ -60,6 +143,8 @@ export interface RecordDetail extends RecordListItem {
   matchedPairCount: number
   pairState: string | null
   lowConfidenceCount: number
+  /** 仅 isMine=true 时返回（契约 §4.2）；非所有者字段省略，不是空数组 */
+  pairs?: PairCard[]
 }
 
 export interface RecordCreatePayload {
