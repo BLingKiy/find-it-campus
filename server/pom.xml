@@ -39,6 +39,16 @@
       <artifactId>mybatis-spring-boot-starter</artifactId>
       <version>${mybatis-spring-boot.version}</version>
     </dependency>
+    <!--
+      认证：只引 spring-security-crypto（BCryptPasswordEncoder + 常数时间比较），
+      不引 spring-boot-starter-security —— B2 只要口令哈希与会话，不要整套过滤器链
+      （引完整的 starter 会把默认安全链带进来，与「表单登录 / HTTP Basic / CSRF token 全不开放」的口径冲突）。
+      版本由 Boot BOM 管理（3.5.16 → Spring Security 6.5.11），不手写 version。
+    -->
+    <dependency>
+      <groupId>org.springframework.security</groupId>
+      <artifactId>spring-security-crypto</artifactId>
+    </dependency>
     <!-- MySQL 驱动：版本由 Boot BOM 管理，不手写 version（§9.1） -->
     <dependency>
       <groupId>com.mysql</groupId>

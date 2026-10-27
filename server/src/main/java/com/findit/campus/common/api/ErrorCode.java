@@ -22,6 +22,15 @@ public enum ErrorCode {
     RESOURCE_NOT_FOUND(10003, HttpStatus.NOT_FOUND, "资源不存在"),
     METHOD_NOT_ALLOWED(10004, HttpStatus.METHOD_NOT_ALLOWED, "方法不支持"),
     INTERNAL_ERROR(10005, HttpStatus.INTERNAL_SERVER_ERROR, "服务器内部错误"),
+    /**
+     * 未登录 / 会话失效 / 凭证错误（契约 §1.1、§6：HTTP 401，body code 10006）。
+     *
+     * <p>默认文案是"请先登录"，用于拦截器与 {@code /api/auth/me}；<b>登录失败</b>必须换成
+     * "学号或密码不正确"（防账号枚举），但仍是同一个 code 与 401 —— 那个分支用
+     * {@link com.findit.campus.common.error.BizException#withPublicMessage} 显式指定对外文案，
+     * 不在这里再登记一个同 code 的枚举值（否则 10006 的含义就分裂成两条）。
+     */
+    UNAUTHORIZED(10006, HttpStatus.UNAUTHORIZED, "请先登录"),
 
     // ---- 2xxxx 记录 ----
     RECORD_NOT_FOUND(20001, HttpStatus.NOT_FOUND, "记录不存在或已删除"),

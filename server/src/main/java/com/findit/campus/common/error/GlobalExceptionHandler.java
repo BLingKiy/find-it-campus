@@ -195,7 +195,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(BizException.class)
     public ResponseEntity<ApiResponse<Map<String, Object>>> handleBiz(BizException ex) {
         log.warn("[{}] 业务异常 code={}: {}", RequestContext.requestId(), ex.errorCode().code(), ex.getMessage());
-        return fail(ex.errorCode(), ex.data());
+        return fail(ex.errorCode(), ex.publicMessage(), ex.data());
     }
 
     /** 出口 4：其他一切异常 → 10005，日志打全栈，响应体只给 message + requestId。 */
@@ -208,6 +208,19 @@ public class GlobalExceptionHandler {
 
     private static ResponseEntity<ApiResponse<Map<String, Object>>> fail(ErrorCode code, Map<String, Object> data) {
         ApiResponse<Map<String, Object>> body = ApiResponse.fail(code, data);
+        return new ResponseEntity<>(body, new HttpHeaders(), HttpStatusCode.valueOf(code.httpStatus().value()));
+    }
+
+    /**
+     * 失败出口（可覆盖对外文案）：{@code publicMessage} 为 {@code null} 时回退到 {@link ErrorCode#message()}，
+     * 因此所有既有的 {@code BizException.of(...)} 分支行为不变 —— 只有显式用
+     * {@link BizException#withPublicMessage} 的分支才会换文案（10006 的登录失败）。
+     */
+    private static ResponseEntity<ApiResponse<Map<String, Object>>> fail(ErrorCode code, String publicMessage,
+                                                                        Map<String, Object> data) {
+        ApiResponse<Map<String, Object>> body = publicMessage == null
+                ? ApiResponse.fail(code, data)
+                : ApiResponse.fail(code, publicMessage, data);
         return new ResponseEntity<>(body, new HttpHeaders(), HttpStatusCode.valueOf(code.httpStatus().value()));
     }
 

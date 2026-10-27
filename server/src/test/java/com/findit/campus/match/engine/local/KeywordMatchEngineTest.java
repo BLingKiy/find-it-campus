@@ -88,14 +88,14 @@ class KeywordMatchEngineTest {
     }
 
     @Test
-    @DisplayName("N4：18 号 top1；23（CLAIMED）/25（已删除）不在候选池，更不在结果")
+    @DisplayName("N4：18 号 top1；23（COMPLETED）/25（COMPLETED 且已过保留期）不在候选池，更不在结果")
     void negativeKeysOnlyPending() {
         List<MatchCandidateSource> pool = SeedSamples.pool("FOUND");
         Set<Long> poolIds = new HashSet<>();
         pool.forEach(source -> poolIds.add(source.recordId()));
-        assertFalse(poolIds.contains(23L), "CLAIMED 记录不应进候选池");
-        assertFalse(poolIds.contains(25L), "逻辑删除记录不应进候选池");
-        assertEquals(21, SeedSamples.pool(null).size(), "未删除 + PENDING 应为 21 条（seed 注释口径）");
+        assertFalse(poolIds.contains(23L), "COMPLETED 记录不应进候选池");
+        assertFalse(poolIds.contains(25L), "COMPLETED（已过保留期）记录不应进候选池");
+        assertEquals(21, SeedSamples.pool(null).size(), "PENDING 应为 21 条（v2 seed 口径：24 条里 2 COMPLETED + 1 CLOSED）");
 
         List<MatchCandidate> result = match("FOUND", "捡到一串钥匙", 5, MIN_SCORE);
         assertEquals(18L, result.get(0).recordId());

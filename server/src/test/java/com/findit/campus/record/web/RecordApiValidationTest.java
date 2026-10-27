@@ -1,6 +1,7 @@
 package com.findit.campus.record.web;
 
 import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.nullValue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -12,14 +13,18 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import java.time.LocalDateTime;
 import java.util.List;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.http.MediaType;
+import org.springframework.mock.web.MockHttpSession;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
+import com.findit.campus.auth.domain.SessionUser;
+import com.findit.campus.auth.session.SessionAuth;
 import com.findit.campus.common.api.PageResult;
 import com.findit.campus.record.domain.RecordStatus;
 import com.findit.campus.record.domain.RecordType;
@@ -49,6 +54,19 @@ class RecordApiValidationTest {
 
     @MockitoBean
     private RecordService recordService;
+
+    /**
+     * 已登录会话：B2 起写接口（含 {@code POST /api/records}）要求登录，本类验的是"入参校验"，
+     * 不该被鉴权挡住，所以 POST 用例统一挂这个会话。
+     * "无会话 → 401"是独立用例（{@link #postWithoutSessionIsUnauthorized()}），两者不混在一起验。
+     */
+    private MockHttpSession session;
+
+    @BeforeEach
+    void signIn() {
+        session = new MockHttpSession();
+        session.setAttribute(SessionAuth.SESSION_ATTRIBUTE, new SessionUser(1L, "demo01", "演示甲"));
+    }
 
     @Test
     @DisplayName("GET 列表：status 取值非法 → 400 + 10001 + fieldErrors（不是 500）")
@@ -91,7 +109,7 @@ class RecordApiValidationTest {
     @Test
     @DisplayName("POST 提交：请求体不是合法 JSON → 400 + 10001 + fieldErrors 非空（不再是空数组）")
     void malformedJsonBodyCarriesFieldErrors() throws Exception {
-        mockMvc.perform(post("/api/records")
+        mockMvc.perform(post("/api/records").session(session)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"type\":"))
                 .andExpect(status().isBadRequest())
@@ -106,7 +124,7 @@ class RecordApiValidationTest {
     @Test
     @DisplayName("POST 提交：请求体缺失 → 400 + 10001 + fieldErrors 非空")
     void missingBodyCarriesFieldErrors() throws Exception {
-        mockMvc.perform(post("/api/records").contentType(MediaType.APPLICATION_JSON))
+        mockMvc.perform(post("/api/records").session(session).contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code").value(10001))
                 .andExpect(jsonPath("$.data.fieldErrors.length()").value(1))
@@ -118,7 +136,7 @@ class RecordApiValidationTest {
     @Test
     @DisplayName("POST 提交：某字段类型不符 → 400 + 10001 + fieldErrors 指向该字段（能定位就不退回 body）")
     void wrongFieldTypePointsAtTheField() throws Exception {
-        mockMvc.perform(post("/api/records")
+        mockMvc.perform(post("/api/records").session(session)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"type":"LOST","title":"丢了一个灰色背包","description":"今天下午在第一教学楼 305 落下","location":"第一教学楼305","occurredAt":"2026-10-21 15:20:00","categoryId":{"nested":1}}
@@ -132,7 +150,7 @@ class RecordApiValidationTest {
     @Test
     @DisplayName("POST 提交：缺必填字段 → 400 + 10001，fieldErrors 一次给全（契约 §1.1 / §5.3）")
     void missingRequiredFieldsReturnAllFieldErrors() throws Exception {
-        mockMvc.perform(post("/api/records")
+        mockMvc.perform(post("/api/records").session(session)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"type\":\"LOST\",\"title\":\"x\"}"))
                 .andExpect(status().isBadRequest())
@@ -147,7 +165,7 @@ class RecordApiValidationTest {
     void futureOccurredAtIsRejected() throws Exception {
         String future = LocalDateTime.now().plusDays(1)
                 .format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
-        mockMvc.perform(post("/api/records")
+        mockMvc.perform(post("/api/records").session(session)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"type":"LOST","title":"丢了一个灰色背包","description":"今天下午在第一教学楼 305 落下","location":"第一教学楼305","occurredAt":"%s"}
@@ -163,7 +181,7 @@ class RecordApiValidationTest {
         // 形状全部合法（正则放行），只有日历不成立；这类值曾经漏到 service 的 parse 才炸成 10005/500，
         // 其中 2026-02-30 更糟 —— SMART 解析会把它悄悄纠成 2026-02-28 落库。
         for (String value : List.of("2026-13-40 25:61:61", "2026-02-30 10:00:00", "2025-02-29 10:00:00")) {
-            mockMvc.perform(post("/api/records")
+            mockMvc.perform(post("/api/records").session(session)
                             .contentType(MediaType.APPLICATION_JSON)
                             .content("""
                                     {"type":"LOST","title":"丢了一个灰色背包","description":"今天下午在第一教学楼 305 落下","location":"第一教学楼305","occurredAt":"%s"}
@@ -179,7 +197,7 @@ class RecordApiValidationTest {
     @Test
     @DisplayName("POST 提交：纯空格标题按未填写处理（去首尾空格后判长，契约 §5.1）")
     void blankTitleIsRejected() throws Exception {
-        mockMvc.perform(post("/api/records")
+        mockMvc.perform(post("/api/records").session(session)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"type":"LOST","title":"   ","description":"今天下午在第一教学楼 305 落下","location":"第一教学楼305","occurredAt":"2026-10-21 15:20:00"}
@@ -242,6 +260,34 @@ class RecordApiValidationTest {
                 .andExpect(jsonPath("$.data.contact").value("13800000101"))
                 .andExpect(jsonPath("$.data.allowedStatuses", containsInAnyOrder("CLAIMED", "CLOSED")))
                 .andExpect(jsonPath("$.data.occurredAt").value("2026-10-20 15:00:00"));
+    }
+
+    @Test
+    @DisplayName("POST 提交：无会话 → 401 + 10006 + 统一错误体（不是 500，不是空列表，也不是 400）")
+    void postWithoutSessionIsUnauthorized() throws Exception {
+        mockMvc.perform(post("/api/records")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"type":"LOST","title":"丢了一个灰色背包","description":"今天下午在第一教学楼 305 落下","location":"第一教学楼305","occurredAt":"2026-10-21 15:20:00"}
+                                """))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.code").value(10006))
+                .andExpect(jsonPath("$.message").value("请先登录"))
+                // 错误体与成功体同形状：data 为 null（不是缺字段，也不是空列表）
+                .andExpect(jsonPath("$.data").value(nullValue()))
+                .andExpect(jsonPath("$.requestId").isNotEmpty());
+        // 鉴权在入口就拦下：service 一次都不该被调用（否则等于"先写后判"，会留下脏数据）
+        verifyNoInteractions(recordService);
+    }
+
+    @Test
+    @DisplayName("GET 列表：无会话仍匿名可读 → 200（读默认放、写默认拦）")
+    void listStaysAnonymousWithoutSession() throws Exception {
+        when(recordService.list(any())).thenReturn(PageResult.of(1, 10, 0, List.of()));
+
+        mockMvc.perform(get("/api/records"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(0));
     }
 
     private static com.findit.campus.record.domain.Record sampleRecord() {

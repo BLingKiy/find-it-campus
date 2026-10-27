@@ -13,6 +13,23 @@ server:
   error:
     include-stacktrace: never
     include-message: never
+  servlet:
+    session:
+      # 契约 §1.1：30 分钟无活动即失效。会话存在本进程内存里 ——
+      # 进程重启 = 所有会话消失（用户表现为下一次请求 401，需重新登录）。
+      # 这是单实例演示形态的已知限制，不是 bug；写进 deploy/DEPLOY-WINDOWS.md 与
+      # docs/design/v2-auth-session.md，不在客户端做补偿。
+      timeout: 30m
+      cookie:
+        # 显式写出默认值，让"证据里的 Cookie 名"和配置能对上（抓包/验收都按这个 grep）
+        name: JSESSIONID
+        path: /
+        # 前端 JS 读不到会话 id：XSS 少一条直接偷会话的路径
+        http-only: true
+        # 跨站请求默认不携带 Cookie（CSRF 的主要防线，契约 §1.1）
+        same-site: lax
+        # 本地/演示是 http，置 true 会导致浏览器拒收 Cookie；生产在 HTTPS 前置代理后改 true
+        secure: false
 
 spring:
   application:

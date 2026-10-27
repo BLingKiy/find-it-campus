@@ -119,6 +119,23 @@ curl -i http://localhost:18080/api/health
 错误码表见 `docs/architecture-baseline.md` §6.2。失败出口只有一个（`GlobalExceptionHandler`），
 500 的响应体**不含堆栈**，只回 `message` 与 `requestId` —— 排障时用这个 id 去日志里 grep。
 
+### 登录与会话（v2 B2 起）
+
+写接口（发布 / 编辑 / 改状态 / 匹配 / 我的启事 / 通知 / pair）要求登录；列表、详情、分类保持匿名可读。
+演示账号来自 `db/seed.sql`：`demo01` / `Demo@123456`（`demo02`、`demo03` 同口令，见 seed 注释）。
+
+```bash
+curl -i -c cookies.txt -H "Content-Type: application/json" \
+  -d '{"studentNo":"demo01","password":"Demo@123456"}' http://localhost:18080/api/auth/login
+curl -i -b cookies.txt http://localhost:18080/api/auth/me
+curl -i -b cookies.txt -X POST http://localhost:18080/api/auth/logout
+```
+
+- 登录态是服务端内存 `HttpSession`：Cookie `JSESSIONID`，`Path=/`、`HttpOnly`、`SameSite=Lax`，30 分钟无活动超时。
+- **重启后端 = 所有会话失效**（内存会话，单实例），客户端会拿到 `401 + code=10006`，重新登录即可；这不是故障，
+  部署口径见 `deploy/DEPLOY-WINDOWS.md` §11.1，设计取舍见 `docs/design/v2-auth-session.md`。
+- 没有注册接口，账号只来自 seed / 运维路径；登录失败文案不区分"学号不存在 / 口令错"，连续失败只记日志、不锁定账号。
+
 ---
 
 ## 五、代理与 CORS
