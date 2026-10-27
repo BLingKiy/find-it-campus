@@ -32,7 +32,6 @@
     <footer class="app-footer">
       <div class="container app-footer__inner">
         <span>find-it-campus · 校园失物招领</span>
-        <span class="app-footer__note">演示环境（dev server）</span>
       </div>
     </footer>
   </div>
@@ -178,10 +177,6 @@
   padding-top: var(--sp-3);
   /* 底部安全区：iPhone 横屏/全面屏手势条不压住文字 */
   padding-bottom: calc(var(--sp-3) + env(safe-area-inset-bottom, 0px));
-}
-
-.app-footer__note {
-  color: var(--color-text-subtle);
 }
 
 @media (min-width: 768px) {

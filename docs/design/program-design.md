@@ -488,7 +488,7 @@ GET /api/records?page=1&pageSize=10&sortBy=createdAt&sortOrder=desc
   "data": {
     "page": 1, "pageSize": 10, "total": 21, "totalPages": 3, "hasNext": true,
     "list": [
-      {"id":26,"type":"FOUND","status":"PENDING","title":"捡到一张 unknown 的卡片",
+      {"id":26,"type":"FOUND","status":"PENDING","title":"捡到一张浅蓝色卡片",
        "categoryId":null,"categoryName":null,"location":"大学生活动中心公告栏",
        "occurredAt":"2026-10-21 13:30:00","createdAt":"2026-10-21 13:50:00"}
     ]

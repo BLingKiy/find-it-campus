@@ -356,7 +356,7 @@ try {
     $buildInfo = @(
         'find-it-campus Windows x64 deployment package',
         ('Package name: ' + $packageName),
-        'Package layout version: 7.1',
+        'Package layout version: 7.4',
         ('Build time: ' + $buildTime),
         ('Git branch: ' + $gitInfo.Branch),
         ('Git commit: ' + $gitInfo.Sha),
