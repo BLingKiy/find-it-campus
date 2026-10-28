@@ -15,6 +15,7 @@ import com.findit.campus.auth.web.dto.LoginRequest;
 import com.findit.campus.auth.web.dto.UserResponse;
 import com.findit.campus.common.api.ErrorCode;
 import com.findit.campus.common.error.BizException;
+import com.findit.campus.common.log.LogSafe;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
@@ -81,7 +82,8 @@ public class AuthService {
             int failures = loginAttempts.recordFailure(studentNo, clientIp);
             // 日志记原因（排障需要），响应不记原因（防枚举）。中文原因只进日志，不进 body。
             log.warn("登录失败 studentNo={} ip={} reason={} consecutiveFailures={}",
-                    studentNo, clientIp, failureReason(user, active, passwordMatches), failures);
+                    LogSafe.sanitize(studentNo), LogSafe.sanitize(clientIp),
+                    failureReason(user, active, passwordMatches), failures);
             throw BizException.withPublicMessage(ErrorCode.UNAUTHORIZED, BAD_CREDENTIALS_MESSAGE);
         }
 

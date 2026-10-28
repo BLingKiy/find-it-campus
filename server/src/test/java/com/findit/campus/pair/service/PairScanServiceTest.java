@@ -7,8 +7,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
@@ -19,6 +21,7 @@ import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 
 import com.findit.campus.common.api.ErrorCode;
 import com.findit.campus.common.error.BizException;
@@ -58,7 +61,8 @@ class PairScanServiceTest {
     @Test
     @DisplayName("输出扫描/补算/重算/跳过/到期五个数，且到期只计数")
     void aggregatesCounters() {
-        when(recordMapper.selectPairScanTargets(org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.anyInt()))
+        when(recordMapper.selectPairScanTargets(org.mockito.ArgumentMatchers.any(),
+                org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.anyInt()))
                 .thenReturn(List.of(1L, 2L, 3L));
         when(scoringService.scoreRecord(anyLong(), anyString()))
                 .thenReturn(outcome(1L, "READY", 2, 3, 0, 0),
@@ -79,7 +83,8 @@ class PairScanServiceTest {
     @Test
     @DisplayName("单条失败不计入 scanned（下一轮仍是候选）")
     void failedRecordIsNotCountedAsScanned() {
-        when(recordMapper.selectPairScanTargets(org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.anyInt()))
+        when(recordMapper.selectPairScanTargets(org.mockito.ArgumentMatchers.any(),
+                org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.anyInt()))
                 .thenReturn(List.of(1L, 2L));
         when(scoringService.scoreRecord(anyLong(), anyString()))
                 .thenReturn(PairScoringService.RecordScoreOutcome.failed(1L, "db down"),
@@ -95,7 +100,8 @@ class PairScanServiceTest {
     @DisplayName("达到 maxLlmCalls 即停，limited=true（不把配额一次烧完）")
     void stopsAtMaxLlmCalls() {
         scoreProperties.setMaxLlmCalls(2);
-        when(recordMapper.selectPairScanTargets(org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.anyInt()))
+        when(recordMapper.selectPairScanTargets(org.mockito.ArgumentMatchers.any(),
+                org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.anyInt()))
                 .thenReturn(List.of(1L, 2L, 3L));
         when(scoringService.scoreRecord(anyLong(), anyString())).thenAnswer(invocation -> {
             metrics.llmCallStarted();
@@ -113,7 +119,8 @@ class PairScanServiceTest {
     void concurrentScanRejected() throws Exception {
         CountDownLatch started = new CountDownLatch(1);
         CountDownLatch release = new CountDownLatch(1);
-        when(recordMapper.selectPairScanTargets(org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.anyInt()))
+        when(recordMapper.selectPairScanTargets(org.mockito.ArgumentMatchers.any(),
+                org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.anyInt()))
                 .thenReturn(List.of(1L));
         when(scoringService.scoreRecord(anyLong(), anyString())).thenAnswer(invocation -> {
             started.countDown();
@@ -135,6 +142,25 @@ class PairScanServiceTest {
             release.countDown();
             executor.shutdownNow();
         }
+    }
+
+    @Test
+    @DisplayName("扫描查询带保留期下界：completedCutoff ≈ now-30d 且早于 staleBefore（P2-4）")
+    void passesRetentionCutoff() {
+        when(recordMapper.selectPairScanTargets(org.mockito.ArgumentMatchers.any(),
+                org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.anyInt()))
+                .thenReturn(List.of());
+        LocalDateTime before = LocalDateTime.now();
+
+        scanService.scan("http");
+
+        ArgumentCaptor<LocalDateTime> stale = ArgumentCaptor.forClass(LocalDateTime.class);
+        ArgumentCaptor<LocalDateTime> cutoff = ArgumentCaptor.forClass(LocalDateTime.class);
+        verify(recordMapper).selectPairScanTargets(stale.capture(), cutoff.capture(),
+                org.mockito.ArgumentMatchers.anyInt());
+        assertTrue(cutoff.getValue().isAfter(before.minusDays(31)), "保留期下界不应早于 31 天前");
+        assertTrue(cutoff.getValue().isBefore(before.minusDays(29)), "保留期下界不应晚于 29 天前");
+        assertTrue(stale.getValue().isAfter(cutoff.getValue()), "stale 窗口（10 分钟）远早于保留期下界");
     }
 
     private static PairScoringService.RecordScoreOutcome outcome(long recordId, String state, int written,

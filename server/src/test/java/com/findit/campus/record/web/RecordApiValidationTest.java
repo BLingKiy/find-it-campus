@@ -8,6 +8,7 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -19,6 +20,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockHttpSession;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -215,6 +217,8 @@ class RecordApiValidationTest {
 
         mockMvc.perform(get("/api/records"))
                 .andExpect(status().isOk())
+                .andExpect(header().string(HttpHeaders.CACHE_CONTROL, "no-store"))
+                .andExpect(header().string(HttpHeaders.VARY, "Cookie"))
                 .andExpect(jsonPath("$.code").value(0))
                 .andExpect(jsonPath("$.data.page").value(1))
                 .andExpect(jsonPath("$.data.pageSize").value(10))
@@ -255,6 +259,10 @@ class RecordApiValidationTest {
 
         mockMvc.perform(get("/api/records/13"))
                 .andExpect(status().isOk())
+                // P2-2：详情含本人明文 contact，任何中间层都不许缓存；Vary 把身份并入缓存键
+                .andExpect(header().string(HttpHeaders.CACHE_CONTROL, "no-store"))
+                .andExpect(header().string(HttpHeaders.VARY, "Cookie"))
+                .andExpect(header().string("X-Content-Type-Options", "nosniff"))
                 .andExpect(jsonPath("$.code").value(0))
                 .andExpect(jsonPath("$.data.id").value(13))
                 .andExpect(jsonPath("$.data.description").value("黑色皮质钱包，内有银行卡两张"))
@@ -297,6 +305,8 @@ class RecordApiValidationTest {
                                 {"type":"LOST","title":"丢了一个灰色背包","description":"今天下午在第一教学楼 305 落下","location":"第一教学楼305","occurredAt":"2026-10-21 15:20:00"}
                                 """))
                 .andExpect(status().isUnauthorized())
+                // 401 由 Filter 短路，同样要带上 no-store（不能把带身份判断的失败响应缓存起来）
+                .andExpect(header().string(HttpHeaders.CACHE_CONTROL, "no-store"))
                 .andExpect(jsonPath("$.code").value(10006))
                 .andExpect(jsonPath("$.message").value("请先登录"))
                 // 错误体与成功体同形状：data 为 null（不是缺字段，也不是空列表）

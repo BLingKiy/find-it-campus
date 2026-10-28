@@ -1,10 +1,12 @@
 package com.findit.campus.pair.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -225,6 +227,42 @@ class PairScoringServiceTest {
         assertEquals(1L, captor.getAllValues().get(0).getLostId().longValue());
         assertEquals(3L, captor.getAllValues().get(1).getLostId().longValue());
         assertTrue(captor.getAllValues().stream().allMatch(row -> row.getFoundId().equals(2L)));
+    }
+
+    @Test
+    @DisplayName("P2-4 过期 COMPLETED + DEGRADED：跳过，不置 SCORING、不召回、不调 LLM，且不算失败")
+    void expiredCompletedIsNotRescored() {
+        Record expired = record(1L, RecordType.LOST, "丢失校园卡", "在图书馆二楼丢的，蓝色卡套");
+        expired.setStatus(RecordStatus.COMPLETED);
+        expired.setCompletedAt(LocalDateTime.now().minusDays(31));
+        expired.setPairState("DEGRADED");
+        when(recordMapper.selectById(1L)).thenReturn(expired);
+
+        PairScoringService.RecordScoreOutcome outcome = service.scoreRecord(1L, "scan");
+
+        assertEquals("EXPIRED", outcome.error(), "跳过原因要能区分 CLOSED / EXPIRED");
+        assertFalse(outcome.failed(), "过期跳过不是失败，扫描不应把它当待重试目标");
+        verify(recordMapper, never()).markPairScoring(anyLong());
+        verify(recallService, never()).recall(any());
+        verify(llmScorer, never()).score(any());
+        verify(pairScoreMapper, never()).upsertScore(any());
+    }
+
+    @Test
+    @DisplayName("P2-4 保留期内 COMPLETED 仍参与召回（新口径没有误伤正常重算）")
+    void completedWithinRetentionStillScored() {
+        Record completed = record(1L, RecordType.LOST, "丢失校园卡", "在图书馆二楼丢的，蓝色卡套");
+        completed.setStatus(RecordStatus.COMPLETED);
+        completed.setCompletedAt(LocalDateTime.now().minusDays(3));
+        when(recordMapper.selectById(1L)).thenReturn(completed);
+        when(pairScoreMapper.selectByPair(1L, 2L))
+                .thenReturn(existingRow(lostHash(), foundHash(), new BigDecimal("0.90"), "DEEPSEEK"));
+
+        PairScoringService.RecordScoreOutcome outcome = service.scoreRecord(1L, "scan");
+
+        assertEquals("READY", outcome.pairState());
+        verify(recallService).recall(any());
+        verify(recordMapper).markPairScored(eq(1L), eq("READY"), any());
     }
 
     // ------------------------------------------------------------------ fixtures

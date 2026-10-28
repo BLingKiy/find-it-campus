@@ -20,6 +20,9 @@ server:
       # 这是单实例演示形态的已知限制，不是 bug；写进 deploy/DEPLOY-WINDOWS.md 与
       # docs/design/v2-auth-session.md，不在客户端做补偿。
       timeout: 30m
+      # 只允许 Cookie 承载会话（P2-5）：禁止容器回退到 ;jsessionid 的 URL 重写，
+      # 避免会话 id 出现在 URL、Referer 和中间代理日志里。
+      tracking-modes: cookie
       cookie:
         # 显式写出默认值，让"证据里的 Cookie 名"和配置能对上（抓包/验收都按这个 grep）
         name: JSESSIONID
