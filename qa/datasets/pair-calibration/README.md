@@ -35,10 +35,15 @@ mysql -u root findit_z84_pair < db/schema.sql   # 注意 schema.sql 里有自己
 mysql -u root findit_z84_pair < db/seed.sql
 mysql -u root -e "SET FOREIGN_KEY_CHECKS=0; TRUNCATE findit_z84_pair.t_access_log; TRUNCATE findit_z84_pair.t_notification; TRUNCATE findit_z84_pair.t_pair_score; TRUNCATE findit_z84_pair.t_match_result; TRUNCATE findit_z84_pair.t_record; SET FOREIGN_KEY_CHECKS=1;"
 
-# 2. 采集轮：阈值临时全放行（仅采集；不要写进 application.yml）
+# 2. 采集轮：两套阈值都临时全放行（仅采集；不要写进 application.yml）。
+#    自 2026-10-28 起 local 有 overrides，只压默认那套会把本地引擎的低分对判成「没出卡片」。
 java -jar server/target/find-it-campus-0.0.1-SNAPSHOT.jar --server.port=18086 \
   --findit.pair.contact_unlock_threshold=0.00 --findit.pair.contact_direct_threshold=0.01 \
-  --findit.pair.notify_threshold=0.00 --findit.pair.completed_visible_threshold=0.00
+  --findit.pair.notify_threshold=0.00 --findit.pair.completed_visible_threshold=0.00 \
+  --findit.pair.overrides.local.contact_unlock_threshold=0.00 \
+  --findit.pair.overrides.local.contact_direct_threshold=0.01 \
+  --findit.pair.overrides.local.notify_threshold=0.00 \
+  --findit.pair.overrides.local.completed_visible_threshold=0.00
 FINDIT_API_BASE=http://localhost:18086 node qa/datasets/pair-calibration/run.mjs local
 
 # 3. 语义引擎：同一 shell 内注入 key 后换端口重启，再跑一遍

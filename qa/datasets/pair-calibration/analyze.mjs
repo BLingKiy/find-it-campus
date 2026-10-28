@@ -16,8 +16,10 @@ const POS_TARGET = 0.8;
 const NEG_TARGET = 0.9;
 
 // 校准后的建议值（与 server/src/main/resources/application.yml 保持一致）。
+// 2026-10-28 同义/陷阱专项后修正：local 的 direct/notify 从 0.65/0.55 抬到 0.90，
+// 因为 6 对高重叠陷阱里 5 对落在 0.75–0.85，旧值会让它们免授权直看。
 const RECOMMENDED = {
-  local: { unlock: 0.45, direct: 0.65, notify: 0.55 },
+  local: { unlock: 0.45, direct: 0.90, notify: 0.90 },
   deepseek: { unlock: 0.8, direct: 0.95, notify: 0.9 },
 };
 

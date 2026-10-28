@@ -1,0 +1,293 @@
+{
+  "version": 1,
+  "dataset": "pair-synonyms",
+  "tasks": ["ZHYYKFX-84", "ZHYYKFX-85"],
+  "sharedWith": {
+    "task": "ZHYYKFX-85",
+    "consumer": "server/src/test/java/com/findit/campus/review/ab/ReviewAbHarnessTest.java（LLM 改写前后 A/B）",
+    "contract": "Z85 的 A/B 必须读本文件的 items 与 traps，不得另造一套；本文件是两边唯一的样本来源。基线口径：items[].phrasings.O 与 Z85 的 BEFORE（match_text）用同一段原文，phrasings.C/F/S 是同一物品的三种改写。",
+    "migration": "Z85 现有 ReviewAbHarnessTest.fixtures() 的 15 对硬编码样本早于本文件，尚未迁移；下一次改 Z85 的 A/B 时必须改为读本文件，旧 15 对作废，不得再扩第二套。"
+  },
+  "createdAt": "2026-10-28",
+  "note": "近似同义转换专项样本。6 件物品 × 4 种措辞（O 原文 / C 口语化 / F 书面正式 / S 带简称或错别字），每件物品两两组合成 6 对（另加 O↔O 作基线，共 7 对）；另有 6 对「不同物但描述高度重叠」的陷阱负例。location 在同一物品内保持完全一致，把差异限制在标题与描述措辞上，避免地点改写混淆分数保持率。ZHYYKFX-85 的 A/B 必须读同一份文件，不要另造。",
+  "phrasings": {
+    "O": "原文（人工标注集里的基准写法）",
+    "C": "口语化（学生随手发布，语序松散、量词口头化）",
+    "F": "书面正式（仿招领处公告，完整句式、书面词）",
+    "S": "带简称或错别字（楼层缩写、专业简称、常见错字）"
+  },
+  "items": [
+    {
+      "itemId": "S1",
+      "object": "小米充电宝",
+      "categoryId": 2,
+      "distinguishing": "黑色 / 小米 / 20000 毫安 / 外壳有划痕 / 图书馆三楼自习区靠窗",
+      "phrasings": {
+        "O": {
+          "title": "丢失黑色小米充电宝",
+          "description": "黑色小米充电宝，20000毫安，外壳有一道划痕，在图书馆三楼自习区靠窗座位丢的",
+          "location": "图书馆三楼自习区"
+        },
+        "C": {
+          "title": "充电宝找不到了",
+          "description": "一个黑的小米充电宝，两万毫安的，壳上刮花了一道，在图书馆三楼自习区窗边丢的",
+          "location": "图书馆三楼自习区"
+        },
+        "F": {
+          "title": "遗失黑色小米移动电源",
+          "description": "遗失黑色小米品牌移动电源一枚，容量20000毫安时，外壳存在划痕，遗失地点为图书馆三层自习区靠窗座位",
+          "location": "图书馆三楼自习区"
+        },
+        "S": {
+          "title": "小米充电宝2W毫安丢了",
+          "description": "小米充电宝2W毫安，黑色，外壳有划横，图书馆3楼自习区窗边掉的",
+          "location": "图书馆三楼自习区"
+        }
+      }
+    },
+    {
+      "itemId": "S2",
+      "object": "深蓝色折叠伞",
+      "categoryId": 6,
+      "distinguishing": "深蓝色 / 折叠 / 木质伞柄 / 体育馆门口",
+      "phrasings": {
+        "O": {
+          "title": "遗失深蓝色折叠伞",
+          "description": "深蓝色折叠雨伞，伞柄是木头的，在体育馆门口丢的",
+          "location": "体育馆门口"
+        },
+        "C": {
+          "title": "深蓝折叠伞丢了",
+          "description": "一把深蓝的折叠伞，木头把的，在体育馆门口忘拿了",
+          "location": "体育馆门口"
+        },
+        "F": {
+          "title": "遗失深蓝色折叠式雨伞",
+          "description": "遗失深蓝色折叠式雨伞一把，伞柄为木质，遗失地点为体育馆入口处",
+          "location": "体育馆门口"
+        },
+        "S": {
+          "title": "深蓝折叠伞不见了",
+          "description": "深蓝折叠伞，木柄，体育馆门口不见的",
+          "location": "体育馆门口"
+        }
+      }
+    },
+    {
+      "itemId": "S3",
+      "object": "学生证",
+      "categoryId": 4,
+      "distinguishing": "陈姓 / 学号 2023 开头 / 计算机学院 / 第三教学楼",
+      "phrasings": {
+        "O": {
+          "title": "学生证丢了",
+          "description": "学生证丢了，姓陈，学号2023开头，计算机学院，在第三教学楼丢的",
+          "location": "第三教学楼"
+        },
+        "C": {
+          "title": "学生证找不到了",
+          "description": "学生证找不到了，姓陈，学号23级的，计院的，在三教丢的",
+          "location": "第三教学楼"
+        },
+        "F": {
+          "title": "遗失学生证一张",
+          "description": "遗失学生证一张，持证人陈姓，学号以2023开头，所属计算机学院，遗失于第三教学楼",
+          "location": "第三教学楼"
+        },
+        "S": {
+          "title": "学生证丢了陈同学",
+          "description": "学生证丢了，陈同学，23级，计算机学院，三教掉的",
+          "location": "第三教学楼"
+        }
+      }
+    },
+    {
+      "itemId": "S4",
+      "object": "银色保温杯",
+      "categoryId": 8,
+      "distinguishing": "银色 / 不锈钢保温杯 / 卡通贴纸 / A203 教室",
+      "phrasings": {
+        "O": {
+          "title": "银色保温杯遗失",
+          "description": "银色不锈钢保温杯，杯身贴了一张卡通贴纸，在A203教室丢的",
+          "location": "A203教室"
+        },
+        "C": {
+          "title": "保温杯落在教室了",
+          "description": "银色不锈钢的保温杯，上面贴了个卡通贴纸，在A203教室落下的",
+          "location": "A203教室"
+        },
+        "F": {
+          "title": "遗失银色不锈钢保温杯",
+          "description": "遗失银色不锈钢保温杯一只，杯体附有卡通贴纸，遗失地点为A203教室",
+          "location": "A203教室"
+        },
+        "S": {
+          "title": "银色保温杯丢了",
+          "description": "银色保温杯，有卡通贴纸，A203教室丢的",
+          "location": "A203教室"
+        }
+      }
+    },
+    {
+      "itemId": "S5",
+      "object": "钥匙串",
+      "categoryId": 3,
+      "distinguishing": "小熊挂件 / 宿舍钥匙 / 第二食堂二楼",
+      "phrasings": {
+        "O": {
+          "title": "钥匙串丢了",
+          "description": "一串钥匙，上面有小熊挂件和宿舍钥匙，在第二食堂二楼丢的",
+          "location": "第二食堂二楼"
+        },
+        "C": {
+          "title": "一串钥匙找不到了",
+          "description": "一串钥匙，挂着个小熊，有宿舍钥匙，在第二食堂二楼丢的",
+          "location": "第二食堂二楼"
+        },
+        "F": {
+          "title": "遗失钥匙一串",
+          "description": "遗失钥匙一串，附小熊挂饰及宿舍门钥匙，遗失地点为第二食堂二层",
+          "location": "第二食堂二楼"
+        },
+        "S": {
+          "title": "钥匙串不见了",
+          "description": "钥匙串，小熊挂件，宿舍钥匙，二食堂2楼丢的",
+          "location": "第二食堂二楼"
+        }
+      }
+    },
+    {
+      "itemId": "S6",
+      "object": "线性代数教材",
+      "categoryId": 7,
+      "distinguishing": "线性代数 / 封面有手写名字 / 图书馆四楼",
+      "phrasings": {
+        "O": {
+          "title": "线性代数教材丢失",
+          "description": "线性代数教材，封面写了名字，在图书馆四楼丢的",
+          "location": "图书馆四楼"
+        },
+        "C": {
+          "title": "线代课本丢了",
+          "description": "一本线代教材，封面上写了名字，在图书馆四楼丢的",
+          "location": "图书馆四楼"
+        },
+        "F": {
+          "title": "遗失线性代数教材一册",
+          "description": "遗失《线性代数》教材一册，封面有手写姓名，遗失地点为图书馆四层",
+          "location": "图书馆四楼"
+        },
+        "S": {
+          "title": "线代教材丢了",
+          "description": "线代课本，封面有名字，图书馆4楼丢的",
+          "location": "图书馆四楼"
+        }
+      }
+    }
+  ],
+  "traps": [
+    {
+      "id": "T1",
+      "itemId": "T1",
+      "object": "黑色充电宝（划痕对完好）",
+      "categoryId": 2,
+      "reason": "同为黑色 20000 毫安充电宝、同地点，但一侧外壳有划痕、另一侧完好，是两个不同物品",
+      "lost": {
+        "title": "黑色充电宝丢失",
+        "description": "黑色20000毫安充电宝，外壳有一道划痕，在图书馆三楼自习区丢的",
+        "location": "图书馆三楼自习区"
+      },
+      "found": {
+        "title": "捡到黑色20000毫安充电宝",
+        "description": "黑色20000毫安充电宝，外壳完好无划痕，在图书馆三楼自习区捡到的",
+        "location": "图书馆三楼自习区"
+      }
+    },
+    {
+      "id": "T2",
+      "itemId": "T2",
+      "object": "黑色水杯（保温对塑料）",
+      "categoryId": 8,
+      "reason": "同为黑色杯子、同在 A203，但一个是保温杯、一个是塑料水杯，材质不同即不同物",
+      "lost": {
+        "title": "黑色保温杯丢失",
+        "description": "黑色保温杯，杯身有卡通贴纸，在A203教室丢的",
+        "location": "A203教室"
+      },
+      "found": {
+        "title": "A203捡到黑色水杯",
+        "description": "黑色塑料水杯，杯身没有贴纸，在A203教室捡到的",
+        "location": "A203教室"
+      }
+    },
+    {
+      "id": "T3",
+      "itemId": "T3",
+      "object": "深蓝色折叠伞（木柄对金属柄）",
+      "categoryId": 6,
+      "reason": "同为深蓝色折叠伞、同在体育馆门口，但伞柄一木一金属，是两个物品",
+      "lost": {
+        "title": "深蓝色折叠伞丢失",
+        "description": "深蓝色折叠伞，木质伞柄，在体育馆门口丢的",
+        "location": "体育馆门口"
+      },
+      "found": {
+        "title": "体育馆门口捡到深蓝色折叠伞",
+        "description": "深蓝色折叠伞，金属伞柄，在体育馆门口捡到的",
+        "location": "体育馆门口"
+      }
+    },
+    {
+      "id": "T4",
+      "itemId": "T4",
+      "object": "钥匙串（小熊对兔子挂件）",
+      "categoryId": 3,
+      "reason": "同为含宿舍钥匙的钥匙串、同在第二食堂二楼，但挂件一个小熊一个兔子，不是同一串",
+      "lost": {
+        "title": "钥匙串丢了（小熊挂件）",
+        "description": "钥匙串，小熊挂件，含宿舍钥匙，在第二食堂二楼丢的",
+        "location": "第二食堂二楼"
+      },
+      "found": {
+        "title": "捡到钥匙串（兔子挂件）",
+        "description": "钥匙串，兔子挂件，含宿舍钥匙，在第二食堂二楼捡到的",
+        "location": "第二食堂二楼"
+      }
+    },
+    {
+      "id": "T5",
+      "itemId": "T5",
+      "object": "线性代数教材（有名字对无名字）",
+      "categoryId": 7,
+      "reason": "同为线性代数教材、同在图书馆四楼，但一本封面有名字、一本没有，是两本不同的书",
+      "lost": {
+        "title": "线性代数教材丢失（封面有名字）",
+        "description": "线性代数教材，封面写有名字，在图书馆四楼丢的",
+        "location": "图书馆四楼"
+      },
+      "found": {
+        "title": "图书馆四楼捡到线性代数教材",
+        "description": "线性代数教材，封面没有名字，在图书馆四楼捡到的",
+        "location": "图书馆四楼"
+      }
+    },
+    {
+      "id": "T6",
+      "itemId": "T6",
+      "object": "白色蓝牙耳机（右耳对左耳）",
+      "categoryId": 2,
+      "reason": "同为白色蓝牙耳机、同在第二食堂二楼，但一只是右耳、一只是左耳，不是同一只",
+      "lost": {
+        "title": "白色蓝牙耳机丢失（右耳）",
+        "description": "白色蓝牙耳机，右耳单只，在第二食堂二楼丢的",
+        "location": "第二食堂二楼"
+      },
+      "found": {
+        "title": "捡到白色蓝牙耳机（左耳）",
+        "description": "白色蓝牙耳机，左耳单只，在第二食堂二楼捡到的",
+        "location": "第二食堂二楼"
+      }
+    }
+  ]
+}

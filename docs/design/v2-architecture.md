@@ -7,7 +7,7 @@
 > 配套文件：`docs/api-contract-v2.md`（17 接口 × 3 态权限矩阵、逐接口契约）、`docs/design/diagrams/er-v2.mmd`（ER 图）、`docs/testing/v2/A1-contract-evidence.md`（证据）
 > 边界：**只出文档**。本分支不改 `server/`、`web/` 下任何一行代码；DDL 是给 B1 的草案，SQL 方言细节可在 B1 落地时按本机 MySQL 8.0.x 微调，但列、约束语义与唯一键不得改。
 >
-> **阈值口径补丁（2026-10-28，ZHYYKFX-84）：** 本文 §5/H5/H13 等处写的 `contact_direct_threshold=0.90`、`contact_unlock_threshold=0.75`、`completed_visible_threshold=0.90`、`notify_threshold=0.75` 是 v2.0.0 的**全局**默认值，已被校准结果取代。现行口径：默认（语义引擎）`0.95/0.80/0.95/0.90`，`LOCAL_KEYWORD` 覆盖 `0.65/0.45/0.65/0.55`；判定与可见性规则不变，但每个 pair 按自己的 `engine` 取阈值（`PairPolicyProperties.forEngine`）。校准样本与理由见 `docs/testing/v2/threshold-calibration.md`。
+> **阈值口径补丁（2026-10-28，ZHYYKFX-84）：** 本文 §5/H5/H13 等处写的 `contact_direct_threshold=0.90`、`contact_unlock_threshold=0.75`、`completed_visible_threshold=0.90`、`notify_threshold=0.75` 是 v2.0.0 的**全局**默认值，已被校准结果取代。现行口径：默认（语义引擎）`0.95/0.80/0.95/0.90`，`LOCAL_KEYWORD` 覆盖 `0.90/0.45/0.90/0.90`（2026-10-28 同义/陷阱专项修正）；判定与可见性规则不变，但每个 pair 按自己的 `engine` 取阈值（`PairPolicyProperties.forEngine`）。校准样本与理由见 `docs/testing/v2/threshold-calibration.md`。
 
 ---
 

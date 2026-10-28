@@ -199,9 +199,9 @@ class PairContactServiceTest {
     void thresholdsFollowPairEngine() {
         PairPolicyProperties localPolicy = new PairPolicyProperties();
         localPolicy.getOverrides().getLocal().setContactUnlockThreshold(new BigDecimal("0.45"));
-        localPolicy.getOverrides().getLocal().setContactDirectThreshold(new BigDecimal("0.65"));
-        localPolicy.getOverrides().getLocal().setNotifyThreshold(new BigDecimal("0.55"));
-        localPolicy.getOverrides().getLocal().setCompletedVisibleThreshold(new BigDecimal("0.65"));
+        localPolicy.getOverrides().getLocal().setContactDirectThreshold(new BigDecimal("0.90"));
+        localPolicy.getOverrides().getLocal().setNotifyThreshold(new BigDecimal("0.90"));
+        localPolicy.getOverrides().getLocal().setCompletedVisibleThreshold(new BigDecimal("0.90"));
         PairContactService localAware = new PairContactService(lookupService, localPolicy, accessLogService);
 
         PairLookup local = lookup("0.50", RecordStatus.PENDING, RecordStatus.PENDING);
@@ -248,3 +248,4 @@ class PairContactServiceTest {
         return new PairLookup(pair, lost, found);
     }
 }
+

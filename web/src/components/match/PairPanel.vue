@@ -66,7 +66,7 @@ function handleChanged(result: PairActionResult): void {
       data-testid="pair-degraded-banner"
     >
       <span class="alert__title">已降级</span>
-      <span class="alert__text">智能匹配暂不可用，已用关键词匹配。分数仅供参考。</span>
+      <span class="alert__text">当前为关键词匹配，同义/近义描述可能匹配不到，也可能出现不相关的结果，结果显示仅供参考。</span>
     </p>
 
     <p v-else-if="analyzing" class="alert alert--info pair-panel__degraded" role="status">

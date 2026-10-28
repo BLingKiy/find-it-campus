@@ -60,9 +60,9 @@ class PairFactsAdapterTest {
     void engineSpecificThresholds() {
         PairPolicyProperties localPolicy = new PairPolicyProperties();
         localPolicy.getOverrides().getLocal().setContactUnlockThreshold(new BigDecimal("0.45"));
-        localPolicy.getOverrides().getLocal().setContactDirectThreshold(new BigDecimal("0.65"));
-        localPolicy.getOverrides().getLocal().setNotifyThreshold(new BigDecimal("0.55"));
-        localPolicy.getOverrides().getLocal().setCompletedVisibleThreshold(new BigDecimal("0.65"));
+        localPolicy.getOverrides().getLocal().setContactDirectThreshold(new BigDecimal("0.90"));
+        localPolicy.getOverrides().getLocal().setNotifyThreshold(new BigDecimal("0.90"));
+        localPolicy.getOverrides().getLocal().setCompletedVisibleThreshold(new BigDecimal("0.90"));
         PairFactsAdapter localAware = new PairFactsAdapter(mapper, localPolicy);
 
         PairCardRow local = row(1L, 201L, "0.5000", "LOST");
@@ -77,13 +77,13 @@ class PairFactsAdapterTest {
     }
 
     @Test
-    @DisplayName("SQL 拿到的两组阈值来自配置：默认 0.95/0.80，本地覆盖 0.65/0.45")
+    @DisplayName("SQL 拿到的两组阈值来自配置：默认 0.95/0.80，本地覆盖 0.90/0.45")
     void passesBothThresholdSetsToMapper() {
         PairPolicyProperties custom = new PairPolicyProperties();
-        custom.getOverrides().getLocal().setContactDirectThreshold(new BigDecimal("0.65"));
+        custom.getOverrides().getLocal().setContactDirectThreshold(new BigDecimal("0.90"));
         custom.getOverrides().getLocal().setContactUnlockThreshold(new BigDecimal("0.45"));
-        custom.getOverrides().getLocal().setNotifyThreshold(new BigDecimal("0.55"));
-        custom.getOverrides().getLocal().setCompletedVisibleThreshold(new BigDecimal("0.65"));
+        custom.getOverrides().getLocal().setNotifyThreshold(new BigDecimal("0.90"));
+        custom.getOverrides().getLocal().setCompletedVisibleThreshold(new BigDecimal("0.90"));
         PairFactsAdapter customAdapter = new PairFactsAdapter(mapper, custom);
 
         customAdapter.cardsOf(List.of(1L), CUTOFF);
@@ -247,3 +247,4 @@ class PairFactsAdapterTest {
         return row;
     }
 }
+

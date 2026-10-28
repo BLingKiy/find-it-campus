@@ -12,7 +12,7 @@
 
 **这份文档只写仓库里能验证的东西。** 每个字段名、接口路径、状态码都可以按附录 B（`consistency-checklist.md`）的 v2 抽查记录回到源码行核对；本期没有做的能力（如外部嵌入模型、短信验证、自动下架）在文中明确标注为「未落地」或「不做」，不写成「已支持」。
 
-**阈值口径更新（2026-10-28，ZHYYKFX-84）：** 配对阈值从「全局一套」改为「默认（语义引擎）一套 + `LOCAL_KEYWORD` 覆盖」。本文 §5.7、§6.10 与 §7 表格里出现的 `0.90 / 0.75` 是 **v2.0.0 的全局默认值，已被取代**：现行默认是 `direct=0.95 / unlock=0.80 / notify=0.90 / completed_visible=0.95`，本地引擎覆盖为 `0.65 / 0.45 / 0.55 / 0.65`。判定函数（三档语义）没有变，变的是「每个 pair 用自己 `engine` 的那套阈值」。校准样本、分布与取值理由见 `docs/testing/v2/threshold-calibration.md`，不要再用本文的旧数字做验收。
+**阈值口径更新（2026-10-28，ZHYYKFX-84）：** 配对阈值从「全局一套」改为「默认（语义引擎）一套 + `LOCAL_KEYWORD` 覆盖」。本文 §5.7、§6.10 与 §7 表格里出现的 `0.90 / 0.75` 是 **v2.0.0 的全局默认值，已被取代**：现行默认是 `direct=0.95 / unlock=0.80 / notify=0.90 / completed_visible=0.95`，本地引擎覆盖为 `0.90 / 0.45 / 0.90 / 0.90`（2026-10-28 同义/陷阱专项修正：旧 `0.65 / 0.45 / 0.55 / 0.65` 会让 5/6 高重叠陷阱免授权出号）。判定函数（三档语义）没有变，变的是「每个 pair 用自己 `engine` 的那套阈值」。校准样本、分布与取值理由见 `docs/testing/v2/threshold-calibration.md`，不要再用本文的旧数字做验收。
 
 **阅读路径**：答辩前看 §1 与 §8；评审查实现看 §3–§7；复现看 §9–§10 与附录 A/B。
 
@@ -215,7 +215,7 @@ v2 有四种身份，判定只看服务端会话，不看前端传的字段（�
 | 2026-10-27 | 手机号是否做短信验证、是否入 `t_user` | 只做格式校验、不做短信验证、`t_user` 不存手机号列；不自动下架 | `db/schema.sql` 表 1、`RecordCreateRequest` 的 `@Pattern`；§9.1 已知限制 |
 | 2026-10-27 | LLM 密钥放置 | 只走环境变量 `DEEPSEEK_API_KEY`；配置文件里**刻意没有 api-key 键**；代码/配置/日志/证据/文档零明文，证据只记 `model` / `latency_ms` / `tokens` | `LlmProperties`、`DeepSeekPairScorer`；§6.8（密钥纪律）、§9.2（限制） |
 | 2026-10-28 | F3 安全评审后的 P1/P2 处置 | P0=0；P1（分隔符/国际前缀归一，堵手机号与证件号绕过）与 P2（状态竞态条件更新、`Cache-Control: no-store` + `Vary: Cookie`、会话只允许 Cookie 承载、日志格式化、过期 COMPLETED 不再进扫描目标）各立分支，**当日已合入 `feat/v2-integration @ 64693ec`** | `fix/v2-F3-p1-masking-normalize @ 08f4bb9`、`fix/v2-F3-p2-hardening @ fbd538f`；本文 §5.1、§5.6、§5.8、§6.9 |
-| 2026-10-28 | 配对阈值是否需要按引擎分两套 | **必须分**。20 对标注样本实测：语义引擎正例 0.92–0.98 / 负例 0.00–0.15，本地关键词正例 0.20–0.73 / 负例 0.02–0.46；共用 0.75 等于本地引擎永远不出卡片。改为默认 `0.95/0.80/0.90/0.95` + `findit.pair.overrides.local` `0.65/0.45/0.55/0.65`，`forEngine(engine)` 是唯一取阈值入口，两套都做 fail-fast 关系校验 | `docs/testing/v2/threshold-calibration.md`；`qa/datasets/pair-calibration/`；`PairPolicyProperties`、`PairFactsMapper.xml` |
+| 2026-10-28 | 配对阈值是否需要按引擎分两套 | **必须分**。20 对标注样本实测：语义引擎正例 0.92–0.98 / 负例 0.00–0.15，本地关键词正例 0.20–0.73 / 负例 0.02–0.46；共用 0.75 等于本地引擎永远不出卡片。改为默认 `0.95/0.80/0.90/0.95` + `findit.pair.overrides.local` `0.90/0.45/0.90/0.90`（2026-10-28 同义/陷阱专项修正），`forEngine(engine)` 是唯一取阈值入口，两套都做 fail-fast 关系校验 | `docs/testing/v2/threshold-calibration.md`；`qa/datasets/pair-calibration/`；`PairPolicyProperties`、`PairFactsMapper.xml` |
 
 ### 2.5 v2 新增验收判据
 
@@ -969,7 +969,7 @@ candidates = [{"score":0.78,"reason":"关键词命中:[手机号已隐藏]qq[QQ�
 | `LOW` | `score < 0.75` | 一律拒绝，**不出成功体**（`PairCard` 里连卡片都不生成） | `403/50002` |
 
 > **上表数字仅代表 v2.0.0。** 2026-10-28 校准后（ZHYYKFX-84），阈值按 pair 的 `engine` 取：
-> 默认（语义）`0.95 / 0.80`，`LOCAL_KEYWORD` 覆盖 `0.65 / 0.45`；三档语义与判定函数不变。
+> 默认（语义）`0.95 / 0.80`，`LOCAL_KEYWORD` 覆盖 `0.90 / 0.45`；三档语义与判定函数不变。
 > 现行值与理由见 `docs/testing/v2/threshold-calibration.md`。
 
 四条实现细节，都是踩过的位置：
@@ -1296,7 +1296,7 @@ public MatchEngine keywordMatchEngine(@Lazy CategoryMapper categoryMapper) {
 
 共同点有两条，且都不因降级而放宽：**降级不改判定流程**（三档语义与 fail-closed 审计一视同仁，低分照样拒绝），**降级不绕过可见性与审计**（取号仍走 §5.7 的三档判定与 fail-closed 审计）。
 
-但阈值**必须按引擎取**（2026-10-28 校准，ZHYYKFX-84）：`LOCAL_KEYWORD` 的分数尺度与 `DEEPSEEK` 不同（同一对内容可差 0.72），降级 pair 用 `findit.pair.overrides.local`（`0.65/0.45/0.55`）判定，语义 pair 用默认那一套（`0.95/0.80/0.90`）。旧口径「降级不改阈值（0.75/0.90 一视同仁）」是把「不改判定流程」误写成了「不改数字」，其直接后果是降级态下本地分全部低于 0.75、用户看不到任何卡片。校准依据见 `docs/testing/v2/threshold-calibration.md`。
+但阈值**必须按引擎取**（2026-10-28 校准，ZHYYKFX-84）：`LOCAL_KEYWORD` 的分数尺度与 `DEEPSEEK` 不同（同一对内容可差 0.72），降级 pair 用 `findit.pair.overrides.local`（`0.90/0.45/0.90`）判定，语义 pair 用默认那一套（`0.95/0.80/0.90`）。旧口径「降级不改阈值（0.75/0.90 一视同仁）」是把「不改判定流程」误写成了「不改数字」，其直接后果是降级态下本地分全部低于 0.75、用户看不到任何卡片。校准依据见 `docs/testing/v2/threshold-calibration.md`。
 
 ### 6.11 实测证据（真实调用与降级各一组）
 

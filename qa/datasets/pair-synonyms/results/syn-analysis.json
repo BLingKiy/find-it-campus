@@ -1,0 +1,982 @@
+{
+  "generatedAt": "2026-10-28T18:19:33.059Z",
+  "dataset": "qa/datasets/pair-synonyms/variants.json",
+  "items": 6,
+  "synonymPairs": 18,
+  "crossPairs": 18,
+  "traps": 6,
+  "engines": {
+    "local": {
+      "thresholds": {
+        "unlock": 0.45,
+        "direct": 0.9,
+        "notify": 0.9
+      },
+      "rows": [
+        {
+          "id": "S1-OC",
+          "itemId": "S1",
+          "object": "小米充电宝",
+          "combo": "OC",
+          "phrasing": [
+            "O",
+            "C"
+          ],
+          "score": 0.64,
+          "baseline": 1,
+          "retention": 0.64,
+          "overUnlock": true,
+          "overDirect": false,
+          "engine": "LOCAL_KEYWORD"
+        },
+        {
+          "id": "S1-OF",
+          "itemId": "S1",
+          "object": "小米充电宝",
+          "combo": "OF",
+          "phrasing": [
+            "O",
+            "F"
+          ],
+          "score": 0.41,
+          "baseline": 1,
+          "retention": 0.41,
+          "overUnlock": false,
+          "overDirect": false,
+          "engine": "LOCAL_KEYWORD"
+        },
+        {
+          "id": "S1-OS",
+          "itemId": "S1",
+          "object": "小米充电宝",
+          "combo": "OS",
+          "phrasing": [
+            "O",
+            "S"
+          ],
+          "score": 0.68,
+          "baseline": 1,
+          "retention": 0.68,
+          "overUnlock": true,
+          "overDirect": false,
+          "engine": "LOCAL_KEYWORD"
+        },
+        {
+          "id": "S2-OC",
+          "itemId": "S2",
+          "object": "深蓝色折叠伞",
+          "combo": "OC",
+          "phrasing": [
+            "O",
+            "C"
+          ],
+          "score": 0.64,
+          "baseline": 1,
+          "retention": 0.64,
+          "overUnlock": true,
+          "overDirect": false,
+          "engine": "LOCAL_KEYWORD"
+        },
+        {
+          "id": "S2-OF",
+          "itemId": "S2",
+          "object": "深蓝色折叠伞",
+          "combo": "OF",
+          "phrasing": [
+            "O",
+            "F"
+          ],
+          "score": 0.66,
+          "baseline": 1,
+          "retention": 0.66,
+          "overUnlock": true,
+          "overDirect": false,
+          "engine": "LOCAL_KEYWORD"
+        },
+        {
+          "id": "S2-OS",
+          "itemId": "S2",
+          "object": "深蓝色折叠伞",
+          "combo": "OS",
+          "phrasing": [
+            "O",
+            "S"
+          ],
+          "score": 0.61,
+          "baseline": 1,
+          "retention": 0.61,
+          "overUnlock": true,
+          "overDirect": false,
+          "engine": "LOCAL_KEYWORD"
+        },
+        {
+          "id": "S3-OC",
+          "itemId": "S3",
+          "object": "学生证",
+          "combo": "OC",
+          "phrasing": [
+            "O",
+            "C"
+          ],
+          "score": 0.61,
+          "baseline": 1,
+          "retention": 0.61,
+          "overUnlock": true,
+          "overDirect": false,
+          "engine": "LOCAL_KEYWORD"
+        },
+        {
+          "id": "S3-OF",
+          "itemId": "S3",
+          "object": "学生证",
+          "combo": "OF",
+          "phrasing": [
+            "O",
+            "F"
+          ],
+          "score": 0.67,
+          "baseline": 1,
+          "retention": 0.67,
+          "overUnlock": true,
+          "overDirect": false,
+          "engine": "LOCAL_KEYWORD"
+        },
+        {
+          "id": "S3-OS",
+          "itemId": "S3",
+          "object": "学生证",
+          "combo": "OS",
+          "phrasing": [
+            "O",
+            "S"
+          ],
+          "score": 0.65,
+          "baseline": 1,
+          "retention": 0.65,
+          "overUnlock": true,
+          "overDirect": false,
+          "engine": "LOCAL_KEYWORD"
+        },
+        {
+          "id": "S4-OC",
+          "itemId": "S4",
+          "object": "银色保温杯",
+          "combo": "OC",
+          "phrasing": [
+            "O",
+            "C"
+          ],
+          "score": 0.45,
+          "baseline": 0.87,
+          "retention": 0.5172413793103449,
+          "overUnlock": true,
+          "overDirect": false,
+          "engine": "LOCAL_KEYWORD"
+        },
+        {
+          "id": "S4-OF",
+          "itemId": "S4",
+          "object": "银色保温杯",
+          "combo": "OF",
+          "phrasing": [
+            "O",
+            "F"
+          ],
+          "score": 0.53,
+          "baseline": 0.87,
+          "retention": 0.6091954022988506,
+          "overUnlock": true,
+          "overDirect": false,
+          "engine": "LOCAL_KEYWORD"
+        },
+        {
+          "id": "S4-OS",
+          "itemId": "S4",
+          "object": "银色保温杯",
+          "combo": "OS",
+          "phrasing": [
+            "O",
+            "S"
+          ],
+          "score": 0.53,
+          "baseline": 0.87,
+          "retention": 0.6091954022988506,
+          "overUnlock": true,
+          "overDirect": false,
+          "engine": "LOCAL_KEYWORD"
+        },
+        {
+          "id": "S5-OC",
+          "itemId": "S5",
+          "object": "钥匙串",
+          "combo": "OC",
+          "phrasing": [
+            "O",
+            "C"
+          ],
+          "score": 0.73,
+          "baseline": 1,
+          "retention": 0.73,
+          "overUnlock": true,
+          "overDirect": false,
+          "engine": "LOCAL_KEYWORD"
+        },
+        {
+          "id": "S5-OF",
+          "itemId": "S5",
+          "object": "钥匙串",
+          "combo": "OF",
+          "phrasing": [
+            "O",
+            "F"
+          ],
+          "score": 0.55,
+          "baseline": 1,
+          "retention": 0.55,
+          "overUnlock": true,
+          "overDirect": false,
+          "engine": "LOCAL_KEYWORD"
+        },
+        {
+          "id": "S5-OS",
+          "itemId": "S5",
+          "object": "钥匙串",
+          "combo": "OS",
+          "phrasing": [
+            "O",
+            "S"
+          ],
+          "score": 0.7,
+          "baseline": 1,
+          "retention": 0.7,
+          "overUnlock": true,
+          "overDirect": false,
+          "engine": "LOCAL_KEYWORD"
+        },
+        {
+          "id": "S6-OC",
+          "itemId": "S6",
+          "object": "线性代数教材",
+          "combo": "OC",
+          "phrasing": [
+            "O",
+            "C"
+          ],
+          "score": 0.74,
+          "baseline": 1,
+          "retention": 0.74,
+          "overUnlock": true,
+          "overDirect": false,
+          "engine": "LOCAL_KEYWORD"
+        },
+        {
+          "id": "S6-OF",
+          "itemId": "S6",
+          "object": "线性代数教材",
+          "combo": "OF",
+          "phrasing": [
+            "O",
+            "F"
+          ],
+          "score": 0.65,
+          "baseline": 1,
+          "retention": 0.65,
+          "overUnlock": true,
+          "overDirect": false,
+          "engine": "LOCAL_KEYWORD"
+        },
+        {
+          "id": "S6-OS",
+          "itemId": "S6",
+          "object": "线性代数教材",
+          "combo": "OS",
+          "phrasing": [
+            "O",
+            "S"
+          ],
+          "score": 0.63,
+          "baseline": 1,
+          "retention": 0.63,
+          "overUnlock": true,
+          "overDirect": false,
+          "engine": "LOCAL_KEYWORD"
+        }
+      ],
+      "retention": {
+        "n": 18,
+        "min": 0.41,
+        "p25": 0.609396551724138,
+        "median": 0.64,
+        "p75": 0.6675,
+        "max": 0.74,
+        "mean": 0.6280906768837803,
+        "values": [
+          0.41,
+          0.5172413793103449,
+          0.55,
+          0.6091954022988506,
+          0.6091954022988506,
+          0.61,
+          0.61,
+          0.63,
+          0.64,
+          0.64,
+          0.65,
+          0.65,
+          0.66,
+          0.67,
+          0.68,
+          0.7,
+          0.73,
+          0.74
+        ]
+      },
+      "byCombo": {
+        "OC": {
+          "n": 6,
+          "min": 0.5172413793103449,
+          "p25": 0.6174999999999999,
+          "median": 0.64,
+          "p75": 0.7075,
+          "max": 0.74,
+          "mean": 0.6462068965517241,
+          "values": [
+            0.5172413793103449,
+            0.61,
+            0.64,
+            0.64,
+            0.73,
+            0.74
+          ]
+        },
+        "OF": {
+          "n": 6,
+          "min": 0.41,
+          "p25": 0.5647988505747127,
+          "median": 0.6295977011494254,
+          "p75": 0.6575,
+          "max": 0.67,
+          "mean": 0.5915325670498085,
+          "values": [
+            0.41,
+            0.55,
+            0.6091954022988506,
+            0.65,
+            0.66,
+            0.67
+          ]
+        },
+        "OS": {
+          "n": 6,
+          "min": 0.6091954022988506,
+          "p25": 0.615,
+          "median": 0.64,
+          "p75": 0.6725000000000001,
+          "max": 0.7,
+          "mean": 0.6465325670498084,
+          "values": [
+            0.6091954022988506,
+            0.61,
+            0.63,
+            0.65,
+            0.68,
+            0.7
+          ]
+        }
+      },
+      "overUnlock": 0.9444444444444444,
+      "overDirect": 0,
+      "cross": {
+        "n": 18,
+        "min": 0.22,
+        "p25": 0.445,
+        "median": 0.5,
+        "p75": 0.555,
+        "max": 0.76,
+        "mean": 0.5022222222222222,
+        "values": [
+          0.22,
+          0.27,
+          0.4,
+          0.4,
+          0.43,
+          0.49,
+          0.49,
+          0.49,
+          0.5,
+          0.5,
+          0.52,
+          0.53,
+          0.54,
+          0.56,
+          0.63,
+          0.63,
+          0.68,
+          0.76
+        ],
+        "overUnlock": 0.7222222222222222
+      },
+      "traps": {
+        "rows": [
+          {
+            "id": "T1",
+            "object": "黑色充电宝（划痕对完好）",
+            "score": 0.82,
+            "overUnlock": true,
+            "overDirect": false
+          },
+          {
+            "id": "T2",
+            "object": "黑色水杯（保温对塑料）",
+            "score": 0.33,
+            "overUnlock": false,
+            "overDirect": false
+          },
+          {
+            "id": "T3",
+            "object": "深蓝色折叠伞（木柄对金属柄）",
+            "score": 0.79,
+            "overUnlock": true,
+            "overDirect": false
+          },
+          {
+            "id": "T4",
+            "object": "钥匙串（小熊对兔子挂件）",
+            "score": 0.75,
+            "overUnlock": true,
+            "overDirect": false
+          },
+          {
+            "id": "T5",
+            "object": "线性代数教材（有名字对无名字）",
+            "score": 0.85,
+            "overUnlock": true,
+            "overDirect": false
+          },
+          {
+            "id": "T6",
+            "object": "白色蓝牙耳机（右耳对左耳）",
+            "score": 0.8,
+            "overUnlock": true,
+            "overDirect": false
+          }
+        ],
+        "max": 0.85,
+        "min": 0.33,
+        "overUnlock": 0.8333333333333334,
+        "overDirect": 0
+      }
+    },
+    "deepseek": {
+      "thresholds": {
+        "unlock": 0.8,
+        "direct": 0.95,
+        "notify": 0.9
+      },
+      "rows": [
+        {
+          "id": "S1-OC",
+          "itemId": "S1",
+          "object": "小米充电宝",
+          "combo": "OC",
+          "phrasing": [
+            "O",
+            "C"
+          ],
+          "score": 0.98,
+          "baseline": 1,
+          "retention": 0.98,
+          "overUnlock": true,
+          "overDirect": true,
+          "engine": "DEEPSEEK"
+        },
+        {
+          "id": "S1-OF",
+          "itemId": "S1",
+          "object": "小米充电宝",
+          "combo": "OF",
+          "phrasing": [
+            "O",
+            "F"
+          ],
+          "score": 1,
+          "baseline": 1,
+          "retention": 1,
+          "overUnlock": true,
+          "overDirect": true,
+          "engine": "DEEPSEEK"
+        },
+        {
+          "id": "S1-OS",
+          "itemId": "S1",
+          "object": "小米充电宝",
+          "combo": "OS",
+          "phrasing": [
+            "O",
+            "S"
+          ],
+          "score": 0.95,
+          "baseline": 1,
+          "retention": 0.95,
+          "overUnlock": true,
+          "overDirect": true,
+          "engine": "DEEPSEEK"
+        },
+        {
+          "id": "S2-OC",
+          "itemId": "S2",
+          "object": "深蓝色折叠伞",
+          "combo": "OC",
+          "phrasing": [
+            "O",
+            "C"
+          ],
+          "score": 0.98,
+          "baseline": 1,
+          "retention": 0.98,
+          "overUnlock": true,
+          "overDirect": true,
+          "engine": "DEEPSEEK"
+        },
+        {
+          "id": "S2-OF",
+          "itemId": "S2",
+          "object": "深蓝色折叠伞",
+          "combo": "OF",
+          "phrasing": [
+            "O",
+            "F"
+          ],
+          "score": 0.95,
+          "baseline": 1,
+          "retention": 0.95,
+          "overUnlock": true,
+          "overDirect": true,
+          "engine": "DEEPSEEK"
+        },
+        {
+          "id": "S2-OS",
+          "itemId": "S2",
+          "object": "深蓝色折叠伞",
+          "combo": "OS",
+          "phrasing": [
+            "O",
+            "S"
+          ],
+          "score": 0.98,
+          "baseline": 1,
+          "retention": 0.98,
+          "overUnlock": true,
+          "overDirect": true,
+          "engine": "DEEPSEEK"
+        },
+        {
+          "id": "S3-OC",
+          "itemId": "S3",
+          "object": "学生证",
+          "combo": "OC",
+          "phrasing": [
+            "O",
+            "C"
+          ],
+          "score": 0.95,
+          "baseline": 1,
+          "retention": 0.95,
+          "overUnlock": true,
+          "overDirect": true,
+          "engine": "DEEPSEEK"
+        },
+        {
+          "id": "S3-OF",
+          "itemId": "S3",
+          "object": "学生证",
+          "combo": "OF",
+          "phrasing": [
+            "O",
+            "F"
+          ],
+          "score": 1,
+          "baseline": 1,
+          "retention": 1,
+          "overUnlock": true,
+          "overDirect": true,
+          "engine": "DEEPSEEK"
+        },
+        {
+          "id": "S3-OS",
+          "itemId": "S3",
+          "object": "学生证",
+          "combo": "OS",
+          "phrasing": [
+            "O",
+            "S"
+          ],
+          "score": 0.95,
+          "baseline": 1,
+          "retention": 0.95,
+          "overUnlock": true,
+          "overDirect": true,
+          "engine": "DEEPSEEK"
+        },
+        {
+          "id": "S4-OC",
+          "itemId": "S4",
+          "object": "银色保温杯",
+          "combo": "OC",
+          "phrasing": [
+            "O",
+            "C"
+          ],
+          "score": 1,
+          "baseline": 1,
+          "retention": 1,
+          "overUnlock": true,
+          "overDirect": true,
+          "engine": "DEEPSEEK"
+        },
+        {
+          "id": "S4-OF",
+          "itemId": "S4",
+          "object": "银色保温杯",
+          "combo": "OF",
+          "phrasing": [
+            "O",
+            "F"
+          ],
+          "score": 0.98,
+          "baseline": 1,
+          "retention": 0.98,
+          "overUnlock": true,
+          "overDirect": true,
+          "engine": "DEEPSEEK"
+        },
+        {
+          "id": "S4-OS",
+          "itemId": "S4",
+          "object": "银色保温杯",
+          "combo": "OS",
+          "phrasing": [
+            "O",
+            "S"
+          ],
+          "score": 0.98,
+          "baseline": 1,
+          "retention": 0.98,
+          "overUnlock": true,
+          "overDirect": true,
+          "engine": "DEEPSEEK"
+        },
+        {
+          "id": "S5-OC",
+          "itemId": "S5",
+          "object": "钥匙串",
+          "combo": "OC",
+          "phrasing": [
+            "O",
+            "C"
+          ],
+          "score": 0.98,
+          "baseline": 1,
+          "retention": 0.98,
+          "overUnlock": true,
+          "overDirect": true,
+          "engine": "DEEPSEEK"
+        },
+        {
+          "id": "S5-OF",
+          "itemId": "S5",
+          "object": "钥匙串",
+          "combo": "OF",
+          "phrasing": [
+            "O",
+            "F"
+          ],
+          "score": 0.98,
+          "baseline": 1,
+          "retention": 0.98,
+          "overUnlock": true,
+          "overDirect": true,
+          "engine": "DEEPSEEK"
+        },
+        {
+          "id": "S5-OS",
+          "itemId": "S5",
+          "object": "钥匙串",
+          "combo": "OS",
+          "phrasing": [
+            "O",
+            "S"
+          ],
+          "score": 0.98,
+          "baseline": 1,
+          "retention": 0.98,
+          "overUnlock": true,
+          "overDirect": true,
+          "engine": "DEEPSEEK"
+        },
+        {
+          "id": "S6-OC",
+          "itemId": "S6",
+          "object": "线性代数教材",
+          "combo": "OC",
+          "phrasing": [
+            "O",
+            "C"
+          ],
+          "score": 0.95,
+          "baseline": 1,
+          "retention": 0.95,
+          "overUnlock": true,
+          "overDirect": true,
+          "engine": "DEEPSEEK"
+        },
+        {
+          "id": "S6-OF",
+          "itemId": "S6",
+          "object": "线性代数教材",
+          "combo": "OF",
+          "phrasing": [
+            "O",
+            "F"
+          ],
+          "score": 0.95,
+          "baseline": 1,
+          "retention": 0.95,
+          "overUnlock": true,
+          "overDirect": true,
+          "engine": "DEEPSEEK"
+        },
+        {
+          "id": "S6-OS",
+          "itemId": "S6",
+          "object": "线性代数教材",
+          "combo": "OS",
+          "phrasing": [
+            "O",
+            "S"
+          ],
+          "score": 0.95,
+          "baseline": 1,
+          "retention": 0.95,
+          "overUnlock": true,
+          "overDirect": true,
+          "engine": "DEEPSEEK"
+        }
+      ],
+      "retention": {
+        "n": 18,
+        "min": 0.95,
+        "p25": 0.95,
+        "median": 0.98,
+        "p75": 0.98,
+        "max": 1,
+        "mean": 0.9716666666666668,
+        "values": [
+          0.95,
+          0.95,
+          0.95,
+          0.95,
+          0.95,
+          0.95,
+          0.95,
+          0.98,
+          0.98,
+          0.98,
+          0.98,
+          0.98,
+          0.98,
+          0.98,
+          0.98,
+          1,
+          1,
+          1
+        ]
+      },
+      "byCombo": {
+        "OC": {
+          "n": 6,
+          "min": 0.95,
+          "p25": 0.9575,
+          "median": 0.98,
+          "p75": 0.98,
+          "max": 1,
+          "mean": 0.9733333333333333,
+          "values": [
+            0.95,
+            0.95,
+            0.98,
+            0.98,
+            0.98,
+            1
+          ]
+        },
+        "OF": {
+          "n": 6,
+          "min": 0.95,
+          "p25": 0.9575,
+          "median": 0.98,
+          "p75": 0.995,
+          "max": 1,
+          "mean": 0.9766666666666666,
+          "values": [
+            0.95,
+            0.95,
+            0.98,
+            0.98,
+            1,
+            1
+          ]
+        },
+        "OS": {
+          "n": 6,
+          "min": 0.95,
+          "p25": 0.95,
+          "median": 0.965,
+          "p75": 0.98,
+          "max": 0.98,
+          "mean": 0.9649999999999999,
+          "values": [
+            0.95,
+            0.95,
+            0.95,
+            0.98,
+            0.98,
+            0.98
+          ]
+        }
+      },
+      "overUnlock": 1,
+      "overDirect": 1,
+      "cross": {
+        "n": 18,
+        "min": 0.95,
+        "p25": 0.95,
+        "median": 0.98,
+        "p75": 0.98,
+        "max": 0.98,
+        "mean": 0.9683333333333335,
+        "values": [
+          0.95,
+          0.95,
+          0.95,
+          0.95,
+          0.95,
+          0.95,
+          0.95,
+          0.98,
+          0.98,
+          0.98,
+          0.98,
+          0.98,
+          0.98,
+          0.98,
+          0.98,
+          0.98,
+          0.98,
+          0.98
+        ],
+        "overUnlock": 1
+      },
+      "traps": {
+        "rows": [
+          {
+            "id": "T1",
+            "object": "黑色充电宝（划痕对完好）",
+            "score": 0.72,
+            "overUnlock": false,
+            "overDirect": false
+          },
+          {
+            "id": "T2",
+            "object": "黑色水杯（保温对塑料）",
+            "score": 0.55,
+            "overUnlock": false,
+            "overDirect": false
+          },
+          {
+            "id": "T3",
+            "object": "深蓝色折叠伞（木柄对金属柄）",
+            "score": 0.72,
+            "overUnlock": false,
+            "overDirect": false
+          },
+          {
+            "id": "T4",
+            "object": "钥匙串（小熊对兔子挂件）",
+            "score": 0.55,
+            "overUnlock": false,
+            "overDirect": false
+          },
+          {
+            "id": "T5",
+            "object": "线性代数教材（有名字对无名字）",
+            "score": 0.72,
+            "overUnlock": false,
+            "overDirect": false
+          },
+          {
+            "id": "T6",
+            "object": "白色蓝牙耳机（右耳对左耳）",
+            "score": 0.1,
+            "overUnlock": false,
+            "overDirect": false
+          }
+        ],
+        "max": 0.72,
+        "min": 0.1,
+        "overUnlock": 0,
+        "overDirect": 0
+      }
+    }
+  },
+  "simulation": {
+    "deepseekThresholdsOnLocal": {
+      "unlock": 0.8,
+      "direct": 0.95,
+      "synonymPass": 0,
+      "trapPass": 0.5,
+      "synonymDirect": 0,
+      "trapDirect": 0
+    },
+    "oldSharedThresholdsOnLocal": {
+      "unlock": 0.75,
+      "direct": 0.9,
+      "synonymPass": 0,
+      "trapPass": 0.8333333333333334,
+      "synonymDirect": 0,
+      "trapDirect": 0
+    },
+    "deliveredLocalOnLocal": {
+      "unlock": 0.45,
+      "direct": 0.65,
+      "synonymPass": 0.9444444444444444,
+      "trapPass": 0.8333333333333334,
+      "synonymDirect": 0.4444444444444444,
+      "trapDirect": 0.8333333333333334
+    },
+    "proposedLocalOnLocal": {
+      "unlock": 0.45,
+      "direct": 0.9,
+      "synonymPass": 0.9444444444444444,
+      "trapPass": 0.8333333333333334,
+      "synonymDirect": 0,
+      "trapDirect": 0
+    },
+    "localThresholdsOnDeepseek": {
+      "unlock": 0.45,
+      "direct": 0.65,
+      "synonymPass": 1,
+      "trapPass": 0.8333333333333334,
+      "synonymDirect": 1,
+      "trapDirect": 0.5
+    },
+    "localHardFloorOnLocal": {
+      "unlock": 0.86,
+      "direct": 0.9,
+      "synonymPass": 0,
+      "trapPass": 0,
+      "synonymDirect": 0,
+      "trapDirect": 0
+    }
+  }
+}
