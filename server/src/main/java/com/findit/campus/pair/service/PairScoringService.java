@@ -101,6 +101,21 @@ public class PairScoringService {
     }
 
     /**
+     * 本轮 LLM 调用的预算闸门（ZHYYKFX-88）。
+     *
+     * <p>{@code scoreRecord} 是"一条记录 × 多个候选 pair"的循环；只按记录粒度检查
+     * {@code max-llm-calls} 时，单条记录最多能多花 {@code pre-score-pool-size} 次调用。
+     * 把闸门传进循环，达到上限就停在当前 pair 之前 —— 超调最多 0 次（最后那次调用把计数推到上限）。
+     *
+     * <p>实现必须便宜且无副作用：扫描器用 {@code metrics.llmCalls()} 的差值实现它，
+     * 只在每对之前读一次原子计数。
+     */
+    @FunctionalInterface
+    public interface LlmCallBudget {
+        boolean exhausted();
+    }
+
+    /**
      * 给一条记录补齐它的所有候选 pair。
      *
      * @param trigger {@code publish} / {@code scan} / {@code manual}，只进日志（不落库：落库会引入一个
@@ -108,6 +123,18 @@ public class PairScoringService {
      * @return 本轮统计，供扫描汇总；单条记录失败不成异常（内部已兜住），除非数据库不可用
      */
     public RecordScoreOutcome scoreRecord(long recordId, String trigger) {
+        return scoreRecord(recordId, trigger, null);
+    }
+
+    /**
+     * 同上，并接受本轮 LLM 调用预算；{@code budget=null} 表示不设限（发布/编辑/手动重试走这里）。
+     *
+     * <p>预算耗尽时：<b>不再调 LLM</b>，但已算完的 pair 正常落库；记录状态仍按库里的
+     * {@code countDegradedByRecord} 落 READY/DEGRADED，且<b>不刷新</b> {@code pair_scored_at}
+     * （见 {@code markPairScoredKeepTimestamp}）—— 下一条降级重扫/全量扫描会立刻重新选中它，
+     * 而不是等一个 60 分钟冷却窗口。
+     */
+    public RecordScoreOutcome scoreRecord(long recordId, String trigger, LlmCallBudget budget) {
         Record record = recordMapper.selectById(recordId);
         if (record == null) {
             return RecordScoreOutcome.skipped(recordId, "NOT_FOUND");
@@ -128,10 +155,15 @@ public class PairScoringService {
             int written = 0;
             int skipped = 0;
             int locked = 0;
+            boolean truncated = false;
             for (PairSide candidate : candidates) {
+                if (budget != null && budget.exhausted()) {
+                    truncated = true;
+                    break;
+                }
                 PairSide lost = source.type() == RecordType.LOST ? source : candidate;
                 PairSide found = source.type() == RecordType.LOST ? candidate : source;
-                PairOutcome outcome = scorePair(lost, found, trigger);
+                PairOutcome outcome = scorePair(lost, found, trigger, recordId);
                 switch (outcome.status()) {
                     case WRITTEN -> written++;
                     case SKIPPED_UNCHANGED -> skipped++;
@@ -143,11 +175,16 @@ public class PairScoringService {
             }
             int degradedPairs = pairScoreMapper.countDegradedByRecord(recordId);
             String state = degradedPairs > 0 ? STATE_DEGRADED : STATE_READY;
-            recordMapper.markPairScored(recordId, state, LocalDateTime.now());
-            log.info("pair record scored recordId={} trigger={} candidates={} written={} skipped={} locked={} state={} degradedPairs={}",
-                    recordId, trigger, candidates.size(), written, skipped, locked, state, degradedPairs);
+            if (truncated) {
+                // 保留旧的 pair_scored_at：本轮只是被预算截断，不是"冷却期内的完整一轮"
+                recordMapper.markPairScoredKeepTimestamp(recordId, state);
+            } else {
+                recordMapper.markPairScored(recordId, state, LocalDateTime.now());
+            }
+            log.info("pair record scored recordId={} trigger={} candidates={} written={} skipped={} locked={} state={} degradedPairs={} truncated={}",
+                    recordId, trigger, candidates.size(), written, skipped, locked, state, degradedPairs, truncated);
             return new RecordScoreOutcome(recordId, state, candidates.size(), written, skipped, locked,
-                    degradedPairs, null);
+                    degradedPairs, null, truncated);
         } catch (RuntimeException e) {
             // 保持 PENDING/SCORING，扫描会重试；不要让一条记录的失败中断整批扫描
             log.warn("pair record scoring failed recordId={} trigger={} cause={}", recordId, trigger, e.getMessage());
@@ -218,6 +255,18 @@ public class PairScoringService {
      * 两次读之间被别人改过也只会导致"这次不写"，不会写坏。
      */
     public PairOutcome scorePair(PairSide lost, PairSide found, String trigger) {
+        return scorePair(lost, found, trigger, lost.recordId());
+    }
+
+    /**
+     * 同上，并带上"本轮是为哪条记录重算的"（只进日志）。
+     *
+     * <p>为什么单独传 {@code recordId}：降级重扫是按<b>记录</b>选材的，同一条 pair 在重算时
+     * 既可能由 lost 端触发、也可能由 found 端触发。日志里只写 lostId/foundId 无法回答
+     * "这次恢复扫描补的是哪条记录"，而排障时最先问的正是这个。
+     */
+    public PairOutcome scorePair(PairSide lost, PairSide found, String trigger, long recordId) {
+        long pairStartedAt = System.nanoTime();
         String lostHash = PairContentHasher.hash(lost);
         String foundHash = PairContentHasher.hash(found);
 
@@ -282,13 +331,32 @@ public class PairScoringService {
             });
             metrics.pairWritten();
             PairScore persisted = pairScoreMapper.selectByPair(lost.recordId(), found.recordId());
-            log.info("pair score written lostId={} foundId={} trigger={} pairId={} engine={} score={} degradedReason={} latencyMs={} promptTokens={} completionTokens={}",
-                    lost.recordId(), found.recordId(), trigger,
+            long elapsedMs = (System.nanoTime() - pairStartedAt) / 1_000_000L;
+            log.info("pair score written recordId={} lostId={} foundId={} trigger={} pairId={} engine={} score={} degradedReason={} latencyMs={} promptTokens={} completionTokens={} elapsedMs={}",
+                    recordId, lost.recordId(), found.recordId(), trigger,
                     persisted == null ? null : persisted.getId(), row.getEngine(), score,
-                    row.getDegradedReason(), latencyMs, row.getPromptTokens(), row.getCompletionTokens());
+                    row.getDegradedReason(), latencyMs, row.getPromptTokens(), row.getCompletionTokens(),
+                    elapsedMs);
+            // 留痕（ZHYYKFX-88 §5）：回答"这条什么时候从关键词分升级成模型分"。
+            // 单独一行、固定 event 名，便于按 event 检索；只有真有旧行且引擎发生升级时才打，
+            // 首次打分（existing=null）不算升级，避免把"第一次就成功"混进恢复统计。
+            if (upgraded(existing, row.getEngine())) {
+                log.info("pair score upgraded event=pair_score_upgraded recordId={} pairId={} lostId={} foundId={} trigger={} oldEngine={} oldScore={} newEngine={} newScore={} degradedReason={} latencyMs={} elapsedMs={}",
+                        recordId, persisted == null ? null : persisted.getId(), lost.recordId(), found.recordId(),
+                        trigger, existing.getEngine(), existing.getScore(), row.getEngine(), score,
+                        row.getDegradedReason(), latencyMs, elapsedMs);
+            }
             return new PairOutcome(PairOutcome.Status.WRITTEN, persisted == null ? null : persisted.getId(),
                     score, row.getEngine(), row.getDegradedReason());
         }
+    }
+
+    /** 引擎是否从本地关键词分升级为模型分（只用于日志判定，不参与写入）。 */
+    private static boolean upgraded(PairScore existing, String newEngine) {
+        return existing != null
+                && PairEngines.LOCAL_KEYWORD.equals(existing.getEngine())
+                && newEngine != null
+                && !PairEngines.LOCAL_KEYWORD.equals(newEngine);
     }
 
     /** 哈希未变（存在且两端 hash 都相等）。 */
@@ -382,16 +450,23 @@ public class PairScoringService {
         }
     }
 
-    /** 单条记录的本轮统计。 */
+    /** 单条记录的本轮统计。{@code truncated} = 被 LLM 预算截断，还有 pair 没算。 */
     public record RecordScoreOutcome(long recordId, String pairState, int candidates, int written,
-                                     int skipped, int locked, int degradedPairs, String error) {
+                                     int skipped, int locked, int degradedPairs, String error,
+                                     boolean truncated) {
+
+        /** 兼容既有调用方（发布/编辑/手动/测试）：不带预算的运行永远是完整一轮。 */
+        public RecordScoreOutcome(long recordId, String pairState, int candidates, int written,
+                                  int skipped, int locked, int degradedPairs, String error) {
+            this(recordId, pairState, candidates, written, skipped, locked, degradedPairs, error, false);
+        }
 
         public static RecordScoreOutcome skipped(long recordId, String reason) {
-            return new RecordScoreOutcome(recordId, null, 0, 0, 0, 0, 0, reason);
+            return new RecordScoreOutcome(recordId, null, 0, 0, 0, 0, 0, reason, false);
         }
 
         public static RecordScoreOutcome failed(long recordId, String error) {
-            return new RecordScoreOutcome(recordId, null, 0, 0, 0, 0, 0, error);
+            return new RecordScoreOutcome(recordId, null, 0, 0, 0, 0, 0, error, false);
         }
 
         public boolean failed() {

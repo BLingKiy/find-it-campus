@@ -312,12 +312,21 @@
         WHERE id = #{id} AND deleted_at IS NULL
     </update>
 
+    <!-- 被 LLM 预算截断：只落状态，不推进 pair_scored_at（否则剩余 pair 要再等一个冷却窗口） -->
+    <update id="markPairScoredKeepTimestamp">
+        UPDATE t_record
+        SET pair_state = #{state}
+        WHERE id = #{id} AND deleted_at IS NULL
+    </update>
+
     <!--
-      扫描目标：未打分的 PENDING、卡死在 SCORING 的残留、以及 DEGRADED（key 恢复后重算）。
+      扫描目标：未打分的 PENDING、卡死在 SCORING 的残留、以及冷却已过的 DEGRADED（key 恢复后重算）。
 
       召回口径与 matchablePredicate 一致（P2-4）：PENDING 恒扫；COMPLETED 只在保留期内扫；
       CLOSED 与已删除不扫。过期 COMPLETED 即便 pair_state=DEGRADED 也不该再花 LLM 额度 ——
       它已不可见、不再召回，重算只会产生指向 404 的 pair/通知。
+      DEGRADED 的冷却（ZHYYKFX-88）：刚试过的降级记录不重复进候选，避免每轮空转；
+      命中索引 idx_record_pair_scan (pair_state, pair_scored_at)。
       ORDER BY 把 pair_scored_at IS NULL 排最前（0 在前），确保新记录不会被老积压饿死。
     -->
     <select id="selectPairScanTargets" resultType="long">
@@ -328,7 +337,26 @@
                OR (r.status = 'COMPLETED' AND r.completed_at &gt; #{completedCutoff}))
           AND ( (r.pair_state IN ('PENDING', 'SCORING')
                  AND (r.pair_scored_at IS NULL OR r.pair_scored_at &lt; #{staleBefore}))
-                OR r.pair_state = 'DEGRADED' )
+                OR (r.pair_state = 'DEGRADED'
+                 AND (r.pair_scored_at IS NULL OR r.pair_scored_at &lt; #{degradedBefore})) )
+        ORDER BY (r.pair_scored_at IS NULL) DESC, r.pair_scored_at ASC, r.id ASC
+        LIMIT #{limit}
+    </select>
+
+    <!--
+      降级重扫（ZHYYKFX-88）：只取 DEGRADED，且距上次打分超过 degraded-retry-minutes。
+      为什么 ORDER BY 仍带 pair_scored_at：恢复后最该先补的是"最早降级"的那条，
+      而不是 id 最小的那条；同一时刻只看一页时，这个顺序保证不会反复饿死同一批。
+      命中索引 idx_record_pair_scan (pair_state, pair_scored_at)：等值列在前、范围列在后。
+    -->
+    <select id="selectDegradedScanTargets" resultType="long">
+        SELECT r.id
+        FROM t_record r
+        WHERE r.deleted_at IS NULL
+          AND (r.status = 'PENDING'
+               OR (r.status = 'COMPLETED' AND r.completed_at &gt; #{completedCutoff}))
+          AND r.pair_state = 'DEGRADED'
+          AND (r.pair_scored_at IS NULL OR r.pair_scored_at &lt; #{degradedBefore})
         ORDER BY (r.pair_scored_at IS NULL) DESC, r.pair_scored_at ASC, r.id ASC
         LIMIT #{limit}
     </select>
