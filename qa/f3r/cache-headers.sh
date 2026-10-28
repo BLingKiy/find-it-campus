@@ -5,6 +5,10 @@
 # /api/match、/api/pairs/{id} 逐个断言 Cache-Control 含 no-store 与 Vary: Cookie；
 # 401 短路响应同样要带；/api/pairs/{id}/contact 的 no-store 不回退。
 #
+# /api/pairs/{id} 这一支在代码里对应三条真实路由（PairController.java:58/71/82）：
+# GET /{id}/contact、POST /{id}/contact-unlock、PATCH /{id}；裸 GET /api/pairs/{id} 没有 handler，
+# 因此 E5–E9 把这三条路由与「裸路径实际状态」都断言上，避免只测 contact 就宣称覆盖了第 5 个端点。
+#
 # 前置：后端 18080 已起、库为 seed 初始状态。pairId=1 是 seed 里 demo01(lost#1)↔demo02(found#13)
 # 的 0.96 CONTACTED 对，两端身份都能打 contact。
 # 运行：bash qa/f3r/cache-headers.sh > qa/reports/f3r-cache-headers.txt
@@ -15,10 +19,12 @@
 
 set -u
 API="${API:-http://localhost:18080}"
-J1=$(mktemp); J2=$(mktemp); BF=$(mktemp); BF2=$(mktemp)
-trap 'rm -f "$J1" "$J2" "$BF" "$BF2"' EXIT
+J1=$(mktemp); J2=$(mktemp); BF=$(mktemp); BF2=$(mktemp); PF=$(mktemp); UF=$(mktemp)
+trap 'rm -f "$J1" "$J2" "$BF" "$BF2" "$PF" "$UF"' EXIT
 printf '%s' '{"text":"图书馆 黑色钱包 银行卡","type":"FOUND","topN":5,"minScore":0}' >"$BF"
 printf '%s' '{"text":"操场 白色 iPhone 透明壳","type":"LOST","topN":5,"minScore":0}' >"$BF2"
+printf '%s' '{"action":"CONTACT"}' >"$PF"
+printf '%s' '{"action":"PUBLISH","note":"我的号码 13800000009，随时联系"}' >"$UF"
 
 login() { curl -s -c "$2" -X POST "$API/api/auth/login" -H 'Content-Type: application/json' \
   -d "{\"studentNo\":\"$1\",\"password\":\"Demo@123456\"}" -o /dev/null -w '%{http_code}'; }
@@ -74,6 +80,11 @@ show 'E1 参与者 GET /api/pairs/{id}/contact（不回退断言）'    GET "/ap
 show 'E2 对方 GET /api/pairs/{id}/contact（不回退断言）'      GET "/api/pairs/${PAIR_ID:-1}/contact" "$J2"
 show 'E3 匿名 GET /api/pairs/{id}/contact（401 短路带头）'    GET "/api/pairs/${PAIR_ID:-1}/contact"
 show 'E4 不存在 pairId GET /api/pairs/999999/contact（404）'  GET '/api/pairs/999999/contact' "$J1"
+show 'E5 参与者 PATCH /api/pairs/{id}（action=CONTACT，200 统一体）'  PATCH "/api/pairs/${PAIR_ID:-1}" "$J1" "$PF"
+show 'E6 匿名 PATCH /api/pairs/{id}（401 短路带头）'                  PATCH "/api/pairs/${PAIR_ID:-1}" '' "$PF"
+show 'E7 本人 POST /api/pairs/{id}/contact-unlock（200 写库）'         POST "/api/pairs/${PAIR_ID:-1}/contact-unlock" "$J1" "$UF"
+show 'E8 匿名 POST /api/pairs/{id}/contact-unlock（401 短路带头）'      POST "/api/pairs/${PAIR_ID:-1}/contact-unlock" '' "$UF"
+show 'E9 GET /api/pairs/{id} 裸路径（路由不存在，记录实际状态码与头）'   GET "/api/pairs/${PAIR_ID:-1}" "$J1"
 show 'F1 匿名 GET /api/my/records（401 短路）'               GET '/api/my/records'
 show 'F2 匿名 GET /api/notifications（401 短路）'            GET '/api/notifications'
 show 'F3 匿名 POST /api/match（401 短路）'                   POST '/api/match' '' "$BF"
