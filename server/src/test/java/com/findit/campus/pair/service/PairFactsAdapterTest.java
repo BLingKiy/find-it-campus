@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
@@ -18,6 +19,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import com.findit.campus.pair.config.PairPolicyProperties;
 import com.findit.campus.pair.domain.PairCardRow;
 import com.findit.campus.pair.mapper.PairFactsMapper;
 import com.findit.campus.record.domain.PairCardFacts;
@@ -37,31 +39,75 @@ class PairFactsAdapterTest {
     private static final LocalDateTime CUTOFF = LocalDateTime.of(2026, 9, 27, 12, 0);
 
     private PairFactsMapper mapper;
+    private PairPolicyProperties policy;
     private PairFactsAdapter adapter;
 
     @BeforeEach
     void setUp() {
         mapper = mock(PairFactsMapper.class);
-        adapter = new PairFactsAdapter(mapper);
+        // 用例沿用 0.75/0.90 这套「语义引擎」口径，与 row() 默认的 engine=DEEPSEEK 对齐；
+        // 按引擎覆盖的差异由 engineSpecificThresholds() 单独验证。
+        policy = new PairPolicyProperties();
+        policy.setContactDirectThreshold(DIRECT);
+        policy.setContactUnlockThreshold(UNLOCK);
+        policy.setNotifyThreshold(UNLOCK);
+        policy.setCompletedVisibleThreshold(DIRECT);
+        adapter = new PairFactsAdapter(mapper, policy);
+    }
+
+    @Test
+    @DisplayName("按 pair 自己的 engine 取阈值：同分 0.50 在 LOCAL 是 AUTHORIZABLE，在 DEEPSEEK 是 LOW")
+    void engineSpecificThresholds() {
+        PairPolicyProperties localPolicy = new PairPolicyProperties();
+        localPolicy.getOverrides().getLocal().setContactUnlockThreshold(new BigDecimal("0.45"));
+        localPolicy.getOverrides().getLocal().setContactDirectThreshold(new BigDecimal("0.65"));
+        localPolicy.getOverrides().getLocal().setNotifyThreshold(new BigDecimal("0.55"));
+        localPolicy.getOverrides().getLocal().setCompletedVisibleThreshold(new BigDecimal("0.65"));
+        PairFactsAdapter localAware = new PairFactsAdapter(mapper, localPolicy);
+
+        PairCardRow local = row(1L, 201L, "0.5000", "LOST");
+        local.setEngine("LOCAL_KEYWORD");
+        PairCardRow deepseek = row(1L, 202L, "0.5000", "LOST");
+        when(mapper.selectCardsByRecordIds(any(), any(), any(), any())).thenReturn(List.of(local, deepseek));
+
+        List<PairCardFacts> cards = localAware.cardsOf(List.of(1L), CUTOFF).get(1L);
+
+        assertEquals("AUTHORIZABLE", cards.get(0).tier(), "本地引擎 0.50 ≥ 本地 unlock 0.45");
+        assertEquals("LOW", cards.get(1).tier(), "语义引擎 0.50 < 默认 unlock 0.75");
+    }
+
+    @Test
+    @DisplayName("SQL 拿到的两组阈值来自配置：默认 0.95/0.80，本地覆盖 0.65/0.45")
+    void passesBothThresholdSetsToMapper() {
+        PairPolicyProperties custom = new PairPolicyProperties();
+        custom.getOverrides().getLocal().setContactDirectThreshold(new BigDecimal("0.65"));
+        custom.getOverrides().getLocal().setContactUnlockThreshold(new BigDecimal("0.45"));
+        custom.getOverrides().getLocal().setNotifyThreshold(new BigDecimal("0.55"));
+        custom.getOverrides().getLocal().setCompletedVisibleThreshold(new BigDecimal("0.65"));
+        PairFactsAdapter customAdapter = new PairFactsAdapter(mapper, custom);
+
+        customAdapter.cardsOf(List.of(1L), CUTOFF);
+
+        verify(mapper).selectCardsByRecordIds(List.of(1L), new BigDecimal("0.80"), new BigDecimal("0.45"), CUTOFF);
     }
 
     @Test
     @DisplayName("空 id 集合：一次查询都不发（不是发一条 IN () 的坏 SQL）")
     void emptyIdsDoNotQuery() {
-        assertTrue(adapter.cardsOf(List.of(), UNLOCK, DIRECT, CUTOFF).isEmpty());
-        assertTrue(adapter.cardsOf(null, UNLOCK, DIRECT, CUTOFF).isEmpty());
+        assertTrue(adapter.cardsOf(List.of(), CUTOFF).isEmpty());
+        assertTrue(adapter.cardsOf(null, CUTOFF).isEmpty());
         verifyNoInteractions(mapper);
     }
 
     @Test
     @DisplayName("按 recordId 分组且保持 SQL 顺序（score 降序、同分 pairId 升序）")
     void groupsByRecordPreservingOrder() {
-        when(mapper.selectCardsByRecordIds(any(), any(), any())).thenReturn(List.of(
+        when(mapper.selectCardsByRecordIds(any(), any(), any(), any())).thenReturn(List.of(
                 row(1L, 101L, "0.9200", "LOST"),
                 row(1L, 102L, "0.8000", "LOST"),
                 row(2L, 103L, "0.9000", "FOUND")));
 
-        Map<Long, List<PairCardFacts>> cards = adapter.cardsOf(List.of(1L, 2L, 3L), UNLOCK, DIRECT, CUTOFF);
+        Map<Long, List<PairCardFacts>> cards = adapter.cardsOf(List.of(1L, 2L, 3L), CUTOFF);
 
         assertEquals(List.of(101L, 102L),
                 cards.get(1L).stream().map(PairCardFacts::pairId).toList());
@@ -85,9 +131,9 @@ class PairFactsAdapterTest {
         foundSide.setLostUnlockedAt(lostSide.getLostUnlockedAt());
         foundSide.setLostUnlockNote("本端附言");
         foundSide.setFoundUnlockNote("对方附言");
-        when(mapper.selectCardsByRecordIds(any(), any(), any())).thenReturn(List.of(lostSide, foundSide));
+        when(mapper.selectCardsByRecordIds(any(), any(), any(), any())).thenReturn(List.of(lostSide, foundSide));
 
-        Map<Long, List<PairCardFacts>> cards = adapter.cardsOf(List.of(1L, 2L), UNLOCK, DIRECT, CUTOFF);
+        Map<Long, List<PairCardFacts>> cards = adapter.cardsOf(List.of(1L, 2L), CUTOFF);
         PairCardFacts mine = cards.get(1L).get(0);
         PairCardFacts theirs = cards.get(2L).get(0);
 
@@ -113,15 +159,15 @@ class PairFactsAdapterTest {
     void otherNoteVisibility() {
         PairCardRow authorizable = row(1L, 101L, "0.8000", "LOST");
         authorizable.setFoundUnlockNote("对方的附言");
-        when(mapper.selectCardsByRecordIds(any(), any(), any())).thenReturn(List.of(authorizable));
-        assertNull(adapter.cardsOf(List.of(1L), UNLOCK, DIRECT, CUTOFF).get(1L).get(0).otherNote());
-        assertNull(adapter.cardsOf(List.of(1L), UNLOCK, DIRECT, CUTOFF).get(1L).get(0).myNote());
+        when(mapper.selectCardsByRecordIds(any(), any(), any(), any())).thenReturn(List.of(authorizable));
+        assertNull(adapter.cardsOf(List.of(1L), CUTOFF).get(1L).get(0).otherNote());
+        assertNull(adapter.cardsOf(List.of(1L), CUTOFF).get(1L).get(0).myNote());
 
         PairCardRow direct = row(1L, 102L, "0.9200", "LOST");
         direct.setFoundUnlockNote("对方的附言");
-        when(mapper.selectCardsByRecordIds(any(), any(), any())).thenReturn(List.of(direct));
+        when(mapper.selectCardsByRecordIds(any(), any(), any(), any())).thenReturn(List.of(direct));
         assertEquals("对方的附言",
-                adapter.cardsOf(List.of(1L), UNLOCK, DIRECT, CUTOFF).get(1L).get(0).otherNote());
+                adapter.cardsOf(List.of(1L), CUTOFF).get(1L).get(0).otherNote());
     }
 
     @Test
@@ -130,8 +176,8 @@ class PairFactsAdapterTest {
         // AUTHORIZABLE + 未授权 + 有号
         PairCardRow notPublic = row(1L, 101L, "0.8000", "LOST");
         notPublic.setCounterpartContactPresent(true);
-        when(mapper.selectCardsByRecordIds(any(), any(), any())).thenReturn(List.of(notPublic));
-        PairCardFacts facts = adapter.cardsOf(List.of(1L), UNLOCK, DIRECT, CUTOFF).get(1L).get(0);
+        when(mapper.selectCardsByRecordIds(any(), any(), any(), any())).thenReturn(List.of(notPublic));
+        PairCardFacts facts = adapter.cardsOf(List.of(1L), CUTOFF).get(1L).get(0);
         assertFalse(facts.contactAvailable());
         assertEquals("对方尚未公开", facts.contactHint());
 
@@ -139,8 +185,8 @@ class PairFactsAdapterTest {
         PairCardRow published = row(1L, 102L, "0.8000", "LOST");
         published.setFoundUnlockedAt(LocalDateTime.of(2026, 10, 27, 10, 0));
         published.setCounterpartContactPresent(true);
-        when(mapper.selectCardsByRecordIds(any(), any(), any())).thenReturn(List.of(published));
-        facts = adapter.cardsOf(List.of(1L), UNLOCK, DIRECT, CUTOFF).get(1L).get(0);
+        when(mapper.selectCardsByRecordIds(any(), any(), any(), any())).thenReturn(List.of(published));
+        facts = adapter.cardsOf(List.of(1L), CUTOFF).get(1L).get(0);
         assertTrue(facts.contactAvailable());
         assertEquals("对方已公开联系方式", facts.contactHint());
 
@@ -148,16 +194,16 @@ class PairFactsAdapterTest {
         PairCardRow noNumber = row(1L, 103L, "0.8000", "LOST");
         noNumber.setFoundUnlockedAt(LocalDateTime.of(2026, 10, 27, 10, 0));
         noNumber.setCounterpartContactPresent(false);
-        when(mapper.selectCardsByRecordIds(any(), any(), any())).thenReturn(List.of(noNumber));
-        facts = adapter.cardsOf(List.of(1L), UNLOCK, DIRECT, CUTOFF).get(1L).get(0);
+        when(mapper.selectCardsByRecordIds(any(), any(), any(), any())).thenReturn(List.of(noNumber));
+        facts = adapter.cardsOf(List.of(1L), CUTOFF).get(1L).get(0);
         assertFalse(facts.contactAvailable());
         assertEquals("对方未填写联系方式", facts.contactHint());
 
         // DIRECT + 没填号：按钮不可点，文案不能是"可直接查看"
         PairCardRow directNoNumber = row(1L, 104L, "0.9500", "LOST");
         directNoNumber.setCounterpartContactPresent(false);
-        when(mapper.selectCardsByRecordIds(any(), any(), any())).thenReturn(List.of(directNoNumber));
-        facts = adapter.cardsOf(List.of(1L), UNLOCK, DIRECT, CUTOFF).get(1L).get(0);
+        when(mapper.selectCardsByRecordIds(any(), any(), any(), any())).thenReturn(List.of(directNoNumber));
+        facts = adapter.cardsOf(List.of(1L), CUTOFF).get(1L).get(0);
         assertFalse(facts.contactAvailable());
         assertEquals("对方未填写联系方式", facts.contactHint());
     }
@@ -172,9 +218,9 @@ class PairFactsAdapterTest {
         PairCardRow ignored = row(1L, 102L, "0.8000", "LOST");
         ignored.setStatus("IGNORED");
         ignored.setEngine("LOCAL_KEYWORD");
-        when(mapper.selectCardsByRecordIds(any(), any(), any())).thenReturn(List.of(matched, ignored));
+        when(mapper.selectCardsByRecordIds(any(), any(), any(), any())).thenReturn(List.of(matched, ignored));
 
-        List<PairCardFacts> cards = adapter.cardsOf(List.of(1L), UNLOCK, DIRECT, CUTOFF).get(1L);
+        List<PairCardFacts> cards = adapter.cardsOf(List.of(1L), CUTOFF).get(1L);
 
         assertTrue(cards.get(0).matched());
         assertFalse(cards.get(0).degraded());

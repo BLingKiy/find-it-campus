@@ -118,7 +118,7 @@ class RecordServiceAccessTest {
         Record pending = record(RecordStatus.PENDING, OWNER, null);
         when(recordMapper.selectById(RECORD_ID)).thenReturn(pending, pending);
         when(recordMapper.updateContent(any())).thenReturn(1);
-        when(pairFactsPort.cardsOf(any(), any(), any(), any())).thenReturn(Map.of());
+        when(pairFactsPort.cardsOf(any(), any())).thenReturn(Map.of());
 
         RecordDetailResponse response = recordService.update(RECORD_ID, updateRequest(), OWNER);
 
@@ -235,7 +235,7 @@ class RecordServiceAccessTest {
         completed.setContact("13812345678");
         completed.setPublisherName("李同学");
         when(recordMapper.selectById(RECORD_ID)).thenReturn(completed);
-        when(pairFactsPort.viewerHasQualifyingPair(eq(RECORD_ID), eq(OTHER), any(), any())).thenReturn(true);
+        when(pairFactsPort.viewerHasQualifyingPair(eq(RECORD_ID), eq(OTHER), any())).thenReturn(true);
 
         RecordDetailResponse response = recordService.detail(RECORD_ID, OTHER);
 
@@ -252,7 +252,7 @@ class RecordServiceAccessTest {
     void completedDetailIgnoredPairIs404() {
         Record completed = record(RecordStatus.COMPLETED, OWNER, LocalDateTime.now().minusDays(3));
         when(recordMapper.selectById(RECORD_ID)).thenReturn(completed);
-        when(pairFactsPort.viewerHasQualifyingPair(eq(RECORD_ID), eq(OTHER), any(), any())).thenReturn(false);
+        when(pairFactsPort.viewerHasQualifyingPair(eq(RECORD_ID), eq(OTHER), any())).thenReturn(false);
 
         BizException ex = assertThrows(BizException.class, () -> recordService.detail(RECORD_ID, OTHER));
         assertEquals(ErrorCode.RECORD_NOT_FOUND, ex.errorCode());
@@ -263,7 +263,7 @@ class RecordServiceAccessTest {
     void completedDetailExpiredIs404() {
         Record expired = record(RecordStatus.COMPLETED, OWNER, LocalDateTime.now().minusDays(31));
         when(recordMapper.selectById(RECORD_ID)).thenReturn(expired);
-        when(pairFactsPort.viewerHasQualifyingPair(eq(RECORD_ID), eq(OTHER), any(), any())).thenReturn(true);
+        when(pairFactsPort.viewerHasQualifyingPair(eq(RECORD_ID), eq(OTHER), any())).thenReturn(true);
 
         BizException ex = assertThrows(BizException.class, () -> recordService.detail(RECORD_ID, OTHER));
         assertEquals(ErrorCode.RECORD_NOT_FOUND, ex.errorCode());
@@ -277,8 +277,8 @@ class RecordServiceAccessTest {
         pending.setPublisherName("李同学");
         when(recordMapper.selectById(RECORD_ID)).thenReturn(pending);
         when(pairFactsPort.countValidMatched(eq(RECORD_ID), any())).thenReturn(1);
-        when(pairFactsPort.countLowConfidence(eq(RECORD_ID), any(), any())).thenReturn(2);
-        when(pairFactsPort.cardsOf(any(), any(), any(), any())).thenReturn(
+        when(pairFactsPort.countLowConfidence(eq(RECORD_ID), any())).thenReturn(2);
+        when(pairFactsPort.cardsOf(any(), any())).thenReturn(
                 Map.of(RECORD_ID, List.of(
                         PairCardFixtures.direct(RECORD_ID, 101L),
                         PairCardFixtures.authorizableNotPublic(RECORD_ID, 102L))));
@@ -306,7 +306,7 @@ class RecordServiceAccessTest {
     void completedPeerDetailOmitsPairs() {
         Record completed = record(RecordStatus.COMPLETED, OWNER, LocalDateTime.now().minusDays(3));
         when(recordMapper.selectById(RECORD_ID)).thenReturn(completed);
-        when(pairFactsPort.viewerHasQualifyingPair(eq(RECORD_ID), eq(OTHER), any(), any())).thenReturn(true);
+        when(pairFactsPort.viewerHasQualifyingPair(eq(RECORD_ID), eq(OTHER), any())).thenReturn(true);
 
         RecordDetailResponse response = recordService.detail(RECORD_ID, OTHER);
 

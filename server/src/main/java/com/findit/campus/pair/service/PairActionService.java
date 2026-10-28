@@ -61,7 +61,8 @@ public class PairActionService {
                 policy.getCompletedRetentionDays(), LocalDateTime.now())) {
             throw BizException.of(ErrorCode.PAIR_INVALID);
         }
-        if (lookup.pair().getScore().compareTo(policy.getContactUnlockThreshold()) < 0) {
+        if (lookup.pair().getScore()
+                .compareTo(policy.forEngine(lookup.pair().getEngine()).unlock()) < 0) {
             throw BizException.of(ErrorCode.CONTACT_TIER_INSUFFICIENT);
         }
 

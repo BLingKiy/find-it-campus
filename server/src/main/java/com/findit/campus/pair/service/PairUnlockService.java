@@ -85,7 +85,8 @@ public class PairUnlockService {
                 pairScoreMapper.revokeFound(pairId);
             }
         } else {
-            if (access.pair().getScore().compareTo(policy.getContactUnlockThreshold()) < 0) {
+            if (access.pair().getScore()
+                    .compareTo(policy.forEngine(access.pair().getEngine()).unlock()) < 0) {
                 throw BizException.of(ErrorCode.CONTACT_TIER_INSUFFICIENT);
             }
             LocalDateTime now = LocalDateTime.now();

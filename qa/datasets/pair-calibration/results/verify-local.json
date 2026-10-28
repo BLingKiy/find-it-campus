@@ -1,0 +1,90 @@
+{
+  "label": "local",
+  "apiBase": "http://localhost:18088",
+  "runAt": "2026-10-28T15:57:44.646Z",
+  "config": "application.yml 默认值（语义引擎 0.95/0.80/0.90，local 覆盖 0.65/0.45/0.55）",
+  "positive": {
+    "sample": "P01",
+    "class": "A",
+    "expect": "MATCH",
+    "lostId": 1,
+    "foundId": 2,
+    "publishHttp": [
+      200,
+      200
+    ],
+    "detailHttp": 200,
+    "pairState": "READY",
+    "lostPairState": "READY",
+    "foundPairState": "DEGRADED",
+    "lowConfidenceCount": 0,
+    "timedOut": false,
+    "card": {
+      "pairId": 1,
+      "score": 0.73,
+      "scorePercent": 73,
+      "engine": "LOCAL_KEYWORD",
+      "tier": "DIRECT",
+      "degraded": true,
+      "contactAvailable": true,
+      "contactHint": "匹配度较高，可直接查看"
+    },
+    "waitMs": 14,
+    "closed": [
+      {
+        "http": 200,
+        "code": 0
+      },
+      {
+        "http": 200,
+        "code": 0
+      }
+    ],
+    "closeHttp": [
+      200,
+      200
+    ]
+  },
+  "negative": {
+    "sample": "P13",
+    "class": "C",
+    "expect": "NO_MATCH",
+    "lostId": 3,
+    "foundId": 4,
+    "publishHttp": [
+      200,
+      200
+    ],
+    "detailHttp": 200,
+    "pairState": "READY",
+    "lostPairState": "READY",
+    "foundPairState": "DEGRADED",
+    "lowConfidenceCount": 1,
+    "timedOut": false,
+    "card": null,
+    "waitMs": 11,
+    "closed": [
+      {
+        "http": 200,
+        "code": 0
+      },
+      {
+        "http": 200,
+        "code": 0
+      }
+    ],
+    "closeHttp": [
+      200,
+      200
+    ]
+  },
+  "checks": {
+    "positiveCardVisible": true,
+    "positiveTierDirect": true,
+    "positiveEngineExpected": true,
+    "positiveNoLowConfidence": true,
+    "negativeCardHidden": true,
+    "negativeCountedLowConfidence": true
+  },
+  "passed": true
+}

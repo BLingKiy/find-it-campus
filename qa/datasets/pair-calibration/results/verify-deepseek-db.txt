@@ -1,0 +1,3 @@
+pair_id	lost_id	lost_title	found_id	found_title	score	engine	degraded_reason	latency_ms	prompt_tokens	completion_tokens	created_at
+1	1	丢失黑色小米充电宝	2	捡到小米充电宝一个	0.9800	DEEPSEEK	NULL	1358	228	34	2026-10-28 23:58:08
+2	3	黑色双肩包丢失	4	捡到黑色手提包	0.1500	DEEPSEEK	NULL	845	188	36	2026-10-28 23:58:11

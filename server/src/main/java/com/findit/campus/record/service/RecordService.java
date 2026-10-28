@@ -129,8 +129,7 @@ public class RecordService {
         boolean qualifyingPeer = !owner
                 && record.getStatus() == RecordStatus.COMPLETED
                 && viewerId != null
-                && pairFactsPort.viewerHasQualifyingPair(id, viewerId,
-                        pairPolicy.getCompletedVisibleThreshold(), cutoff);
+                && pairFactsPort.viewerHasQualifyingPair(id, viewerId, cutoff);
         DetailAccess access = RecordVisibilityPolicy.detailAccess(record, viewerId, qualifyingPeer,
                 pairPolicy.getCompletedRetentionDays(), now);
         if (access == DetailAccess.NOT_FOUND) {
@@ -140,7 +139,7 @@ public class RecordService {
             // 三个数/卡片共用同一个 cutoff：否则"详情说 1 条、卡片说 0 条"会出现在保留期边界上
             return RecordDetailResponse.ownerView(record,
                     pairFactsPort.countValidMatched(id, cutoff),
-                    pairFactsPort.countLowConfidence(id, pairPolicy.getContactUnlockThreshold(), cutoff),
+                    pairFactsPort.countLowConfidence(id, cutoff),
                     pairCards(id, cutoff));
         }
         return RecordDetailResponse.from(record);
@@ -214,7 +213,7 @@ public class RecordService {
         // 契约 §4.4：响应与详情同构（pairs 可能是重算前的旧分数，pairState=PENDING 表示分析中）
         return RecordDetailResponse.ownerView(requireRecord(id),
                 pairFactsPort.countValidMatched(id, cutoff),
-                pairFactsPort.countLowConfidence(id, pairPolicy.getContactUnlockThreshold(), cutoff),
+                pairFactsPort.countLowConfidence(id, cutoff),
                 pairCards(id, cutoff));
     }
 
@@ -301,8 +300,7 @@ public class RecordService {
         LocalDateTime cutoff = pairPolicy.completedCutoff(now);
         boolean qualifyingPeer = record.getStatus() == RecordStatus.COMPLETED
                 && viewerId != null
-                && pairFactsPort.viewerHasQualifyingPair(record.getId(), viewerId,
-                        pairPolicy.getCompletedVisibleThreshold(), cutoff);
+                && pairFactsPort.viewerHasQualifyingPair(record.getId(), viewerId, cutoff);
         DetailAccess access = RecordVisibilityPolicy.detailAccess(record, viewerId, qualifyingPeer,
                 pairPolicy.getCompletedRetentionDays(), now);
         if (access == DetailAccess.NOT_FOUND) {
@@ -353,10 +351,7 @@ public class RecordService {
      * {@link PairFactsPort#cardsOf}，两处出卡片的字段与顺序不会分叉。
      */
     private List<PairCard> pairCards(long recordId, LocalDateTime completedCutoff) {
-        return pairFactsPort.cardsOf(List.of(recordId),
-                        pairPolicy.getContactUnlockThreshold(),
-                        pairPolicy.getContactDirectThreshold(),
-                        completedCutoff)
+        return pairFactsPort.cardsOf(List.of(recordId), completedCutoff)
                 .getOrDefault(recordId, List.of()).stream()
                 .map(PairCard::of)
                 .toList();

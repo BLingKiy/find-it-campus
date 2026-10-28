@@ -55,9 +55,9 @@ class PairContactServiceTest {
     }
 
     @Test
-    @DisplayName("0.92 直看：LOST 端拿到 FOUND 号码，审计 GRANTED，note 不因未授权而泄露")
+    @DisplayName("0.96 直看：LOST 端拿到 FOUND 号码，审计 GRANTED，note 不因未授权而泄露")
     void directTierReturnsContact() {
-        when(lookupService.load(101L)).thenReturn(lookup("0.92", RecordStatus.PENDING, RecordStatus.PENDING));
+        when(lookupService.load(101L)).thenReturn(lookup("0.96", RecordStatus.PENDING, RecordStatus.PENDING));
 
         ContactView view = contactService.view(101L, 1L, META);
 
@@ -123,7 +123,7 @@ class PairContactServiceTest {
     }
 
     @Test
-    @DisplayName("<0.75：403/50002，审计 DENIED_LOW_SCORE")
+    @DisplayName("<0.80：403/50002，审计 DENIED_LOW_SCORE")
     void lowScoreIsForbidden() {
         when(lookupService.load(101L)).thenReturn(lookup("0.70", RecordStatus.PENDING, RecordStatus.PENDING));
 
@@ -194,6 +194,27 @@ class PairContactServiceTest {
         verify(accessLogService, never()).record(any(), any(), any());
     }
 
+    @Test
+    @DisplayName("按 pair 自己的 engine 取阈值：本地 0.50 可授权，语义 0.50 一律 403")
+    void thresholdsFollowPairEngine() {
+        PairPolicyProperties localPolicy = new PairPolicyProperties();
+        localPolicy.getOverrides().getLocal().setContactUnlockThreshold(new BigDecimal("0.45"));
+        localPolicy.getOverrides().getLocal().setContactDirectThreshold(new BigDecimal("0.65"));
+        localPolicy.getOverrides().getLocal().setNotifyThreshold(new BigDecimal("0.55"));
+        localPolicy.getOverrides().getLocal().setCompletedVisibleThreshold(new BigDecimal("0.65"));
+        PairContactService localAware = new PairContactService(lookupService, localPolicy, accessLogService);
+
+        PairLookup local = lookup("0.50", RecordStatus.PENDING, RecordStatus.PENDING);
+        local.pair().setEngine("LOCAL_KEYWORD");
+        when(lookupService.load(101L)).thenReturn(local);
+        assertEquals("AUTHORIZABLE", localAware.view(101L, 1L, META).getTier());
+
+        PairLookup semantic = lookup("0.50", RecordStatus.PENDING, RecordStatus.PENDING);
+        when(lookupService.load(101L)).thenReturn(semantic);
+        assertThrows(BizException.class, () -> contactService.view(101L, 1L, META),
+                "0.50 < 默认 unlock 0.80 → 403");
+    }
+
     private void assertAudit(AccessResult expected) {
         ArgumentCaptor<AccessResult> captor = ArgumentCaptor.forClass(AccessResult.class);
         verify(accessLogService).record(any(), captor.capture(), any());
@@ -207,6 +228,7 @@ class PairContactServiceTest {
         pair.setFoundId(12L);
         pair.setScore(new BigDecimal(score));
         pair.setStatus(PairStatuses.NEW);
+        pair.setEngine("DEEPSEEK");
 
         Record lost = new Record();
         lost.setId(11L);

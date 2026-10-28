@@ -1,0 +1,545 @@
+{
+  "version": 1,
+  "dataset": "pair-calibration",
+  "task": "ZHYYKFX-84",
+  "createdAt": "2026-10-28",
+  "note": "20 对人工标注的 LOST/FOUND 配对样本，用于校准 findit.pair.* 阈值。expect=MATCH 表示人工判定应出卡片；NO_MATCH 表示不应出卡片。categoryId 对齐 db/seed.sql 的分类字典。",
+  "categories": {
+    "1": "钱包卡证",
+    "2": "手机数码",
+    "3": "钥匙",
+    "4": "证件资料",
+    "5": "包袋",
+    "6": "衣物饰品",
+    "7": "书籍文具",
+    "8": "其他"
+  },
+  "classes": {
+    "A": "完全同物不同措辞",
+    "B": "近义但可判同物",
+    "C": "部分要素相同（含同类别不同物）",
+    "D": "明确无关"
+  },
+  "pairs": [
+    {
+      "id": "P01",
+      "class": "A",
+      "expect": "MATCH",
+      "reason": "同品牌同容量同地点，外壳划痕这一细节两边一致，是同一件充电宝",
+      "lost": {
+        "type": "LOST",
+        "title": "丢失黑色小米充电宝",
+        "description": "在图书馆三楼自习区丢的，黑色小米充电宝，20000毫安，外壳有一道划痕，应该落在靠窗的位置",
+        "categoryId": 2,
+        "location": "图书馆三楼自习区",
+        "occurredAt": "2026-10-24 15:20:00",
+        "contact": "13800000002",
+        "publisherName": "演示乙"
+      },
+      "found": {
+        "type": "FOUND",
+        "title": "捡到小米充电宝一个",
+        "description": "图书馆三楼自习区靠窗座位捡到，黑色，小米品牌，容量20000毫安，外壳有划痕",
+        "categoryId": 2,
+        "location": "图书馆三楼自习区",
+        "occurredAt": "2026-10-24 16:05:00",
+        "contact": "13800000003",
+        "publisherName": "演示丙"
+      }
+    },
+    {
+      "id": "P02",
+      "class": "A",
+      "expect": "MATCH",
+      "reason": "深蓝色折叠伞、木柄、同一地点，描述的是同一把伞",
+      "lost": {
+        "type": "LOST",
+        "title": "遗失深蓝色折叠伞",
+        "description": "深蓝色折叠雨伞，伞柄是木头的，体育馆门口丢的",
+        "categoryId": 6,
+        "location": "体育馆门口",
+        "occurredAt": "2026-10-24 18:30:00",
+        "contact": "13800000002",
+        "publisherName": "演示乙"
+      },
+      "found": {
+        "type": "FOUND",
+        "title": "体育馆门口捡到折叠伞",
+        "description": "捡到深蓝色折叠雨伞一把，木质伞柄，放在体育馆门卫处",
+        "categoryId": 6,
+        "location": "体育馆门口",
+        "occurredAt": "2026-10-24 19:10:00",
+        "contact": "13800000003",
+        "publisherName": "演示丙"
+      }
+    },
+    {
+      "id": "P03",
+      "class": "A",
+      "expect": "MATCH",
+      "reason": "同姓、同学号年级段、同学院同地点，指向同一张学生证",
+      "lost": {
+        "type": "LOST",
+        "title": "学生证丢了",
+        "description": "姓名王小明，学号2023开头，计算机学院，可能在二食堂",
+        "categoryId": 4,
+        "location": "二食堂",
+        "occurredAt": "2026-10-25 12:10:00",
+        "contact": "13800000002",
+        "publisherName": "演示乙"
+      },
+      "found": {
+        "type": "FOUND",
+        "title": "捡到一张学生证",
+        "description": "二食堂捡到学生证，姓王，学号2023级，计算机学院",
+        "categoryId": 4,
+        "location": "二食堂",
+        "occurredAt": "2026-10-25 12:40:00",
+        "contact": "13800000003",
+        "publisherName": "演示丙"
+      }
+    },
+    {
+      "id": "P04",
+      "class": "A",
+      "expect": "MATCH",
+      "reason": "同颜色同材质同容量同教室，杯身贴纸也一致，是同一个保温杯",
+      "lost": {
+        "type": "LOST",
+        "title": "银色不锈钢保温杯遗失",
+        "description": "500ml银色不锈钢保温杯，杯身有贴纸，放在教学楼A203",
+        "categoryId": 8,
+        "location": "教学楼A203",
+        "occurredAt": "2026-10-25 09:15:00",
+        "contact": "13800000002",
+        "publisherName": "演示乙"
+      },
+      "found": {
+        "type": "FOUND",
+        "title": "A203捡到银色保温杯",
+        "description": "教学楼A203捡到不锈钢保温杯一个，银色，容量500毫升，杯身有贴纸",
+        "categoryId": 8,
+        "location": "教学楼A203",
+        "occurredAt": "2026-10-25 10:00:00",
+        "contact": "13800000003",
+        "publisherName": "演示丙"
+      }
+    },
+    {
+      "id": "P05",
+      "class": "A",
+      "expect": "MATCH",
+      "reason": "同色、同为右耳单只、同地点，缺失充电仓的细节互相印证",
+      "lost": {
+        "type": "LOST",
+        "title": "白色蓝牙耳机丢失（右耳）",
+        "description": "白色蓝牙耳机，只剩右耳那只，在操场看台丢的，充电仓还在我手里",
+        "categoryId": 2,
+        "location": "操场看台",
+        "occurredAt": "2026-10-25 17:40:00",
+        "contact": "13800000002",
+        "publisherName": "演示乙"
+      },
+      "found": {
+        "type": "FOUND",
+        "title": "操场看台捡到白色无线耳机",
+        "description": "操场看台捡到白色蓝牙耳机一只，右耳，无充电仓",
+        "categoryId": 2,
+        "location": "操场看台",
+        "occurredAt": "2026-10-25 18:05:00",
+        "contact": "13800000003",
+        "publisherName": "演示丙"
+      }
+    },
+    {
+      "id": "P06",
+      "class": "B",
+      "expect": "MATCH",
+      "reason": "“移动电源 / 充电宝”是同一物的两种叫法，颜色容量品牌与地点一致",
+      "lost": {
+        "type": "LOST",
+        "title": "移动电源不见了",
+        "description": "黑色两万毫安时移动电源，昨天下午在图书馆丢的，牌子是小米",
+        "categoryId": 2,
+        "location": "图书馆",
+        "occurredAt": "2026-10-25 16:20:00",
+        "contact": "13800000002",
+        "publisherName": "演示乙"
+      },
+      "found": {
+        "type": "FOUND",
+        "title": "捡到黑色大容量充电宝",
+        "description": "图书馆自习室捡到一个充电宝，黑色，大容量，应该是两万毫安",
+        "categoryId": 2,
+        "location": "图书馆自习室",
+        "occurredAt": "2026-10-25 17:00:00",
+        "contact": "13800000003",
+        "publisherName": "演示丙"
+      }
+    },
+    {
+      "id": "P07",
+      "class": "B",
+      "expect": "MATCH",
+      "reason": "颜色、折叠/长柄样式与地点一致，可以判为同一把伞",
+      "lost": {
+        "type": "LOST",
+        "title": "雨伞忘在体育馆",
+        "description": "一把深蓝色折叠伞，长柄那种，落在体育馆了",
+        "categoryId": 6,
+        "location": "体育馆",
+        "occurredAt": "2026-10-26 08:30:00",
+        "contact": "13800000002",
+        "publisherName": "演示乙"
+      },
+      "found": {
+        "type": "FOUND",
+        "title": "体育馆捡到一把伞",
+        "description": "体育馆捡到蓝色折叠雨伞，长柄",
+        "categoryId": 6,
+        "location": "体育馆",
+        "occurredAt": "2026-10-26 09:00:00",
+        "contact": "13800000003",
+        "publisherName": "演示丙"
+      }
+    },
+    {
+      "id": "P08",
+      "class": "B",
+      "expect": "MATCH",
+      "reason": "同地点、同含宿舍钥匙、同一个小熊挂件，可判为同一串钥匙",
+      "lost": {
+        "type": "LOST",
+        "title": "钥匙串丢了",
+        "description": "宿舍钥匙和自行车钥匙，串着一个小熊挂件",
+        "categoryId": 3,
+        "location": "教学楼门口",
+        "occurredAt": "2026-10-26 11:05:00",
+        "contact": "13800000002",
+        "publisherName": "演示乙"
+      },
+      "found": {
+        "type": "FOUND",
+        "title": "捡到一串钥匙",
+        "description": "在教学楼门口捡到钥匙串，有宿舍钥匙，带卡通小熊挂饰",
+        "categoryId": 3,
+        "location": "教学楼门口",
+        "occurredAt": "2026-10-26 11:40:00",
+        "contact": "13800000003",
+        "publisherName": "演示丙"
+      }
+    },
+    {
+      "id": "P09",
+      "class": "B",
+      "expect": "MATCH",
+      "reason": "黑框、高度数、同地点，可判为同一副眼镜",
+      "lost": {
+        "type": "LOST",
+        "title": "黑框眼镜丢了",
+        "description": "黑框近视眼镜，度数比较高，在食堂二楼吃饭时放的",
+        "categoryId": 8,
+        "location": "食堂二楼",
+        "occurredAt": "2026-10-26 12:25:00",
+        "contact": "13800000002",
+        "publisherName": "演示乙"
+      },
+      "found": {
+        "type": "FOUND",
+        "title": "食堂二楼捡到黑框眼镜",
+        "description": "食堂二楼桌上捡到黑色边框近视眼镜一副，度数不低",
+        "categoryId": 8,
+        "location": "食堂二楼",
+        "occurredAt": "2026-10-26 13:00:00",
+        "contact": "13800000003",
+        "publisherName": "演示丙"
+      }
+    },
+    {
+      "id": "P10",
+      "class": "C",
+      "expect": "MATCH",
+      "reason": "同地点、同颜色，钱包内都有校园卡，一侧信息更少但仍是同一只钱包",
+      "lost": {
+        "type": "LOST",
+        "title": "黑色钱包丢失",
+        "description": "黑色短款钱包，里面有校园卡和一点现金",
+        "categoryId": 1,
+        "location": "二食堂",
+        "occurredAt": "2026-10-26 12:50:00",
+        "contact": "13800000002",
+        "publisherName": "演示乙"
+      },
+      "found": {
+        "type": "FOUND",
+        "title": "捡到黑色钱包",
+        "description": "二食堂捡到黑色钱包一个，内有校园卡、现金若干",
+        "categoryId": 1,
+        "location": "二食堂",
+        "occurredAt": "2026-10-26 13:20:00",
+        "contact": "13800000003",
+        "publisherName": "演示丙"
+      }
+    },
+    {
+      "id": "P11",
+      "class": "C",
+      "expect": "NO_MATCH",
+      "reason": "同类别同地点，但宿舍门钥匙与带遥控器的电动车钥匙不是同一个物品",
+      "lost": {
+        "type": "LOST",
+        "title": "304宿舍钥匙丢失",
+        "description": "一把宿舍门钥匙，钥匙上有304标签",
+        "categoryId": 3,
+        "location": "宿舍楼下",
+        "occurredAt": "2026-10-26 20:10:00",
+        "contact": "13800000002",
+        "publisherName": "演示乙"
+      },
+      "found": {
+        "type": "FOUND",
+        "title": "捡到电动车钥匙",
+        "description": "捡到电动车钥匙一把，带遥控器",
+        "categoryId": 3,
+        "location": "宿舍楼下",
+        "occurredAt": "2026-10-26 20:40:00",
+        "contact": "13800000003",
+        "publisherName": "演示丙"
+      }
+    },
+    {
+      "id": "P12",
+      "class": "C",
+      "expect": "NO_MATCH",
+      "reason": "同为教材同一间教室，但高等数学与大学英语是两本不同的书",
+      "lost": {
+        "type": "LOST",
+        "title": "高等数学教材丢了",
+        "description": "同济版高等数学上册，书里有笔记",
+        "categoryId": 7,
+        "location": "教学楼B301",
+        "occurredAt": "2026-10-27 09:10:00",
+        "contact": "13800000002",
+        "publisherName": "演示乙"
+      },
+      "found": {
+        "type": "FOUND",
+        "title": "捡到大学英语教材",
+        "description": "新视野大学英语第三册，教学楼B301捡到",
+        "categoryId": 7,
+        "location": "教学楼B301",
+        "occurredAt": "2026-10-27 09:45:00",
+        "contact": "13800000003",
+        "publisherName": "演示丙"
+      }
+    },
+    {
+      "id": "P13",
+      "class": "C",
+      "expect": "NO_MATCH",
+      "reason": "同为黑色包、同一地点，但双肩电脑包与女士手提包不是同一件",
+      "lost": {
+        "type": "LOST",
+        "title": "黑色双肩包丢失",
+        "description": "黑色电脑双肩包，装着一台笔记本",
+        "categoryId": 5,
+        "location": "图书馆一楼",
+        "occurredAt": "2026-10-27 10:30:00",
+        "contact": "13800000002",
+        "publisherName": "演示乙"
+      },
+      "found": {
+        "type": "FOUND",
+        "title": "捡到黑色手提包",
+        "description": "图书馆一楼捡到黑色女士手提包一个",
+        "categoryId": 5,
+        "location": "图书馆一楼",
+        "occurredAt": "2026-10-27 11:00:00",
+        "contact": "13800000003",
+        "publisherName": "演示丙"
+      }
+    },
+    {
+      "id": "P14",
+      "class": "C",
+      "expect": "NO_MATCH",
+      "reason": "同类目同地点，但蓝色 iPhone 13 与黑色华为手机是两部不同的手机",
+      "lost": {
+        "type": "LOST",
+        "title": "iPhone 13 蓝色手机丢失",
+        "description": "蓝色iPhone 13，手机壳是透明的，操场丢的",
+        "categoryId": 2,
+        "location": "操场",
+        "occurredAt": "2026-10-27 16:40:00",
+        "contact": "13800000002",
+        "publisherName": "演示乙"
+      },
+      "found": {
+        "type": "FOUND",
+        "title": "操场捡到华为手机",
+        "description": "操场捡到黑色华为手机一部",
+        "categoryId": 2,
+        "location": "操场",
+        "occurredAt": "2026-10-27 17:10:00",
+        "contact": "13800000003",
+        "publisherName": "演示丙"
+      }
+    },
+    {
+      "id": "P15",
+      "class": "D",
+      "expect": "NO_MATCH",
+      "reason": "充电宝与蓝牙耳机是两类物品，只有颜色和地点相同",
+      "lost": {
+        "type": "LOST",
+        "title": "黑色充电宝丢了",
+        "description": "黑色小米充电宝，20000毫安",
+        "categoryId": 2,
+        "location": "图书馆",
+        "occurredAt": "2026-10-27 14:00:00",
+        "contact": "13800000002",
+        "publisherName": "演示乙"
+      },
+      "found": {
+        "type": "FOUND",
+        "title": "捡到黑色蓝牙耳机",
+        "description": "图书馆捡到黑色蓝牙耳机一副",
+        "categoryId": 2,
+        "location": "图书馆",
+        "occurredAt": "2026-10-27 14:30:00",
+        "contact": "13800000003",
+        "publisherName": "演示丙"
+      }
+    },
+    {
+      "id": "P16",
+      "class": "D",
+      "expect": "NO_MATCH",
+      "reason": "雨伞与保温杯是两类物品，地点也不同",
+      "lost": {
+        "type": "LOST",
+        "title": "深蓝色折叠伞丢失",
+        "description": "深蓝色折叠伞，体育馆",
+        "categoryId": 6,
+        "location": "体育馆",
+        "occurredAt": "2026-10-27 15:00:00",
+        "contact": "13800000002",
+        "publisherName": "演示乙"
+      },
+      "found": {
+        "type": "FOUND",
+        "title": "捡到银色保温杯",
+        "description": "教学楼捡到银色保温杯",
+        "categoryId": 8,
+        "location": "教学楼",
+        "occurredAt": "2026-10-27 15:30:00",
+        "contact": "13800000003",
+        "publisherName": "演示丙"
+      }
+    },
+    {
+      "id": "P17",
+      "class": "D",
+      "expect": "NO_MATCH",
+      "reason": "学生证与钥匙串是两类物品，只有地点相同",
+      "lost": {
+        "type": "LOST",
+        "title": "学生证遗失",
+        "description": "学生证，姓名李华",
+        "categoryId": 4,
+        "location": "二食堂",
+        "occurredAt": "2026-10-27 12:00:00",
+        "contact": "13800000002",
+        "publisherName": "演示乙"
+      },
+      "found": {
+        "type": "FOUND",
+        "title": "捡到一串钥匙",
+        "description": "二食堂捡到钥匙一串",
+        "categoryId": 3,
+        "location": "二食堂",
+        "occurredAt": "2026-10-27 12:30:00",
+        "contact": "13800000003",
+        "publisherName": "演示丙"
+      }
+    },
+    {
+      "id": "P18",
+      "class": "D",
+      "expect": "NO_MATCH",
+      "reason": "线性代数课本与钱包是两类物品，只有地点相同",
+      "lost": {
+        "type": "LOST",
+        "title": "线性代数课本丢失",
+        "description": "线性代数教材，有课堂笔记",
+        "categoryId": 7,
+        "location": "教学楼C102",
+        "occurredAt": "2026-10-27 10:00:00",
+        "contact": "13800000002",
+        "publisherName": "演示乙"
+      },
+      "found": {
+        "type": "FOUND",
+        "title": "捡到黑色钱包",
+        "description": "教学楼C102捡到黑色钱包一个",
+        "categoryId": 1,
+        "location": "教学楼C102",
+        "occurredAt": "2026-10-27 10:40:00",
+        "contact": "13800000003",
+        "publisherName": "演示丙"
+      }
+    },
+    {
+      "id": "P19",
+      "class": "D",
+      "expect": "NO_MATCH",
+      "reason": "白色蓝牙耳机与白色运动水壶是两类物品，只有颜色与地点相同",
+      "lost": {
+        "type": "LOST",
+        "title": "白色蓝牙耳机丢失",
+        "description": "白色蓝牙耳机一副，操场",
+        "categoryId": 2,
+        "location": "操场",
+        "occurredAt": "2026-10-27 18:00:00",
+        "contact": "13800000002",
+        "publisherName": "演示乙"
+      },
+      "found": {
+        "type": "FOUND",
+        "title": "捡到白色运动水壶",
+        "description": "操场看台捡到白色运动水壶",
+        "categoryId": 8,
+        "location": "操场看台",
+        "occurredAt": "2026-10-27 18:30:00",
+        "contact": "13800000003",
+        "publisherName": "演示丙"
+      }
+    },
+    {
+      "id": "P20",
+      "class": "D",
+      "expect": "NO_MATCH",
+      "reason": "黑色双肩包与黑色雨伞是两类物品，只有颜色与地点相同",
+      "lost": {
+        "type": "LOST",
+        "title": "黑色双肩包丢失",
+        "description": "黑色双肩包，图书馆二楼",
+        "categoryId": 5,
+        "location": "图书馆二楼",
+        "occurredAt": "2026-10-27 19:00:00",
+        "contact": "13800000002",
+        "publisherName": "演示乙"
+      },
+      "found": {
+        "type": "FOUND",
+        "title": "图书馆捡到黑色雨伞",
+        "description": "图书馆二楼捡到黑色雨伞一把",
+        "categoryId": 6,
+        "location": "图书馆二楼",
+        "occurredAt": "2026-10-27 19:30:00",
+        "contact": "13800000003",
+        "publisherName": "演示丙"
+      }
+    }
+  ]
+}
