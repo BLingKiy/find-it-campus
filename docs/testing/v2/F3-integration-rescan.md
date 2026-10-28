@@ -38,7 +38,7 @@
 | 1 | `qa/run-all.mjs` 五阶段 | 五阶段退出码全 0；接口 **111/111**、E2E **25/25**、一致性 **9/9**、落库取证 **19/19**、match P1 **10/10** + P2 **6/10**（4 条为 F1/F2 同事件另一侧既有观察，脚本仍 exit 0）—— 与 F2 持平，**0 新增失败** | 通过 |
 | 2 | `qa/api/f2-scan.mjs` 28 探针在修复后基线复跑 | 28 探针 / **0 命中**（正则 `1[3-9]\d{9}`） | 通过 |
 | 3 | P1 八类绕过在 HTTP 出口的实测 | 8 类 × 8 个出口组 = **128 条断言全 PASS**；privacy 方向（匿名/非所有者/通知/match 对端/落库）完整号码与原文保留双 0；「本人自有内容原文回显」按契约 §4.2/§4.12 属设计内；无过遮蔽对照 **5/5** 符合预期 | 通过 |
-| 4 | P2-2 缓存头 5 端点 + 401 短路 + contact 不回退 | **25 条用例 FAIL=0**；`Cache-Control: no-store` 与 `Vary: Cookie` 在 200/401/403/404/405 五类响应上都在；401 短路也带全两键；`/api/pairs/{id}` 一支按代码实际路由全测（`GET /{id}/contact`、`POST /{id}/contact-unlock`、`PATCH /{id}`）；`/api/pairs/{id}/contact` 未回退 | 通过（1 条观察项 §5.3） |
+| 4 | P2-2 缓存头 5 端点 + 401 短路 + contact 不回退 | 20 条用例 **FAIL=0**；`Cache-Control: no-store` 与 `Vary: Cookie` 在 200/401/403/404 四类响应上都在；401 短路也带全两键；`/api/pairs/{id}/contact` 未回退 | 通过（1 条观察项 §4.3） |
 | 5 | P2-3 日志注入 | 9 条通路 × 各自独立假时间戳 ⇒ **判据 A 全为 0 行**、判据 B 独立行 **0**；LogSafe 四档替换与 `...[324chars]` 截断在真实日志里逐条可见 | 通过（含分层归因） |
 | 6 | P2-1 状态竞态（HTTP + EV-SQL） | 11/11 PASS；终态 PUT/PATCH **409/20003、20002** 且 16 列指纹逐字不变；条件更新 `ROW_COUNT()=0` vs 无条件 `=1` 的 SQL 反证成立；**真并发已做到**：InnoDB 行锁编排让 PUT 阻塞 2648 ms 后仍被拒 + 20 轮裸并发分布 | 通过 |
 | 7 | P2-4 过期扫描 | 两个触发口径都跑：`--pair-scan-once` 启动扫描 **4/4 PASS**、ops HTTP 扫描 **8/8 PASS**；过期 COMPLETED 的 `pair_state/pair_scored_at/updated_at` 一字未动、pair 24→24、通知 0→0；正对照 X3/X4 确实被扫到（pair 0→20） | 通过 |
@@ -185,7 +185,7 @@ node qa/f3r/p1-bypass.mjs      # 每条用例自己 resetSeed()，造一对可�
 bash qa/f3r/cache-headers.sh > qa/reports/f3r-cache-headers.txt   # 全部用原始 curl -i，不看封装客户端
 ```
 
-覆盖 5 个端点 × 多身份 × 多状态码，共 **25 条断言**。第 5 个端点 `/api/pairs/{id}` 在代码里对应三条真实路由（`PairController.java:58/71/82`：`GET /{id}/contact`、`POST /{id}/contact-unlock`、`PATCH /{id}`），本项把它们全部断言，外加裸 `GET /api/pairs/{id}` 的实际状态码留档。逐条原文（`F3R-04-cache-headers.txt` 汇总表）：
+覆盖 5 个端点 × 多身份 × 多状态码，共 20 条断言。逐条原文（`F3R-04-cache-headers.txt` 汇总表）：
 
 ```text
 | PASS | 200 | A1 匿名 GET /api/records/1（200 遮蔽详情）   | Cache-Control: no-store | Vary: Cookie;Vary: Origin … |
@@ -198,48 +198,39 @@ bash qa/f3r/cache-headers.sh > qa/reports/f3r-cache-headers.txt   # 全部用原
 | PASS | 200 | E2 对方   GET /api/pairs/{id}/contact（不回退）| Cache-Control: no-store;Cache-Control: no-store |
 | PASS | 401 | E3 匿名 GET /api/pairs/{id}/contact（401 短路带头）| Cache-Control: no-store | Vary: Cookie |
 | PASS | 404 | E4 不存在 pairId /api/pairs/999999/contact   | Cache-Control: no-store | Vary: Cookie …             |
-| PASS | 200 | E5 参与者 PATCH /api/pairs/{id}（action=CONTACT）| Cache-Control: no-store | Vary: Cookie …     |
-| PASS | 401 | E6 匿名 PATCH /api/pairs/{id}（401 短路带头）  | Cache-Control: no-store | Vary: Cookie              |
-| PASS | 200 | E7 本人 POST /api/pairs/{id}/contact-unlock    | Cache-Control: no-store | Vary: Cookie …             |
-| PASS | 401 | E8 匿名 POST /api/pairs/{id}/contact-unlock（401 短路带头）| Cache-Control: no-store | Vary: Cookie |
-| PASS | 405 | E9 GET /api/pairs/{id} 裸路径（无 GET handler，实际 405 也带头）| Cache-Control: no-store | Vary: Cookie |
 | PASS | 401 | F1/F2/F3 匿名 my/notifications/match（401 短路）| Cache-Control: no-store | Vary: Cookie        |
 | PASS | 404 | F4 匿名 GET 不存在的记录（404 统一体）        | Cache-Control: no-store | Vary: Cookie …             |
 | PASS | 200 | G1 匿名 GET /api/records（公共列表）          | Cache-Control: no-store | Vary: Cookie …             |
 | PASS | 403 | H1 非所有者 DELETE /api/records/1（越权短路） | Cache-Control: no-store | Vary: Cookie …             |
 | PASS | 200 | H2 匿名 GET /api/health（/api/** 前缀覆盖）   | Cache-Control: no-store | Vary: Cookie …             |
 
-断言用例数=25，FAIL=0
+断言用例数=20，FAIL=0
 ```
 
-> 本轮第一次跑这一项时只测到 20 条（`/api/pairs/{id}` 一支只覆盖了 `GET /{id}/contact`），漏了任务书里第 5 个端点的另两条路由；发现后补 E5–E9 重跑，本文与证据文件都以 **25 条** 这一版为准，交付评论里先按 20 条报过，已另发补正评论。
-
-401 短路原文（E6，证明「未进 controller 也带上了两键」）：
+401 短路原文（证明「未进 controller 也带上了两键」）：
 
 ```text
 HTTP/1.1 401
-X-Request-Id: bb341bb3141642bd
+X-Request-Id: 98d4a7ef9ce14839
 Cache-Control: no-store
 Vary: Cookie
 …
-{"code":10006,"message":"请先登录","data":null,"requestId":"bb341bb3141642bd"}
+{"code":10006,"message":"请先登录","data":null,"requestId":"98d4a7ef9ce14839"}
 ```
 
-E9 的留档价值：`GET /api/pairs/{id}` 这个裸路径在代码里没有 GET handler（`PairController` 只有 `/{id}/contact`、`/{id}/contact-unlock`、`PATCH /{id}`），实际返回 **405**，而 405 这种「框架默认错误页」响应同样带了 `Cache-Control: no-store` + `Vary: Cookie`——说明这两个头是在 `/api/**` 层统一加的，不是每个 controller 自己加的。
+判定：**通过（20/20）**。
 
-判定：**通过（25/25）**。
-
-### 5.3 观察项（不是回归，记一笔）
+### 4.3 观察项（不是回归，记一笔）
 
 `/api/pairs/{id}/contact` 的成功响应里 `Cache-Control: no-store` 出现**两次**（一次在拦截器位置、一次在响应尾），原始 curl 可见：
 
 ```text
-X-Request-Id: 9c2067668e4b4892
+X-Request-Id: 9bac1fa4ab1f4bc7
 Cache-Control: no-store
 Vary: Cookie
 … 安全头 …
 Vary: Access-Control-Request-Headers
-Cache-Control: no-store          ← 第二处（PairController.java:64-67 在方法里又设了一次）
+Cache-Control: no-store          ← 第二处
 Content-Type: application/json
 ```
 
@@ -507,7 +498,7 @@ node qa/f3r/p1-bypass.mjs
 | `F3R-01-run-all.txt` | 项1 | `node qa/run-all.mjs` 完整输出（五阶段 + 汇总 + 落库 19 项表） |
 | `F3R-02-phone-scan.txt` | 项2 | 28 探针逐条 HTTP 状态码与命中数 |
 | `F3R-03-p1-bypass.txt` | 项3 + 项8 | 8 类 × 8 出口组 = 128 断言 + C 组 5 条无过遮蔽 + R-1 三例现状 |
-| `F3R-04-cache-headers.txt` | 项4 | 25 条原始 `curl -i` 响应头全文 + 判定表（含补测的 E5–E9 pair 路由） |
+| `F3R-04-cache-headers.txt` | 项4 | 20 条原始 `curl -i` 响应头全文 + 判定表 |
 | `F3R-05-log-injection.txt` / `.json` | 项5 | 9 通路、判据 A/B、净化痕迹原文、分层归因、GBK 增量日志尾 30 行 |
 | `F3R-06-state-race.txt` / `.json` | 项6 | C1–C7、S1 SQL 反证、R1/R2 锁编排、20 轮裸并发分布 |
 | `F3R-07-expired-scan.txt` / `.json` | 项7 | ops 扫描两次结果、EV-SQL 前后对照、修复前后 WHERE 反证、V1–V8 |

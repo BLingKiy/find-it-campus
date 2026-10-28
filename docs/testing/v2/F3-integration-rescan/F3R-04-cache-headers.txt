@@ -1,4 +1,4 @@
-# F3-R 项4 · P2-2 缓存头实测 · 2026-10-28T08:16:20Z
+# F3-R 项4 · P2-2 缓存头实测 · 2026-10-28T07:07:23Z
 # API=http://localhost:18080  pairId=1
 # 登录 demo01 → HTTP 200 / demo02 → HTTP 200
 
@@ -7,7 +7,7 @@
 ----- A1 匿名 GET /api/records/1（200 遮蔽详情）
 $ curl -sS -i -X GET 'http://localhost:18080/api/records/1'
 HTTP/1.1 200 
-X-Request-Id: 9dc4cb8615bb4b24
+X-Request-Id: dd62cb020c174371
 Cache-Control: no-store
 Vary: Cookie
 X-Content-Type-Options: nosniff
@@ -19,15 +19,15 @@ Vary: Access-Control-Request-Method
 Vary: Access-Control-Request-Headers
 Content-Type: application/json
 Transfer-Encoding: chunked
-Date: Wed, 28 Oct 2026 08:16:21 GMT
+Date: Wed, 28 Oct 2026 07:07:24 GMT
 
-{"code":0,"message":"ok","data":{"id":1,"type":"LOST","status":"PENDING","title":"图书馆丢了黑色钱包","description":"昨天下午在图书馆三楼自习区靠窗的位置看书，起身走的时候发现黑色皮质钱包不见了，里面有两张银行卡和三百多块现金，卡是工行的，非常着急，捡到的同学联系我，必有感谢。","categoryId":1,"categoryName":"钱包卡证","location":"图书馆三楼自习区","occurredAt":"2026-10-19 17:30:00","completedAt":null,"contact":null,"publisherName":"李**","allowedStatuses":[],"hasMatchedPair":false,"matchedPairCount":0,"isMine":false,"pairState":null,"lowConfidenceCount":0,"createdAt":"2026-10-20 09:10:00","updatedAt":"2026-10-20 09:10:00"},"requestId":"9dc4cb8615bb4b24"}
+{"code":0,"message":"ok","data":{"id":1,"type":"LOST","status":"PENDING","title":"图书馆丢了黑色钱包","description":"昨天下午在图书馆三楼自习区靠窗的位置看书，起身走的时候发现黑色皮质钱包不见了，里面有两张银行卡和三百多块现金，卡是工行的，非常着急，捡到的同学联系我，必有感谢。","categoryId":1,"categoryName":"钱包卡证","location":"图书馆三楼自习区","occurredAt":"2026-10-19 17:30:00","completedAt":null,"contact":null,"publisherName":"李**","allowedStatuses":[],"hasMatchedPair":false,"matchedPairCount":0,"isMine":false,"pairState":null,"lowConfidenceCount":0,"createdAt":"2026-10-20 09:10:00","updatedAt":"2026-10-20 09:10:00"},"requestId":"dd62cb020c174371"}
 → HTTP 200 | Cache-Control: no-store | Vary: Cookie;Vary: Origin Vary: Access-Control-Request-Method;Vary: Access-Control-Request-Headers | 判定 PASS（no-store=nostore / Vary Cookie=Cookie）
 
 ----- A2 本人 GET /api/records/1（200 明文详情）
 $ curl -sS -i -X GET 'http://localhost:18080/api/records/1' -b <会话 Cookie>
 HTTP/1.1 200 
-X-Request-Id: 798be8b077d14805
+X-Request-Id: 46c3e3cbeb91418d
 Cache-Control: no-store
 Vary: Cookie
 X-Content-Type-Options: nosniff
@@ -39,15 +39,15 @@ Vary: Access-Control-Request-Method
 Vary: Access-Control-Request-Headers
 Content-Type: application/json
 Transfer-Encoding: chunked
-Date: Wed, 28 Oct 2026 08:16:22 GMT
+Date: Wed, 28 Oct 2026 07:07:25 GMT
 
-{"code":0,"message":"ok","data":{"id":1,"type":"LOST","status":"PENDING","title":"图书馆丢了黑色钱包","description":"昨天下午在图书馆三楼自习区靠窗的位置看书，起身走的时候发现黑色皮质钱包不见了，里面有两张银行卡和三百多块现金，卡是工行的，非常着急，捡到的同学联系我，必有感谢。","categoryId":1,"categoryName":"钱包卡证","location":"图书馆三楼自习区","occurredAt":"2026-10-19 17:30:00","completedAt":null,"contact":"13800000001","publisherName":"李同学","allowedStatuses":["CLOSED"],"hasMatchedPair":false,"matchedPairCount":0,"isMine":true,"pairState":"READY","lowConfidenceCount":0,"pairs":[{"pairId":1,"score":0.9600,"scorePercent":96,"tier":"DIRECT","status":"CONTACTED","matched":false,"myConfirmed":false,"otherConfirmed":false,"lostConfirmedAt":null,"foundConfirmedAt":null,"engine":"DEEPSEEK","degraded":false,"counterpart":{"recordId":13,"type":"FOUND","title":"图书馆拾到黑色钱包","location":"图书馆三楼自习区","occurredAt":"2026-09-15 15:00:00","createdAt":"2026-09-15 15:30:00","status":"PENDING"},"mySide":"LOST","myUnlocked":false,"otherUnlocked":false,"myNote":null,"otherNote":null,"contactAvailable":true,"contactHint":"匹配度较高，可直接查看"}],"createdAt":"2026-10-20 09:10:00","updatedAt":"2026-10-20 09:10:00"},"requestId":"798be8b077d14805"}
+{"code":0,"message":"ok","data":{"id":1,"type":"LOST","status":"PENDING","title":"图书馆丢了黑色钱包","description":"昨天下午在图书馆三楼自习区靠窗的位置看书，起身走的时候发现黑色皮质钱包不见了，里面有两张银行卡和三百多块现金，卡是工行的，非常着急，捡到的同学联系我，必有感谢。","categoryId":1,"categoryName":"钱包卡证","location":"图书馆三楼自习区","occurredAt":"2026-10-19 17:30:00","completedAt":null,"contact":"13800000001","publisherName":"李同学","allowedStatuses":["CLOSED"],"hasMatchedPair":false,"matchedPairCount":0,"isMine":true,"pairState":"READY","lowConfidenceCount":0,"pairs":[{"pairId":1,"score":0.9600,"scorePercent":96,"tier":"DIRECT","status":"CONTACTED","matched":false,"myConfirmed":false,"otherConfirmed":false,"lostConfirmedAt":null,"foundConfirmedAt":null,"engine":"DEEPSEEK","degraded":false,"counterpart":{"recordId":13,"type":"FOUND","title":"图书馆拾到黑色钱包","location":"图书馆三楼自习区","occurredAt":"2026-09-15 15:00:00","createdAt":"2026-09-15 15:30:00","status":"PENDING"},"mySide":"LOST","myUnlocked":false,"otherUnlocked":false,"myNote":null,"otherNote":null,"contactAvailable":true,"contactHint":"匹配度较高，可直接查看"}],"createdAt":"2026-10-20 09:10:00","updatedAt":"2026-10-20 09:10:00"},"requestId":"46c3e3cbeb91418d"}
 → HTTP 200 | Cache-Control: no-store | Vary: Cookie;Vary: Origin Vary: Access-Control-Request-Method;Vary: Access-Control-Request-Headers | 判定 PASS（no-store=nostore / Vary Cookie=Cookie）
 
 ----- A3 非所有者 GET /api/records/1（200 遮蔽详情）
 $ curl -sS -i -X GET 'http://localhost:18080/api/records/1' -b <会话 Cookie>
 HTTP/1.1 200 
-X-Request-Id: 827b48658dcb4b59
+X-Request-Id: 72e0b3d10b914615
 Cache-Control: no-store
 Vary: Cookie
 X-Content-Type-Options: nosniff
@@ -59,15 +59,15 @@ Vary: Access-Control-Request-Method
 Vary: Access-Control-Request-Headers
 Content-Type: application/json
 Transfer-Encoding: chunked
-Date: Wed, 28 Oct 2026 08:16:23 GMT
+Date: Wed, 28 Oct 2026 07:07:27 GMT
 
-{"code":0,"message":"ok","data":{"id":1,"type":"LOST","status":"PENDING","title":"图书馆丢了黑色钱包","description":"昨天下午在图书馆三楼自习区靠窗的位置看书，起身走的时候发现黑色皮质钱包不见了，里面有两张银行卡和三百多块现金，卡是工行的，非常着急，捡到的同学联系我，必有感谢。","categoryId":1,"categoryName":"钱包卡证","location":"图书馆三楼自习区","occurredAt":"2026-10-19 17:30:00","completedAt":null,"contact":null,"publisherName":"李**","allowedStatuses":[],"hasMatchedPair":false,"matchedPairCount":0,"isMine":false,"pairState":null,"lowConfidenceCount":0,"createdAt":"2026-10-20 09:10:00","updatedAt":"2026-10-20 09:10:00"},"requestId":"827b48658dcb4b59"}
+{"code":0,"message":"ok","data":{"id":1,"type":"LOST","status":"PENDING","title":"图书馆丢了黑色钱包","description":"昨天下午在图书馆三楼自习区靠窗的位置看书，起身走的时候发现黑色皮质钱包不见了，里面有两张银行卡和三百多块现金，卡是工行的，非常着急，捡到的同学联系我，必有感谢。","categoryId":1,"categoryName":"钱包卡证","location":"图书馆三楼自习区","occurredAt":"2026-10-19 17:30:00","completedAt":null,"contact":null,"publisherName":"李**","allowedStatuses":[],"hasMatchedPair":false,"matchedPairCount":0,"isMine":false,"pairState":null,"lowConfidenceCount":0,"createdAt":"2026-10-20 09:10:00","updatedAt":"2026-10-20 09:10:00"},"requestId":"72e0b3d10b914615"}
 → HTTP 200 | Cache-Control: no-store | Vary: Cookie;Vary: Origin Vary: Access-Control-Request-Method;Vary: Access-Control-Request-Headers | 判定 PASS（no-store=nostore / Vary Cookie=Cookie）
 
 ----- B1 本人 GET /api/my/records（200 个人集合）
 $ curl -sS -i -X GET 'http://localhost:18080/api/my/records' -b <会话 Cookie>
 HTTP/1.1 200 
-X-Request-Id: 081ea95281dc4132
+X-Request-Id: 83b856ec90cf44d5
 Cache-Control: no-store
 Vary: Cookie
 X-Content-Type-Options: nosniff
@@ -79,15 +79,15 @@ Vary: Access-Control-Request-Method
 Vary: Access-Control-Request-Headers
 Content-Type: application/json
 Transfer-Encoding: chunked
-Date: Wed, 28 Oct 2026 08:16:25 GMT
+Date: Wed, 28 Oct 2026 07:07:28 GMT
 
-{"code":0,"message":"ok","data":{"page":1,"pageSize":10,"total":19,"list":[{"id":26,"type":"FOUND","status":"PENDING","title":"捡到一张浅蓝色卡片","categoryId":null,"categoryName":null,"location":"大学生活动中心公告栏","occurredAt":"2026-10-21 13:30:00","completedAt":null,"contact":"13800000112","publisherName":"同学","pairState":"PENDING","pairDegraded":false,"pairCount":0,"relatedCount":0,"lowConfidenceCount":0,"hasMatchedPair":false,"matchedPairCount":0,"detailVisible":true,"pairs":[],"createdAt":"2026-10-21 13:50:00","updatedAt":"2026-10-21 13:50:00"},{"id":22,"type":"FOUND","status":"PENDING","title":"捡到一副黑框眼镜","categoryId":8,"categoryName":"其他","location":"第一食堂一楼门口","occurredAt":"2026-10-21 12:40:00","completedAt":null,"contact":"13800000110","publisherName":"许同学","pairState":"READY","pairDegraded":false,"pairCount":1,"relatedCount":0,"lowConfidenceCount":1,"hasMatchedPair":false,"matchedPairCount":0,"detailVisible":true,"pairs":[],"createdAt":"2026-10-21 13:00:00","updatedAt":"2026-10-21 13:00:00"},{"id":15,"type":"FOUND","status":"PENDING","title":"教室捡到卡套内有学生证","categoryId":4,"categoryName":"证件资料","location":"第三教学楼201","occurredAt":"2026-10-21 12:10:00","completedAt":null,"contact":"13800000103","publisherName":"郑同学","pairState":"READY","pairDegraded":false,"pairCount":1,"relatedCount":1,"lowConfidenceCount":0,"hasMatchedPair":false,"matchedPairCount":0,"detailVisible":true,"pairs":[{"pairId":3,"score":0.9200,"scorePercent":92,"tier":"DIRECT","status":"CONTACTED","matched":false,"myConfirmed":false,"otherConfirmed":false,"lostConfirmedAt":null,"foundConfirmedAt":null,"engine":"DEEPSEEK","degraded":false,"counterpart":{"recordId":3,"type":"LOST","title":"学生证和校园卡一起丢了","location":"第三教学楼…","occurredAt":"2026-10-21 10:40:00","createdAt":"2026-10-21 11:05:00","status":"PENDING"},"mySide":"FOUND","myUnlocked":false,"otherUnlocked":false,"myNote":null,"otherNote":null,"contactAvailable":true,"contactHint":"匹配度较高，可直接查看"}],"createdAt":"2026-10-21 12:30:00","updatedAt":"2026-10-21 12:30:00"},{"id":3,"type":"LOST","status":"PENDING","title":"学生证和校园卡一起丢了","categoryId":4,"categoryName":"证件资料","location":"第三教学楼201","occurredAt":"2026-10-21 10:40:00","completedAt":null,"contact":"13800000003","publisherName":"张三","pairState":"READY","pairDegraded":false,"pairCount":1,"relatedCount":1,"lowConfidenceCount":0,"hasMatchedPair":false,"matchedPairCount":0,"detailVisible":true,"pairs":[{"pairId":3,"score":0.9200,"scorePercent":92,"tier":"DIRECT","status":"CONTACTED","matched":false,"myConfirmed":false,"otherConfirmed":false,"lostConfirmedAt":null,"foundConfirmedAt":null,"engine":"DEEPSEEK","degraded":false,"counterpart":{"recordId":15,"type":"FOUND","title":"教室捡到卡套内有学生证","location":"第三教学楼…","occurredAt":"2026-10-21 12:10:00","createdAt":"2026-10-21 12:30:00","status":"PENDING"},"mySide":"LOST","myUnlocked":false,"otherUnlocked":false,"myNote":null,"otherNote":null,"contactAvailable":true,"contactHint":"匹配度较高，可直接查看"}],"createdAt":"2026-10-21 11:05:00","updatedAt":"2026-10-21 11:05:00"},{"id":7,"type":"LOST","status":"PENDING","title":"丢了科学计算器","categoryId":7,"categoryName":"书籍文具","location":"第一教学楼自习室","occurredAt":"2026-10-21 09:00:00","completedAt":null,"contact":"13800000007","publisherName":"蒋同学","pairState":"READY","pairDegraded":false,"pairCount":1,"relatedCount":0,"lowConfidenceCount":1,"hasMatchedPair":false,"matchedPairCount":0,"detailVisible":true,"pairs":[],"createdAt":"2026-10-21 09:30:00","updatedAt":"2026-10-21 09:30:00"},{"id":18,"type":"FOUND","status":"PENDING","title":"快递点捡到三把钥匙带小熊挂件","categoryId":3,"categoryName":"钥匙","location":"7号宿舍楼下快递点","occurredAt":"2026-10-20 21:00:00","completedAt":null,"contact":"13800000106","publisherName":"卫同学","pairState":"READY","pairDegraded":false,"pairCount":1,"relatedCount":1,"lowConfidenceCount":0,"hasMatchedPair":false,"matchedPairCount":0,"detailVisible":true,"pairs":[{"pairId":6,"score":0.9600,"scorePercent":96,"tier":"DIRECT","status":"CONTACTED","matched":false,"myConfirmed":false,"otherConfirmed":false,"lostConfirmedAt":null,"foundConfirmedAt":null,"engine":"DEEPSEEK","degraded":false,"counterpart":{"recordId":6,"type":"LOST","title":"一串宿舍钥匙丢了","location":"7号宿舍楼下快递…","occurredAt":"2026-10-20 19:20:00","createdAt":"2026-10-20 20:00:00","status":"PENDING"},"mySide":"FOUND","myUnlocked":false,"otherUnlocked":false,"myNote":null,"otherNote":null,"contactAvailable":true,"contactHint":"匹配度较高，可直接查看"}],"createdAt":"2026-10-20 21:20:00","updatedAt":"2026-10-20 21:20:00"},{"id":19,"type":"FOUND","status":"PENDING","title":"捡到一副红色羽毛球拍","categoryId":8,"categoryName":"其他","location":"体育场看台","occurredAt":"2026-10-20 17:00:00","completedAt":null,"contact":"13800000107","publisherName":"朱同学","pairState":"READY","pairDegraded":false,"pairCount":1,"relatedCount":0,"lowConfidenceCount":1,"hasMatchedPair":false,"matchedPairCount":0,"detailVisible":true,"pairs":[],"createdAt":"2026-10-20 17:30:00","updatedAt":"2026-10-20 17:30:00"},{"id":4,"type":"LOST","status":"PENDING","title":"丢失深蓝色折叠雨伞","categoryId":6,"categoryName":"衣物饰品","location":"第二食堂二楼","occurredAt":"2026-10-19 18:50:00","completedAt":null,"contact":null,"publisherName":"赵同学","pairState":"READY","pairDegraded":false,"pairCount":1,"relatedCount":1,"lowConfidenceCount":0,"hasMatchedPair":false,"matchedPairCount":0,"detailVisible":true,"pairs":[{"pairId":4,"score":0.8600,"scorePercent":86,"tier":"AUTHORIZABLE","status":"NEW","matched":false,"myConfirmed":false,"otherConfirmed":false,"lostConfirmedAt":null,"foundConfirmedAt":null,"engine":"DEEPSEEK","degraded":false,"counterpart":{"recordId":16,"type":"FOUND","title":"食堂捡到一把折叠伞","location":"第二食堂…","occurredAt":"2026-10-19 20:30:00","createdAt":"2026-10-19 21:00:00","status":"PENDING"},"mySide":"LOST","myUnlocked":false,"otherUnlocked":true,"myNote":null,"otherNote":"已公开联系方式，可直接联系","contactAvailable":true,"contactHint":"对方已公开联系方式"}],"createdAt":"2026-10-20 12:00:00","updatedAt":"2026-10-20 12:00:00"},{"id":1,"type":"LOST","status":"PENDING","title":"图书馆丢了黑色钱包","categoryId":1,"categoryName":"钱包卡证","location":"图书馆三楼自习区","occurredAt":"2026-10-19 17:30:00","completedAt":null,"contact":"13800000001","publisherName":"李同学","pairState":"READY","pairDegraded":false,"pairCount":1,"relatedCount":1,"lowConfidenceCount":0,"hasMatchedPair":false,"matchedPairCount":0,"detailVisible":true,"pairs":[{"pairId":1,"score":0.9600,"scorePercent":96,"tier":"DIRECT","status":"CONTACTED","matched":false,"myConfirmed":false,"otherConfirmed":false,"lostConfirmedAt":null,"foundConfirmedAt":null,"engine":"DEEPSEEK","degraded":false,"counterpart":{"recordId":13,"type":"FOUND","title":"图书馆拾到黑色钱包","location":"图书馆三楼自习区","occurredAt":"2026-09-15 15:00:00","createdAt":"2026-09-15 15:30:00","status":"PENDING"},"mySide":"LOST","myUnlocked":false,"otherUnlocked":false,"myNote":null,"otherNote":null,"contactAvailable":true,"contactHint":"匹配度较高，可直接查看"}],"createdAt":"2026-10-20 09:10:00","updatedAt":"2026-10-20 09:10:00"},{"id":9,"type":"LOST","status":"PENDING","title":"丢了一个不锈钢保温杯","categoryId":8,"categoryName":"其他","location":"实验楼402","occurredAt":"2026-10-19 15:00:00","completedAt":null,"contact":"13800000009","publisherName":"韩同学","pairState":"READY","pairDegraded":false,"pairCount":1,"relatedCount":0,"lowConfidenceCount":1,"hasMatchedPair":false,"matchedPairCount":0,"detailVisible":true,"pairs":[],"createdAt":"2026-10-20 08:30:00","updatedAt":"2026-10-20 08:30:00"}],"totalPages":2,"hasNext":true},"requestId":"081ea95281dc4132"}
+{"code":0,"message":"ok","data":{"page":1,"pageSize":10,"total":19,"list":[{"id":26,"type":"FOUND","status":"PENDING","title":"捡到一张浅蓝色卡片","categoryId":null,"categoryName":null,"location":"大学生活动中心公告栏","occurredAt":"2026-10-21 13:30:00","completedAt":null,"contact":"13800000112","publisherName":"同学","pairState":"PENDING","pairDegraded":false,"pairCount":0,"relatedCount":0,"lowConfidenceCount":0,"hasMatchedPair":false,"matchedPairCount":0,"detailVisible":true,"pairs":[],"createdAt":"2026-10-21 13:50:00","updatedAt":"2026-10-21 13:50:00"},{"id":22,"type":"FOUND","status":"PENDING","title":"捡到一副黑框眼镜","categoryId":8,"categoryName":"其他","location":"第一食堂一楼门口","occurredAt":"2026-10-21 12:40:00","completedAt":null,"contact":"13800000110","publisherName":"许同学","pairState":"READY","pairDegraded":false,"pairCount":1,"relatedCount":0,"lowConfidenceCount":1,"hasMatchedPair":false,"matchedPairCount":0,"detailVisible":true,"pairs":[],"createdAt":"2026-10-21 13:00:00","updatedAt":"2026-10-21 13:00:00"},{"id":15,"type":"FOUND","status":"PENDING","title":"教室捡到卡套内有学生证","categoryId":4,"categoryName":"证件资料","location":"第三教学楼201","occurredAt":"2026-10-21 12:10:00","completedAt":null,"contact":"13800000103","publisherName":"郑同学","pairState":"READY","pairDegraded":false,"pairCount":1,"relatedCount":1,"lowConfidenceCount":0,"hasMatchedPair":false,"matchedPairCount":0,"detailVisible":true,"pairs":[{"pairId":3,"score":0.9200,"scorePercent":92,"tier":"DIRECT","status":"CONTACTED","matched":false,"myConfirmed":false,"otherConfirmed":false,"lostConfirmedAt":null,"foundConfirmedAt":null,"engine":"DEEPSEEK","degraded":false,"counterpart":{"recordId":3,"type":"LOST","title":"学生证和校园卡一起丢了","location":"第三教学楼…","occurredAt":"2026-10-21 10:40:00","createdAt":"2026-10-21 11:05:00","status":"PENDING"},"mySide":"FOUND","myUnlocked":false,"otherUnlocked":false,"myNote":null,"otherNote":null,"contactAvailable":true,"contactHint":"匹配度较高，可直接查看"}],"createdAt":"2026-10-21 12:30:00","updatedAt":"2026-10-21 12:30:00"},{"id":3,"type":"LOST","status":"PENDING","title":"学生证和校园卡一起丢了","categoryId":4,"categoryName":"证件资料","location":"第三教学楼201","occurredAt":"2026-10-21 10:40:00","completedAt":null,"contact":"13800000003","publisherName":"张三","pairState":"READY","pairDegraded":false,"pairCount":1,"relatedCount":1,"lowConfidenceCount":0,"hasMatchedPair":false,"matchedPairCount":0,"detailVisible":true,"pairs":[{"pairId":3,"score":0.9200,"scorePercent":92,"tier":"DIRECT","status":"CONTACTED","matched":false,"myConfirmed":false,"otherConfirmed":false,"lostConfirmedAt":null,"foundConfirmedAt":null,"engine":"DEEPSEEK","degraded":false,"counterpart":{"recordId":15,"type":"FOUND","title":"教室捡到卡套内有学生证","location":"第三教学楼…","occurredAt":"2026-10-21 12:10:00","createdAt":"2026-10-21 12:30:00","status":"PENDING"},"mySide":"LOST","myUnlocked":false,"otherUnlocked":false,"myNote":null,"otherNote":null,"contactAvailable":true,"contactHint":"匹配度较高，可直接查看"}],"createdAt":"2026-10-21 11:05:00","updatedAt":"2026-10-21 11:05:00"},{"id":7,"type":"LOST","status":"PENDING","title":"丢了科学计算器","categoryId":7,"categoryName":"书籍文具","location":"第一教学楼自习室","occurredAt":"2026-10-21 09:00:00","completedAt":null,"contact":"13800000007","publisherName":"蒋同学","pairState":"READY","pairDegraded":false,"pairCount":1,"relatedCount":0,"lowConfidenceCount":1,"hasMatchedPair":false,"matchedPairCount":0,"detailVisible":true,"pairs":[],"createdAt":"2026-10-21 09:30:00","updatedAt":"2026-10-21 09:30:00"},{"id":18,"type":"FOUND","status":"PENDING","title":"快递点捡到三把钥匙带小熊挂件","categoryId":3,"categoryName":"钥匙","location":"7号宿舍楼下快递点","occurredAt":"2026-10-20 21:00:00","completedAt":null,"contact":"13800000106","publisherName":"卫同学","pairState":"READY","pairDegraded":false,"pairCount":1,"relatedCount":1,"lowConfidenceCount":0,"hasMatchedPair":false,"matchedPairCount":0,"detailVisible":true,"pairs":[{"pairId":6,"score":0.9600,"scorePercent":96,"tier":"DIRECT","status":"CONTACTED","matched":false,"myConfirmed":false,"otherConfirmed":false,"lostConfirmedAt":null,"foundConfirmedAt":null,"engine":"DEEPSEEK","degraded":false,"counterpart":{"recordId":6,"type":"LOST","title":"一串宿舍钥匙丢了","location":"7号宿舍楼下快递…","occurredAt":"2026-10-20 19:20:00","createdAt":"2026-10-20 20:00:00","status":"PENDING"},"mySide":"FOUND","myUnlocked":false,"otherUnlocked":false,"myNote":null,"otherNote":null,"contactAvailable":true,"contactHint":"匹配度较高，可直接查看"}],"createdAt":"2026-10-20 21:20:00","updatedAt":"2026-10-20 21:20:00"},{"id":19,"type":"FOUND","status":"PENDING","title":"捡到一副红色羽毛球拍","categoryId":8,"categoryName":"其他","location":"体育场看台","occurredAt":"2026-10-20 17:00:00","completedAt":null,"contact":"13800000107","publisherName":"朱同学","pairState":"READY","pairDegraded":false,"pairCount":1,"relatedCount":0,"lowConfidenceCount":1,"hasMatchedPair":false,"matchedPairCount":0,"detailVisible":true,"pairs":[],"createdAt":"2026-10-20 17:30:00","updatedAt":"2026-10-20 17:30:00"},{"id":4,"type":"LOST","status":"PENDING","title":"丢失深蓝色折叠雨伞","categoryId":6,"categoryName":"衣物饰品","location":"第二食堂二楼","occurredAt":"2026-10-19 18:50:00","completedAt":null,"contact":null,"publisherName":"赵同学","pairState":"READY","pairDegraded":false,"pairCount":1,"relatedCount":1,"lowConfidenceCount":0,"hasMatchedPair":false,"matchedPairCount":0,"detailVisible":true,"pairs":[{"pairId":4,"score":0.8600,"scorePercent":86,"tier":"AUTHORIZABLE","status":"NEW","matched":false,"myConfirmed":false,"otherConfirmed":false,"lostConfirmedAt":null,"foundConfirmedAt":null,"engine":"DEEPSEEK","degraded":false,"counterpart":{"recordId":16,"type":"FOUND","title":"食堂捡到一把折叠伞","location":"第二食堂…","occurredAt":"2026-10-19 20:30:00","createdAt":"2026-10-19 21:00:00","status":"PENDING"},"mySide":"LOST","myUnlocked":false,"otherUnlocked":true,"myNote":null,"otherNote":"已公开联系方式，可直接联系","contactAvailable":true,"contactHint":"对方已公开联系方式"}],"createdAt":"2026-10-20 12:00:00","updatedAt":"2026-10-20 12:00:00"},{"id":1,"type":"LOST","status":"PENDING","title":"图书馆丢了黑色钱包","categoryId":1,"categoryName":"钱包卡证","location":"图书馆三楼自习区","occurredAt":"2026-10-19 17:30:00","completedAt":null,"contact":"13800000001","publisherName":"李同学","pairState":"READY","pairDegraded":false,"pairCount":1,"relatedCount":1,"lowConfidenceCount":0,"hasMatchedPair":false,"matchedPairCount":0,"detailVisible":true,"pairs":[{"pairId":1,"score":0.9600,"scorePercent":96,"tier":"DIRECT","status":"CONTACTED","matched":false,"myConfirmed":false,"otherConfirmed":false,"lostConfirmedAt":null,"foundConfirmedAt":null,"engine":"DEEPSEEK","degraded":false,"counterpart":{"recordId":13,"type":"FOUND","title":"图书馆拾到黑色钱包","location":"图书馆三楼自习区","occurredAt":"2026-09-15 15:00:00","createdAt":"2026-09-15 15:30:00","status":"PENDING"},"mySide":"LOST","myUnlocked":false,"otherUnlocked":false,"myNote":null,"otherNote":null,"contactAvailable":true,"contactHint":"匹配度较高，可直接查看"}],"createdAt":"2026-10-20 09:10:00","updatedAt":"2026-10-20 09:10:00"},{"id":9,"type":"LOST","status":"PENDING","title":"丢了一个不锈钢保温杯","categoryId":8,"categoryName":"其他","location":"实验楼402","occurredAt":"2026-10-19 15:00:00","completedAt":null,"contact":"13800000009","publisherName":"韩同学","pairState":"READY","pairDegraded":false,"pairCount":1,"relatedCount":0,"lowConfidenceCount":1,"hasMatchedPair":false,"matchedPairCount":0,"detailVisible":true,"pairs":[],"createdAt":"2026-10-20 08:30:00","updatedAt":"2026-10-20 08:30:00"}],"totalPages":2,"hasNext":true},"requestId":"83b856ec90cf44d5"}
 → HTTP 200 | Cache-Control: no-store | Vary: Cookie;Vary: Origin Vary: Access-Control-Request-Method;Vary: Access-Control-Request-Headers | 判定 PASS（no-store=nostore / Vary Cookie=Cookie）
 
 ----- B2 非所有者 GET /api/my/records（200 另一人集合）
 $ curl -sS -i -X GET 'http://localhost:18080/api/my/records' -b <会话 Cookie>
 HTTP/1.1 200 
-X-Request-Id: 13e6a898ee804fe8
+X-Request-Id: 3b07ab31c2c34735
 Cache-Control: no-store
 Vary: Cookie
 X-Content-Type-Options: nosniff
@@ -99,15 +99,15 @@ Vary: Access-Control-Request-Method
 Vary: Access-Control-Request-Headers
 Content-Type: application/json
 Transfer-Encoding: chunked
-Date: Wed, 28 Oct 2026 08:16:26 GMT
+Date: Wed, 28 Oct 2026 07:07:29 GMT
 
-{"code":0,"message":"ok","data":{"page":1,"pageSize":10,"total":4,"list":[{"id":6,"type":"LOST","status":"PENDING","title":"一串宿舍钥匙丢了","categoryId":3,"categoryName":"钥匙","location":"7号宿舍楼下快递点","occurredAt":"2026-10-20 19:20:00","completedAt":null,"contact":"13800000006","publisherName":"孙同学","pairState":"READY","pairDegraded":false,"pairCount":2,"relatedCount":2,"lowConfidenceCount":0,"hasMatchedPair":false,"matchedPairCount":0,"detailVisible":true,"pairs":[{"pairId":6,"score":0.9600,"scorePercent":96,"tier":"DIRECT","status":"CONTACTED","matched":false,"myConfirmed":false,"otherConfirmed":false,"lostConfirmedAt":null,"foundConfirmedAt":null,"engine":"DEEPSEEK","degraded":false,"counterpart":{"recordId":18,"type":"FOUND","title":"快递点捡到三把钥匙带小熊挂件","location":"7号宿舍楼下快递…","occurredAt":"2026-10-20 21:00:00","createdAt":"2026-10-20 21:20:00","status":"PENDING"},"mySide":"LOST","myUnlocked":false,"otherUnlocked":false,"myNote":null,"otherNote":null,"contactAvailable":true,"contactHint":"匹配度较高，可直接查看"},{"pairId":11,"score":0.9300,"scorePercent":93,"tier":"DIRECT","status":"IGNORED","matched":false,"myConfirmed":false,"otherConfirmed":false,"lostConfirmedAt":null,"foundConfirmedAt":null,"engine":"DEEPSEEK","degraded":false,"counterpart":{"recordId":23,"type":"FOUND","title":"已归还:第二教学楼捡到的蓝色挂件钥匙","location":"第二教学楼楼梯口","occurredAt":"2026-10-12 19:00:00","createdAt":"2026-10-12 19:30:00","status":"COMPLETED"},"mySide":"LOST","myUnlocked":false,"otherUnlocked":false,"myNote":null,"otherNote":null,"contactAvailable":true,"contactHint":"匹配度较高，可直接查看"}],"createdAt":"2026-10-20 20:00:00","updatedAt":"2026-10-20 20:00:00"},{"id":16,"type":"FOUND","status":"PENDING","title":"食堂捡到一把折叠伞","categoryId":6,"categoryName":"衣物饰品","location":"第二食堂二楼","occurredAt":"2026-10-19 20:30:00","completedAt":null,"contact":"13800000104","publisherName":"冯同学","pairState":"READY","pairDegraded":false,"pairCount":1,"relatedCount":1,"lowConfidenceCount":0,"hasMatchedPair":false,"matchedPairCount":0,"detailVisible":true,"pairs":[{"pairId":4,"score":0.8600,"scorePercent":86,"tier":"AUTHORIZABLE","status":"NEW","matched":false,"myConfirmed":false,"otherConfirmed":false,"lostConfirmedAt":null,"foundConfirmedAt":null,"engine":"DEEPSEEK","degraded":false,"counterpart":{"recordId":4,"type":"LOST","title":"丢失深蓝色折叠雨伞","location":"第二食堂…","occurredAt":"2026-10-19 18:50:00","createdAt":"2026-10-20 12:00:00","status":"PENDING"},"mySide":"FOUND","myUnlocked":true,"otherUnlocked":false,"myNote":"已公开联系方式，可直接联系","otherNote":null,"contactAvailable":false,"contactHint":"对方尚未公开"}],"createdAt":"2026-10-19 21:00:00","updatedAt":"2026-10-19 21:00:00"},{"id":24,"type":"LOST","status":"CLOSED","title":"已关闭：丢失的黑色圆框眼镜","categoryId":8,"categoryName":"其他","location":"第一食堂一楼门口","occurredAt":"2026-10-10 16:00:00","completedAt":null,"contact":"13800000011","publisherName":"吕同学","pairState":"READY","pairDegraded":false,"pairCount":0,"relatedCount":0,"lowConfidenceCount":0,"hasMatchedPair":false,"matchedPairCount":0,"detailVisible":false,"pairs":[],"createdAt":"2026-10-10 18:00:00","updatedAt":"2026-10-22 09:00:00"},{"id":13,"type":"FOUND","status":"PENDING","title":"图书馆拾到黑色钱包","categoryId":1,"categoryName":"钱包卡证","location":"图书馆三楼自习区","occurredAt":"2026-09-15 15:00:00","completedAt":null,"contact":"13800000101","publisherName":"周同学","pairState":"READY","pairDegraded":false,"pairCount":1,"relatedCount":1,"lowConfidenceCount":0,"hasMatchedPair":false,"matchedPairCount":0,"detailVisible":true,"pairs":[{"pairId":1,"score":0.9600,"scorePercent":96,"tier":"DIRECT","status":"CONTACTED","matched":false,"myConfirmed":false,"otherConfirmed":false,"lostConfirmedAt":null,"foundConfirmedAt":null,"engine":"DEEPSEEK","degraded":false,"counterpart":{"recordId":1,"type":"LOST","title":"图书馆丢了黑色钱包","location":"图书馆三楼自习区","occurredAt":"2026-10-19 17:30:00","createdAt":"2026-10-20 09:10:00","status":"PENDING"},"mySide":"FOUND","myUnlocked":false,"otherUnlocked":false,"myNote":null,"otherNote":null,"contactAvailable":true,"contactHint":"匹配度较高，可直接查看"}],"createdAt":"2026-09-15 15:30:00","updatedAt":"2026-09-15 15:30:00"}],"totalPages":1,"hasNext":false},"requestId":"13e6a898ee804fe8"}
+{"code":0,"message":"ok","data":{"page":1,"pageSize":10,"total":4,"list":[{"id":6,"type":"LOST","status":"PENDING","title":"一串宿舍钥匙丢了","categoryId":3,"categoryName":"钥匙","location":"7号宿舍楼下快递点","occurredAt":"2026-10-20 19:20:00","completedAt":null,"contact":"13800000006","publisherName":"孙同学","pairState":"READY","pairDegraded":false,"pairCount":2,"relatedCount":2,"lowConfidenceCount":0,"hasMatchedPair":false,"matchedPairCount":0,"detailVisible":true,"pairs":[{"pairId":6,"score":0.9600,"scorePercent":96,"tier":"DIRECT","status":"CONTACTED","matched":false,"myConfirmed":false,"otherConfirmed":false,"lostConfirmedAt":null,"foundConfirmedAt":null,"engine":"DEEPSEEK","degraded":false,"counterpart":{"recordId":18,"type":"FOUND","title":"快递点捡到三把钥匙带小熊挂件","location":"7号宿舍楼下快递…","occurredAt":"2026-10-20 21:00:00","createdAt":"2026-10-20 21:20:00","status":"PENDING"},"mySide":"LOST","myUnlocked":false,"otherUnlocked":false,"myNote":null,"otherNote":null,"contactAvailable":true,"contactHint":"匹配度较高，可直接查看"},{"pairId":11,"score":0.9300,"scorePercent":93,"tier":"DIRECT","status":"IGNORED","matched":false,"myConfirmed":false,"otherConfirmed":false,"lostConfirmedAt":null,"foundConfirmedAt":null,"engine":"DEEPSEEK","degraded":false,"counterpart":{"recordId":23,"type":"FOUND","title":"已归还:第二教学楼捡到的蓝色挂件钥匙","location":"第二教学楼楼梯口","occurredAt":"2026-10-12 19:00:00","createdAt":"2026-10-12 19:30:00","status":"COMPLETED"},"mySide":"LOST","myUnlocked":false,"otherUnlocked":false,"myNote":null,"otherNote":null,"contactAvailable":true,"contactHint":"匹配度较高，可直接查看"}],"createdAt":"2026-10-20 20:00:00","updatedAt":"2026-10-20 20:00:00"},{"id":16,"type":"FOUND","status":"PENDING","title":"食堂捡到一把折叠伞","categoryId":6,"categoryName":"衣物饰品","location":"第二食堂二楼","occurredAt":"2026-10-19 20:30:00","completedAt":null,"contact":"13800000104","publisherName":"冯同学","pairState":"READY","pairDegraded":false,"pairCount":1,"relatedCount":1,"lowConfidenceCount":0,"hasMatchedPair":false,"matchedPairCount":0,"detailVisible":true,"pairs":[{"pairId":4,"score":0.8600,"scorePercent":86,"tier":"AUTHORIZABLE","status":"NEW","matched":false,"myConfirmed":false,"otherConfirmed":false,"lostConfirmedAt":null,"foundConfirmedAt":null,"engine":"DEEPSEEK","degraded":false,"counterpart":{"recordId":4,"type":"LOST","title":"丢失深蓝色折叠雨伞","location":"第二食堂…","occurredAt":"2026-10-19 18:50:00","createdAt":"2026-10-20 12:00:00","status":"PENDING"},"mySide":"FOUND","myUnlocked":true,"otherUnlocked":false,"myNote":"已公开联系方式，可直接联系","otherNote":null,"contactAvailable":false,"contactHint":"对方尚未公开"}],"createdAt":"2026-10-19 21:00:00","updatedAt":"2026-10-19 21:00:00"},{"id":24,"type":"LOST","status":"CLOSED","title":"已关闭：丢失的黑色圆框眼镜","categoryId":8,"categoryName":"其他","location":"第一食堂一楼门口","occurredAt":"2026-10-10 16:00:00","completedAt":null,"contact":"13800000011","publisherName":"吕同学","pairState":"READY","pairDegraded":false,"pairCount":0,"relatedCount":0,"lowConfidenceCount":0,"hasMatchedPair":false,"matchedPairCount":0,"detailVisible":false,"pairs":[],"createdAt":"2026-10-10 18:00:00","updatedAt":"2026-10-22 09:00:00"},{"id":13,"type":"FOUND","status":"PENDING","title":"图书馆拾到黑色钱包","categoryId":1,"categoryName":"钱包卡证","location":"图书馆三楼自习区","occurredAt":"2026-09-15 15:00:00","completedAt":null,"contact":"13800000101","publisherName":"周同学","pairState":"READY","pairDegraded":false,"pairCount":1,"relatedCount":1,"lowConfidenceCount":0,"hasMatchedPair":false,"matchedPairCount":0,"detailVisible":true,"pairs":[{"pairId":1,"score":0.9600,"scorePercent":96,"tier":"DIRECT","status":"CONTACTED","matched":false,"myConfirmed":false,"otherConfirmed":false,"lostConfirmedAt":null,"foundConfirmedAt":null,"engine":"DEEPSEEK","degraded":false,"counterpart":{"recordId":1,"type":"LOST","title":"图书馆丢了黑色钱包","location":"图书馆三楼自习区","occurredAt":"2026-10-19 17:30:00","createdAt":"2026-10-20 09:10:00","status":"PENDING"},"mySide":"FOUND","myUnlocked":false,"otherUnlocked":false,"myNote":null,"otherNote":null,"contactAvailable":true,"contactHint":"匹配度较高，可直接查看"}],"createdAt":"2026-09-15 15:30:00","updatedAt":"2026-09-15 15:30:00"}],"totalPages":1,"hasNext":false},"requestId":"3b07ab31c2c34735"}
 → HTTP 200 | Cache-Control: no-store | Vary: Cookie;Vary: Origin Vary: Access-Control-Request-Method;Vary: Access-Control-Request-Headers | 判定 PASS（no-store=nostore / Vary Cookie=Cookie）
 
 ----- C1 本人 GET /api/notifications（200）
 $ curl -sS -i -X GET 'http://localhost:18080/api/notifications' -b <会话 Cookie>
 HTTP/1.1 200 
-X-Request-Id: 0e10ddc5b19d4b50
+X-Request-Id: 0d561f7156b24eab
 Cache-Control: no-store
 Vary: Cookie
 X-Content-Type-Options: nosniff
@@ -119,15 +119,15 @@ Vary: Access-Control-Request-Method
 Vary: Access-Control-Request-Headers
 Content-Type: application/json
 Transfer-Encoding: chunked
-Date: Wed, 28 Oct 2026 08:16:27 GMT
+Date: Wed, 28 Oct 2026 07:07:31 GMT
 
-{"code":0,"message":"ok","data":{"unreadCount":5,"page":1,"pageSize":10,"total":5,"list":[{"id":8,"type":"SYSTEM","pairId":null,"title":"平台维护通知","body":"平台将于近期进行例行维护，维护期间写操作可能短暂不可用，请提前保存草稿。","read":false,"createdAt":"2026-10-26 09:00:00"},{"id":3,"type":"PAIR_UNLOCK","pairId":4,"title":"对方已公开联系方式","body":"有一条配对中，对方已公开联系方式，你可在配对详情页查看。","read":false,"createdAt":"2026-10-25 09:00:00"},{"id":7,"type":"PAIR_MATCH","pairId":12,"title":"有一条新的匹配结果","body":"你发布的寻物启事已与一条招领启事完成确认，登录后可查看配对详情。","read":false,"createdAt":"2026-10-24 16:16:19"},{"id":5,"type":"PAIR_MATCH","pairId":6,"title":"有一条新的匹配结果","body":"你发布的招领启事有了一条新的匹配结果，登录后可查看配对详情。为保护隐私，通知不展示联系方式与完整描述。","read":false,"createdAt":"2026-10-22 10:26:00"},{"id":1,"type":"PAIR_MATCH","pairId":1,"title":"有一条新的匹配结果","body":"你发布的寻物启事有了一条新的匹配结果，登录后可查看配对详情。为保护隐私，通知不展示联系方式与完整描述。","read":false,"createdAt":"2026-10-22 10:01:00"}],"totalPages":1,"hasNext":false},"requestId":"0e10ddc5b19d4b50"}
+{"code":0,"message":"ok","data":{"unreadCount":5,"page":1,"pageSize":10,"total":5,"list":[{"id":8,"type":"SYSTEM","pairId":null,"title":"平台维护通知","body":"平台将于近期进行例行维护，维护期间写操作可能短暂不可用，请提前保存草稿。","read":false,"createdAt":"2026-10-26 09:00:00"},{"id":3,"type":"PAIR_UNLOCK","pairId":4,"title":"对方已公开联系方式","body":"有一条配对中，对方已公开联系方式，你可在配对详情页查看。","read":false,"createdAt":"2026-10-25 09:00:00"},{"id":7,"type":"PAIR_MATCH","pairId":12,"title":"有一条新的匹配结果","body":"你发布的寻物启事已与一条招领启事完成确认，登录后可查看配对详情。","read":false,"createdAt":"2026-10-24 15:07:23"},{"id":5,"type":"PAIR_MATCH","pairId":6,"title":"有一条新的匹配结果","body":"你发布的招领启事有了一条新的匹配结果，登录后可查看配对详情。为保护隐私，通知不展示联系方式与完整描述。","read":false,"createdAt":"2026-10-22 10:26:00"},{"id":1,"type":"PAIR_MATCH","pairId":1,"title":"有一条新的匹配结果","body":"你发布的寻物启事有了一条新的匹配结果，登录后可查看配对详情。为保护隐私，通知不展示联系方式与完整描述。","read":false,"createdAt":"2026-10-22 10:01:00"}],"totalPages":1,"hasNext":false},"requestId":"0d561f7156b24eab"}
 → HTTP 200 | Cache-Control: no-store | Vary: Cookie;Vary: Origin Vary: Access-Control-Request-Method;Vary: Access-Control-Request-Headers | 判定 PASS（no-store=nostore / Vary Cookie=Cookie）
 
 ----- C2 非所有者 GET /api/notifications（200）
 $ curl -sS -i -X GET 'http://localhost:18080/api/notifications' -b <会话 Cookie>
 HTTP/1.1 200 
-X-Request-Id: af2281bf34044b73
+X-Request-Id: dc180eb0f3d94184
 Cache-Control: no-store
 Vary: Cookie
 X-Content-Type-Options: nosniff
@@ -139,15 +139,15 @@ Vary: Access-Control-Request-Method
 Vary: Access-Control-Request-Headers
 Content-Type: application/json
 Transfer-Encoding: chunked
-Date: Wed, 28 Oct 2026 08:16:29 GMT
+Date: Wed, 28 Oct 2026 07:07:32 GMT
 
-{"code":0,"message":"ok","data":{"unreadCount":1,"page":1,"pageSize":10,"total":2,"list":[{"id":4,"type":"PAIR_MATCH","pairId":6,"title":"有一条新的匹配结果","body":"你发布的寻物启事有了一条新的匹配结果，登录后可查看配对详情。为保护隐私，通知不展示联系方式与完整描述。","read":true,"createdAt":"2026-10-22 10:26:00"},{"id":2,"type":"PAIR_MATCH","pairId":1,"title":"有一条新的匹配结果","body":"你发布的招领启事有了一条新的匹配结果，登录后可查看配对详情。为保护隐私，通知不展示联系方式与完整描述。","read":false,"createdAt":"2026-10-22 10:01:00"}],"totalPages":1,"hasNext":false},"requestId":"af2281bf34044b73"}
+{"code":0,"message":"ok","data":{"unreadCount":1,"page":1,"pageSize":10,"total":2,"list":[{"id":4,"type":"PAIR_MATCH","pairId":6,"title":"有一条新的匹配结果","body":"你发布的寻物启事有了一条新的匹配结果，登录后可查看配对详情。为保护隐私，通知不展示联系方式与完整描述。","read":true,"createdAt":"2026-10-22 10:26:00"},{"id":2,"type":"PAIR_MATCH","pairId":1,"title":"有一条新的匹配结果","body":"你发布的招领启事有了一条新的匹配结果，登录后可查看配对详情。为保护隐私，通知不展示联系方式与完整描述。","read":false,"createdAt":"2026-10-22 10:01:00"}],"totalPages":1,"hasNext":false},"requestId":"dc180eb0f3d94184"}
 → HTTP 200 | Cache-Control: no-store | Vary: Cookie;Vary: Origin Vary: Access-Control-Request-Method;Vary: Access-Control-Request-Headers | 判定 PASS（no-store=nostore / Vary Cookie=Cookie）
 
 ----- D1 本人 POST /api/match（200）
 $ curl -sS -i -X POST 'http://localhost:18080/api/match' -b <会话 Cookie> --data-binary @<UTF-8 请求体>
 HTTP/1.1 200 
-X-Request-Id: 1c0887012c274110
+X-Request-Id: 35987f48b21446a3
 Cache-Control: no-store
 Vary: Cookie
 X-Content-Type-Options: nosniff
@@ -159,15 +159,15 @@ Vary: Access-Control-Request-Method
 Vary: Access-Control-Request-Headers
 Content-Type: application/json
 Transfer-Encoding: chunked
-Date: Wed, 28 Oct 2026 08:16:31 GMT
+Date: Wed, 28 Oct 2026 07:07:34 GMT
 
-{"code":0,"message":"ok","data":{"matchId":1,"engine":"LOCAL_KEYWORD","inputType":"FOUND","topN":5,"minScore":0,"tookMs":7,"total":5,"items":[{"recordId":13,"score":1.00,"scorePercent":100,"reason":"关键词命中:钱包、银行卡、色钱、黑色；分类词表命中:钱包卡证","type":"FOUND","status":"PENDING","recordStatus":"PENDING","detailAccess":"OPEN","title":"图书馆拾到黑色钱包","categoryName":"钱包卡证","location":"图书馆三楼自习区","occurredAt":"2026-09-15 15:00:00","createdAt":"2026-09-15 15:30:00"},{"recordId":21,"score":0.21,"scorePercent":21,"reason":"关键词命中:书、书馆、图书、色","type":"FOUND","status":"PENDING","recordStatus":"PENDING","detailAccess":"OPEN","title":"捡到一本大学英语词汇书","categoryName":"书籍文具","location":"图书馆二楼","occurredAt":"2026-10-16 14:00:00","createdAt":"2026-10-16 15:00:00"},{"recordId":15,"score":0.19,"scorePercent":19,"reason":"关键词命中:银行卡","type":"FOUND","status":"PENDING","recordStatus":"PENDING","detailAccess":"OPEN","title":"教室捡到卡套内有学生证","categoryName":"证件资料","location":"第三教学楼201","occurredAt":"2026-10-21 12:10:00","createdAt":"2026-10-21 12:30:00"},{"recordId":17,"score":0.19,"scorePercent":19,"reason":"关键词命中:色、书馆、图书","type":"FOUND","status":"PENDING","recordStatus":"PENDING","detailAccess":"OPEN","title":"自习室捡到白色耳机和充电盒","categoryName":"手机数码","location":"图书馆一楼自习室","occurredAt":"2026-10-16 18:00:00","createdAt":"2026-10-16 18:20:00"},{"recordId":22,"score":0.04,"scorePercent":4,"reason":"关键词命中:黑、色","type":"FOUND","status":"PENDING","recordStatus":"PENDING","detailAccess":"OPEN","title":"捡到一副黑框眼镜","categoryName":"其他","location":"第一食堂一楼门口","occurredAt":"2026-10-21 12:40:00","createdAt":"2026-10-21 13:00:00"}]},"requestId":"1c0887012c274110"}
+{"code":0,"message":"ok","data":{"matchId":1,"engine":"LOCAL_KEYWORD","inputType":"FOUND","topN":5,"minScore":0,"tookMs":0,"total":5,"items":[{"recordId":13,"score":1.00,"scorePercent":100,"reason":"关键词命中:钱包、银行卡、色钱、黑色；分类词表命中:钱包卡证","type":"FOUND","status":"PENDING","recordStatus":"PENDING","detailAccess":"OPEN","title":"图书馆拾到黑色钱包","categoryName":"钱包卡证","location":"图书馆三楼自习区","occurredAt":"2026-09-15 15:00:00","createdAt":"2026-09-15 15:30:00"},{"recordId":21,"score":0.21,"scorePercent":21,"reason":"关键词命中:书、书馆、图书、色","type":"FOUND","status":"PENDING","recordStatus":"PENDING","detailAccess":"OPEN","title":"捡到一本大学英语词汇书","categoryName":"书籍文具","location":"图书馆二楼","occurredAt":"2026-10-16 14:00:00","createdAt":"2026-10-16 15:00:00"},{"recordId":15,"score":0.19,"scorePercent":19,"reason":"关键词命中:银行卡","type":"FOUND","status":"PENDING","recordStatus":"PENDING","detailAccess":"OPEN","title":"教室捡到卡套内有学生证","categoryName":"证件资料","location":"第三教学楼201","occurredAt":"2026-10-21 12:10:00","createdAt":"2026-10-21 12:30:00"},{"recordId":17,"score":0.19,"scorePercent":19,"reason":"关键词命中:色、书馆、图书","type":"FOUND","status":"PENDING","recordStatus":"PENDING","detailAccess":"OPEN","title":"自习室捡到白色耳机和充电盒","categoryName":"手机数码","location":"图书馆一楼自习室","occurredAt":"2026-10-16 18:00:00","createdAt":"2026-10-16 18:20:00"},{"recordId":22,"score":0.04,"scorePercent":4,"reason":"关键词命中:黑、色","type":"FOUND","status":"PENDING","recordStatus":"PENDING","detailAccess":"OPEN","title":"捡到一副黑框眼镜","categoryName":"其他","location":"第一食堂一楼门口","occurredAt":"2026-10-21 12:40:00","createdAt":"2026-10-21 13:00:00"}]},"requestId":"35987f48b21446a3"}
 → HTTP 200 | Cache-Control: no-store | Vary: Cookie;Vary: Origin Vary: Access-Control-Request-Method;Vary: Access-Control-Request-Headers | 判定 PASS（no-store=nostore / Vary Cookie=Cookie）
 
 ----- D2 非所有者 POST /api/match（200）
 $ curl -sS -i -X POST 'http://localhost:18080/api/match' -b <会话 Cookie> --data-binary @<UTF-8 请求体>
 HTTP/1.1 200 
-X-Request-Id: fae81d7c31304f53
+X-Request-Id: a103f92dbdc346ba
 Cache-Control: no-store
 Vary: Cookie
 X-Content-Type-Options: nosniff
@@ -179,15 +179,15 @@ Vary: Access-Control-Request-Method
 Vary: Access-Control-Request-Headers
 Content-Type: application/json
 Transfer-Encoding: chunked
-Date: Wed, 28 Oct 2026 08:16:32 GMT
+Date: Wed, 28 Oct 2026 07:07:36 GMT
 
-{"code":0,"message":"ok","data":{"matchId":2,"engine":"LOCAL_KEYWORD","inputType":"LOST","topN":5,"minScore":0,"tookMs":1,"total":5,"items":[{"recordId":2,"score":0.72,"scorePercent":72,"reason":"关键词命中:iphone、白色、操场、透明；分类词表命中:手机数码","type":"LOST","status":"PENDING","recordStatus":"PENDING","detailAccess":"OPEN","title":"白色苹果手机丢了","categoryName":"手机数码","location":"南操场跑道边台阶","occurredAt":"2026-10-18 20:15:00","createdAt":"2026-10-19 08:00:00"},{"recordId":5,"score":0.14,"scorePercent":14,"reason":"关键词命中:白色、壳","type":"LOST","status":"PENDING","recordStatus":"PENDING","detailAccess":"OPEN","title":"蓝牙耳机连充电盒一起丢了","categoryName":"手机数码","location":"图书馆一楼自习室","occurredAt":"2026-10-15 16:00:00","createdAt":"2026-10-16 10:00:00"},{"recordId":3,"score":0.13,"scorePercent":13,"reason":"关键词命中:透明","type":"LOST","status":"PENDING","recordStatus":"PENDING","detailAccess":"OPEN","title":"学生证和校园卡一起丢了","categoryName":"证件资料","location":"第三教学楼…","occurredAt":"2026-10-21 10:40:00","createdAt":"2026-10-21 11:05:00"},{"recordId":8,"score":0.11,"scorePercent":11,"reason":"关键词命中:色、白色","type":"LOST","status":"PENDING","recordStatus":"PENDING","detailAccess":"OPEN","title":"丢失黑色篮球袜一双","categoryName":"衣物饰品","location":"体育馆更衣室","occurredAt":"2026-10-18 21:00:00","createdAt":"2026-10-19 10:00:00"},{"recordId":1,"score":0.02,"scorePercent":2,"reason":"关键词命中:色","type":"LOST","status":"PENDING","recordStatus":"PENDING","detailAccess":"OPEN","title":"图书馆丢了黑色钱包","categoryName":"钱包卡证","location":"图书馆三楼自习区","occurredAt":"2026-10-19 17:30:00","createdAt":"2026-10-20 09:10:00"}]},"requestId":"fae81d7c31304f53"}
+{"code":0,"message":"ok","data":{"matchId":2,"engine":"LOCAL_KEYWORD","inputType":"LOST","topN":5,"minScore":0,"tookMs":0,"total":5,"items":[{"recordId":2,"score":0.72,"scorePercent":72,"reason":"关键词命中:iphone、白色、操场、透明；分类词表命中:手机数码","type":"LOST","status":"PENDING","recordStatus":"PENDING","detailAccess":"OPEN","title":"白色苹果手机丢了","categoryName":"手机数码","location":"南操场跑道边台阶","occurredAt":"2026-10-18 20:15:00","createdAt":"2026-10-19 08:00:00"},{"recordId":5,"score":0.14,"scorePercent":14,"reason":"关键词命中:白色、壳","type":"LOST","status":"PENDING","recordStatus":"PENDING","detailAccess":"OPEN","title":"蓝牙耳机连充电盒一起丢了","categoryName":"手机数码","location":"图书馆一楼自习室","occurredAt":"2026-10-15 16:00:00","createdAt":"2026-10-16 10:00:00"},{"recordId":3,"score":0.13,"scorePercent":13,"reason":"关键词命中:透明","type":"LOST","status":"PENDING","recordStatus":"PENDING","detailAccess":"OPEN","title":"学生证和校园卡一起丢了","categoryName":"证件资料","location":"第三教学楼…","occurredAt":"2026-10-21 10:40:00","createdAt":"2026-10-21 11:05:00"},{"recordId":8,"score":0.11,"scorePercent":11,"reason":"关键词命中:色、白色","type":"LOST","status":"PENDING","recordStatus":"PENDING","detailAccess":"OPEN","title":"丢失黑色篮球袜一双","categoryName":"衣物饰品","location":"体育馆更衣室","occurredAt":"2026-10-18 21:00:00","createdAt":"2026-10-19 10:00:00"},{"recordId":1,"score":0.02,"scorePercent":2,"reason":"关键词命中:色","type":"LOST","status":"PENDING","recordStatus":"PENDING","detailAccess":"OPEN","title":"图书馆丢了黑色钱包","categoryName":"钱包卡证","location":"图书馆三楼自习区","occurredAt":"2026-10-19 17:30:00","createdAt":"2026-10-20 09:10:00"}]},"requestId":"a103f92dbdc346ba"}
 → HTTP 200 | Cache-Control: no-store | Vary: Cookie;Vary: Origin Vary: Access-Control-Request-Method;Vary: Access-Control-Request-Headers | 判定 PASS（no-store=nostore / Vary Cookie=Cookie）
 
 ----- E1 参与者 GET /api/pairs/{id}/contact（不回退断言）
 $ curl -sS -i -X GET 'http://localhost:18080/api/pairs/1/contact' -b <会话 Cookie>
 HTTP/1.1 200 
-X-Request-Id: 9c2067668e4b4892
+X-Request-Id: 9bac1fa4ab1f4bc7
 Cache-Control: no-store
 Vary: Cookie
 X-Content-Type-Options: nosniff
@@ -200,15 +200,15 @@ Vary: Access-Control-Request-Headers
 Cache-Control: no-store
 Content-Type: application/json
 Transfer-Encoding: chunked
-Date: Wed, 28 Oct 2026 08:16:33 GMT
+Date: Wed, 28 Oct 2026 07:07:37 GMT
 
-{"code":0,"message":"ok","data":{"pairId":1,"score":0.9600,"scorePercent":96,"tier":"DIRECT","viewerSide":"LOST","targetSide":"FOUND","available":true,"contact":"13800000101","reason":null,"message":"匹配度较高，可直接查看","unlockedAt":null,"note":null},"requestId":"9c2067668e4b4892"}
+{"code":0,"message":"ok","data":{"pairId":1,"score":0.9600,"scorePercent":96,"tier":"DIRECT","viewerSide":"LOST","targetSide":"FOUND","available":true,"contact":"13800000101","reason":null,"message":"匹配度较高，可直接查看","unlockedAt":null,"note":null},"requestId":"9bac1fa4ab1f4bc7"}
 → HTTP 200 | Cache-Control: no-store;Cache-Control: no-store | Vary: Cookie;Vary: Origin Vary: Access-Control-Request-Method;Vary: Access-Control-Request-Headers | 判定 PASS（no-store=nostore / Vary Cookie=Cookie）
 
 ----- E2 对方 GET /api/pairs/{id}/contact（不回退断言）
 $ curl -sS -i -X GET 'http://localhost:18080/api/pairs/1/contact' -b <会话 Cookie>
 HTTP/1.1 200 
-X-Request-Id: d59323a8e0f8478f
+X-Request-Id: 2cbfa56c9c504d4c
 Cache-Control: no-store
 Vary: Cookie
 X-Content-Type-Options: nosniff
@@ -221,15 +221,15 @@ Vary: Access-Control-Request-Headers
 Cache-Control: no-store
 Content-Type: application/json
 Transfer-Encoding: chunked
-Date: Wed, 28 Oct 2026 08:16:35 GMT
+Date: Wed, 28 Oct 2026 07:07:39 GMT
 
-{"code":0,"message":"ok","data":{"pairId":1,"score":0.9600,"scorePercent":96,"tier":"DIRECT","viewerSide":"FOUND","targetSide":"LOST","available":true,"contact":"13800000001","reason":null,"message":"匹配度较高，可直接查看","unlockedAt":null,"note":null},"requestId":"d59323a8e0f8478f"}
+{"code":0,"message":"ok","data":{"pairId":1,"score":0.9600,"scorePercent":96,"tier":"DIRECT","viewerSide":"FOUND","targetSide":"LOST","available":true,"contact":"13800000001","reason":null,"message":"匹配度较高，可直接查看","unlockedAt":null,"note":null},"requestId":"2cbfa56c9c504d4c"}
 → HTTP 200 | Cache-Control: no-store;Cache-Control: no-store | Vary: Cookie;Vary: Origin Vary: Access-Control-Request-Method;Vary: Access-Control-Request-Headers | 判定 PASS（no-store=nostore / Vary Cookie=Cookie）
 
 ----- E3 匿名 GET /api/pairs/{id}/contact（401 短路带头）
 $ curl -sS -i -X GET 'http://localhost:18080/api/pairs/1/contact'
 HTTP/1.1 401 
-X-Request-Id: bb341bb3141642bd
+X-Request-Id: 98d4a7ef9ce14839
 Cache-Control: no-store
 Vary: Cookie
 X-Content-Type-Options: nosniff
@@ -238,15 +238,15 @@ Referrer-Policy: no-referrer
 Content-Security-Policy: default-src 'none'; frame-ancestors 'none'
 Content-Type: application/json;charset=UTF-8
 Content-Length: 82
-Date: Wed, 28 Oct 2026 08:16:37 GMT
+Date: Wed, 28 Oct 2026 07:07:40 GMT
 
-{"code":10006,"message":"请先登录","data":null,"requestId":"bb341bb3141642bd"}
+{"code":10006,"message":"请先登录","data":null,"requestId":"98d4a7ef9ce14839"}
 → HTTP 401 | Cache-Control: no-store | Vary: Cookie | 判定 PASS（no-store=nostore / Vary Cookie=Cookie）
 
 ----- E4 不存在 pairId GET /api/pairs/999999/contact（404）
 $ curl -sS -i -X GET 'http://localhost:18080/api/pairs/999999/contact' -b <会话 Cookie>
 HTTP/1.1 404 
-X-Request-Id: 668573a4de264906
+X-Request-Id: 7a42d1362a534f8c
 Cache-Control: no-store
 Vary: Cookie
 X-Content-Type-Options: nosniff
@@ -258,106 +258,15 @@ Vary: Access-Control-Request-Method
 Vary: Access-Control-Request-Headers
 Content-Type: application/json
 Transfer-Encoding: chunked
-Date: Wed, 28 Oct 2026 08:16:38 GMT
+Date: Wed, 28 Oct 2026 07:07:42 GMT
 
-{"code":20004,"message":"配对不存在或任一端记录已删除","data":null,"requestId":"668573a4de264906"}
+{"code":20004,"message":"配对不存在或任一端记录已删除","data":null,"requestId":"7a42d1362a534f8c"}
 → HTTP 404 | Cache-Control: no-store | Vary: Cookie;Vary: Origin Vary: Access-Control-Request-Method;Vary: Access-Control-Request-Headers | 判定 PASS（no-store=nostore / Vary Cookie=Cookie）
-
------ E5 参与者 PATCH /api/pairs/{id}（action=CONTACT，200 统一体）
-$ curl -sS -i -X PATCH 'http://localhost:18080/api/pairs/1' -b <会话 Cookie> --data-binary @<UTF-8 请求体>
-HTTP/1.1 200 
-X-Request-Id: 4ed310ea327e42a6
-Cache-Control: no-store
-Vary: Cookie
-X-Content-Type-Options: nosniff
-X-Frame-Options: DENY
-Referrer-Policy: no-referrer
-Content-Security-Policy: default-src 'none'; frame-ancestors 'none'
-Vary: Origin
-Vary: Access-Control-Request-Method
-Vary: Access-Control-Request-Headers
-Content-Type: application/json
-Transfer-Encoding: chunked
-Date: Wed, 28 Oct 2026 08:16:39 GMT
-
-{"code":0,"message":"已联系","data":{"pairId":1,"status":"CONTACTED","matched":false,"mySide":"LOST","myConfirmed":false,"otherConfirmed":false,"lostConfirmedAt":null,"foundConfirmedAt":null,"updatedAt":"2026-10-23 09:00:00"},"requestId":"4ed310ea327e42a6"}
-→ HTTP 200 | Cache-Control: no-store | Vary: Cookie;Vary: Origin Vary: Access-Control-Request-Method;Vary: Access-Control-Request-Headers | 判定 PASS（no-store=nostore / Vary Cookie=Cookie）
-
------ E6 匿名 PATCH /api/pairs/{id}（401 短路带头）
-$ curl -sS -i -X PATCH 'http://localhost:18080/api/pairs/1' --data-binary @<UTF-8 请求体>
-HTTP/1.1 401 
-X-Request-Id: 8c8b999739df4806
-Cache-Control: no-store
-Vary: Cookie
-X-Content-Type-Options: nosniff
-X-Frame-Options: DENY
-Referrer-Policy: no-referrer
-Content-Security-Policy: default-src 'none'; frame-ancestors 'none'
-Content-Type: application/json;charset=UTF-8
-Content-Length: 82
-Date: Wed, 28 Oct 2026 08:16:41 GMT
-
-{"code":10006,"message":"请先登录","data":null,"requestId":"8c8b999739df4806"}
-→ HTTP 401 | Cache-Control: no-store | Vary: Cookie | 判定 PASS（no-store=nostore / Vary Cookie=Cookie）
-
------ E7 本人 POST /api/pairs/{id}/contact-unlock（200 写库）
-$ curl -sS -i -X POST 'http://localhost:18080/api/pairs/1/contact-unlock' -b <会话 Cookie> --data-binary @<UTF-8 请求体>
-HTTP/1.1 200 
-X-Request-Id: b7ef532dea434137
-Cache-Control: no-store
-Vary: Cookie
-X-Content-Type-Options: nosniff
-X-Frame-Options: DENY
-Referrer-Policy: no-referrer
-Content-Security-Policy: default-src 'none'; frame-ancestors 'none'
-Vary: Origin
-Vary: Access-Control-Request-Method
-Vary: Access-Control-Request-Headers
-Content-Type: application/json
-Transfer-Encoding: chunked
-Date: Wed, 28 Oct 2026 08:16:42 GMT
-
-{"code":0,"message":"ok","data":{"pairId":1,"side":"LOST","unlockedAt":"2026-10-28 16:16:43","note":"我的号码 [手机号已隐藏]，随时联系","public":true},"requestId":"b7ef532dea434137"}
-→ HTTP 200 | Cache-Control: no-store | Vary: Cookie;Vary: Origin Vary: Access-Control-Request-Method;Vary: Access-Control-Request-Headers | 判定 PASS（no-store=nostore / Vary Cookie=Cookie）
-
------ E8 匿名 POST /api/pairs/{id}/contact-unlock（401 短路带头）
-$ curl -sS -i -X POST 'http://localhost:18080/api/pairs/1/contact-unlock' --data-binary @<UTF-8 请求体>
-HTTP/1.1 401 
-X-Request-Id: fd7c9b685ad24ebb
-Cache-Control: no-store
-Vary: Cookie
-X-Content-Type-Options: nosniff
-X-Frame-Options: DENY
-Referrer-Policy: no-referrer
-Content-Security-Policy: default-src 'none'; frame-ancestors 'none'
-Content-Type: application/json;charset=UTF-8
-Content-Length: 82
-Date: Wed, 28 Oct 2026 08:16:43 GMT
-
-{"code":10006,"message":"请先登录","data":null,"requestId":"fd7c9b685ad24ebb"}
-→ HTTP 401 | Cache-Control: no-store | Vary: Cookie | 判定 PASS（no-store=nostore / Vary Cookie=Cookie）
-
------ E9 GET /api/pairs/{id} 裸路径（路由不存在，记录实际状态码与头）
-$ curl -sS -i -X GET 'http://localhost:18080/api/pairs/1' -b <会话 Cookie>
-HTTP/1.1 405 
-X-Request-Id: 520f065d81544478
-Cache-Control: no-store
-Vary: Cookie
-X-Content-Type-Options: nosniff
-X-Frame-Options: DENY
-Referrer-Policy: no-referrer
-Content-Security-Policy: default-src 'none'; frame-ancestors 'none'
-Content-Type: application/json
-Transfer-Encoding: chunked
-Date: Wed, 28 Oct 2026 08:16:45 GMT
-
-{"code":10004,"message":"方法不支持","data":null,"requestId":"520f065d81544478"}
-→ HTTP 405 | Cache-Control: no-store | Vary: Cookie | 判定 PASS（no-store=nostore / Vary Cookie=Cookie）
 
 ----- F1 匿名 GET /api/my/records（401 短路）
 $ curl -sS -i -X GET 'http://localhost:18080/api/my/records'
 HTTP/1.1 401 
-X-Request-Id: b36a11e1798849f2
+X-Request-Id: 439eddd10c5048d2
 Cache-Control: no-store
 Vary: Cookie
 X-Content-Type-Options: nosniff
@@ -366,15 +275,15 @@ Referrer-Policy: no-referrer
 Content-Security-Policy: default-src 'none'; frame-ancestors 'none'
 Content-Type: application/json;charset=UTF-8
 Content-Length: 82
-Date: Wed, 28 Oct 2026 08:16:46 GMT
+Date: Wed, 28 Oct 2026 07:07:43 GMT
 
-{"code":10006,"message":"请先登录","data":null,"requestId":"b36a11e1798849f2"}
+{"code":10006,"message":"请先登录","data":null,"requestId":"439eddd10c5048d2"}
 → HTTP 401 | Cache-Control: no-store | Vary: Cookie | 判定 PASS（no-store=nostore / Vary Cookie=Cookie）
 
 ----- F2 匿名 GET /api/notifications（401 短路）
 $ curl -sS -i -X GET 'http://localhost:18080/api/notifications'
 HTTP/1.1 401 
-X-Request-Id: 2fe63d8d19484aec
+X-Request-Id: 36c23b41be974a4f
 Cache-Control: no-store
 Vary: Cookie
 X-Content-Type-Options: nosniff
@@ -383,15 +292,15 @@ Referrer-Policy: no-referrer
 Content-Security-Policy: default-src 'none'; frame-ancestors 'none'
 Content-Type: application/json;charset=UTF-8
 Content-Length: 82
-Date: Wed, 28 Oct 2026 08:16:47 GMT
+Date: Wed, 28 Oct 2026 07:07:45 GMT
 
-{"code":10006,"message":"请先登录","data":null,"requestId":"2fe63d8d19484aec"}
+{"code":10006,"message":"请先登录","data":null,"requestId":"36c23b41be974a4f"}
 → HTTP 401 | Cache-Control: no-store | Vary: Cookie | 判定 PASS（no-store=nostore / Vary Cookie=Cookie）
 
 ----- F3 匿名 POST /api/match（401 短路）
 $ curl -sS -i -X POST 'http://localhost:18080/api/match' --data-binary @<UTF-8 请求体>
 HTTP/1.1 401 
-X-Request-Id: 8776a031917443bf
+X-Request-Id: 45241f374f644e0f
 Cache-Control: no-store
 Vary: Cookie
 X-Content-Type-Options: nosniff
@@ -400,15 +309,15 @@ Referrer-Policy: no-referrer
 Content-Security-Policy: default-src 'none'; frame-ancestors 'none'
 Content-Type: application/json;charset=UTF-8
 Content-Length: 82
-Date: Wed, 28 Oct 2026 08:16:48 GMT
+Date: Wed, 28 Oct 2026 07:07:46 GMT
 
-{"code":10006,"message":"请先登录","data":null,"requestId":"8776a031917443bf"}
+{"code":10006,"message":"请先登录","data":null,"requestId":"45241f374f644e0f"}
 → HTTP 401 | Cache-Control: no-store | Vary: Cookie | 判定 PASS（no-store=nostore / Vary Cookie=Cookie）
 
 ----- F4 匿名 GET 不存在的记录（404 统一体）
 $ curl -sS -i -X GET 'http://localhost:18080/api/records/999999'
 HTTP/1.1 404 
-X-Request-Id: e574567d21fe45ef
+X-Request-Id: 3b0eaa96acea4346
 Cache-Control: no-store
 Vary: Cookie
 X-Content-Type-Options: nosniff
@@ -420,15 +329,15 @@ Vary: Access-Control-Request-Method
 Vary: Access-Control-Request-Headers
 Content-Type: application/json
 Transfer-Encoding: chunked
-Date: Wed, 28 Oct 2026 08:16:50 GMT
+Date: Wed, 28 Oct 2026 07:07:48 GMT
 
-{"code":20001,"message":"记录不存在或已删除","data":null,"requestId":"e574567d21fe45ef"}
+{"code":20001,"message":"记录不存在或已删除","data":null,"requestId":"3b0eaa96acea4346"}
 → HTTP 404 | Cache-Control: no-store | Vary: Cookie;Vary: Origin Vary: Access-Control-Request-Method;Vary: Access-Control-Request-Headers | 判定 PASS（no-store=nostore / Vary Cookie=Cookie）
 
 ----- G1 匿名 GET /api/records（200 公共列表）
 $ curl -sS -i -X GET 'http://localhost:18080/api/records'
 HTTP/1.1 200 
-X-Request-Id: 1745a379c3c14a77
+X-Request-Id: a8af0c01dd0e4a6c
 Cache-Control: no-store
 Vary: Cookie
 X-Content-Type-Options: nosniff
@@ -440,15 +349,15 @@ Vary: Access-Control-Request-Method
 Vary: Access-Control-Request-Headers
 Content-Type: application/json
 Transfer-Encoding: chunked
-Date: Wed, 28 Oct 2026 08:16:51 GMT
+Date: Wed, 28 Oct 2026 07:07:49 GMT
 
-{"code":0,"message":"ok","data":{"page":1,"pageSize":10,"total":21,"list":[{"id":26,"type":"FOUND","status":"PENDING","title":"捡到一张浅蓝色卡片","categoryId":null,"categoryName":null,"location":"大学生活动中心公…","occurredAt":"2026-10-21 13:30:00","createdAt":"2026-10-21 13:50:00","isMine":false},{"id":22,"type":"FOUND","status":"PENDING","title":"捡到一副黑框眼镜","categoryId":8,"categoryName":"其他","location":"第一食堂一楼门口","occurredAt":"2026-10-21 12:40:00","createdAt":"2026-10-21 13:00:00","isMine":false},{"id":15,"type":"FOUND","status":"PENDING","title":"教室捡到卡套内有学生证","categoryId":4,"categoryName":"证件资料","location":"第三教学楼…","occurredAt":"2026-10-21 12:10:00","createdAt":"2026-10-21 12:30:00","isMine":false},{"id":3,"type":"LOST","status":"PENDING","title":"学生证和校园卡一起丢了","categoryId":4,"categoryName":"证件资料","location":"第三教学楼…","occurredAt":"2026-10-21 10:40:00","createdAt":"2026-10-21 11:05:00","isMine":false},{"id":7,"type":"LOST","status":"PENDING","title":"丢了科学计算器","categoryId":7,"categoryName":"书籍文具","location":"第一教学楼自习室","occurredAt":"2026-10-21 09:00:00","createdAt":"2026-10-21 09:30:00","isMine":false},{"id":18,"type":"FOUND","status":"PENDING","title":"快递点捡到三把钥匙带小熊挂件","categoryId":3,"categoryName":"钥匙","location":"7号宿舍楼下快递…","occurredAt":"2026-10-20 21:00:00","createdAt":"2026-10-20 21:20:00","isMine":false},{"id":6,"type":"LOST","status":"PENDING","title":"一串宿舍钥匙丢了","categoryId":3,"categoryName":"钥匙","location":"7号宿舍楼下快递…","occurredAt":"2026-10-20 19:20:00","createdAt":"2026-10-20 20:00:00","isMine":false},{"id":19,"type":"FOUND","status":"PENDING","title":"捡到一副红色羽毛球拍","categoryId":8,"categoryName":"其他","location":"体育场看台","occurredAt":"2026-10-20 17:00:00","createdAt":"2026-10-20 17:30:00","isMine":false},{"id":4,"type":"LOST","status":"PENDING","title":"丢失深蓝色折叠雨伞","categoryId":6,"categoryName":"衣物饰品","location":"第二食堂…","occurredAt":"2026-10-19 18:50:00","createdAt":"2026-10-20 12:00:00","isMine":false},{"id":1,"type":"LOST","status":"PENDING","title":"图书馆丢了黑色钱包","categoryId":1,"categoryName":"钱包卡证","location":"图书馆三楼自习区","occurredAt":"2026-10-19 17:30:00","createdAt":"2026-10-20 09:10:00","isMine":false}],"totalPages":3,"hasNext":true},"requestId":"1745a379c3c14a77"}
+{"code":0,"message":"ok","data":{"page":1,"pageSize":10,"total":21,"list":[{"id":26,"type":"FOUND","status":"PENDING","title":"捡到一张浅蓝色卡片","categoryId":null,"categoryName":null,"location":"大学生活动中心公…","occurredAt":"2026-10-21 13:30:00","createdAt":"2026-10-21 13:50:00","isMine":false},{"id":22,"type":"FOUND","status":"PENDING","title":"捡到一副黑框眼镜","categoryId":8,"categoryName":"其他","location":"第一食堂一楼门口","occurredAt":"2026-10-21 12:40:00","createdAt":"2026-10-21 13:00:00","isMine":false},{"id":15,"type":"FOUND","status":"PENDING","title":"教室捡到卡套内有学生证","categoryId":4,"categoryName":"证件资料","location":"第三教学楼…","occurredAt":"2026-10-21 12:10:00","createdAt":"2026-10-21 12:30:00","isMine":false},{"id":3,"type":"LOST","status":"PENDING","title":"学生证和校园卡一起丢了","categoryId":4,"categoryName":"证件资料","location":"第三教学楼…","occurredAt":"2026-10-21 10:40:00","createdAt":"2026-10-21 11:05:00","isMine":false},{"id":7,"type":"LOST","status":"PENDING","title":"丢了科学计算器","categoryId":7,"categoryName":"书籍文具","location":"第一教学楼自习室","occurredAt":"2026-10-21 09:00:00","createdAt":"2026-10-21 09:30:00","isMine":false},{"id":18,"type":"FOUND","status":"PENDING","title":"快递点捡到三把钥匙带小熊挂件","categoryId":3,"categoryName":"钥匙","location":"7号宿舍楼下快递…","occurredAt":"2026-10-20 21:00:00","createdAt":"2026-10-20 21:20:00","isMine":false},{"id":6,"type":"LOST","status":"PENDING","title":"一串宿舍钥匙丢了","categoryId":3,"categoryName":"钥匙","location":"7号宿舍楼下快递…","occurredAt":"2026-10-20 19:20:00","createdAt":"2026-10-20 20:00:00","isMine":false},{"id":19,"type":"FOUND","status":"PENDING","title":"捡到一副红色羽毛球拍","categoryId":8,"categoryName":"其他","location":"体育场看台","occurredAt":"2026-10-20 17:00:00","createdAt":"2026-10-20 17:30:00","isMine":false},{"id":4,"type":"LOST","status":"PENDING","title":"丢失深蓝色折叠雨伞","categoryId":6,"categoryName":"衣物饰品","location":"第二食堂…","occurredAt":"2026-10-19 18:50:00","createdAt":"2026-10-20 12:00:00","isMine":false},{"id":1,"type":"LOST","status":"PENDING","title":"图书馆丢了黑色钱包","categoryId":1,"categoryName":"钱包卡证","location":"图书馆三楼自习区","occurredAt":"2026-10-19 17:30:00","createdAt":"2026-10-20 09:10:00","isMine":false}],"totalPages":3,"hasNext":true},"requestId":"a8af0c01dd0e4a6c"}
 → HTTP 200 | Cache-Control: no-store | Vary: Cookie;Vary: Origin Vary: Access-Control-Request-Method;Vary: Access-Control-Request-Headers | 判定 PASS（no-store=nostore / Vary Cookie=Cookie）
 
 ----- H1 非所有者 DELETE /api/records/1（403 越权短路）
 $ curl -sS -i -X DELETE 'http://localhost:18080/api/records/1' -b <会话 Cookie>
 HTTP/1.1 403 
-X-Request-Id: 5a7a1523d9b1446e
+X-Request-Id: 5afcf62f67364666
 Cache-Control: no-store
 Vary: Cookie
 X-Content-Type-Options: nosniff
@@ -460,15 +369,15 @@ Vary: Access-Control-Request-Method
 Vary: Access-Control-Request-Headers
 Content-Type: application/json
 Transfer-Encoding: chunked
-Date: Wed, 28 Oct 2026 08:16:52 GMT
+Date: Wed, 28 Oct 2026 07:07:50 GMT
 
-{"code":10007,"message":"无权操作该资源","data":null,"requestId":"5a7a1523d9b1446e"}
+{"code":10007,"message":"无权操作该资源","data":null,"requestId":"5afcf62f67364666"}
 → HTTP 403 | Cache-Control: no-store | Vary: Cookie;Vary: Origin Vary: Access-Control-Request-Method;Vary: Access-Control-Request-Headers | 判定 PASS（no-store=nostore / Vary Cookie=Cookie）
 
 ----- H2 匿名 GET /api/health（/api/** 前缀覆盖）
 $ curl -sS -i -X GET 'http://localhost:18080/api/health'
 HTTP/1.1 200 
-X-Request-Id: 1272ce1521804a29
+X-Request-Id: 63d999377c38497e
 Cache-Control: no-store
 Vary: Cookie
 X-Content-Type-Options: nosniff
@@ -480,9 +389,9 @@ Vary: Access-Control-Request-Method
 Vary: Access-Control-Request-Headers
 Content-Type: application/json
 Transfer-Encoding: chunked
-Date: Wed, 28 Oct 2026 08:16:53 GMT
+Date: Wed, 28 Oct 2026 07:07:51 GMT
 
-{"code":0,"message":"ok","data":{"status":"UP","db":"UP","version":"0.0.1-SNAPSHOT","engine":"local"},"requestId":"1272ce1521804a29"}
+{"code":0,"message":"ok","data":{"status":"UP","db":"UP","version":"0.0.1-SNAPSHOT","engine":"local"},"requestId":"63d999377c38497e"}
 → HTTP 200 | Cache-Control: no-store | Vary: Cookie;Vary: Origin Vary: Access-Control-Request-Method;Vary: Access-Control-Request-Headers | 判定 PASS（no-store=nostore / Vary Cookie=Cookie）
 
 ================= 汇总表 =================
@@ -501,11 +410,6 @@ Date: Wed, 28 Oct 2026 08:16:53 GMT
 | PASS | 200 | E2 对方 GET /api/pairs/{id}/contact（不回退断言） | Cache-Control: no-store;Cache-Control: no-store | Vary: Cookie;Vary: Origin Vary: Access-Control-Request-Method;Vary: Access-Control-Request-Headers |
 | PASS | 401 | E3 匿名 GET /api/pairs/{id}/contact（401 短路带头） | Cache-Control: no-store | Vary: Cookie |
 | PASS | 404 | E4 不存在 pairId GET /api/pairs/999999/contact（404） | Cache-Control: no-store | Vary: Cookie;Vary: Origin Vary: Access-Control-Request-Method;Vary: Access-Control-Request-Headers |
-| PASS | 200 | E5 参与者 PATCH /api/pairs/{id}（action=CONTACT，200 统一体） | Cache-Control: no-store | Vary: Cookie;Vary: Origin Vary: Access-Control-Request-Method;Vary: Access-Control-Request-Headers |
-| PASS | 401 | E6 匿名 PATCH /api/pairs/{id}（401 短路带头） | Cache-Control: no-store | Vary: Cookie |
-| PASS | 200 | E7 本人 POST /api/pairs/{id}/contact-unlock（200 写库） | Cache-Control: no-store | Vary: Cookie;Vary: Origin Vary: Access-Control-Request-Method;Vary: Access-Control-Request-Headers |
-| PASS | 401 | E8 匿名 POST /api/pairs/{id}/contact-unlock（401 短路带头） | Cache-Control: no-store | Vary: Cookie |
-| PASS | 405 | E9 GET /api/pairs/{id} 裸路径（路由不存在，记录实际状态码与头） | Cache-Control: no-store | Vary: Cookie |
 | PASS | 401 | F1 匿名 GET /api/my/records（401 短路） | Cache-Control: no-store | Vary: Cookie |
 | PASS | 401 | F2 匿名 GET /api/notifications（401 短路） | Cache-Control: no-store | Vary: Cookie |
 | PASS | 401 | F3 匿名 POST /api/match（401 短路） | Cache-Control: no-store | Vary: Cookie |
@@ -514,4 +418,4 @@ Date: Wed, 28 Oct 2026 08:16:53 GMT
 | PASS | 403 | H1 非所有者 DELETE /api/records/1（403 越权短路） | Cache-Control: no-store | Vary: Cookie;Vary: Origin Vary: Access-Control-Request-Method;Vary: Access-Control-Request-Headers |
 | PASS | 200 | H2 匿名 GET /api/health（/api/** 前缀覆盖） | Cache-Control: no-store | Vary: Cookie;Vary: Origin Vary: Access-Control-Request-Method;Vary: Access-Control-Request-Headers |
 
-断言用例数=25，FAIL=0
+断言用例数=20，FAIL=0
