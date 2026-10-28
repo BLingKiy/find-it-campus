@@ -1,0 +1,73 @@
+%% find-it-campus v2 · 配对打分与三档取号时序（含降级与审计 fail-closed）
+%% 事实来源：RecordService / PairScoringEventListener / PairScoringService / PairRecallService /
+%%          DeepSeekPairScorer / LocalKeywordPairScorer / LlmCircuitBreaker / PairScanService /
+%%          PairContactService / PairAccessPolicy / AccessLogService / db/schema.sql
+sequenceDiagram
+  autonumber
+  participant B as 浏览器
+  participant R as RecordController
+  participant L as PairScoringEventListener
+  participant PS as PairScoringService
+  participant RC as PairRecallService
+  participant LL as DeepSeekPairScorer
+  participant LK as LocalKeywordPairScorer
+  participant DB as MySQL
+  participant PC as PairController
+
+  B->>R: POST /api/records（需登录，401/10006 若无会话）
+  R->>DB: INSERT t_record（status=PENDING · pair_state=PENDING · publisher_id=session.userId）
+  R-->>B: 200 · code 0 · 详情（本人明文）
+  R->>L: 事务提交后发 PairScoringRequested(recordId)
+
+  Note over L,PS: 异步 —— 发布请求不因 LLM 慢而变慢
+
+  L->>PS: scoreRecord(recordId, trigger=publish)
+  PS->>DB: markPairScoring → pair_state=SCORING
+  PS->>RC: 召回候选（MATCHABLE：PENDING 恒可，COMPLETED 在 completed_retention_days=30 内，CLOSED 排除）
+  RC->>DB: 取前 pre_score_pool_size=200 条，本地整池预分取 top_n=10
+  PS->>DB: 并上「已存在 pair 的对端」，逐对处理
+  PS->>DB: 快路径 SELECT + 比对 lost_hash / found_hash（SHA-256）
+  alt 内容未变（两端 hash 相同，且不是降级重算窗口）
+    PS->>PS: 跳过：不调 LLM、不写库、不刷新 updated_at（通知按唯一键补一次）
+  else 需要打分（先 GET_LOCK('pair:lost|found', 5)，拿不到就跳过）
+    PS->>LL: 逐对请求（temperature=0 · model 与 latency_ms/tokens 留痕）
+    alt 密钥缺失 / 401 / 超时 / 非 JSON / 分数越界 / 其它非 2xx / 熔断打开
+      LL-->>PS: 降级（degraded_reason=EMPTY_KEY/UNAUTHORIZED/TIMEOUT/NON_JSON/SCORE_OUT_OF_RANGE/HTTP_ERROR/CIRCUIT_OPEN）
+      PS->>LK: 取本地关键词双向平均分顶替
+      PS->>PS: engine=LOCAL_KEYWORD · degraded_reason=原因 · 连续 5 次失败 → 熔断 5 分钟
+    else 正常返回
+      LL-->>PS: engine=DEEPSEEK · score · latency_ms · tokens
+    end
+    PS->>DB: upsertScore（唯一键 lost_id+found_id，只写分数类 9 列 · 不碰 status/授权/confirmed_at）
+    PS->>DB: score ≥ notify_threshold(0.75) 时写 t_notification<br/>唯一键(user_id,pair_id,type) 去重，正文不含号码与对方标题
+  end
+  PS->>DB: 回写 t_record.pair_state = READY（全部有分）/ DEGRADED（存在降级行）
+
+  B->>R: GET /api/records/{id} 或 GET /api/my/records（轮询 pair_state）
+  R-->>B: 200 · PairCard[]{score, scorePercent, tier, status, contactAvailable, contactHint}
+
+  B->>PC: GET /api/pairs/{id}/contact（需登录，响应头 Cache-Control: no-store）
+  PC->>DB: 读 pair + 两端记录
+  alt pair 行不存在
+    PC-->>B: 404 · 20004（外键无指目标，不写审计）
+  else 记录已删除 / 两端非参与方 / pair 失效 / 分数不足
+    PC->>DB: INSERT t_access_log（result=DENIED_*）
+    PC-->>B: 404 · 20004 ／ 403 · 10007 ／ 403 · 50005 ／ 403 · 50002
+  else 三档判定通过
+    alt score ≥ 0.90（DIRECT）
+      PC->>DB: 先 INSERT t_access_log(GRANTED) —— 写失败即 500，不出号
+      PC-->>B: 200 · available=true · contact 明文
+    else 0.75 ≤ score < 0.90（AUTHORIZABLE）
+      alt 对方端已 POST /contact-unlock PUBLISH
+        PC->>DB: INSERT t_access_log(GRANTED)
+        PC-->>B: 200 · available=true · contact + note
+      else 对方未授权
+        PC->>DB: INSERT t_access_log(DENIED_NOT_PUBLIC)
+        PC-->>B: 200 · available=false · reason=NOT_PUBLIC · message「对方尚未公开」
+      end
+    else score < 0.75（LOW）
+      PC->>DB: INSERT t_access_log(DENIED_LOW_SCORE)
+      PC-->>B: 403 · 50002（不出成功体）
+    end
+  end
+  Note over PC,DB: 审计 append-only，只记谁/何时/哪一对/结果，不复制号码与附言原文

@@ -1,34 +1,39 @@
-%% find-it-campus · POST /api/match 调用时序（含失败出口）
-%% 事实来源：MatchController / MatchService / MatchCandidatePoolPort / KeywordMatchEngine / MatchResultMapper
+%% find-it-campus · POST /api/match 调用时序（v2，含失败出口）
+%% 事实来源：AuthGateFilter / MatchController / MatchService / RecordCandidatePoolAdapter / KeywordMatchEngine / MatchResultMapper
 sequenceDiagram
   autonumber
   participant C as 浏览器
+  participant Gate as AuthGateFilter
   participant Ctl as MatchController
   participant Svc as MatchService
   participant Pool as MatchCandidatePoolPort
   participant Eng as MatchEngine
   participant DB as MySQL
 
-  C->>Ctl: POST /api/match {text, type?, categoryId?, topN?, minScore?, excludeRecordId?}
-  Ctl->>Svc: match(request)
+  C->>Gate: POST /api/match（带 JSESSIONID）
+  Gate->>Gate: 写路径默认拒绝：无会话即 401 · 10006
+  Gate->>Ctl: 已登录，放行
+  Ctl->>Svc: match(request, viewerId)
   Svc->>Svc: 校验 text（30001）· topN/minScore/type（10001）· categoryId 存在性（40001）
 
   alt 引擎未装配（30002）
     Svc-->>C: 503 · code 30002 · data.engine
   else 引擎已装配
     Svc->>Pool: load(type, categoryId, poolSize=500)
-    Pool->>DB: SELECT ... WHERE status='PENDING' AND deleted_at IS NULL LIMIT 500
+    Pool->>DB: SELECT ... WHERE deleted_at IS NULL AND MATCHABLE LIMIT 500
+    Note over Pool,DB: MATCHABLE = PENDING 或保留期内的 COMPLETED；CLOSED 恒不召回
     Pool-->>Svc: List<MatchCandidateSource>
     Svc->>Svc: 剔除 excludeRecordId
     Svc->>Eng: match(candidates, query)
     alt MatchEngineException
       Eng-->>Svc: UNAVAILABLE / TIMEOUT
-      Svc-->>C: 503 · 30002 / 504 · 30003
+      Svc-->>C: 503 · 30002 / 504 · 30003（不回退本地分，见 §6.10）
     else 正常返回
       Eng-->>Svc: List<MatchCandidate>(recordId, score, reason)
       Svc->>Svc: minScore 过滤 → 去重 → score DESC, recordId ASC → 截断 topN
-      Svc->>DB: selectSummariesByIds(ids)（再校验未删除且 PENDING）
-      Svc->>DB: INSERT t_match_result（失败仅 WARN，不影响响应）
-      Svc-->>C: 200 · code 0 · items（score / scorePercent / reason / 展示字段）
+      Svc->>DB: selectSummariesByIds(ids, cutoff)（回表再校验 MATCHABLE）
+      Svc->>Svc: 按 viewerId 遮蔽 title/location · reason 恒过打码器
+      Svc->>DB: INSERT t_match_result（input_text/reason 写库前脱敏；失败仅 WARN）
+      Svc-->>C: 200 · code 0 · items（含 recordStatus / detailAccess）
     end
   end

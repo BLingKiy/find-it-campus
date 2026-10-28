@@ -1,30 +1,84 @@
-%% find-it-campus · 三张表 ER 图（关系与关键列）
-%% 事实来源：db/schema.sql（列名与约束逐列核对；31 列的完整字段说明见文档 §4.3）
-%% 取舍：字段类型与全部列在正文表里已经列全，这张图只保留「关系怎么连、哪一列起约束作用」，
-%%       这样字号才够大；把 31 列全塞进图里会让它在 A4 页宽下小到看不清。
+%% find-it-campus v2 · 七张表 ER 图（关系与关键列）
+%% 事实来源：db/schema.sql（7 表 / 82 列 / 9 外键 / 23 CHECK / 4 唯一键，逐列核对；完整字段说明见文档 §4.3）
+%% 取舍：列类型与全部 82 列在正文表里已经列全，这张图只保留「关系怎么连、哪一列起约束作用」，
+%%       这样字号才够大；把 82 列全塞进图里会让它在 A4 页宽下小到看不清。
 erDiagram
+  t_user ||--o{ t_record : "publisher_id（RESTRICT）"
+  t_user ||--o{ t_notification : "user_id（RESTRICT）"
+  t_user ||--o{ t_access_log : "viewer_id（RESTRICT）"
   t_category ||--o{ t_record : "category_id（RESTRICT）"
   t_category ||--o{ t_match_result : "input_category_id（SET NULL）"
+  t_record ||--o{ t_pair_score : "lost_id（RESTRICT）"
+  t_record ||--o{ t_pair_score : "found_id（RESTRICT）"
+  t_pair_score ||--o{ t_notification : "pair_id（SET NULL）"
+  t_pair_score ||--o{ t_access_log : "pair_id（RESTRICT）"
+
+  t_user {
+    BIGINT id PK "自增主键"
+    VARCHAR student_no UK "登录名，唯一；无 phone 列"
+    VARCHAR password_hash "bcrypt，禁止明文"
+    TINYINT is_active "0=停用，不做物理删除"
+  }
 
   t_category {
-    BIGINT id PK "自增主键"
+    BIGINT id PK "主键"
     VARCHAR code UK "稳定编码，如 WALLET"
     VARCHAR name "中文名"
-    TINYINT is_active "1 启用 / 0 停用"
+    VARCHAR keywords "本地匹配加权词表"
+    TINYINT is_active "0=停用，历史仍保留名称"
   }
 
   t_record {
     BIGINT id PK "对外资源 id"
     VARCHAR type "LOST / FOUND"
-    VARCHAR status "PENDING / CLAIMED / CLOSED"
+    VARCHAR status "PENDING / COMPLETED / CLOSED"
+    DATETIME completed_at "保留期起点，COMPLETED 才非空"
     BIGINT category_id FK "可空，指向 t_category"
+    BIGINT publisher_id FK "发布者，指向 t_user"
+    VARCHAR contact "手机号，输出层遮蔽"
+    VARCHAR pair_state "PENDING/SCORING/READY/DEGRADED，系统写"
     DATETIME deleted_at "非空即逻辑删除"
   }
 
   t_match_result {
     BIGINT id PK "响应体 matchId"
+    TEXT input_text "写入前已脱敏"
     VARCHAR input_type "可空 = 不限类型"
     BIGINT input_category_id FK "可空，指向 t_category"
-    VARCHAR impl "产出该结果的引擎"
+    VARCHAR impl "LOCAL_KEYWORD / EXTERNAL_EMBEDDING"
     JSON candidates "无外键，逻辑引用 t_record.id"
+  }
+
+  t_pair_score {
+    BIGINT id PK "pairId"
+    BIGINT lost_id FK "LOST 记录，唯一键左列"
+    BIGINT found_id FK "FOUND 记录，唯一键右列"
+    DECIMAL score "0.0000-1.0000"
+    VARCHAR engine "DEEPSEEK / LOCAL_KEYWORD"
+    VARCHAR degraded_reason "七种降级原因，可空"
+    DATETIME lost_unlocked_at "LOST 端授权公开"
+    DATETIME found_unlocked_at "FOUND 端授权公开"
+    DATETIME lost_confirmed_at "两端均非空 MATCHED"
+    DATETIME found_confirmed_at "两端均非空 MATCHED"
+    VARCHAR status "NEW / CONTACTED / MATCHED / IGNORED"
+  }
+
+  t_notification {
+    BIGINT id PK "主键"
+    BIGINT user_id FK "接收人，唯一键左列"
+    BIGINT pair_id FK "关联 pair，可空（SYSTEM）"
+    VARCHAR type "PAIR_MATCH / PAIR_UNLOCK / SYSTEM"
+    VARCHAR body "写入前已打码，不含号码"
+    DATETIME read_at "NULL = 未读"
+  }
+
+  t_access_log {
+    BIGINT id PK "主键，append-only"
+    BIGINT pair_id FK "被查看的 pair"
+    BIGINT viewer_id FK "查看人"
+    VARCHAR viewer_side "LOST / FOUND"
+    VARCHAR target_side "LOST / FOUND"
+    DECIMAL score "查看时分数快照"
+    VARCHAR result "GRANTED 与五种 DENIED"
+    VARCHAR request_id "与响应体 requestId 同值"
   }

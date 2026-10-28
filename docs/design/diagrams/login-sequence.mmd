@@ -1,0 +1,51 @@
+%% find-it-campus v2 · 登录与会话时序（含 401 出口与失效路径）
+%% 事实来源：AuthGateFilter / AuthPaths / AuthController / AuthService / LoginAttemptTracker /
+%%          SessionAuth / UserMapper.xml / application.yml（server.servlet.session.*）
+sequenceDiagram
+  autonumber
+  participant B as 浏览器
+  participant F as AuthGateFilter
+  participant Ctl as AuthController
+  participant Svc as AuthService
+  participant Trk as LoginAttemptTracker
+  participant M as UserMapper
+  participant DB as MySQL
+  participant S as HttpSession
+
+  Note over B,S: 会话载体 JSESSIONID · HttpOnly · SameSite=Lax · 30 分钟无活动失效
+
+  B->>F: POST /api/auth/login {studentNo, password}
+  F->>F: 命中 PUBLIC_WRITE_PATHS → 放行（不要求会话）
+  F->>Ctl: 继续路由
+  Ctl->>Svc: login(request)
+  Svc->>M: selectByStudentNo(studentNo)
+  M->>DB: SELECT id, student_no, password_hash, display_name, is_active（无 is_active 条件）
+  DB-->>M: 命中行 / 空
+  M-->>Svc: User 或 null
+  alt 用户不存在 / is_active=0 / 密码不匹配
+    Svc->>Svc: matchesSafely(raw, 停用或缺行时用 dummyHash 走一次 bcrypt)
+    Svc->>Trk: recordFailure(studentNo, ip) → 连续失败计数（15 分钟窗口）
+    Svc-->>B: 401 · code 10006 · message「学号或密码不正确」<br/>原因只进 WARN 日志，响应不区分账号/密码
+    Note over Svc,B: 三种失败（无此账号 / 已停用 / 密码错）状态码、body、耗时一致 → 防账号枚举
+  else 凭证正确且 is_active=1
+    Svc->>Trk: clear(studentNo, ip)
+    Svc->>S: signIn → getSession(true) 后 changeSessionId（防会话固定）
+    Svc->>S: 写入 SessionUser(userId, studentNo, displayName)
+    Svc-->>B: 200 · code 0 · data（id / studentNo / displayName）<br/>Set-Cookie JSESSIONID=… · Path=/ · HttpOnly · SameSite=Lax
+  end
+
+  Note over B,S: —— 之后每一次写请求与私有读都过同一道门禁 ——
+
+  B->>F: GET /api/my/records（fetch credentials:'include' 带 Cookie）
+  alt 有有效会话
+    F->>F: 命中 LOGIN_REQUIRED_READS → SessionAuth.currentUser ≠ null → 放行
+    F-->>B: 200（controller 内 requireUser 作第二层，防绕过 Filter 的直调）
+  else 无 Cookie / 已过期 / 服务重启（内存 session 清空）
+    F->>F: 在 DispatcherServlet 之前短路，不查 handler
+    F-->>B: 401 · code 10006 · message「请先登录」+ X-Request-Id
+    Note over F,B: 用 Filter 而非拦截器：未实现的私有路径匿名访问也是 401 而不是 404，<br/>不泄露「这个路由存在」
+  end
+
+  B->>Ctl: POST /api/auth/logout
+  Ctl->>S: invalidate() + 响应头下发删除 Cookie
+  Ctl-->>B: 200 · code 0（未登录调用同样 200，幂等）

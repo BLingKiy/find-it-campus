@@ -1,13 +1,15 @@
 /**
- * 把 docs/delivery/6.2-defense-ppt.md 渲染成可提交的 PPTX。
+ * 把答辩 PPT 的 Markdown 文案稿渲染成可提交的 PPTX。
  *
  * 输入（相对本脚本）：
- *   ../6.2-defense-ppt.md            文案事实源（唯一）
+ *   ../6.2-defense-ppt.md            v1 文案稿（默认，不传参时行为与以前完全一致）
+ *   ../v2-defense-ppt.md             v2 文案稿（`--src ../v2-defense-ppt.md --out ../v2-答辩PPT.pptx`）
  *   ../assets/shots/*.png            演示截图（由 demo-path-check.mjs 生成）
  *   ../assets/match-sample-s1*.json  真实请求/响应（PPT 的输入输出示例）
  *   ../../design/diagrams/*.png      架构 / ER / 时序图（6.1 已有）
+ *   ../testing/v2/**                 v2 实测截图与时序图（v2 稿用 `../` 相对路径引用）
  * 输出：
- *   ../6.2-答辩PPT.pptx
+ *   ../6.2-答辩PPT.pptx（默认）或 `--out` 指定的文件
  *
  * 为什么用 Markdown 当源而不是直接改 pptx：口径要能被评审、被 diff。
  * 直接改二进制文件的话，下一次构建就把改动冲掉，也没人能 review 改了什么。
@@ -17,7 +19,10 @@
  * 解析器 —— 结构固定，自己解析比调解析器行为更快，也不会因为某个插件升级把排版弄坏。
  *
  * 运行：
- *   cd docs/delivery/tools && npm install && node build-ppt.mjs
+ *   cd docs/delivery/tools && npm install
+ *   node build-ppt.mjs                                   # v1
+ *   node build-ppt.mjs --src ../v2-defense-ppt.md --out ../v2-答辩PPT.pptx \
+ *        --footer "find-it-campus · 校园失物招领　|　v2 阶段 4 答辩稿 2026-10-28"
  */
 import fs from 'node:fs';
 import path from 'node:path';
@@ -26,8 +31,21 @@ import pptxgen from 'pptxgenjs';
 const HERE = path.dirname(new URL(import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, '$1'));
 const DELIVERY = path.resolve(HERE, '..');
 const DOCS = path.resolve(DELIVERY, '..');
-const SRC = path.join(DELIVERY, '6.2-defense-ppt.md');
-const OUT = path.join(DELIVERY, '6.2-答辩PPT.pptx');
+
+/**
+ * `--key value` 形式；不传参时三个默认值就是 v1 的那套，老命令不必改。
+ * 值一律按**相对本脚本目录**解析（`--src ../v2-defense-ppt.md`），所以从哪儿跑都一样。
+ */
+const argOf = (name, fallback) => {
+  const i = process.argv.indexOf(`--${name}`);
+  return i > 0 && process.argv[i + 1] ? path.resolve(HERE, process.argv[i + 1]) : fallback;
+};
+
+const SRC = argOf('src', path.join(DELIVERY, '6.2-defense-ppt.md'));
+const OUT = argOf('out', path.join(DELIVERY, '6.2-答辩PPT.pptx'));
+const FOOTER = process.argv.includes('--footer')
+  ? process.argv[process.argv.indexOf('--footer') + 1]
+  : 'find-it-campus · 校园失物招领　|　程序设计答辩 2026-10-22';
 
 /** 稿子里的相对路径可能落在 docs/delivery（截图、JSON）或 docs（6.1 的图）下：两处都试。 */
 const resolveAsset = (rel) => {
@@ -200,7 +218,7 @@ function addTitle(slide, text) {
 }
 
 function addFooter(slide, page, dark = false) {
-  slide.addText('find-it-campus · 校园失物招领　|　程序设计答辩 2026-10-22', {
+  slide.addText(FOOTER, {
     x: M, y: H - 0.46, w: CW - 0.8, h: 0.28, fontSize: 8.5, color: dark ? '6E7E9B' : '9AA6BA', fontFace: FONT,
   });
   slide.addText(String(page), {
@@ -386,8 +404,8 @@ pptx.defineLayout({ name: 'CN_16_9', width: W, height: H });
 pptx.layout = 'CN_16_9';
 pptx.author = '文通通';
 pptx.company = 'find-it-campus';
-pptx.title = '校园失物招领平台 · 程序设计答辩';
-pptx.subject = '阶段 6.2 答辩 PPT（建议稿，最终口径由人类定）';
+pptx.title = `${deck[0]?.title || '校园失物招领平台'} · 程序设计答辩`;
+pptx.subject = path.basename(OUT, '.pptx');
 
 deck.forEach((s, idx) => {
   const page = idx + 1;
