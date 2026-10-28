@@ -1,0 +1,51 @@
+# G1 干净目录实测 · 第二轮（设置 DEEPSEEK_API_KEY 后重启）
+# 说明：只保留判定段输出。脚本收尾的 stop.ps1 输出因本机沙箱拒绝 CIM 查询而无法按命令行核对，
+# 测试脚本改用“仅包内 PID / 18080 java 路径”精确收尾，详见 G1-clean-install.md「环境限制」。
+
+G1 ROUND2 start 2026-10-28T18:54:01.0645419+08:00
+PACKAGE=C:\Project\hifox-workspaces\panshishi\g1-clean\find-it-campus-windows-x64
+== 0. start MySQL 3306 ==
+MYSQL_VERSION=8.0.29 pid=10168
+ROUND1_STATE_BEFORE_RESTART=CLOSED:2,COMPLETED:3,PENDING:22
+== 1. restart with DEEPSEEK_API_KEY ==
+KEY_STATE=present len=35 (value never printed)
+  START| [2026-10-28 18:54:04] [INFO] 
+  START| [2026-10-28 18:54:04] [STEP] ==== find-it-campus Windows 启动 ====
+  START| [2026-10-28 18:54:04] [INFO] 部署包目录：C:\Project\hifox-workspaces\panshishi\g1-clean\find-it-campus-windows-x64
+  START| [2026-10-28 18:54:04] [OK] JDK 17：C:\Project\tools\jdk17\jdk-17.0.20.1+1\bin\java.exe
+  START| [2026-10-28 18:54:04] [INFO] 后端 jar：C:\Project\hifox-workspaces\panshishi\g1-clean\find-it-campus-windows-x64\app\find-it-campus-0.0.1-SNAPSHOT.jar
+  START| [2026-10-28 18:54:04] [INFO] 前端目录：C:\Project\hifox-workspaces\panshishi\g1-clean\find-it-campus-windows-x64\web\dist
+  START| [2026-10-28 18:54:04] [INFO] Nginx：C:\Project\hifox-workspaces\panshishi\g1-clean\find-it-campus-windows-x64\nginx\nginx.exe
+  START| [2026-10-28 18:54:04] [INFO] 数据库：127.0.0.1:3306/findit_g1_62，引擎：local
+  START| [2026-10-28 18:54:05] [INFO] 
+  START| [2026-10-28 18:54:05] [STEP] ==== 启动后端（127.0.0.1:18080） ====
+  START| [2026-10-28 18:54:25] [WARN] 进程树查询不可用，按 18080 端口归属回退识别后端 PID 14088
+  START| [2026-10-28 18:54:25] [INFO] 已拉起后端：PID 14088，日志：C:\Project\hifox-workspaces\panshishi\g1-clean\find-it-campus-windows-x64\logs\backend.log
+  START| [2026-10-28 18:54:26] [OK] 后端健康：code=0, status=UP, db=UP, engine=local
+  START| [2026-10-28 18:54:26] [INFO] 
+  START| [2026-10-28 18:54:26] [STEP] ==== 启动 Nginx（8088） ====
+  START| [2026-10-28 18:54:27] [OK] Nginx 已就绪：http://127.0.0.1:8088/ → code=0, status=UP, db=UP
+  START| [2026-10-28 18:54:27] [INFO] 
+  START| [2026-10-28 18:54:27] [STEP] ==== 启动完成 ====
+  START| [2026-10-28 18:54:27] [OK] 后端：PID 14088，http://127.0.0.1:18080/api/health
+  START| [2026-10-28 18:54:27] [OK] Nginx：PID 3808，http://127.0.0.1:8088/
+  START| [2026-10-28 18:54:27] [OK] 健康：code=0, status=UP, db=UP, engine=local
+  START| [2026-10-28 18:54:27] [INFO] 访问：http://127.0.0.1:8088/
+  START| [2026-10-28 18:54:27] [INFO] 启动日志：C:\Project\hifox-workspaces\panshishi\g1-clean\find-it-campus-windows-x64\logs\start-20261028-185404.log
+START_EXIT=0
+HEALTH_8088=HTTP 200 code=0 status=UP db=UP
+ROOT_8088=HTTP 200
+== 2. login and publish new pair through 8088 ==
+LOGIN demo02=HTTP 200 cookie=set
+LOGIN demo03=HTTP 200 cookie=set
+PUBLISH LOST id=30 title=G1实测第二轮 丢失银色保温杯
+PUBLISH FOUND id=31 title=G1实测第二轮 捡到银色保温杯
+ROUND2_PAIR id=64 score=1.0000 engine=DEEPSEEK degraded_reason=NULL latency_ms=889 prompt_tokens=239 completion_tokens=24 prompt_version=pair-score-v1 status=NEW
+ROUND2_DETAIL owner=HTTP 200 recordStatus=PENDING pairState=READY pairs=1
+ROUND2_CARD pairId=64 score=1.0000 tier=DIRECT engine=DEEPSEEK degraded=False
+ROUND2_LLM_LOG=2026-10-28 18:54:39.385 INFO  [pair-score-2] c.f.c.p.e.d.DeepSeekPairScorer - [cfb98eee44c3476c] pair llm ok lostId=30 foundId=31 engine=DEEPSEEK score=1.0 latencyMs=889 promptTokens=239 completionTokens=24 model=deepseek-chat
+ROUND2_MODEL=deepseek-chat
+ROUND2_LOG_FILE=logs/backend.log
+ROUND2_DB_ENGINE_COUNTS=DEEPSEEK:32,LOCAL_KEYWORD:32
+ROUND2_LLM_ROWS=32
+ROUND2_RESULT=PASS
