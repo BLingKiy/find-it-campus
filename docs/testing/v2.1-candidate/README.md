@@ -100,4 +100,11 @@ powershell -NoProfile -ExecutionPolicy Bypass -File ..\m6-tmp\part2.ps1
 
 ## 8. 远端状态
 
-以 `git ls-remote` 实读为准，见 `raw/git-ls-remote.txt`：`refs/heads/main` 保持 `0ff400a...`，本轮未推 `main`。候选包与证据只出现在 `test/v2-M6-candidate-package`；未创建 tag / release。
+`git ls-remote` 实读（快照见 `raw/git-ls-remote.txt`）：
+
+- `refs/heads/main = 0ff400a5e519bad9384481e59427633d860879eb`（未动）
+- `refs/heads/feat/v2-integration = 30002ded5893661f680eaea4e0b858e40ca23255`
+- `refs/heads/test/v2-M6-candidate-package` = 本轮证据分支（只推该分支）
+- tag 只有既有的 `v1.0.0-windows`、`v2.0.0-windows`；**没有新增 v2.0.1 或任何 tag**，未创建 GitHub Release，未覆盖 v2.0.0 资产。
+
+> `raw/git-ls-remote.txt` 是在最后一次纯文档提交之前抓取的快照；`main` 与 tag 列表是判据，证据分支的最终 HEAD 以交付评论中的 `git rev-parse HEAD` 为准。

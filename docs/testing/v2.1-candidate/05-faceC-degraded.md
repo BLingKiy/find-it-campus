@@ -69,4 +69,4 @@ pair scan done scope=DEGRADED trigger=degraded-scheduled scanned=2 rescored=1
 
 **结论：配置开关可回退；关闭时定时重扫不执行、引擎不升级；重新打开后 10 秒级调度可完成升级，且不破坏确认/解锁状态。**
 
-> 说明：默认 10 分钟调度在真包启动时已按 `0 */10 * * * *` 注册；本轮为了在 25 秒内可观察，用 `SPRING_APPLICATION_JSON` 把 cron 临时改为 10 秒、并切换 enabled，未写入任何配置文件或包内默认值。
+> 说明：`application.yml` 的默认调度是 `0 */10 * * * *`；本轮为了在 25 秒内可观察，用 `SPRING_APPLICATION_JSON` 把 cron 临时改为 10 秒、并切换 enabled，未写入任何配置文件或包内默认值。
