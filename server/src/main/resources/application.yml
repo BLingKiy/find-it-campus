@@ -165,6 +165,19 @@ findit:
     max-tokens: 256
     circuit-failure-threshold: 5
     circuit-open-duration: 5m
+  # 发布闸门（ZHYYKFX-85，ReviewProperties）。
+  # **默认 off**：v2.0 行为是回归基线，打开闸门必须显式改配置。ai 模式下发布异步审核，
+  # 未通过绝不进公共列表/候选池/配对；AI 连续失败停在 PENDING 并转人工。
+  review:
+    mode: '${FINDIT_REVIEW_MODE:off}'
+    max-attempts: 3
+    retry-backoff-ms: 300
+    max-tokens: 900
+    timeout-ms: 45000
+    prompt-version: pair-postprocess-v1
+    summary-max-code-points: 40
+    reconcile-interval-ms: 60000
+    reconcile-batch-size: 20
 
 logging:
   level:

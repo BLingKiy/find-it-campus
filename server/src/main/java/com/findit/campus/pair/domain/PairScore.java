@@ -33,6 +33,8 @@ public class PairScore {
     private Integer latencyMs;
     private Integer promptTokens;
     private Integer completionTokens;
+    /** 模型给出的 ≤200 字打分依据；v2.0 解析后丢弃，v2.1 落库并出现在卡片上。 */
+    private String reason;
     private String lostHash;
     private String foundHash;
     private LocalDateTime lostUnlockedAt;
@@ -123,6 +125,14 @@ public class PairScore {
 
     public void setCompletionTokens(Integer completionTokens) {
         this.completionTokens = completionTokens;
+    }
+
+    public String getReason() {
+        return reason;
+    }
+
+    public void setReason(String reason) {
+        this.reason = reason;
     }
 
     public String getLostHash() {

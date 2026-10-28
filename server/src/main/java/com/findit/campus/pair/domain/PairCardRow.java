@@ -22,6 +22,8 @@ public class PairCardRow {
     private BigDecimal score;
     private String status;
     private String engine;
+    /** 模型打分依据（≤200 字）；展示前由 {@code PairCard} 过打码。 */
+    private String reason;
     private LocalDateTime lostConfirmedAt;
     private LocalDateTime foundConfirmedAt;
     private LocalDateTime lostUnlockedAt;
@@ -77,6 +79,14 @@ public class PairCardRow {
 
     public void setEngine(String engine) {
         this.engine = engine;
+    }
+
+    public String getReason() {
+        return reason;
+    }
+
+    public void setReason(String reason) {
+        this.reason = reason;
     }
 
     public LocalDateTime getLostConfirmedAt() {

@@ -85,6 +85,7 @@ class PairAccessPolicyTest {
         Record record = new Record();
         record.setStatus(status);
         record.setCompletedAt(completedAt);
+        record.setReviewState(com.findit.campus.record.domain.RecordReviewState.APPROVED);
         return record;
     }
 }

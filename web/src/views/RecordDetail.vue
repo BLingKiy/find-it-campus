@@ -195,13 +195,43 @@ function reload(): void {
       </p>
 
       <p v-if="justCreated" class="alert alert--success record-detail__created" role="status">
-        <span class="alert__title">发布成功</span>
-        <span class="alert__text">这条启事已经出现在列表里了。</span>
+        <span class="alert__title">
+          {{ record.reviewState === 'PENDING' ? '已提交，待审核' : '发布成功' }}
+        </span>
+        <span class="alert__text">
+          {{
+            record.reviewState === 'PENDING'
+              ? '审核通过后才会出现在公共列表与匹配结果中；可在「我的启事」查看审核进度。'
+              : '这条启事已经出现在列表里了。'
+          }}
+        </span>
       </p>
 
       <p v-else-if="justUpdated" class="alert alert--success record-detail__created" role="status">
-        <span class="alert__title">修改已保存</span>
-        <span class="alert__text">详情已刷新为最新内容。</span>
+        <span class="alert__title">
+          {{ record.reviewState === 'PENDING' ? '修改已保存，重新审核中' : '修改已保存' }}
+        </span>
+        <span class="alert__text">
+          {{
+            record.reviewState === 'PENDING'
+              ? '内容变更后需重新审核；通过前不会对外可见。'
+              : '详情已刷新为最新内容。'
+          }}
+        </span>
+      </p>
+
+      <p
+        v-if="record.isMine && record.reviewState && record.reviewState !== 'APPROVED'"
+        class="alert alert--warning"
+        role="status"
+        data-testid="detail-review-state"
+      >
+        <span class="alert__title">
+          {{ record.reviewState === 'REJECTED' ? '未通过审核' : (record.reviewManualRequired ? '待人工审核' : '审核中') }}
+        </span>
+        <span class="alert__text">
+          {{ record.reviewReason || '审核通过前，这条启事不会出现在公共列表、匹配或配对中。' }}
+        </span>
       </p>
 
       <article class="panel record-detail__card">
@@ -273,6 +303,18 @@ function reload(): void {
             登录后可参与匹配、管理自己的启事；联系方式在配对确认后可见。
           </p>
         </div>
+
+        <!-- 原文仅本人可见（raw_*）；展示文本才是任何对外出口使用的那一份。 -->
+        <details
+          v-if="record.isMine && record.rawTitle && (record.rawTitle !== record.title || record.rawDescription !== record.description || record.rawLocation !== record.location)"
+          class="record-detail__raw"
+          data-testid="detail-raw"
+        >
+          <summary>查看原始内容（仅本人可见，读取会记录审计）</summary>
+          <p><strong>标题：</strong>{{ record.rawTitle }}</p>
+          <p><strong>地点：</strong>{{ record.rawLocation }}</p>
+          <p><strong>描述：</strong>{{ record.rawDescription }}</p>
+        </details>
 
         <!-- 状态操作只属于本人：非本人 allowedStatuses 恒为空，不能落到「已归档」的假说明上 -->
         <footer v-if="record.isMine" class="record-detail__actions">

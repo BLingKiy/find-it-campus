@@ -1,0 +1,6 @@
+find-it-campus server · mvn test (final)
+command: mvn -s m2-settings.xml -o -f server/pom.xml test
+date: 2026-10-29 Asia/Shanghai
+[INFO] Tests run: 266, Failures: 0, Errors: 0, Skipped: 1
+[INFO] BUILD SUCCESS
+note: 1 skipped = ReviewAbHarnessTest (no DEEPSEEK_API_KEY in this run); live A/B evidence is under ab/.

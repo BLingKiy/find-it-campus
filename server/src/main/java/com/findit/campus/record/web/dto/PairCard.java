@@ -43,6 +43,8 @@ public class PairCard {
 
     private String engine;
     private Boolean degraded;
+    /** 模型给出的打分依据（已打码）；v2.1 起不再丢弃。 */
+    private String scoreReason;
     private Counterpart counterpart;
     private String mySide;
     private Boolean myUnlocked;
@@ -66,6 +68,7 @@ public class PairCard {
         card.foundConfirmedAt = facts.foundConfirmedAt();
         card.engine = facts.engine();
         card.degraded = facts.degraded();
+        card.scoreReason = MaskingPolicy.maskDescription(facts.scoreReason());
         card.mySide = facts.mySide();
         card.myUnlocked = facts.myUnlocked();
         card.otherUnlocked = facts.otherUnlocked();
@@ -191,6 +194,10 @@ public class PairCard {
 
     public Boolean getDegraded() {
         return degraded;
+    }
+
+    public String getScoreReason() {
+        return scoreReason;
     }
 
     public Counterpart getCounterpart() {

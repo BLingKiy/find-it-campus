@@ -160,6 +160,7 @@ public class PairFactsAdapter implements PairFactsPort {
                 row.getCounterpartCreatedAt(),
                 row.getCounterpartStatus(),
                 PairAccessPolicy.contactAvailable(tier, otherUnlocked, contactPresent),
-                PairAccessPolicy.contactHint(tier, otherUnlocked, contactPresent));
+                PairAccessPolicy.contactHint(tier, otherUnlocked, contactPresent),
+                row.getReason());
     }
 }

@@ -29,6 +29,7 @@ import com.findit.campus.common.api.ErrorCode;
 import com.findit.campus.common.error.BizException;
 import com.findit.campus.pair.config.PairPolicyProperties;
 import com.findit.campus.record.domain.Record;
+import com.findit.campus.record.domain.RecordReviewState;
 import com.findit.campus.record.domain.RecordStatus;
 import com.findit.campus.record.domain.RecordType;
 import com.findit.campus.record.mapper.RecordMapper;
@@ -36,6 +37,8 @@ import com.findit.campus.record.web.dto.RecordCreateRequest;
 import com.findit.campus.record.web.dto.RecordDetailResponse;
 import com.findit.campus.record.web.dto.StatusUpdateRequest;
 import com.findit.campus.record.web.dto.StatusUpdateResponse;
+import com.findit.campus.review.config.ReviewProperties;
+import com.findit.campus.review.service.ReviewPersistence;
 import com.findit.campus.support.PairCardFixtures;
 
 /**
@@ -65,7 +68,8 @@ class RecordServiceAccessTest {
         pairFactsPort = mock(PairFactsPort.class);
         eventPublisher = mock(ApplicationEventPublisher.class);
         recordService = new RecordService(recordMapper, categoryService, pairFactsPort,
-                new PairPolicyProperties(), eventPublisher);
+                new PairPolicyProperties(), eventPublisher, new ReviewProperties(),
+                mock(ReviewPersistence.class));
     }
 
     @Test
@@ -376,6 +380,8 @@ class RecordServiceAccessTest {
         record.setContact("13812345678");
         record.setPublisherName("李同学");
         record.setPairState("READY");
+        // 发布闸门默认 off/APPROVED：v2.0 的可见性用例不受审核态影响
+        record.setReviewState(RecordReviewState.APPROVED);
         return record;
     }
 }

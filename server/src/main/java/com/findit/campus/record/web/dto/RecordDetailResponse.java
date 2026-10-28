@@ -61,6 +61,27 @@ public class RecordDetailResponse {
     private String pairState;
     private Integer lowConfidenceCount;
 
+    // ---- 发布闸门（ZHYYKFX-85）：审核态对外只出"结论 + 理由"，不出原文 ----
+    private String reviewState;
+    private Boolean reviewManualRequired;
+    private String reviewReason;
+
+    @JsonFormat(pattern = JacksonConfig.DATE_TIME_PATTERN)
+    private LocalDateTime reviewedAt;
+
+    private String summary;
+
+    /**
+     * 原文三通道：<b>仅本人详情</b>返回；匿名/非所有者整个键被省略（NON_NULL）。
+     * 每次本人详情读取都会写一条 {@code RAW_VIEW} 审计（见 RecordService）。
+     */
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    private String rawTitle;
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    private String rawDescription;
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    private String rawLocation;
+
     /**
      * 所有者视角的 pair 卡片（契约 §4.2 / §5.1），按匹配度降序。
      *
@@ -100,6 +121,8 @@ public class RecordDetailResponse {
         response.createdAt = record.getCreatedAt();
         response.updatedAt = record.getUpdatedAt();
         response.isMine = ownerView;
+        response.reviewState = record.getReviewState() == null ? null : record.getReviewState().name();
+        response.summary = record.getSummary();
         if (ownerView) {
             response.title = record.getTitle();
             response.description = record.getDescription();
@@ -108,6 +131,15 @@ public class RecordDetailResponse {
             response.contact = record.getContact();
             response.publisherName = record.getPublisherName();
             response.pairState = record.getPairState();
+            response.reviewManualRequired = Boolean.TRUE.equals(record.getReviewManualRequired());
+            response.reviewReason = record.getReviewReason();
+            response.reviewedAt = record.getReviewedAt();
+            // 只有真正按 AI 通道发布的行才有 raw_*；mode=off 不返回这三个键，保持 v2.0 形状
+            if (record.getRawTitle() != null) {
+                response.rawTitle = record.rawTitleOrDefault();
+                response.rawDescription = record.rawDescriptionOrDefault();
+                response.rawLocation = record.rawLocationOrDefault();
+            }
             response.hasMatchedPair = matchedPairCount > 0;
             response.matchedPairCount = matchedPairCount;
             response.lowConfidenceCount = lowConfidenceCount;
@@ -211,6 +243,38 @@ public class RecordDetailResponse {
 
     public Integer getLowConfidenceCount() {
         return lowConfidenceCount;
+    }
+
+    public String getReviewState() {
+        return reviewState;
+    }
+
+    public Boolean getReviewManualRequired() {
+        return reviewManualRequired;
+    }
+
+    public String getReviewReason() {
+        return reviewReason;
+    }
+
+    public LocalDateTime getReviewedAt() {
+        return reviewedAt;
+    }
+
+    public String getSummary() {
+        return summary;
+    }
+
+    public String getRawTitle() {
+        return rawTitle;
+    }
+
+    public String getRawDescription() {
+        return rawDescription;
+    }
+
+    public String getRawLocation() {
+        return rawLocation;
     }
 
     public List<PairCard> getPairs() {

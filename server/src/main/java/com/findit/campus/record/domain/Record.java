@@ -27,6 +27,26 @@ public class Record {
     private String publisherName;
     private Long publisherId;
     private String pairState;
+
+    // ---- 发布闸门（ZHYYKFX-85）：审核态与双通道文本 ----
+    private RecordReviewState reviewState;
+    private LocalDateTime reviewedAt;
+    private String reviewReason;
+    private String reviewEngine;
+    private String reviewModel;
+    private String reviewPromptVersion;
+    private Integer reviewLatencyMs;
+    private Integer reviewTokens;
+    private Integer reviewAttempts;
+    private Boolean reviewManualRequired;
+    private String rawTitle;
+    private String rawDescription;
+    private String rawLocation;
+    private String matchTitle;
+    private String matchDescription;
+    private String matchLocation;
+    private String summary;
+
     private LocalDateTime deletedAt;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
@@ -145,6 +165,177 @@ public class Record {
 
     public void setPairState(String pairState) {
         this.pairState = pairState;
+    }
+
+    public RecordReviewState getReviewState() {
+        return reviewState;
+    }
+
+    public void setReviewState(RecordReviewState reviewState) {
+        this.reviewState = reviewState;
+    }
+
+    public LocalDateTime getReviewedAt() {
+        return reviewedAt;
+    }
+
+    public void setReviewedAt(LocalDateTime reviewedAt) {
+        this.reviewedAt = reviewedAt;
+    }
+
+    public String getReviewReason() {
+        return reviewReason;
+    }
+
+    public void setReviewReason(String reviewReason) {
+        this.reviewReason = reviewReason;
+    }
+
+    public String getReviewEngine() {
+        return reviewEngine;
+    }
+
+    public void setReviewEngine(String reviewEngine) {
+        this.reviewEngine = reviewEngine;
+    }
+
+    public String getReviewModel() {
+        return reviewModel;
+    }
+
+    public void setReviewModel(String reviewModel) {
+        this.reviewModel = reviewModel;
+    }
+
+    public String getReviewPromptVersion() {
+        return reviewPromptVersion;
+    }
+
+    public void setReviewPromptVersion(String reviewPromptVersion) {
+        this.reviewPromptVersion = reviewPromptVersion;
+    }
+
+    public Integer getReviewLatencyMs() {
+        return reviewLatencyMs;
+    }
+
+    public void setReviewLatencyMs(Integer reviewLatencyMs) {
+        this.reviewLatencyMs = reviewLatencyMs;
+    }
+
+    public Integer getReviewTokens() {
+        return reviewTokens;
+    }
+
+    public void setReviewTokens(Integer reviewTokens) {
+        this.reviewTokens = reviewTokens;
+    }
+
+    public Integer getReviewAttempts() {
+        return reviewAttempts;
+    }
+
+    public void setReviewAttempts(Integer reviewAttempts) {
+        this.reviewAttempts = reviewAttempts;
+    }
+
+    public Boolean getReviewManualRequired() {
+        return reviewManualRequired;
+    }
+
+    public void setReviewManualRequired(Boolean reviewManualRequired) {
+        this.reviewManualRequired = reviewManualRequired;
+    }
+
+    public String getRawTitle() {
+        return rawTitle;
+    }
+
+    public void setRawTitle(String rawTitle) {
+        this.rawTitle = rawTitle;
+    }
+
+    public String getRawDescription() {
+        return rawDescription;
+    }
+
+    public void setRawDescription(String rawDescription) {
+        this.rawDescription = rawDescription;
+    }
+
+    public String getRawLocation() {
+        return rawLocation;
+    }
+
+    public void setRawLocation(String rawLocation) {
+        this.rawLocation = rawLocation;
+    }
+
+    public String getMatchTitle() {
+        return matchTitle;
+    }
+
+    public void setMatchTitle(String matchTitle) {
+        this.matchTitle = matchTitle;
+    }
+
+    public String getMatchDescription() {
+        return matchDescription;
+    }
+
+    public void setMatchDescription(String matchDescription) {
+        this.matchDescription = matchDescription;
+    }
+
+    public String getMatchLocation() {
+        return matchLocation;
+    }
+
+    public void setMatchLocation(String matchLocation) {
+        this.matchLocation = matchLocation;
+    }
+
+    public String getSummary() {
+        return summary;
+    }
+
+    public void setSummary(String summary) {
+        this.summary = summary;
+    }
+
+    /** 对外可见的唯一 Java 侧判据；SQL 侧同义谓词是 {@code t_record.is_visible}。 */
+    public boolean isApproved() {
+        return reviewState == RecordReviewState.APPROVED;
+    }
+
+    /**
+     * 比对通道取值：新行用 {@code match_*}，v2.0 历史行/seed/mode=off 回退到展示文本。
+     *
+     * <p>回退不是"偷懒"：历史行没有 match 列，若不回退就会让所有老记录从候选池里消失。
+     * 回退值在进 prompt 前仍会过 {@code IdentityScrubber}，所以手机号不会因回退而外泄。
+     */
+    public String matchTitleOrDefault() {
+        return matchTitle == null || matchTitle.isBlank() ? title : matchTitle;
+    }
+
+    public String matchDescriptionOrDefault() {
+        return matchDescription == null || matchDescription.isBlank() ? description : matchDescription;
+    }
+
+    public String matchLocationOrDefault() {
+        return matchLocation == null || matchLocation.isBlank() ? location : matchLocation;
+    }
+
+    public String rawTitleOrDefault() {
+        return rawTitle == null ? title : rawTitle;
+    }
+
+    public String rawDescriptionOrDefault() {
+        return rawDescription == null ? description : rawDescription;
+    }
+
+    public String rawLocationOrDefault() {
+        return rawLocation == null ? location : rawLocation;
     }
 
     public LocalDateTime getDeletedAt() {

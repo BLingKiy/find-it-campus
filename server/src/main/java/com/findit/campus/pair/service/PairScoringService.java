@@ -31,6 +31,7 @@ import com.findit.campus.pair.engine.deepseek.DeepSeekPairScorer;
 import com.findit.campus.pair.engine.local.LocalKeywordPairScorer;
 import com.findit.campus.pair.mapper.PairScoreMapper;
 import com.findit.campus.record.domain.Record;
+import com.findit.campus.record.domain.RecordReviewState;
 import com.findit.campus.record.domain.RecordStatus;
 import com.findit.campus.record.domain.RecordType;
 import com.findit.campus.record.mapper.RecordMapper;
@@ -139,6 +140,10 @@ public class PairScoringService {
         if (record == null) {
             return RecordScoreOutcome.skipped(recordId, "NOT_FOUND");
         }
+        // 发布闸门：未过审/已拒绝的记录不触发打分（即使事件被误发，也在这里兜住）
+        if (record.getReviewState() != RecordReviewState.APPROVED) {
+            return RecordScoreOutcome.skipped(recordId, "NOT_APPROVED");
+        }
         LocalDateTime now = LocalDateTime.now();
         // 召回口径的单点判据（契约 §4.8 / P2-4）：CLOSED 恒不可；COMPLETED 仅保留期内可。
         // 扫描 SQL 已经排除过期 COMPLETED，这里再兜一层是因为 publish/update/manual 也走本方法，
@@ -233,6 +238,9 @@ public class PairScoringService {
 
     /** 与召回同口径：未删除（SQL 已滤）、非 CLOSED、COMPLETED 需在保留期内。 */
     private boolean isMatchable(Record record) {
+        if (record.getReviewState() != RecordReviewState.APPROVED) {
+            return false;
+        }
         if (record.getStatus() == RecordStatus.CLOSED) {
             return false;
         }
@@ -321,6 +329,8 @@ public class PairScoringService {
             row.setLatencyMs(latencyMs);
             row.setPromptTokens(effective.promptTokens());
             row.setCompletionTokens(effective.completionTokens());
+            // v2.0 解析了 reason 却没落库（模型依据被丢弃）；v2.1 随分数一起写
+            row.setReason(effective.reason());
             row.setLostHash(lostHash);
             row.setFoundHash(foundHash);
 

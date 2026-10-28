@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!--
+  t_review_audit：append-only。这里刻意只有 INSERT 与 SELECT：
+  改审计 = 销毁证据；删审计 = 销毁证据。两者都不提供入口。
+-->
+<mapper namespace="com.findit.campus.review.mapper.ReviewAuditMapper">
+
+    <resultMap id="reviewAuditMap" type="com.findit.campus.review.domain.ReviewAudit">
+        <id property="id" column="id"/>
+        <result property="recordId" column="record_id"/>
+        <result property="action" column="action"/>
+        <result property="decision" column="decision"/>
+        <result property="reviewState" column="review_state"/>
+        <result property="reason" column="reason"/>
+        <result property="engine" column="engine"/>
+        <result property="model" column="model"/>
+        <result property="promptVersion" column="prompt_version"/>
+        <result property="latencyMs" column="latency_ms"/>
+        <result property="promptTokens" column="prompt_tokens"/>
+        <result property="completionTokens" column="completion_tokens"/>
+        <result property="actorType" column="actor_type"/>
+        <result property="actorId" column="actor_id"/>
+        <result property="requestId" column="request_id"/>
+        <result property="createdAt" column="created_at"/>
+    </resultMap>
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id" keyColumn="id">
+        INSERT INTO t_review_audit
+            (record_id, action, decision, review_state, reason, engine, model, prompt_version,
+             latency_ms, prompt_tokens, completion_tokens, actor_type, actor_id, request_id)
+        VALUES
+            (#{recordId}, #{action}, #{decision}, #{reviewState}, #{reason}, #{engine}, #{model},
+             #{promptVersion}, #{latencyMs}, #{promptTokens}, #{completionTokens}, #{actorType},
+             #{actorId}, #{requestId})
+    </insert>
+
+    <select id="selectByRecordId" resultMap="reviewAuditMap">
+        SELECT id, record_id, action, decision, review_state, reason, engine, model, prompt_version,
+               latency_ms, prompt_tokens, completion_tokens, actor_type, actor_id, request_id, created_at
+        FROM t_review_audit
+        WHERE record_id = #{recordId}
+        ORDER BY id DESC
+        LIMIT #{limit}
+    </select>
+
+</mapper>

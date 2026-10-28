@@ -51,6 +51,7 @@ SET NAMES utf8mb4;
 -- 外键检查关闭只为清表顺序；清完立即恢复，插入仍受全部约束校验。
 SET FOREIGN_KEY_CHECKS = 0;
 TRUNCATE TABLE `t_access_log`;
+TRUNCATE TABLE `t_review_audit`;
 TRUNCATE TABLE `t_notification`;
 TRUNCATE TABLE `t_pair_score`;
 TRUNCATE TABLE `t_match_result`;
@@ -327,3 +328,16 @@ INSERT INTO `t_notification` (`id`, `user_id`, `pair_id`, `type`, `title`, `body
       NULL, '2026-10-26 09:00:00');
 
 -- t_access_log / t_match_result 保持空表：由运行期真实请求产生，不预置假数据。
+
+-- ---------------------------------------------------------------------
+-- 4. v2.1 发布闸门兼容（ZHYYKFX-85）
+--    现有 24 条种子记录视为已通过审核，否则切换 findit.review.mode=ai 后演示全空。
+--    不复制 raw_*/match_*：读取侧对历史行用 COALESCE(match_*, display_*) 兜底；
+--    match 通道在打分前还会再过一遍身份剥离，种子里自带的手机号不会进 LLM。
+-- ---------------------------------------------------------------------
+UPDATE `t_record`
+SET `review_state` = 'APPROVED',
+    `review_engine` = 'OFF',
+    `review_prompt_version` = 'seed-v2.1',
+    `summary` = LEFT(`title`, 40)
+WHERE `match_title` IS NULL;

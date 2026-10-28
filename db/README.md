@@ -1,8 +1,8 @@
 # db/ · 数据库脚本（v2）
 
-七张表：`t_user`（登录身份，无手机号列）、`t_category`（分类字典）、`t_record`（启事主表）、
+八张表：`t_user`（登录身份，无手机号列）、`t_category`（分类字典）、`t_record`（启事主表，含审核态）、
 `t_match_result`（匹配快照）、`t_pair_score`（LOST↔FOUND 配对，一条一对）、
-`t_notification`（通知）、`t_access_log`（联系方式查看审计，append-only）。
+`t_notification`（通知）、`t_access_log`（联系方式查看审计，append-only）、`t_review_audit`（发布闸门审计，append-only，不含原文）。
 库名 `find_it_campus`，引擎 InnoDB / utf8mb4。字段与约束的设计理由见
 `docs/design/v2-architecture.md` §4（A1 冻结稿），完整 DDL 注释写在 `schema.sql` 里。
 
@@ -24,7 +24,7 @@ mysql --default-character-set=utf8mb4 -u root -p -e "SOURCE db/schema.sql"
 mysql --default-character-set=utf8mb4 -u root -p find_it_campus -e "SOURCE db/seed.sql"
 ```
 
-`seed.sql` 先 `TRUNCATE` 七张表再显式 id 插入，可重复执行；重复执行后行数、分数、
+`seed.sql` 先 `TRUNCATE` 八张表再显式 id 插入，可重复执行；重复执行后行数、分数、
 状态分布一致（`completed_at/confirmed_at/unlocked_at` 用 `NOW()-n DAY` 相对量，保证
 3 天/31 天窗口在任何执行日成立）。
 
@@ -49,7 +49,7 @@ mysql --default-character-set=utf8mb4 -u root -p find_it_campus -e "SOURCE db/se
 mysql --default-character-set=utf8mb4 -u root -p find_it_campus -e "SOURCE db/seed.sql"
 ```
 
-`seed.sql` 自身就会清空七张表，不需要再手工 TRUNCATE。
+`seed.sql` 自身就会清空八张表，不需要再手工 TRUNCATE。
 
 ## 本机实测（Windows / MySQL 8.0.29 / root 免密）
 
@@ -60,7 +60,7 @@ C:/Project/tools/mysql/mysql-8.0.29-winx64/bin/mysql.exe --default-character-set
 C:/Project/tools/mysql/mysql-8.0.29-winx64/bin/mysql.exe --default-character-set=utf8mb4 -u root find_it_campus < db/seed.sql
 ```
 
-已验证：空库执行 `schema.sql` 0 报错，`SHOW TABLES` 恰好 7 张；seed 连跑两次结果一致；
+已验证：空库执行 `schema.sql` 0 报错，`SHOW TABLES` 恰好 8 张；seed 连跑两次结果一致；
 `FULLTEXT ... WITH PARSER ngram` 建成功（依赖 MySQL ≥ 8.0.14 且内核含 ngram；
 若目标机没有 ngram，按 `schema.sql` 文末说明注释掉 `ft_record_search` 一行，业务行为不变）。
 完整执行记录见 `docs/testing/v2/B1-data-layer.md`。
@@ -73,3 +73,15 @@ C:/Project/tools/mysql/mysql-8.0.29-winx64/bin/mysql.exe --default-character-set
 > `PENDING/COMPLETED/CLOSED`。公共列表（默认 `status=PENDING`）不受影响；
 > `status=ALL|COMPLETED` 与 `PATCH status=COMPLETED` 需要 C1 同步枚举后再上线，
 > 不要只把 B1 的库结构单独发到运行环境。
+
+## 4. v2.0 → v2.1 增量（ZHYYKFX-85）
+
+已有数据用增量迁移，不要跑全量 schema：
+
+```bash
+mysql --default-character-set=utf8mb4 -u root -p < db/migration/v2.1-review-gate-up.sql
+# 回滚（有损，先停应用）：
+mysql --default-character-set=utf8mb4 -u root -p < db/migration/v2.1-review-gate-down.sql
+```
+
+迁移后自检：`SELECT COUNT(*), SUM(is_visible) FROM t_record WHERE deleted_at IS NULL;`（两者相等）。

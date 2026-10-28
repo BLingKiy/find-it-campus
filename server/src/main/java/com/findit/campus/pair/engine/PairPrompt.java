@@ -5,14 +5,16 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.findit.campus.common.masking.MaskingPolicy;
 import com.findit.campus.pair.domain.PairSide;
+import com.findit.campus.review.postprocess.IdentityScrubber;
 
 /**
  * Prompt 的唯一构造点（架构 §8.2，{@code prompt_version = pair-score-v1}）。
  *
- * <p><b>打码在这里做，而且只在这里做</b>：{@code title/description/location} 一律过
- * {@link MaskingPolicy} 后才拼进 prompt；{@code contact} 根本不在 {@link PairSide} 里
+ * <p><b>身份剥离在这里做，而且只在这里做</b>：{@code title/description/location} 是比对通道
+ * （{@code match_*}），再过一遍 {@link IdentityScrubber} 后才拼进 prompt —— 只删身份类，
+ * <b>不泛化地点、不删时间</b>，否则「第三教学楼 201」被抹成「教学楼」会直接拉低区分度。
+ * {@code contact} 根本不在 {@link PairSide} 里
  * （类型层面拿不到），因此"号码进 prompt"这件事无法通过改调用方发生。
  *
  * <p>为什么把 system/user 拆成两个常量 + 一个方法：单测可以直接断言
@@ -21,7 +23,12 @@ import com.findit.campus.pair.domain.PairSide;
 public final class PairPrompt {
 
     /** 落 {@code t_pair_score.prompt_version}；改 prompt 文本必须同时改这个值。 */
-    public static final String VERSION = "pair-score-v1";
+    /**
+     * v2：输入改为比对通道（只剥离身份类，不再泛化地点/时间）。改 prompt 语义必须改版本号，
+     * 否则库里新旧两套分数无法区分。{@code findit.review.mode=off} 时输入回退为展示文本
+     * （与 v2.0 一致），但版本号仍是 v2 —— 口径差异由 mode 决定，不再用版本号表达。
+     */
+    public static final String VERSION = "pair-score-v2";
 
     public static final String SYSTEM = """
             你是校园失物招领的配对评估器。只输出 JSON，不要输出 Markdown 或解释：
@@ -56,9 +63,9 @@ public final class PairPrompt {
     }
 
     static String describe(PairSide side) {
-        return "标题：" + orUnfilled(MaskingPolicy.maskDescription(side.title()))
-                + "；描述：" + orUnfilled(MaskingPolicy.maskDescription(side.description()))
-                + "；地点：" + orUnfilled(MaskingPolicy.maskLocation(side.location()))
+        return "标题：" + orUnfilled(IdentityScrubber.scrub(side.title()))
+                + "；描述：" + orUnfilled(IdentityScrubber.scrub(side.description()))
+                + "；地点：" + orUnfilled(IdentityScrubber.scrub(side.location()))
                 + "；分类：" + orUnfilled(side.categoryName())
                 + "；时间：" + (side.occurredAt() == null ? "未填" : side.occurredAt().format(TIME_FORMAT));
     }

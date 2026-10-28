@@ -17,6 +17,7 @@ import com.findit.campus.pair.domain.PairSide;
 import com.findit.campus.pair.engine.local.LocalKeywordPairScorer;
 import com.findit.campus.record.domain.Record;
 import com.findit.campus.record.domain.RecordCandidate;
+import com.findit.campus.record.domain.RecordReviewState;
 import com.findit.campus.record.domain.RecordStatus;
 import com.findit.campus.record.domain.RecordType;
 import com.findit.campus.record.mapper.RecordMapper;
@@ -133,6 +134,9 @@ public class PairRecallService {
      * MATCHABLE 复核（与 SQL 同口径）：未删除（SQL 已滤）+ 非 CLOSED + 保留期内的 COMPLETED。
      */
     private boolean matches(Record record, LocalDateTime cutoff) {
+        if (record.getReviewState() != RecordReviewState.APPROVED) {
+            return false;
+        }
         if (record.getStatus() == RecordStatus.CLOSED) {
             return false;
         }
@@ -142,9 +146,14 @@ public class PairRecallService {
         return true;
     }
 
+    /**
+     * 打分快照走<b>比对通道</b>（{@code match_*}），不是展示通道：
+     * 地点细节/时间/特征必须完整保留，否则区分度被削；历史行与 mode=off 回退到展示文本。
+     */
     static PairSide toSide(Record record) {
         return new PairSide(record.getId(), record.getType(), record.getStatus(), record.getCompletedAt(),
-                record.getTitle(), record.getDescription(), record.getLocation(),
+                record.matchTitleOrDefault(), record.matchDescriptionOrDefault(),
+                record.matchLocationOrDefault(),
                 record.getCategoryId(), record.getCategoryName(), record.getOccurredAt(),
                 record.getPublisherId());
     }

@@ -4,6 +4,8 @@
 export type RecordType = 'LOST' | 'FOUND'
 /** v2 三态（契约 §1）：CLAIMED 已作废，后端收到即 10001 */
 export type RecordStatus = 'PENDING' | 'COMPLETED' | 'CLOSED'
+/** v2.1 发布闸门：与三态正交，只决定是否允许对外可见 */
+export type ReviewState = 'PENDING' | 'APPROVED' | 'REJECTED'
 export type SortBy = 'createdAt' | 'occurredAt'
 export type SortOrder = 'asc' | 'desc'
 export type MatchEngineKind = 'LOCAL_KEYWORD' | 'EXTERNAL_EMBEDDING'
@@ -43,6 +45,8 @@ export interface PairCard {
   foundConfirmedAt: string | null
   engine: PairEngine
   degraded: boolean
+  /** 模型给出的打分依据（服务端已打码）；v2.1 起不再丢弃 */
+  scoreReason?: string | null
   counterpart: PairCounterpart
   mySide: PairSide
   myUnlocked: boolean
@@ -118,6 +122,8 @@ export interface RecordListItem {
   categoryName: string | null
   /** 非本人行已被服务端截断（末尾带 …） */
   location: string
+  /** v2.1 展示摘要（类别+关键特征+模糊地点）；历史行为 null */
+  summary?: string | null
   occurredAt: string
   createdAt: string
   /**
@@ -143,6 +149,15 @@ export interface RecordDetail extends RecordListItem {
   matchedPairCount: number
   pairState: string | null
   lowConfidenceCount: number
+  /** 发布闸门：审核态（非所有者只会看到 APPROVED，其余一律 404） */
+  reviewState?: ReviewState
+  reviewManualRequired?: boolean
+  reviewReason?: string | null
+  reviewedAt?: string | null
+  /** 原文三通道：仅本人详情返回；对外响应不出现 */
+  rawTitle?: string
+  rawDescription?: string
+  rawLocation?: string
   /** 仅 isMine=true 时返回（契约 §4.2）；非所有者字段省略，不是空数组 */
   pairs?: PairCard[]
 }
@@ -248,6 +263,12 @@ export interface MyRecordItem {
   contact: string | null
   publisherName: string | null
   pairState: PairState
+  /** 发布闸门：审核中 / 已通过 / 未通过（+ 理由） */
+  reviewState: ReviewState
+  reviewManualRequired: boolean
+  reviewReason: string | null
+  reviewedAt: string | null
+  summary: string | null
   /** 服务端推导的降级标记位（pairState=DEGRADED 的布尔投影） */
   pairDegraded: boolean
   /** 有效 pair 行数（含 <contact_unlock_threshold 的低分），对应「N 条可能相关」 */
