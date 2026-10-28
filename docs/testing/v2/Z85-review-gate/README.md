@@ -16,6 +16,7 @@
 | `ab/ab-result.json` | 每个引擎 × 通道的逐对分数 |
 | `ab/ab-samples.csv` | 逐对分数明细 |
 | `migration-check.txt` | v2.0 → v2.1（up）→ v2.0（down）迁移实测 |
+| `fulltest-summary.txt` | 最终 mvn test 结果（266 run / 0 failed / 1 skipped） |
 | `tools/verify-z85.ps1` | 可复跑的真包脚本（会重置 `findit_z85` 测试库） |
 | `tools/stub-llm.cjs` | 确定性 stub LLM（只用于闸门路径，不用于 A/B 数据） |
 | `../server/src/test/java/com/findit/campus/review/ab/ReviewAbHarnessTest.java` | 真实 LLM A/B 脚本（无 key 自动 skip，不伪造） |
