@@ -1,0 +1,13 @@
+v2.0 → v2.1 → v2.0 migration check (MySQL 8.0.29, database findit_mig)
+
+source: work-v2-integration/db/schema.sql (v2.0, 7 tables)
+up:     db/migration/v2.1-review-gate-up.sql
+down:   db/migration/v2.1-review-gate-down.sql
+
+before_review_state (t_record.review_state columns before up) = 0
+after_up_columns (review_state/is_visible/raw_title/match_title/summary) = 5
+audit_table (t_review_audit after up) = 1
+after_down_columns (review_state/is_visible after down) = 0
+audit_table_after (t_review_audit after down) = 0
+
+结论：up 迁移可执行且新增 5 个关键列 + 审计表；down 可完整撤回。

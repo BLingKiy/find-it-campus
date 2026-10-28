@@ -213,6 +213,7 @@ class PairContactServiceTest {
         lost.setType(RecordType.LOST);
         lost.setPublisherId(1L);
         lost.setStatus(lostStatus);
+        lost.setReviewState(com.findit.campus.record.domain.RecordReviewState.APPROVED);
         lost.setTitle("丢失蓝色水杯");
 
         Record found = new Record();
@@ -220,6 +221,7 @@ class PairContactServiceTest {
         found.setType(RecordType.FOUND);
         found.setPublisherId(2L);
         found.setStatus(foundStatus);
+        found.setReviewState(com.findit.campus.record.domain.RecordReviewState.APPROVED);
         found.setTitle("捡到蓝色水杯");
         found.setContact("13800000002");
 

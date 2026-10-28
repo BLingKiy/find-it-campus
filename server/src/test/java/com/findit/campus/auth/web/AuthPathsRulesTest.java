@@ -33,6 +33,9 @@ class AuthPathsRulesTest {
         assertThat(requiresLogin("POST", "/api/auth/login")).isFalse();
         assertThat(requiresLogin("POST", "/api/auth/logout")).isFalse();
         assertThat(requiresLogin("POST", "/api/ops/pair-scan")).isFalse();
+        // 人工审核入口与扫描同口径：会话门禁不介入，X-Ops-Token 是唯一认证
+        assertThat(requiresLogin("POST", "/api/ops/reviews/9/approve")).isFalse();
+        assertThat(requiresLogin("POST", "/api/ops/reviews/9/reject")).isFalse();
     }
 
     @Test

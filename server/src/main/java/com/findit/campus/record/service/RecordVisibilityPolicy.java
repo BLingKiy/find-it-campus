@@ -3,6 +3,7 @@ package com.findit.campus.record.service;
 import java.time.LocalDateTime;
 
 import com.findit.campus.record.domain.Record;
+import com.findit.campus.record.domain.RecordReviewState;
 import com.findit.campus.record.domain.RecordStatus;
 
 /**
@@ -86,6 +87,11 @@ public final class RecordVisibilityPolicy {
             return DetailAccess.NOT_FOUND;
         }
         boolean owner = isOwner(record, viewerId);
+        // 发布闸门：未通过审核的内容，**非所有者一律 404**（与不存在同码，不泄露"审核中"）。
+        // 所有者仍可打开发布/编辑页看到自己的记录与审核态 —— 那不是对外可见，是本人回显。
+        if (!owner && record.getReviewState() != RecordReviewState.APPROVED) {
+            return DetailAccess.NOT_FOUND;
+        }
         if (status == RecordStatus.PENDING) {
             return owner ? DetailAccess.OWNER_PLAINTEXT : DetailAccess.MASKED;
         }

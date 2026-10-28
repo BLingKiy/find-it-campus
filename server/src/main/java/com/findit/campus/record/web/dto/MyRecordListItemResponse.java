@@ -41,6 +41,17 @@ public class MyRecordListItemResponse {
     private String contact;
     private String publisherName;
     private String pairState;
+
+    // ---- 发布闸门（ZHYYKFX-85）：我的启事必须显示审核态与理由，不能假装已上架 ----
+    private String reviewState;
+    private Boolean reviewManualRequired;
+    private String reviewReason;
+
+    @JsonFormat(pattern = JacksonConfig.DATE_TIME_PATTERN)
+    private LocalDateTime reviewedAt;
+
+    private String summary;
+
     /**
      * 降级标志位（D1）：{@code pairState=DEGRADED} 的布尔投影。
      *
@@ -82,6 +93,11 @@ public class MyRecordListItemResponse {
         response.contact = row.getContact();
         response.publisherName = row.getPublisherName();
         response.pairState = row.getPairState();
+        response.reviewState = row.getReviewState() == null ? null : row.getReviewState().name();
+        response.reviewManualRequired = Boolean.TRUE.equals(row.getReviewManualRequired());
+        response.reviewReason = row.getReviewReason();
+        response.reviewedAt = row.getReviewedAt();
+        response.summary = row.getSummary();
         response.pairDegraded = "DEGRADED".equals(row.getPairState());
         response.pairCount = effective.total();
         response.relatedCount = effective.related();
@@ -141,6 +157,26 @@ public class MyRecordListItemResponse {
 
     public String getPairState() {
         return pairState;
+    }
+
+    public String getReviewState() {
+        return reviewState;
+    }
+
+    public Boolean getReviewManualRequired() {
+        return reviewManualRequired;
+    }
+
+    public String getReviewReason() {
+        return reviewReason;
+    }
+
+    public LocalDateTime getReviewedAt() {
+        return reviewedAt;
+    }
+
+    public String getSummary() {
+        return summary;
     }
 
     public Boolean getPairDegraded() {

@@ -301,6 +301,8 @@ class PairScoringServiceTest {
         record.setCategoryName("证件");
         record.setOccurredAt(LocalDateTime.of(2026, 10, 20, 9, 0));
         record.setPublisherId(type == RecordType.LOST ? 11L : 12L);
+        // 发布闸门：v2.0 的打分用例不测审核，默认视为已通过
+        record.setReviewState(com.findit.campus.record.domain.RecordReviewState.APPROVED);
         return record;
     }
 }

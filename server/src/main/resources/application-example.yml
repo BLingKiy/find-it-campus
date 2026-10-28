@@ -33,3 +33,14 @@ findit:
       base-url: '${FINDIT_EMBED_BASE_URL:}'
       api-key: '${FINDIT_EMBED_API_KEY:}'
       timeout-ms: 3000
+  review:
+    # off=不启用发布闸门（v2.0 行为，默认）；ai=规则打码 → LLM 后处理/审核 → 通过才上架
+    mode: '${FINDIT_REVIEW_MODE:off}'
+    max-attempts: 3
+    retry-backoff-ms: 300
+    max-tokens: 900
+    timeout-ms: 45000
+    prompt-version: pair-postprocess-v1
+    summary-max-code-points: 40
+    reconcile-interval-ms: 60000
+    reconcile-batch-size: 20

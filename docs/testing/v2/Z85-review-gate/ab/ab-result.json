@@ -1,0 +1,102 @@
+{
+  "DEEPSEEK_BEFORE" : {
+    "engine" : "DEEPSEEK",
+    "channel" : "BEFORE",
+    "pairs" : 15,
+    "positiveConsistency" : 1.0000,
+    "negativeMisMatchRate" : 0.0000,
+    "top1HitRate" : 1.0000,
+    "scores" : {
+      "P01" : 0.85,
+      "P02" : 0.98,
+      "P03" : 0.98,
+      "P04" : 0.98,
+      "P05" : 0.95,
+      "P06" : 1.0,
+      "P07" : 0.95,
+      "P08" : 0.98,
+      "P09" : 0.98,
+      "P10" : 0.98,
+      "N01" : 0.15,
+      "N02" : 0.15,
+      "N03" : 0.15,
+      "N04" : 0.72,
+      "N05" : 0.05
+    }
+  },
+  "DEEPSEEK_AFTER" : {
+    "engine" : "DEEPSEEK",
+    "channel" : "AFTER",
+    "pairs" : 15,
+    "positiveConsistency" : 1.0000,
+    "negativeMisMatchRate" : 0.2000,
+    "top1HitRate" : 1.0000,
+    "scores" : {
+      "P01" : 0.98,
+      "P02" : 1.0,
+      "P03" : 1.0,
+      "P04" : 1.0,
+      "P05" : 0.95,
+      "P06" : 1.0,
+      "P07" : 1.0,
+      "P08" : 0.98,
+      "P09" : 0.98,
+      "P10" : 1.0,
+      "N01" : 0.15,
+      "N02" : 0.15,
+      "N03" : 0.15,
+      "N04" : 0.85,
+      "N05" : 0.05
+    }
+  },
+  "LOCAL_KEYWORD_BEFORE" : {
+    "engine" : "LOCAL_KEYWORD",
+    "channel" : "BEFORE",
+    "pairs" : 15,
+    "positiveConsistency" : 0.2000,
+    "negativeMisMatchRate" : 0.0000,
+    "top1HitRate" : 1.0000,
+    "scores" : {
+      "P01" : 0.38,
+      "P02" : 0.41,
+      "P03" : 0.58,
+      "P04" : 0.53,
+      "P05" : 0.60,
+      "P06" : 0.60,
+      "P07" : 0.77,
+      "P08" : 0.49,
+      "P09" : 0.76,
+      "P10" : 0.46,
+      "N01" : 0.44,
+      "N02" : 0.34,
+      "N03" : 0.40,
+      "N04" : 0.58,
+      "N05" : 0.42
+    }
+  },
+  "LOCAL_KEYWORD_AFTER" : {
+    "engine" : "LOCAL_KEYWORD",
+    "channel" : "AFTER",
+    "pairs" : 15,
+    "positiveConsistency" : 0.0000,
+    "negativeMisMatchRate" : 0.0000,
+    "top1HitRate" : 1.0000,
+    "scores" : {
+      "P01" : 0.49,
+      "P02" : 0.55,
+      "P03" : 0.51,
+      "P04" : 0.48,
+      "P05" : 0.29,
+      "P06" : 0.46,
+      "P07" : 0.67,
+      "P08" : 0.43,
+      "P09" : 0.57,
+      "P10" : 0.39,
+      "N01" : 0.29,
+      "N02" : 0.26,
+      "N03" : 0.24,
+      "N04" : 0.21,
+      "N05" : 0.13
+    }
+  }
+}

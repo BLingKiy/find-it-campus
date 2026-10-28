@@ -44,6 +44,37 @@ class RecordMapperSqlTest {
                 "旧条件会放行过期 COMPLETED：它不召回、详情 404，重算只是浪费 LLM 并产生死链通知");
     }
 
+    @Test
+    @DisplayName("发布闸门：公共列表 / 候选池 / 兜底扫描都通过 is_visible 过滤")
+    void publicSurfacesRequireVisibility() throws Exception {
+        assertTrue(normalized(fragment("listJoins")).contains("r.is_visible = 1"),
+                "公共列表必须只出已审核记录");
+        assertTrue(normalized(fragment("matchablePredicate")).contains("r.is_visible = 1"),
+                "候选池与 /api/match 回表必须只出已审核记录");
+        assertTrue(normalized(statement("selectPairScanTargets")).contains("r.is_visible = 1"),
+                "未审核记录不得进入打分扫描");
+    }
+
+    private static String fragment(String id) throws Exception {
+        String xml = mapperXml();
+        int start = xml.indexOf("<sql id=\"" + id + "\"");
+        assertTrue(start > 0, "找不到 SQL 片段 " + id);
+        int end = xml.indexOf("</sql>", start);
+        assertTrue(end > start, id + " 片段未闭合");
+        return xml.substring(start, end);
+    }
+
+    @Test
+    @DisplayName("审核写路径必须带 review_state='PENDING'，否则并发会覆盖已定稿结论")
+    void reviewWritesAreConditional() throws Exception {
+        for (String id : new String[]{"markReviewAttempt", "approveReview", "rejectReview",
+                "markReviewManual", "markReviewApprovedManually", "markReviewRejectedManually"}) {
+            String sql = normalized(statement(id));
+            assertTrue(sql.contains("review_state = 'pending'"),
+                    id + " 缺少 review_state='PENDING' 条件");
+        }
+    }
+
     private static String statement(String id) throws Exception {
         String xml = mapperXml();
         int start = xml.indexOf("<" + tagOf(xml, id) + " id=\"" + id + "\"");

@@ -41,7 +41,8 @@ public final class AuthPaths {
     static final Set<String> PUBLIC_WRITE_PATHS = Set.of(
             "/api/auth/login",
             "/api/auth/logout",
-            "/api/ops/pair-scan");
+            "/api/ops/pair-scan",
+            "/api/ops/reviews");
 
     private static final String API_PREFIX = "/api/";
 
@@ -67,7 +68,9 @@ public final class AuthPaths {
             return false;
         }
         if (!"GET".equalsIgnoreCase(method) && !"HEAD".equalsIgnoreCase(method)) {
-            return !PUBLIC_WRITE_PATHS.contains(path);
+            // 运维入口按前缀放行（/api/ops/reviews/{id}/approve），认证仍由 X-Ops-Token 完成；
+            // 这里只让"会话门禁"不介入，不是让它匿名可写。
+            return PUBLIC_WRITE_PATHS.stream().noneMatch(prefix -> matches(path, prefix));
         }
         return LOGIN_REQUIRED_READS.stream().anyMatch(prefix -> matches(path, prefix));
     }

@@ -1,28 +1,31 @@
 -- =====================================================================
--- find-it-campus · 校园失物招领 · 数据库结构 v2（七张表）
--- 任务：ZHYYKFX-49 · B1 数据层 v2（7 表 + seed）
--- 契约来源：docs/design/v2-architecture.md §4.2（A1 冻结稿，feat/v2-A1-arch-contract @ b90270e）
+-- find-it-campus · 校园失物招领 · 数据库结构 v2.1（八张表）
+-- 任务：ZHYYKFX-49 · B1 数据层 v2；ZHYYKFX-85 · AI 发布闸门增量
+-- 契约来源：docs/design/v2-architecture.md §4.2（A1 冻结稿）+ docs/design/adr/AI-REVIEW-GATE.md
 -- 目标引擎：MySQL 8.0.x / InnoDB / utf8mb4_0900_ai_ci
 --
 -- 执行语义：本脚本面向「空库全量重建」，自身可重复执行 —— 先按外键依赖逆序
---           DROP TABLE IF EXISTS，再重建；执行一次 0 报错，SHOW TABLES 恰好 7 张。
---           脚本会清空已有数据，正式数据请勿执行（v2 筹备期无历史数据，不做 v1→v2 迁移）。
+--           DROP TABLE IF EXISTS，再重建；执行一次 0 报错，SHOW TABLES 恰好 8 张。
+--           脚本会清空已有数据，正式数据请勿执行（已有库用 db/migration/v2.1-review-gate-up.sql）。
 --
--- 七张表与所有权（每个上下文只写自己的表，没有两处写同一张表）：
+-- 八张表与所有权（每个上下文只写自己的表，没有两处写同一张表）：
 --   t_user          登录身份（无手机号列）
 --   t_category      分类字典（只读消费方：record / match / pair）
---   t_record        启事主表（三态 PENDING / COMPLETED / CLOSED）
+--   t_record        启事主表（三态 PENDING / COMPLETED / CLOSED + 正交审核态）
+--   t_review_audit  发布闸门审计（append-only，不含原文）
 --   t_match_result  /api/match 快照（不参与业务读写路径）
 --   t_pair_score    每条 LOST↔FOUND 一行（四态 NEW / CONTACTED / MATCHED / IGNORED）
 --   t_notification  通知（正文不含号码）
 --   t_access_log    联系方式查看审计（append-only）
 --
--- 本脚本刻意没有触发器、没有生成列、没有定时事件：
+-- 本脚本刻意没有触发器、没有定时事件；唯一生成列是 t_record.is_visible：
 --   ① pair 的 status 只由用户显式操作（CONTACT / CONFIRM / IGNORE）写入；
 --      文本 hash 变化触发的重算只允许更新 score / engine / latency_ms / tokens / 两个 hash 列，
 --      不得自动把 IGNORED 翻回 NEW —— 这是任务书 #2 新规则的库层落点。
 --   ② t_record.status 只由发布者手动改；系统任务不得写 status / completed_at。
 --   ③ COMPLETED 到期是读时窗口（completed_at + completed_retention_days），到期不改写 status。
+--   ④ is_visible 只由 review_state 与 deleted_at 派生，任何写路径都不能直接写它 ——
+--      对外可见性因此只有一个事实来源，列表/匹配/配对不可能各写一份而分叉。
 --
 -- 依赖：FULLTEXT ... WITH PARSER ngram 需 MySQL 8.0.14+ 且内核含 ngram 解析器。
 --       若该语句报错，注释掉 ft_record_search 一行即可，业务行为不变（退化路径见文末）。
@@ -41,6 +44,7 @@ USE `find_it_campus`;
 -- 删除顺序本身已经是逆序，双重保险。
 SET FOREIGN_KEY_CHECKS = 0;
 DROP TABLE IF EXISTS `t_access_log`;
+DROP TABLE IF EXISTS `t_review_audit`;
 DROP TABLE IF EXISTS `t_notification`;
 DROP TABLE IF EXISTS `t_pair_score`;
 DROP TABLE IF EXISTS `t_match_result`;
@@ -120,6 +124,36 @@ CREATE TABLE `t_record` (
   `pair_state`     VARCHAR(16)     NOT NULL DEFAULT 'PENDING'
                                      COMMENT 'PENDING/SCORING/READY/DEGRADED；系统写，不是业务状态',
   `pair_scored_at` DATETIME                 DEFAULT NULL  COMMENT '最后一次打分完成时间',
+  -- ------------------------------------------------------------------
+  -- AI 发布闸门（ZHYYKFX-85）：审核态与业务 status 正交，不进入三态状态机。
+  -- 默认 APPROVED 是为了 v2.0 → v2.1 的向后兼容：迁移前的行、seed、mode=off 的
+  -- 新行都视为已通过，读路径行为与 v2.0 完全一致。
+  -- ------------------------------------------------------------------
+  `review_state`   VARCHAR(16)     NOT NULL DEFAULT 'APPROVED'
+                                     COMMENT 'PENDING/APPROVED/REJECTED；只有审核链路写，不参与 status 状态机',
+  `reviewed_at`    DATETIME                 DEFAULT NULL COMMENT '最后一次审核完成时间',
+  `review_reason`  VARCHAR(500)             DEFAULT NULL COMMENT '判定理由（≤3 条，中文，分号分隔）；不含原文',
+  `review_engine`  VARCHAR(32)              DEFAULT NULL COMMENT '审核引擎：DEEPSEEK / RULE_DOUBLE_CHECK / MANUAL / OFF',
+  `review_model`   VARCHAR(64)              DEFAULT NULL COMMENT '模型名；不落 key',
+  `review_prompt_version` VARCHAR(32)        DEFAULT NULL COMMENT '后处理 prompt 版本，如 pair-postprocess-v1',
+  `review_latency_ms` INT                   DEFAULT NULL COMMENT '审核调用耗时；未调用为 NULL',
+  `review_tokens`  INT                      DEFAULT NULL COMMENT 'prompt+completion token 合计；缺失为 NULL，不估算',
+  `review_attempts` INT            NOT NULL DEFAULT 0 COMMENT 'AI 审核尝试次数（含失败）',
+  `review_manual_required` TINYINT(1) NOT NULL DEFAULT 0
+                                     COMMENT '1=AI 连续失败/人工驳回后待人工处理；该行永不被自动上架',
+  -- 双通道：raw_* 原文（仅本人可见、读取走审计）；match_* 仅剥离身份类信息（出分/contentHash）；
+  -- title/description/location 存 display_text（全脱敏 + LLM 泛化），所有对外接口只出这一份。
+  `raw_title`      VARCHAR(64)              DEFAULT NULL COMMENT '原文标题；仅本人详情可见',
+  `raw_description` TEXT                    DEFAULT NULL COMMENT '原文描述；仅本人详情可见',
+  `raw_location`   VARCHAR(128)             DEFAULT NULL COMMENT '原文地点；仅本人详情可见',
+  `match_title`    VARCHAR(64)              DEFAULT NULL COMMENT '比对文本标题（仅剥离身份类，地点/时间/特征保留）',
+  `match_description` TEXT                  DEFAULT NULL COMMENT '比对文本描述（同上）',
+  `match_location` VARCHAR(128)             DEFAULT NULL COMMENT '比对文本地点（保留精准定位，供打分区分）',
+  `summary`        VARCHAR(64)              DEFAULT NULL COMMENT '展示摘要（≤40 字，类别+关键特征+模糊地点）',
+  -- 可见性单点谓词：所有对外列表/匹配/配对 SQL 只认这一列（生成列，避免各写一份 review_state 条件）。
+  `is_visible`     TINYINT(1) GENERATED ALWAYS AS (
+                     CASE WHEN `review_state` = 'APPROVED' AND `deleted_at` IS NULL THEN 1 ELSE 0 END
+                   ) STORED COMMENT '1=已审核且未删除；对外可见的唯一判据',
   `deleted_at`     DATETIME                 DEFAULT NULL  COMMENT '非空=逻辑删除',
   `created_at`     DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '发布时间，列表默认排序键',
   `updated_at`     DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP
@@ -137,6 +171,10 @@ CREATE TABLE `t_record` (
   KEY `idx_record_pair_scan` (`pair_state`, `pair_scored_at`),
   -- COMPLETED 保留期召回与到期统计（不改 status）
   KEY `idx_record_completed` (`status`, `completed_at`),
+  -- 对外可见集合（列表/匹配/配对共用的单列谓词；生成列可索引）
+  KEY `idx_record_visible` (`is_visible`, `status`, `deleted_at`, `created_at`),
+  -- 人工审核队列：review_state='PENDING' AND review_manual_required=1
+  KEY `idx_record_review` (`review_state`, `review_manual_required`, `created_at`),
   -- 关键词检索加速（可选；退化路径见文末）
   FULLTEXT KEY `ft_record_search` (`title`, `description`) WITH PARSER ngram,
   CONSTRAINT `fk_record_category` FOREIGN KEY (`category_id`) REFERENCES `t_category` (`id`)
@@ -149,11 +187,53 @@ CREATE TABLE `t_record` (
     (`status` = 'COMPLETED' AND `completed_at` IS NOT NULL) OR
     (`status` <> 'COMPLETED' AND `completed_at` IS NULL)),
   CONSTRAINT `ck_record_pair_state` CHECK (`pair_state` IN ('PENDING', 'SCORING', 'READY', 'DEGRADED')),
+  CONSTRAINT `ck_record_review_state` CHECK (`review_state` IN ('PENDING', 'APPROVED', 'REJECTED')),
+  CONSTRAINT `ck_record_review_attempts` CHECK (`review_attempts` >= 0),
   CONSTRAINT `ck_record_title_len` CHECK (CHAR_LENGTH(`title`) BETWEEN 2 AND 64),
   CONSTRAINT `ck_record_desc_len` CHECK (CHAR_LENGTH(`description`) BETWEEN 2 AND 2000),
   CONSTRAINT `ck_record_location_len` CHECK (CHAR_LENGTH(`location`) BETWEEN 1 AND 128)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
   COMMENT='失物/招领记录；status 三态与 pair_state 语义分离；completed_at 为保留期起点';
+
+-- ---------------------------------------------------------------------
+-- 表 3b：t_review_audit 发布闸门审计（append-only）
+-- 所有权：record/review 上下文
+-- 只插不改不删；回答「谁、哪条、判定、理由、模型、版本、耗时、token」，
+-- **没有原文列**：审计不能变成第二份未脱敏语料库。reasons 只存模型给出的
+-- 中文理由（≤500 字），不复制 title/description/location。
+-- ---------------------------------------------------------------------
+CREATE TABLE `t_review_audit` (
+  `id`               BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `record_id`        BIGINT UNSIGNED NOT NULL COMMENT '被审核的记录',
+  `action`           VARCHAR(24)     NOT NULL
+                       COMMENT 'REVIEW=AI 审核 / MANUAL_APPROVE / MANUAL_REJECT / RAW_VIEW=本人读原文',
+  `decision`         VARCHAR(16)              DEFAULT NULL COMMENT 'APPROVE/REJECT/PENDING/ERROR；RAW_VIEW 为 NULL',
+  `review_state`     VARCHAR(16)              DEFAULT NULL COMMENT '动作完成后的记录审核态',
+  `reason`           VARCHAR(500)             DEFAULT NULL COMMENT '判定理由；不含原文',
+  `engine`           VARCHAR(32)              DEFAULT NULL COMMENT 'DEEPSEEK / RULE_DOUBLE_CHECK / MANUAL',
+  `model`            VARCHAR(64)              DEFAULT NULL,
+  `prompt_version`   VARCHAR(32)              DEFAULT NULL,
+  `latency_ms`       INT                      DEFAULT NULL,
+  `prompt_tokens`    INT                      DEFAULT NULL,
+  `completion_tokens` INT                     DEFAULT NULL,
+  `actor_type`       VARCHAR(8)      NOT NULL DEFAULT 'AI' COMMENT 'AI / HUMAN / SYSTEM',
+  `actor_id`         BIGINT UNSIGNED          DEFAULT NULL COMMENT 'HUMAN 时为操作人；AI/SYSTEM 为 NULL',
+  `request_id`       VARCHAR(64)              DEFAULT NULL COMMENT '与响应体 requestId 同值',
+  `created_at`       DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_review_audit_record` (`record_id`, `created_at`),
+  KEY `idx_review_audit_action` (`action`, `created_at`),
+  CONSTRAINT `fk_review_audit_record` FOREIGN KEY (`record_id`) REFERENCES `t_record` (`id`)
+    ON DELETE RESTRICT ON UPDATE RESTRICT,
+  CONSTRAINT `ck_review_audit_action` CHECK (`action` IN
+    ('REVIEW','MANUAL_APPROVE','MANUAL_REJECT','RAW_VIEW')),
+  CONSTRAINT `ck_review_audit_decision` CHECK (`decision` IS NULL OR `decision` IN
+    ('APPROVE','REJECT','PENDING','ERROR')),
+  CONSTRAINT `ck_review_audit_state` CHECK (`review_state` IS NULL OR `review_state` IN
+    ('PENDING','APPROVED','REJECTED')),
+  CONSTRAINT `ck_review_audit_latency` CHECK (`latency_ms` IS NULL OR `latency_ms` >= 0)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
+  COMMENT='发布闸门审计；append-only，不含原文';
 
 -- ---------------------------------------------------------------------
 -- 表 4：t_match_result /api/match 快照（v1 扩展 impl 取值）
@@ -202,10 +282,11 @@ CREATE TABLE `t_pair_score` (
   `engine`            VARCHAR(32)     NOT NULL COMMENT 'DEEPSEEK / LOCAL_KEYWORD',
   `degraded_reason`   VARCHAR(32)              DEFAULT NULL
                         COMMENT 'EMPTY_KEY/UNAUTHORIZED/TIMEOUT/NON_JSON/SCORE_OUT_OF_RANGE/HTTP_ERROR/CIRCUIT_OPEN',
-  `prompt_version`    VARCHAR(32)     NOT NULL DEFAULT 'pair-score-v1',
+  `prompt_version`    VARCHAR(32)     NOT NULL DEFAULT 'pair-score-v2',
   `latency_ms`        INT                      DEFAULT NULL COMMENT 'LLM 调用耗时；本地引擎为 NULL',
   `prompt_tokens`     INT                      DEFAULT NULL,
   `completion_tokens` INT                      DEFAULT NULL,
+  `reason`            VARCHAR(200)             DEFAULT NULL COMMENT '模型给出的 ≤200 字打分依据；v2.0 曾丢弃，v2.1 落库',
   `lost_hash`         CHAR(64)        NOT NULL COMMENT 'lost 内容 SHA-256（小写 hex）',
   `found_hash`        CHAR(64)        NOT NULL COMMENT 'found 内容 SHA-256（小写 hex）',
   `lost_unlocked_at`  DATETIME                 DEFAULT NULL COMMENT 'LOST 端授权公开时间',

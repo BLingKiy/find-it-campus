@@ -1,0 +1,87 @@
+
+===== 0. environment =====
+repo=C:\Project\hifox-workspaces\panshishi\work-v2-Z85
+jar=C:\Project\hifox-workspaces\panshishi\work-v2-Z85\server\target\find-it-campus-0.0.1-SNAPSHOT.jar bytes=28651696
+db=findit_z85 port=18085
+java=17.0.20.1
+
+===== 1. start MySQL 3306 =====
+MYSQL_VERSION=8.0.29
+
+===== 2. reset schema + seed =====
+t_record=24
+visible=24
+
+===== 3. start stub LLM 19090 =====
+stub llm ready
+
+===== 4. mode=ai: publish PENDING / APPROVED / REJECT paths =====
+app pid=13304 mode=ai
+pending: http=200 id=27 reviewState=PENDING
+approved: http=200 id=28 reviewState=PENDING
+sensitive: http=200 id=29 reviewState=PENDING
+rejected: http=200 id=30 reviewState=PENDING
+failed: http=200 id=31 reviewState=PENDING
+
+===== 5. DB state after async review =====
+27	PENDING	DEEPSEEK	stub-model	3	1	0
+28	APPROVED	DEEPSEEK	stub-model	1	0	1
+29	REJECTED	DEEPSEEK	stub-model	1	0	0
+30	REJECTED	DEEPSEEK	stub-model	1	0	0
+31	PENDING	DEEPSEEK	stub-model	3	1	0
+27	AI 审核连续失败（HTTP_ERROR），记录保持待审并转人工；不会自动上架
+29	规则双检命中：10-12 位长数字（疑似学号）、手机号/证件号/邮箱/QQ
+30	内容包含无法在保留特征的前提下去身份化的信息
+31	AI 审核连续失败（HTTP_ERROR），记录保持待审并转人工；不会自动上架
+
+===== 6. PENDING four surfaces =====
+public list status=200 total=0
+/api/match status=200 items=12 pendingHit=0
+other detail status=404 code=20001
+other /api/my/records pendingHit=0
+owner /api/my/records reviewState=PENDING manual=True reason=AI 审核连续失败（HTTP_ERROR），记录保持待审并转人工；不会自动上架
+pending pair rows=0
+
+===== 7. APPROVED path =====
+approved public total=1 hit=1
+approved other detail status=200 hasRaw=False hasMatch=False
+approved pair rows=10
+
+===== 8. REJECT paths =====
+sensitive: REJECTED	DEEPSEEK	规则双检命中：10-12 位长数字（疑似学号）、手机号/证件号/邮箱/QQ
+model reject: REJECTED	内容包含无法在保留特征的前提下去身份化的信息
+rejected public total=0
+
+===== 9. AI failure path =====
+failed: PENDING	3	1	0
+failed pair rows=0
+
+===== 10. double-channel columns + audit =====
+approved display/raw/match:
+*************************** 1. row ***************************
+Z85APPROVE 黑色钱包
+Z85APPROVE 在图书馆三楼捡到黑色皮质钱包，内有工行卡
+图书馆三楼
+Z85APPROVE 黑色钱包 姓名：张三
+Z85APPROVE 姓名：张三 电话 13800000009 在第三教学楼 201 丢失的黑色皮质钱包，内有工行卡
+Z85APPROVE 黑色钱包 姓名[已隐藏]
+Z85APPROVE 姓名[已隐藏] 电话 [手机号已隐藏] 在第三教学楼 201 丢失的黑色皮质钱包，内有工行卡
+raw contains identity=True
+match contains phone=False keeps location=True
+audit rows approved=1
+REVIEW	APPROVE	APPROVED	DEEPSEEK	stub-model	pair-postprocess-v1	4	128	64
+audit rows failed=4
+audit text columns=0
+
+===== 11. stop ai app, stop stub, mode=off regression =====
+app pid=4292 mode=off (stub LLM down)
+off create http=200 id=32 reviewState=APPROVED
+off public total=1
+off other detail status=200
+off DB: APPROVED	OFF	1	NULL	NULL
+
+===== 12. stop app + mysql =====
+mysqld shutdown requested
+
+===== RESULT =====
+ALL Z85 CHECKS PASSED

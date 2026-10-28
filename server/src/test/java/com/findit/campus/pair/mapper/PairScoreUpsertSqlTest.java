@@ -29,7 +29,7 @@ class PairScoreUpsertSqlTest {
     /** 允许出现在 ON DUPLICATE KEY UPDATE 里的列（顺序无关）。 */
     private static final List<String> ALLOWED_UPDATE_COLUMNS = List.of(
             "score", "engine", "degraded_reason", "prompt_version",
-            "latency_ms", "prompt_tokens", "completion_tokens", "lost_hash", "found_hash");
+            "latency_ms", "prompt_tokens", "completion_tokens", "reason", "lost_hash", "found_hash");
 
     /** 绝不允许被重算覆盖的列（任务书 #2 + 契约 §4.13）。 */
     private static final List<String> FORBIDDEN_UPDATE_COLUMNS = List.of(

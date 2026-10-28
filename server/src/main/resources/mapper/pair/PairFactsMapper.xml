@@ -19,6 +19,7 @@
           AND p.lost_confirmed_at IS NOT NULL
           AND p.found_confirmed_at IS NOT NULL
           AND l.deleted_at IS NULL AND f.deleted_at IS NULL
+          AND l.is_visible = 1 AND f.is_visible = 1
           AND l.status &lt;&gt; 'CLOSED' AND f.status &lt;&gt; 'CLOSED'
           AND (l.status = 'PENDING' OR l.completed_at &gt; #{cutoff})
           AND (f.status = 'PENDING' OR f.completed_at &gt; #{cutoff})
@@ -35,6 +36,7 @@
         WHERE (p.lost_id = #{targetRecordId} OR p.found_id = #{targetRecordId})
           AND other.publisher_id = #{viewerId}
           AND other.deleted_at IS NULL
+          AND other.is_visible = 1
           AND other.status &lt;&gt; 'CLOSED'
           AND (other.status = 'PENDING' OR other.completed_at &gt; #{cutoff})
           AND p.score &gt;= #{threshold}
@@ -47,6 +49,7 @@
         JOIN t_record other ON other.id = IF(p.lost_id = #{recordId}, p.found_id, p.lost_id)
         WHERE (p.lost_id = #{recordId} OR p.found_id = #{recordId})
           AND other.deleted_at IS NULL
+          AND other.is_visible = 1
           AND other.status &lt;&gt; 'CLOSED'
           AND (other.status = 'PENDING' OR other.completed_at &gt; #{cutoff})
           AND p.score &lt; #{threshold}
@@ -80,10 +83,12 @@
         JOIN t_record f ON f.id = p.found_id
         JOIN t_record other ON other.id = IF(p.lost_id = t.record_id, p.found_id, p.lost_id)
         WHERE l.deleted_at IS NULL AND f.deleted_at IS NULL
+          AND l.is_visible = 1 AND f.is_visible = 1
           AND l.status &lt;&gt; 'CLOSED' AND f.status &lt;&gt; 'CLOSED'
           AND (l.status = 'PENDING' OR l.completed_at &gt; #{cutoff})
           AND (f.status = 'PENDING' OR f.completed_at &gt; #{cutoff})
           AND other.deleted_at IS NULL
+          AND other.is_visible = 1
           AND other.status &lt;&gt; 'CLOSED'
           AND (other.status = 'PENDING' OR other.completed_at &gt; #{cutoff})
         GROUP BY t.record_id
@@ -107,6 +112,7 @@
                p.score,
                p.status,
                p.engine,
+               p.reason,
                p.lost_confirmed_at,
                p.found_confirmed_at,
                p.lost_unlocked_at,
@@ -139,6 +145,7 @@
         JOIN t_record other ON other.id = IF(p.lost_id = t.record_id, p.found_id, p.lost_id)
         WHERE p.score &gt;= #{threshold}
           AND l.deleted_at IS NULL AND f.deleted_at IS NULL
+          AND l.is_visible = 1 AND f.is_visible = 1
           AND l.status &lt;&gt; 'CLOSED' AND f.status &lt;&gt; 'CLOSED'
           AND (l.status = 'PENDING' OR l.completed_at &gt; #{cutoff})
           AND (f.status = 'PENDING' OR f.completed_at &gt; #{cutoff})

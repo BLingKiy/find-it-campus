@@ -75,6 +75,6 @@ public final class PairCardFixtures {
                 engine, degraded, "LOST", myUnlocked, otherUnlocked, myNote, otherNote,
                 recordId + 100, "FOUND", counterpartTitle, counterpartLocation,
                 LocalDateTime.of(2026, 10, 20, 15, 0), LocalDateTime.of(2026, 10, 20, 15, 30),
-                "PENDING", contactAvailable, contactHint);
+                "PENDING", contactAvailable, contactHint, null);
     }
 }

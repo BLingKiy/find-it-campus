@@ -82,6 +82,21 @@ class RecordVisibilityPolicyTest {
     }
 
     @Test
+    @DisplayName("发布闸门：审核中/已拒绝的记录，非所有者一律 404；所有者仍可看自己的审核态")
+    void unreviewedIsInvisibleToOthers() {
+        Record pending = record(RecordStatus.PENDING, OWNER, null);
+        pending.setReviewState(com.findit.campus.record.domain.RecordReviewState.PENDING);
+        assertEquals(DetailAccess.NOT_FOUND, access(pending, OTHER, false));
+        assertEquals(DetailAccess.NOT_FOUND, access(pending, null, false));
+        assertEquals(DetailAccess.OWNER_PLAINTEXT, access(pending, OWNER, false));
+
+        Record rejected = record(RecordStatus.PENDING, OWNER, null);
+        rejected.setReviewState(com.findit.campus.record.domain.RecordReviewState.REJECTED);
+        assertEquals(DetailAccess.NOT_FOUND, access(rejected, OTHER, false));
+        assertEquals(DetailAccess.OWNER_PLAINTEXT, access(rejected, OWNER, false));
+    }
+
+    @Test
     @DisplayName("MATCHABLE：PENDING 恒可；COMPLETED 仅保留期内；CLOSED 恒不可")
     void matchablePredicate() {
         assertTrue(RecordVisibilityPolicy.isMatchable(RecordStatus.PENDING, null, RETENTION_DAYS, NOW));
@@ -103,6 +118,7 @@ class RecordVisibilityPolicyTest {
         record.setStatus(status);
         record.setPublisherId(publisherId);
         record.setCompletedAt(completedAt);
+        record.setReviewState(com.findit.campus.record.domain.RecordReviewState.APPROVED);
         return record;
     }
 }

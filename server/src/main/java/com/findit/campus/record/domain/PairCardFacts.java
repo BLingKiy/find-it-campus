@@ -51,5 +51,6 @@ public record PairCardFacts(
         LocalDateTime counterpartCreatedAt,
         String counterpartStatus,
         boolean contactAvailable,
-        String contactHint) {
+        String contactHint,
+        String scoreReason) {
 }

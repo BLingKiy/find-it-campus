@@ -24,6 +24,7 @@
         <result property="location" column="location"/>
         <result property="occurredAt" column="occurred_at"/>
         <result property="publisherId" column="publisher_id"/>
+        <result property="summary" column="summary"/>
         <result property="createdAt" column="created_at"/>
     </resultMap>
 
@@ -42,6 +43,23 @@
         <result property="publisherName" column="publisher_name"/>
         <result property="publisherId" column="publisher_id"/>
         <result property="pairState" column="pair_state"/>
+        <result property="reviewState" column="review_state"/>
+        <result property="reviewedAt" column="reviewed_at"/>
+        <result property="reviewReason" column="review_reason"/>
+        <result property="reviewEngine" column="review_engine"/>
+        <result property="reviewModel" column="review_model"/>
+        <result property="reviewPromptVersion" column="review_prompt_version"/>
+        <result property="reviewLatencyMs" column="review_latency_ms"/>
+        <result property="reviewTokens" column="review_tokens"/>
+        <result property="reviewAttempts" column="review_attempts"/>
+        <result property="reviewManualRequired" column="review_manual_required"/>
+        <result property="rawTitle" column="raw_title"/>
+        <result property="rawDescription" column="raw_description"/>
+        <result property="rawLocation" column="raw_location"/>
+        <result property="matchTitle" column="match_title"/>
+        <result property="matchDescription" column="match_description"/>
+        <result property="matchLocation" column="match_location"/>
+        <result property="summary" column="summary"/>
         <result property="deletedAt" column="deleted_at"/>
         <result property="createdAt" column="created_at"/>
         <result property="updatedAt" column="updated_at"/>
@@ -68,18 +86,27 @@
         <result property="contact" column="contact"/>
         <result property="publisherName" column="publisher_name"/>
         <result property="pairState" column="pair_state"/>
+        <result property="reviewState" column="review_state"/>
+        <result property="reviewReason" column="review_reason"/>
+        <result property="reviewManualRequired" column="review_manual_required"/>
+        <result property="reviewedAt" column="reviewed_at"/>
+        <result property="summary" column="summary"/>
         <result property="createdAt" column="created_at"/>
         <result property="updatedAt" column="updated_at"/>
     </resultMap>
 
     <!--
-      召回谓词（MATCHABLE，契约 §4.8 / 架构 §9.3）：PENDING 恒可；COMPLETED 仅保留期内；CLOSED 不可。
+      召回谓词（MATCHABLE，契约 §4.8 / 架构 §9.3）：已审核（is_visible=1）且
+      PENDING 恒可 / COMPLETED 仅保留期内 / CLOSED 不可。
       「列表隐藏 ≠ 匹配隐藏」的 SQL 落点：公共列表硬写 PENDING（见 listJoins），
       候选池则允许保留期内的 COMPLETED —— 两处刻意不同，不是漏写。
+      发布闸门（ZHYYKFX-85）：未审核/已拒绝的行 is_visible=0，因此既不进列表也不进池，
+      更不会被打分 —— 可见性与召回共用同一个生成列，不存在两处口径分叉。
     -->
     <sql id="matchablePredicate">
-        (r.status = 'PENDING'
-         OR (r.status = 'COMPLETED' AND r.completed_at &gt; #{completedCutoff}))
+        r.is_visible = 1
+        AND (r.status = 'PENDING'
+             OR (r.status = 'COMPLETED' AND r.completed_at &gt; #{completedCutoff}))
     </sql>
 
     <!-- 列表与总数共用同一份条件，避免"总数 21、列表 20"这类两处条件写歪的事故 -->
@@ -88,6 +115,7 @@
         LEFT JOIN t_category c ON c.id = r.category_id
         <where>
             r.deleted_at IS NULL
+            AND r.is_visible = 1
             AND r.status = 'PENDING'
             <if test="condition.type != null">AND r.type = #{condition.type}</if>
             <if test="condition.categoryId != null">AND r.category_id = #{condition.categoryId}</if>
@@ -144,7 +172,7 @@
 
     <select id="selectSummaries" resultMap="summaryMap">
         SELECT r.id, r.type, r.status, r.completed_at, r.title, r.category_id, c.name AS category_name,
-               r.location, r.occurred_at, r.publisher_id, r.created_at
+               r.location, r.occurred_at, r.publisher_id, r.summary, r.created_at
         <include refid="listJoins"/>
         <include refid="orderByClause"/>
         LIMIT #{limit} OFFSET #{offset}
@@ -169,16 +197,30 @@
     <select id="selectMyRecords" resultMap="myRecordMap">
         SELECT r.id, r.type, r.status, r.completed_at, r.title, r.category_id, c.name AS category_name,
                r.location, r.occurred_at, r.contact, r.publisher_name, r.pair_state,
+               r.review_state, r.review_reason, r.review_manual_required, r.reviewed_at, r.summary,
                r.created_at, r.updated_at
         <include refid="myRecordWhere"/>
         <include refid="myOrderByClause"/>
         LIMIT #{limit} OFFSET #{offset}
     </select>
 
+    <!--
+      详情/打分共用的完整列清单。发布闸门新增列只在这里加一次：
+      两处各写一份 SELECT 迟早会漏（v2.0 的 reason 被丢弃就是"解析了但没落列"的同类事故）。
+    -->
+    <sql id="recordColumns">
+        r.id, r.type, r.status, r.completed_at, r.title, r.description, r.category_id,
+        c.name AS category_name, r.location, r.occurred_at, r.contact, r.publisher_name,
+        r.publisher_id, r.pair_state, r.review_state, r.reviewed_at, r.review_reason,
+        r.review_engine, r.review_model, r.review_prompt_version, r.review_latency_ms,
+        r.review_tokens, r.review_attempts, r.review_manual_required,
+        r.raw_title, r.raw_description, r.raw_location,
+        r.match_title, r.match_description, r.match_location, r.summary,
+        r.deleted_at, r.created_at, r.updated_at
+    </sql>
+
     <select id="selectById" resultMap="recordMap">
-        SELECT r.id, r.type, r.status, r.completed_at, r.title, r.description, r.category_id,
-               c.name AS category_name, r.location, r.occurred_at, r.contact, r.publisher_name,
-               r.publisher_id, r.pair_state, r.deleted_at, r.created_at, r.updated_at
+        SELECT <include refid="recordColumns"/>
         FROM t_record r
         LEFT JOIN t_category c ON c.id = r.category_id
         WHERE r.id = #{id} AND r.deleted_at IS NULL
@@ -200,10 +242,14 @@
     <insert id="insert" useGeneratedKeys="true" keyProperty="id" keyColumn="id">
         INSERT INTO t_record
             (type, status, title, description, category_id, location, occurred_at, contact,
-             publisher_name, publisher_id)
+             publisher_name, publisher_id, review_state, reviewed_at, review_engine, review_attempts,
+             review_manual_required, raw_title, raw_description, raw_location,
+             match_title, match_description, match_location, summary)
         VALUES
             (#{type}, #{status}, #{title}, #{description}, #{categoryId}, #{location}, #{occurredAt},
-             #{contact}, #{publisherName}, #{publisherId})
+             #{contact}, #{publisherName}, #{publisherId}, #{reviewState}, #{reviewedAt}, #{reviewEngine},
+             #{reviewAttempts}, #{reviewManualRequired}, #{rawTitle}, #{rawDescription}, #{rawLocation},
+             #{matchTitle}, #{matchDescription}, #{matchLocation}, #{summary})
     </insert>
 
     <!--
@@ -225,6 +271,25 @@
             contact         = #{contact},
             publisher_name  = #{publisherName},
             pair_state      = 'PENDING',
+            -- 内容变了就重新走闸门：审核结论、理由、模型/耗时/token 清空，
+            -- 旧结论不能复用在新内容上（否则"改完即上架"，闸门形同虚设）。
+            review_state    = #{reviewState},
+            review_engine   = #{reviewEngine},
+            reviewed_at     = #{reviewedAt},
+            review_reason   = NULL,
+            review_model    = NULL,
+            review_prompt_version = NULL,
+            review_latency_ms = NULL,
+            review_tokens   = NULL,
+            review_attempts = 0,
+            review_manual_required = 0,
+            raw_title       = #{rawTitle},
+            raw_description = #{rawDescription},
+            raw_location    = #{rawLocation},
+            match_title     = #{matchTitle},
+            match_description = #{matchDescription},
+            match_location  = #{matchLocation},
+            summary         = #{summary},
             updated_at      = NOW()
         WHERE id = #{id} AND deleted_at IS NULL AND status = 'PENDING'
     </update>
@@ -284,9 +349,7 @@
 
     <!-- 打分链路按 id 取完整原文；不加 MATCHABLE（调用方要能读到"刚被关闭"的事实再决定跳过） -->
     <select id="selectByIds" resultMap="recordMap">
-        SELECT r.id, r.type, r.status, r.completed_at, r.title, r.description, r.category_id,
-               c.name AS category_name, r.location, r.occurred_at, r.contact, r.publisher_name,
-               r.publisher_id, r.pair_state, r.deleted_at, r.created_at, r.updated_at
+        SELECT <include refid="recordColumns"/>
         FROM t_record r
         LEFT JOIN t_category c ON c.id = r.category_id
         WHERE r.deleted_at IS NULL
@@ -324,6 +387,7 @@
         SELECT r.id
         FROM t_record r
         WHERE r.deleted_at IS NULL
+          AND r.is_visible = 1
           AND (r.status = 'PENDING'
                OR (r.status = 'COMPLETED' AND r.completed_at &gt; #{completedCutoff}))
           AND ( (r.pair_state IN ('PENDING', 'SCORING')
@@ -340,6 +404,127 @@
         WHERE r.deleted_at IS NULL
           AND r.status = 'COMPLETED'
           AND r.completed_at &lt;= #{cutoff}
+    </select>
+
+    <!-- ==================================================================
+         发布闸门（ZHYYKFX-85）写路径。三条纪律：
+         1. 每条 UPDATE 都带 `review_state='PENDING'`：只在"仍待审"时生效，
+            人工/AI 并发只会有一个赢家，后到的影响 0 行（不覆盖已定稿的结论）。
+         2. 这些 UPDATE 不写 status/completed_at/updated_at：审核不是本人写内容，
+            "系统任务跑完 status 与 updated_at 不变"的既有验收仍然成立。
+         3. 原文只进 raw_*，display 只进 title/description/location；审核 SQL 不做文本变换。
+         ================================================================== -->
+
+    <!-- 每次 AI 尝试都先落次数：进程崩溃时 attempts 仍然真实，不会无限重试 -->
+    <update id="markReviewAttempt">
+        UPDATE t_record
+        SET review_attempts = #{attempts}
+        WHERE id = #{id} AND deleted_at IS NULL AND review_state = 'PENDING'
+    </update>
+
+    <update id="approveReview">
+        UPDATE t_record
+        SET title                  = #{title},
+            description            = #{description},
+            location               = #{location},
+            summary                = #{summary},
+            review_state           = 'APPROVED',
+            reviewed_at            = #{at},
+            review_reason          = #{reason},
+            review_engine          = #{engine},
+            review_model           = #{model},
+            review_prompt_version  = #{promptVersion},
+            review_latency_ms      = #{latencyMs},
+            review_tokens          = #{tokens},
+            review_attempts        = #{attempts},
+            review_manual_required = 0
+        WHERE id = #{id} AND deleted_at IS NULL AND review_state = 'PENDING'
+    </update>
+
+    <update id="rejectReview">
+        UPDATE t_record
+        SET review_state           = 'REJECTED',
+            reviewed_at            = #{at},
+            review_reason          = #{reason},
+            review_engine          = #{engine},
+            review_model           = #{model},
+            review_prompt_version  = #{promptVersion},
+            review_latency_ms      = #{latencyMs},
+            review_tokens          = #{tokens},
+            review_attempts        = #{attempts},
+            review_manual_required = #{manualRequired}
+        WHERE id = #{id} AND deleted_at IS NULL AND review_state = 'PENDING'
+    </update>
+
+    <!--
+      AI 连续失败：状态保持 PENDING（不删、不过期、不上架），只置人工标记与可读原因。
+      WHERE 仍要求 PENDING：若审核在重试期间已被人工放行，这里不能把它拉回待审。
+    -->
+    <update id="markReviewManual">
+        UPDATE t_record
+        SET review_manual_required = 1,
+            review_reason          = #{reason},
+            review_engine          = #{engine},
+            review_model           = #{model},
+            review_prompt_version  = #{promptVersion},
+            review_latency_ms      = #{latencyMs},
+            review_tokens          = #{tokens},
+            review_attempts        = #{attempts}
+        WHERE id = #{id} AND deleted_at IS NULL AND review_state = 'PENDING'
+    </update>
+
+    <!-- 兜底调度：拾取"待审、未转人工、已过冷却"的记录；manual=1 的永不被自动重试 -->
+    <select id="selectReviewCandidates" resultMap="recordMap">
+        SELECT <include refid="recordColumns"/>
+        FROM t_record r
+        LEFT JOIN t_category c ON c.id = r.category_id
+        WHERE r.deleted_at IS NULL
+          AND r.review_state = 'PENDING'
+          AND r.review_manual_required = 0
+          AND r.review_attempts &lt; #{maxAttempts}
+          AND r.created_at &lt;= #{createdBefore}
+        ORDER BY r.created_at ASC, r.id ASC
+        LIMIT #{limit}
+    </select>
+
+    <!-- 人工放行/驳回：只改审核列，不碰展示文本（提交时已是规则剥离后的展示文本） -->
+    <update id="markReviewApprovedManually">
+        UPDATE t_record
+        SET review_state           = 'APPROVED',
+            reviewed_at            = #{at},
+            review_reason          = #{reason},
+            review_engine          = 'MANUAL',
+            review_manual_required = 0
+        WHERE id = #{id} AND deleted_at IS NULL AND review_state = 'PENDING'
+    </update>
+
+    <update id="markReviewRejectedManually">
+        UPDATE t_record
+        SET review_state           = 'REJECTED',
+            reviewed_at            = #{at},
+            review_reason          = #{reason},
+            review_engine          = 'MANUAL',
+            review_manual_required = 0
+        WHERE id = #{id} AND deleted_at IS NULL AND review_state = 'PENDING'
+    </update>
+
+    <select id="selectManualReviewQueue" resultMap="recordMap">
+        SELECT <include refid="recordColumns"/>
+        FROM t_record r
+        LEFT JOIN t_category c ON c.id = r.category_id
+        WHERE r.deleted_at IS NULL
+          AND r.review_state = 'PENDING'
+          AND r.review_manual_required = 1
+        ORDER BY r.created_at ASC, r.id ASC
+        LIMIT #{limit}
+    </select>
+
+    <select id="countReviewState" resultType="long">
+        SELECT COUNT(*)
+        FROM t_record
+        WHERE deleted_at IS NULL
+          AND review_state = #{reviewState}
+          AND (#{manualOnly} = 0 OR review_manual_required = 1)
     </select>
 
 </mapper>

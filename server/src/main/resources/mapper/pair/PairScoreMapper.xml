@@ -28,6 +28,7 @@
         <result property="latencyMs" column="latency_ms"/>
         <result property="promptTokens" column="prompt_tokens"/>
         <result property="completionTokens" column="completion_tokens"/>
+        <result property="reason" column="reason"/>
         <result property="lostHash" column="lost_hash"/>
         <result property="foundHash" column="found_hash"/>
         <result property="lostUnlockedAt" column="lost_unlocked_at"/>
@@ -43,7 +44,7 @@
 
     <select id="selectByPair" resultMap="pairScoreMap">
         SELECT id, lost_id, found_id, score, engine, degraded_reason, prompt_version,
-               latency_ms, prompt_tokens, completion_tokens, lost_hash, found_hash,
+               latency_ms, prompt_tokens, completion_tokens, reason, lost_hash, found_hash,
                lost_unlocked_at, found_unlocked_at, lost_unlock_note, found_unlock_note,
                lost_confirmed_at, found_confirmed_at, status, created_at, updated_at
         FROM t_pair_score
@@ -52,7 +53,7 @@
 
     <select id="selectById" resultMap="pairScoreMap">
         SELECT id, lost_id, found_id, score, engine, degraded_reason, prompt_version,
-               latency_ms, prompt_tokens, completion_tokens, lost_hash, found_hash,
+               latency_ms, prompt_tokens, completion_tokens, reason, lost_hash, found_hash,
                lost_unlocked_at, found_unlocked_at, lost_unlock_note, found_unlock_note,
                lost_confirmed_at, found_confirmed_at, status, created_at, updated_at
         FROM t_pair_score
@@ -68,10 +69,10 @@
     <insert id="upsertScore">
         INSERT INTO t_pair_score
             (lost_id, found_id, score, engine, degraded_reason, prompt_version,
-             latency_ms, prompt_tokens, completion_tokens, lost_hash, found_hash)
+             latency_ms, prompt_tokens, completion_tokens, reason, lost_hash, found_hash)
         VALUES
             (#{lostId}, #{foundId}, #{score}, #{engine}, #{degradedReason}, #{promptVersion},
-             #{latencyMs}, #{promptTokens}, #{completionTokens}, #{lostHash}, #{foundHash})
+             #{latencyMs}, #{promptTokens}, #{completionTokens}, #{reason}, #{lostHash}, #{foundHash})
         ON DUPLICATE KEY UPDATE
             score             = VALUES(score),
             engine            = VALUES(engine),
@@ -80,13 +81,14 @@
             latency_ms        = VALUES(latency_ms),
             prompt_tokens     = VALUES(prompt_tokens),
             completion_tokens = VALUES(completion_tokens),
+            reason            = VALUES(reason),
             lost_hash         = VALUES(lost_hash),
             found_hash        = VALUES(found_hash)
     </insert>
 
     <select id="selectDegradedPairs" resultMap="pairScoreMap">
         SELECT id, lost_id, found_id, score, engine, degraded_reason, prompt_version,
-               latency_ms, prompt_tokens, completion_tokens, lost_hash, found_hash,
+               latency_ms, prompt_tokens, completion_tokens, reason, lost_hash, found_hash,
                lost_unlocked_at, found_unlocked_at, lost_unlock_note, found_unlock_note,
                lost_confirmed_at, found_confirmed_at, status, created_at, updated_at
         FROM t_pair_score
@@ -107,7 +109,7 @@
     <!-- 重算时补齐"未进本次 topN 的老 pair"；升序 = 最旧的优先，避免饿死 -->
     <select id="selectByRecord" resultMap="pairScoreMap">
         SELECT id, lost_id, found_id, score, engine, degraded_reason, prompt_version,
-               latency_ms, prompt_tokens, completion_tokens, lost_hash, found_hash,
+               latency_ms, prompt_tokens, completion_tokens, reason, lost_hash, found_hash,
                lost_unlocked_at, found_unlocked_at, lost_unlock_note, found_unlock_note,
                lost_confirmed_at, found_confirmed_at, status, created_at, updated_at
         FROM t_pair_score

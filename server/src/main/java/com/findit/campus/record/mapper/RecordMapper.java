@@ -155,4 +155,69 @@ public interface RecordMapper {
      * 定时器只负责把它们<b>数出来</b>写进日志，用于容量与合规统计。返回 0 也是正常结果。
      */
     long countExpiredCompleted(@Param("cutoff") LocalDateTime cutoff);
+
+    // ------------------------------------------------------------------
+    // 发布闸门（ZHYYKFX-85）：审核态写路径。全部带 review_state='PENDING' 条件。
+    // ------------------------------------------------------------------
+
+    /** 记录一次 AI 尝试次数；{@code WHERE review_state='PENDING'} 保证不覆盖已定稿结论。 */
+    int markReviewAttempt(@Param("id") long id, @Param("attempts") int attempts);
+
+    /** AI/人工通过：同一条 UPDATE 写展示文本、摘要与全部审计元数据，避免半套状态。 */
+    int approveReview(@Param("id") long id,
+                      @Param("title") String title,
+                      @Param("description") String description,
+                      @Param("location") String location,
+                      @Param("summary") String summary,
+                      @Param("reason") String reason,
+                      @Param("engine") String engine,
+                      @Param("model") String model,
+                      @Param("promptVersion") String promptVersion,
+                      @Param("latencyMs") Integer latencyMs,
+                      @Param("tokens") Integer tokens,
+                      @Param("attempts") int attempts,
+                      @Param("at") LocalDateTime at);
+
+    /** 拒绝：不改展示文本（它本来就不对外可见），只落结论、理由与审计元数据。 */
+    int rejectReview(@Param("id") long id,
+                     @Param("reason") String reason,
+                     @Param("engine") String engine,
+                     @Param("model") String model,
+                     @Param("promptVersion") String promptVersion,
+                     @Param("latencyMs") Integer latencyMs,
+                     @Param("tokens") Integer tokens,
+                     @Param("attempts") int attempts,
+                     @Param("manualRequired") boolean manualRequired,
+                     @Param("at") LocalDateTime at);
+
+    /** AI 连续失败：保持 PENDING，标人工。绝不自动上架。 */
+    int markReviewManual(@Param("id") long id,
+                         @Param("reason") String reason,
+                         @Param("engine") String engine,
+                         @Param("model") String model,
+                         @Param("promptVersion") String promptVersion,
+                         @Param("latencyMs") Integer latencyMs,
+                         @Param("tokens") Integer tokens,
+                         @Param("attempts") int attempts);
+
+    /** 兜底调度候选：待审 + 未转人工 + 已过冷却。 */
+    List<Record> selectReviewCandidates(@Param("createdBefore") LocalDateTime createdBefore,
+                                        @Param("maxAttempts") int maxAttempts,
+                                        @Param("limit") int limit);
+
+    /** 人工放行：只改审核列，不碰 title/description/location（提交时已是展示文本）。 */
+    int markReviewApprovedManually(@Param("id") long id,
+                                   @Param("reason") String reason,
+                                   @Param("at") LocalDateTime at);
+
+    /** 人工驳回：同上，只改审核列。 */
+    int markReviewRejectedManually(@Param("id") long id,
+                                   @Param("reason") String reason,
+                                   @Param("at") LocalDateTime at);
+
+    /** 人工审核队列：待审且已被标记为待人工（manual=1）。 */
+    List<Record> selectManualReviewQueue(@Param("limit") int limit);
+
+    /** 运维面板计数：{@code manualOnly=1} 时只数待人工的。 */
+    long countReviewState(@Param("reviewState") String reviewState, @Param("manualOnly") int manualOnly);
 }

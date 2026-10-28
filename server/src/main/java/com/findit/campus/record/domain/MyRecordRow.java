@@ -23,6 +23,11 @@ public class MyRecordRow {
     private String contact;
     private String publisherName;
     private String pairState;
+    private RecordReviewState reviewState;
+    private String reviewReason;
+    private Boolean reviewManualRequired;
+    private LocalDateTime reviewedAt;
+    private String summary;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
@@ -120,6 +125,46 @@ public class MyRecordRow {
 
     public void setPairState(String pairState) {
         this.pairState = pairState;
+    }
+
+    public RecordReviewState getReviewState() {
+        return reviewState;
+    }
+
+    public void setReviewState(RecordReviewState reviewState) {
+        this.reviewState = reviewState;
+    }
+
+    public String getReviewReason() {
+        return reviewReason;
+    }
+
+    public void setReviewReason(String reviewReason) {
+        this.reviewReason = reviewReason;
+    }
+
+    public Boolean getReviewManualRequired() {
+        return reviewManualRequired;
+    }
+
+    public void setReviewManualRequired(Boolean reviewManualRequired) {
+        this.reviewManualRequired = reviewManualRequired;
+    }
+
+    public LocalDateTime getReviewedAt() {
+        return reviewedAt;
+    }
+
+    public void setReviewedAt(LocalDateTime reviewedAt) {
+        this.reviewedAt = reviewedAt;
+    }
+
+    public String getSummary() {
+        return summary;
+    }
+
+    public void setSummary(String summary) {
+        this.summary = summary;
     }
 
     public LocalDateTime getCreatedAt() {
