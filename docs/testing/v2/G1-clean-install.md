@@ -13,7 +13,7 @@
 |---|---|---|
 | 集成分支基线 | `feat/v2-integration @ 0b9b94f` | `git merge-base --is-ancestor 0b9b94f HEAD` → YES |
 | R-1 修复分支 | `fix/v2-R1-masking-separators @ d65dc94` | 已推远端，`MaskingPolicyTest` 21/21、全量 245/245 |
-| R-1 合入 | `c781a99`（`git merge --no-ff`，父提交 `0b9b94f` + `d65dc94`） | `git merge-base --is-ancestor d65dc94 HEAD` → YES |
+| R-1 合入 | `c781a99`（`git merge --no-ff`，父提交 `0b9b94f` + `d65dc94`），已合入 `feat/v2-integration` | `git merge-base --is-ancestor d65dc94 origin/feat/v2-integration` → YES |
 | 包构建提交 | `f5d4731` | `BUILD-INFO.txt` 的 Git commit 与 `git rev-parse HEAD` 一致 |
 | 构建命令 | `deploy\build-package.ps1` + JDK17 / Maven 3.10.0 / Node 22.23.3 / Nginx 1.30.6 | 构建日志 `deploy/.cache/logs/build-package-20261028-184420.log` |
 | BUILD-INFO | layout 7.4、branch `feat/v2-G1-package`、dirty=false、jar/index SHA256 与包内文件实测一致 | 见 `G1-package-secret-scan.txt` §2/§4 |
