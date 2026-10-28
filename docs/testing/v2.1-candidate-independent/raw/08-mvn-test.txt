@@ -1,0 +1,634 @@
+[INFO] Scanning for projects...
+[INFO] 
+[INFO] ---------------------< com.findit:find-it-campus >----------------------
+[INFO] Building find-it-campus 0.0.1-SNAPSHOT
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ find-it-campus ---
+[INFO] Copying 2 resources from src\main\resources to target\classes
+[INFO] Copying 9 resources from src\main\resources to target\classes
+[INFO] 
+[INFO] --- compiler:3.14.1:compile (default-compile) @ find-it-campus ---
+[INFO] Recompiling the module because of changed source code.
+[INFO] Compiling 205 source files with javac [debug parameters release 17] to target\classes
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ find-it-campus ---
+[INFO] Copying 1 resource from src\test\resources to target\test-classes
+[INFO] 
+[INFO] --- compiler:3.14.1:testCompile (default-testCompile) @ find-it-campus ---
+[INFO] Recompiling the module because of changed dependency.
+[INFO] Compiling 47 source files with javac [debug parameters release 17] to target\test-classes
+[INFO] /C:/Project/hifox-workspaces/duancece/find-it-campus/server/src/test/java/com/findit/campus/match/service/MatchServiceTest.java: C:\Project\hifox-workspaces\duancece\find-it-campus\server\src\test\java\com\findit\campus\match\service\MatchServiceTest.java使用了未经检查或不安全的操作。
+[INFO] /C:/Project/hifox-workspaces/duancece/find-it-campus/server/src/test/java/com/findit/campus/match/service/MatchServiceTest.java: 有关详细信息, 请使用 -Xlint:unchecked 重新编译。
+[INFO] 
+[INFO] --- surefire:3.5.6:test (default-test) @ find-it-campus ---
+[INFO] Using auto detected provider org.apache.maven.surefire.junitplatform.JUnitPlatformProvider
+[INFO] 
+[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running AuthService 登录规则
+04:10:39.189 [main] WARN com.findit.campus.auth.service.AuthService -- 登录失败 studentNo=demo01 ip=127.0.0.1 reason=USER_INACTIVE consecutiveFailures=1
+04:10:39.354 [main] WARN org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder -- Encoded password does not look like BCrypt
+04:10:39.354 [main] WARN com.findit.campus.auth.service.AuthService -- 登录失败 studentNo=demo01 ip=127.0.0.1 reason=PASSWORD_MISMATCH consecutiveFailures=1
+04:10:39.637 [main] INFO com.findit.campus.auth.service.AuthService -- 登录成功 userId=1 ip=127.0.0.1
+04:10:39.900 [main] WARN com.findit.campus.auth.service.AuthService -- 登录失败 studentNo=demo01 ip=127.0.0.1 reason=PASSWORD_MISMATCH consecutiveFailures=1
+04:10:40.173 [main] WARN com.findit.campus.auth.service.AuthService -- 登录失败 studentNo=demo01 ip=127.0.0.1 reason=PASSWORD_MISMATCH consecutiveFailures=1
+04:10:40.257 [main] INFO com.findit.campus.auth.service.AuthService -- 登录成功 userId=1 ip=127.0.0.1
+04:10:40.431 [main] WARN com.findit.campus.auth.service.AuthService -- 登录失败 studentNo=demo01 ip=127.0.0.1 reason=STUDENT_NO_NOT_FOUND consecutiveFailures=1
+04:10:40.689 [main] INFO com.findit.campus.auth.service.AuthService -- 登录成功 userId=1 ip=127.0.0.1
+04:10:40.947 [main] WARN com.findit.campus.auth.service.AuthService -- 登录失败 studentNo=demo01 ip=127.0.0.1 reason=PASSWORD_MISMATCH consecutiveFailures=1
+04:10:41.031 [main] WARN com.findit.campus.auth.service.AuthService -- 登录失败 studentNo=demo01 ip=127.0.0.1 reason=PASSWORD_MISMATCH consecutiveFailures=2
+04:10:41.119 [main] WARN com.findit.campus.auth.service.AuthService -- 登录失败 studentNo=demo01 ip=127.0.0.1 reason=PASSWORD_MISMATCH consecutiveFailures=3
+04:10:41.207 [main] WARN com.findit.campus.auth.service.AuthService -- 登录失败 studentNo=demo01 ip=127.0.0.1 reason=PASSWORD_MISMATCH consecutiveFailures=4
+04:10:41.297 [main] WARN com.findit.campus.auth.service.LoginAttemptTracker -- 登录连续失败达到阈值（仅记录，不锁定账号）: key=demo01|127.0.0.1 count=5 windowMinutes=15
+04:10:41.297 [main] WARN com.findit.campus.auth.service.AuthService -- 登录失败 studentNo=demo01 ip=127.0.0.1 reason=PASSWORD_MISMATCH consecutiveFailures=5
+04:10:41.488 [main] WARN com.findit.campus.auth.service.AuthService -- 登录失败 studentNo=demo01__2026-10-28 00:00:00 INFO 登录成功 userId=1 ip=127.0.0.1 reason=STUDENT_NO_NOT_FOUND consecutiveFailures=1
+[INFO] Tests run: 9, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 7.910 s -- in AuthService 登录规则
+[INFO] Running LoginAttemptTracker 失败计数
+04:10:41.512 [main] WARN com.findit.campus.auth.service.LoginAttemptTracker -- 登录连续失败达到阈值（仅记录，不锁定账号）: key=demo01|127.0.0.1 count=5 windowMinutes=15
+04:10:41.610 [main] WARN com.findit.campus.auth.service.LoginAttemptTracker -- 登录失败计数表达到上限 10000，整体清空（计数只用于日志，不影响鉴权结果）
+04:10:41.645 [main] WARN com.findit.campus.auth.service.LoginAttemptTracker -- 登录连续失败达到阈值（仅记录，不锁定账号）: key=demo__2026-10-27 00:00:00 INFO 审计通过|127.0.0.1 count=5 windowMinutes=15
+[INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.153 s -- in LoginAttemptTracker 失败计数
+[INFO] Running /api/auth 登录、登出、当前用户
+04:10:41.939 [main] INFO org.springframework.test.context.support.AnnotationConfigContextLoaderUtils -- Could not detect default configuration classes for test class [com.findit.campus.auth.web.AuthApiTest]: AuthApiTest does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+04:10:42.330 [main] INFO org.springframework.boot.test.context.SpringBootTestContextBootstrapper -- Found @SpringBootConfiguration com.findit.campus.FindItCampusApplication for test class com.findit.campus.auth.web.AuthApiTest
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+
+ :: Spring Boot ::               (v3.5.16)
+
+2026-10-29 04:10:43.308 INFO  [main] c.findit.campus.auth.web.AuthApiTest - [] Starting AuthApiTest using Java 17.0.20.1 with PID 8304 (started by NhNoK in C:\Project\hifox-workspaces\duancece\find-it-campus\server)
+2026-10-29 04:10:43.311 INFO  [main] c.findit.campus.auth.web.AuthApiTest - [] No active profile set, falling back to 1 default profile: "default"
+2026-10-29 04:10:45.610 INFO  [main] o.s.b.t.m.w.SpringBootMockServletContext - [] Initializing Spring TestDispatcherServlet ''
+2026-10-29 04:10:45.611 INFO  [main] o.s.t.w.s.TestDispatcherServlet - [] Initializing Servlet ''
+2026-10-29 04:10:45.624 INFO  [main] o.s.t.w.s.TestDispatcherServlet - [] Completed initialization in 10 ms
+2026-10-29 04:10:45.678 INFO  [main] c.findit.campus.auth.web.AuthApiTest - [] Started AuthApiTest in 3.224 seconds (process running for 16.269)
+2026-10-29 04:10:45.937 INFO  [main] c.f.c.common.config.RequestIdFilter - [0543de57ee7d49bc] GET /api/auth/me -> 200 (164 ms)
+2026-10-29 04:10:46.295 WARN  [main] c.f.c.c.error.GlobalExceptionHandler - [c5f7e77dbc394a98] [c5f7e77dbc394a98] 参数校验失败: [FieldError[field=studentNo, reason=学号不得为空]]
+2026-10-29 04:10:46.345 INFO  [main] c.f.c.common.config.RequestIdFilter - [c5f7e77dbc394a98] POST /api/auth/login -> 400 (296 ms)
+2026-10-29 04:10:46.374 WARN  [main] c.f.c.c.error.GlobalExceptionHandler - [2656578ba89e4420] [2656578ba89e4420] 参数校验失败: [FieldError[field=password, reason=口令不得为空]]
+2026-10-29 04:10:46.377 INFO  [main] c.f.c.common.config.RequestIdFilter - [2656578ba89e4420] POST /api/auth/login -> 400 (6 ms)
+2026-10-29 04:10:46.415 INFO  [main] c.f.c.common.config.RequestIdFilter - [11f7aaa9ab4347c9] POST /api/auth/login -> 200 (6 ms)
+2026-10-29 04:10:46.457 INFO  [main] c.f.c.common.config.RequestIdFilter - [56ad7216127042b5] GET /api/auth/me -> 401 (3 ms)
+2026-10-29 04:10:46.519 INFO  [main] c.f.c.common.config.RequestIdFilter - [2b73393ad7f247f4] POST /api/auth/logout -> 200 (51 ms)
+2026-10-29 04:10:46.541 WARN  [main] c.f.c.c.error.GlobalExceptionHandler - [cfcc357ebbc04a06] [cfcc357ebbc04a06] 业务异常 code=10006: 学号或密码不正确
+2026-10-29 04:10:46.543 INFO  [main] c.f.c.common.config.RequestIdFilter - [cfcc357ebbc04a06] POST /api/auth/login -> 401 (4 ms)
+[INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 4.820 s -- in /api/auth 登录、登出、当前用户
+[INFO] Running AuthPaths 路径规则：写默认拦、读默认放
+[INFO] Tests run: 7, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.042 s -- in AuthPaths 路径规则：写默认拦、读默认放
+[INFO] Running WebConfig CORS：部署源放行 / 开发源不回归 / 外部源仍拒绝
+2026-10-29 04:10:46.612 INFO  [main] o.s.t.c.s.AnnotationConfigContextLoaderUtils - [] Could not detect default configuration classes for test class [com.findit.campus.common.config.WebConfigCorsTest]: WebConfigCorsTest does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+2026-10-29 04:10:46.715 INFO  [main] o.s.b.t.c.SpringBootTestContextBootstrapper - [] Found @SpringBootConfiguration com.findit.campus.FindItCampusApplication for test class com.findit.campus.common.config.WebConfigCorsTest
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+
+ :: Spring Boot ::               (v3.5.16)
+
+2026-10-29 04:10:46.784 INFO  [main] c.f.c.c.config.WebConfigCorsTest - [] Starting WebConfigCorsTest using Java 17.0.20.1 with PID 8304 (started by NhNoK in C:\Project\hifox-workspaces\duancece\find-it-campus\server)
+2026-10-29 04:10:46.784 INFO  [main] c.f.c.c.config.WebConfigCorsTest - [] No active profile set, falling back to 1 default profile: "default"
+2026-10-29 04:10:47.372 INFO  [main] o.s.b.t.m.w.SpringBootMockServletContext - [] Initializing Spring TestDispatcherServlet ''
+2026-10-29 04:10:47.372 INFO  [main] o.s.t.w.s.TestDispatcherServlet - [] Initializing Servlet ''
+2026-10-29 04:10:47.373 INFO  [main] o.s.t.w.s.TestDispatcherServlet - [] Completed initialization in 1 ms
+2026-10-29 04:10:47.384 INFO  [main] c.f.c.c.config.WebConfigCorsTest - [] Started WebConfigCorsTest in 0.664 seconds (process running for 17.975)
+2026-10-29 04:10:47.404 INFO  [main] c.f.c.common.config.RequestIdFilter - [4cc72c58bf54469d] OPTIONS /api/match -> 200 (10 ms)
+2026-10-29 04:10:47.465 INFO  [main] c.f.c.common.config.RequestIdFilter - [6bd383946bb64d88] POST /api/match -> 200 (49 ms)
+2026-10-29 04:10:47.481 INFO  [main] c.f.c.common.config.RequestIdFilter - [dadf611af4104663] POST /api/match -> 200 (3 ms)
+2026-10-29 04:10:47.493 INFO  [main] c.f.c.common.config.RequestIdFilter - [a84ad8bf8f9c4f50] POST /api/match -> 200 (2 ms)
+2026-10-29 04:10:47.510 INFO  [main] c.f.c.common.config.RequestIdFilter - [d5439e0148a549ce] POST /api/match -> 200 (2 ms)
+2026-10-29 04:10:47.522 INFO  [main] c.f.c.common.config.RequestIdFilter - [5c2739574517486e] POST /api/match -> 403 (2 ms)
+[INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.921 s -- in WebConfig CORS：部署源放行 / 开发源不回归 / 外部源仍拒绝
+[INFO] Running 方法级参数校验失败 → HTTP 400 + code 10001 + 全量 fieldErrors
+2026-10-29 04:10:47.540 INFO  [main] o.s.t.c.s.AnnotationConfigContextLoaderUtils - [] Could not detect default configuration classes for test class [com.findit.campus.common.error.MethodValidationExitTest]: MethodValidationExitTest does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+2026-10-29 04:10:47.622 INFO  [main] o.s.b.t.c.SpringBootTestContextBootstrapper - [] Found @SpringBootConfiguration com.findit.campus.FindItCampusApplication for test class com.findit.campus.common.error.MethodValidationExitTest
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+
+ :: Spring Boot ::               (v3.5.16)
+
+2026-10-29 04:10:47.679 INFO  [main] c.f.c.c.e.MethodValidationExitTest - [] Starting MethodValidationExitTest using Java 17.0.20.1 with PID 8304 (started by NhNoK in C:\Project\hifox-workspaces\duancece\find-it-campus\server)
+2026-10-29 04:10:47.680 INFO  [main] c.f.c.c.e.MethodValidationExitTest - [] No active profile set, falling back to 1 default profile: "default"
+2026-10-29 04:10:48.347 INFO  [main] o.s.b.t.m.w.SpringBootMockServletContext - [] Initializing Spring TestDispatcherServlet ''
+2026-10-29 04:10:48.347 INFO  [main] o.s.t.w.s.TestDispatcherServlet - [] Initializing Servlet ''
+2026-10-29 04:10:48.348 INFO  [main] o.s.t.w.s.TestDispatcherServlet - [] Completed initialization in 1 ms
+2026-10-29 04:10:48.358 INFO  [main] c.f.c.c.e.MethodValidationExitTest - [] Started MethodValidationExitTest in 0.732 seconds (process running for 18.949)
+2026-10-29 04:10:48.392 WARN  [main] c.f.c.c.error.GlobalExceptionHandler - [f71adee391914e41] [f71adee391914e41] 方法参数校验失败: [FieldError[field=id, reason=id 必须为正整数]]
+2026-10-29 04:10:48.415 INFO  [main] c.f.c.common.config.RequestIdFilter - [f71adee391914e41] GET /probe/method-validation/0 -> 400 (47 ms)
+
+MockHttpServletRequest:
+      HTTP Method = GET
+      Request URI = /probe/method-validation/0
+       Parameters = {}
+          Headers = []
+             Body = null
+    Session Attrs = {}
+
+Handler:
+             Type = com.findit.campus.validationprobe.MethodValidationProbeController
+           Method = com.findit.campus.validationprobe.MethodValidationProbeController#detail(long)
+
+Async:
+    Async started = false
+     Async result = null
+
+Resolved Exception:
+             Type = org.springframework.web.method.annotation.HandlerMethodValidationException
+
+ModelAndView:
+        View name = null
+             View = null
+            Model = null
+
+FlashMap:
+       Attributes = null
+
+MockHttpServletResponse:
+           Status = 400
+    Error message = null
+          Headers = [X-Request-Id:"f71adee391914e41", Vary:"Origin", "Access-Control-Request-Method", "Access-Control-Request-Headers", Content-Type:"application/json"]
+     Content type = application/json
+             Body = {"code":10001,"message":"请求参数校验失败","data":{"fieldErrors":[{"field":"id","reason":"id 必须为正整数"}]},"requestId":"f71adee391914e41"}
+    Forwarded URL = null
+   Redirected URL = null
+          Cookies = []
+2026-10-29 04:10:48.442 WARN  [main] c.f.c.c.error.GlobalExceptionHandler - [5e685faec4ac4533] [5e685faec4ac4533] 方法参数校验失败（@Validated）: [FieldError[field=size, reason=每页最多 50 条], FieldError[field=page, reason=页码从 1 开始]]
+2026-10-29 04:10:48.444 INFO  [main] c.f.c.common.config.RequestIdFilter - [5e685faec4ac4533] GET /probe/validated -> 400 (13 ms)
+
+MockHttpServletRequest:
+      HTTP Method = GET
+      Request URI = /probe/validated
+       Parameters = {page=[0], size=[999]}
+          Headers = []
+             Body = null
+    Session Attrs = {}
+
+Handler:
+             Type = com.findit.campus.validationprobe.ValidatedProbeController
+           Method = com.findit.campus.validationprobe.ValidatedProbeController#list(int, int)
+
+Async:
+    Async started = false
+     Async result = null
+
+Resolved Exception:
+             Type = jakarta.validation.ConstraintViolationException
+
+ModelAndView:
+        View name = null
+             View = null
+            Model = null
+
+FlashMap:
+       Attributes = null
+
+MockHttpServletResponse:
+           Status = 400
+    Error message = null
+          Headers = [X-Request-Id:"5e685faec4ac4533", Vary:"Origin", "Access-Control-Request-Method", "Access-Control-Request-Headers", Content-Type:"application/json"]
+     Content type = application/json
+             Body = {"code":10001,"message":"请求参数校验失败","data":{"fieldErrors":[{"field":"size","reason":"每页最多 50 条"},{"field":"page","reason":"页码从 1 开始"}]},"requestId":"5e685faec4ac4533"}
+    Forwarded URL = null
+   Redirected URL = null
+          Cookies = []
+2026-10-29 04:10:48.471 WARN  [main] c.f.c.c.error.GlobalExceptionHandler - [f5cb3113caa44184] [f5cb3113caa44184] 方法参数校验失败: [FieldError[field=page, reason=页码从 1 开始]]
+2026-10-29 04:10:48.475 INFO  [main] c.f.c.common.config.RequestIdFilter - [f5cb3113caa44184] GET /probe/method-validation -> 400 (7 ms)
+
+MockHttpServletRequest:
+      HTTP Method = GET
+      Request URI = /probe/method-validation
+       Parameters = {page=[0], size=[10]}
+          Headers = []
+             Body = null
+    Session Attrs = {}
+
+Handler:
+             Type = com.findit.campus.validationprobe.MethodValidationProbeController
+           Method = com.findit.campus.validationprobe.MethodValidationProbeController#list(int, int)
+
+Async:
+    Async started = false
+     Async result = null
+
+Resolved Exception:
+             Type = org.springframework.web.method.annotation.HandlerMethodValidationException
+
+ModelAndView:
+        View name = null
+             View = null
+            Model = null
+
+FlashMap:
+       Attributes = null
+
+MockHttpServletResponse:
+           Status = 400
+    Error message = null
+          Headers = [X-Request-Id:"f5cb3113caa44184", Vary:"Origin", "Access-Control-Request-Method", "Access-Control-Request-Headers", Content-Type:"application/json"]
+     Content type = application/json
+             Body = {"code":10001,"message":"请求参数校验失败","data":{"fieldErrors":[{"field":"page","reason":"页码从 1 开始"}]},"requestId":"f5cb3113caa44184"}
+    Forwarded URL = null
+   Redirected URL = null
+          Cookies = []
+2026-10-29 04:10:48.496 WARN  [main] c.f.c.c.error.GlobalExceptionHandler - [7ab56177803444b4] [7ab56177803444b4] 方法参数校验失败: [FieldError[field=page, reason=页码从 1 开始], FieldError[field=size, reason=每页最多 50 条]]
+2026-10-29 04:10:48.499 INFO  [main] c.f.c.common.config.RequestIdFilter - [7ab56177803444b4] GET /probe/method-validation -> 400 (6 ms)
+
+MockHttpServletRequest:
+      HTTP Method = GET
+      Request URI = /probe/method-validation
+       Parameters = {page=[0], size=[999]}
+          Headers = []
+             Body = null
+    Session Attrs = {}
+
+Handler:
+             Type = com.findit.campus.validationprobe.MethodValidationProbeController
+           Method = com.findit.campus.validationprobe.MethodValidationProbeController#list(int, int)
+
+Async:
+    Async started = false
+     Async result = null
+
+Resolved Exception:
+             Type = org.springframework.web.method.annotation.HandlerMethodValidationException
+
+ModelAndView:
+        View name = null
+             View = null
+            Model = null
+
+FlashMap:
+       Attributes = null
+
+MockHttpServletResponse:
+           Status = 400
+    Error message = null
+          Headers = [X-Request-Id:"7ab56177803444b4", Vary:"Origin", "Access-Control-Request-Method", "Access-Control-Request-Headers", Content-Type:"application/json"]
+     Content type = application/json
+             Body = {"code":10001,"message":"请求参数校验失败","data":{"fieldErrors":[{"field":"page","reason":"页码从 1 开始"},{"field":"size","reason":"每页最多 50 条"}]},"requestId":"7ab56177803444b4"}
+    Forwarded URL = null
+   Redirected URL = null
+          Cookies = []
+2026-10-29 04:10:48.533 WARN  [main] c.f.c.c.error.GlobalExceptionHandler - [a143509624884c80] [a143509624884c80] 方法参数校验失败: [FieldError[field=keyword, reason=关键词只允许字母数字下划线]]
+2026-10-29 04:10:48.536 INFO  [main] c.f.c.common.config.RequestIdFilter - [a143509624884c80] GET /probe/method-validation/keyword -> 400 (12 ms)
+
+MockHttpServletRequest:
+      HTTP Method = GET
+      Request URI = /probe/method-validation/keyword
+       Parameters = {keyword=[a]}
+          Headers = []
+             Body = null
+    Session Attrs = {}
+
+Handler:
+             Type = com.findit.campus.validationprobe.MethodValidationProbeController
+           Method = com.findit.campus.validationprobe.MethodValidationProbeController#keyword(String)
+
+Async:
+    Async started = false
+     Async result = null
+
+Resolved Exception:
+             Type = org.springframework.web.method.annotation.HandlerMethodValidationException
+
+ModelAndView:
+        View name = null
+             View = null
+            Model = null
+
+FlashMap:
+       Attributes = null
+
+MockHttpServletResponse:
+           Status = 400
+    Error message = null
+          Headers = [X-Request-Id:"a143509624884c80", Vary:"Origin", "Access-Control-Request-Method", "Access-Control-Request-Headers", Content-Type:"application/json"]
+     Content type = application/json
+             Body = {"code":10001,"message":"请求参数校验失败","data":{"fieldErrors":[{"field":"keyword","reason":"关键词只允许字母数字下划线"}]},"requestId":"a143509624884c80"}
+    Forwarded URL = null
+   Redirected URL = null
+          Cookies = []
+2026-10-29 04:10:48.561 INFO  [main] c.f.c.common.config.RequestIdFilter - [9c8de950192045cc] GET /probe/method-validation -> 200 (6 ms)
+[INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.030 s -- in 方法级参数校验失败 → HTTP 400 + code 10001 + 全量 fieldErrors
+[INFO] Running LogSafe：CR/LF/TAB/控制字符/限长
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.027 s -- in LogSafe：CR/LF/TAB/控制字符/限长
+[INFO] Running MaskingPolicy：A1 §6 正例/反例/身份维度
+[INFO] Tests run: 21, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.100 s -- in MaskingPolicy：A1 §6 正例/反例/身份维度
+[INFO] Running 引擎可替换性：同一调用点注入 Fake / Keyword 两种实现
+2026-10-29 04:10:49.027 INFO  [main] c.f.c.m.e.local.KeywordMatchEngine - [] 本地匹配类目词表已加载: 7 个分类
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.336 s -- in 引擎可替换性：同一调用点注入 Fake / Keyword 两种实现
+[INFO] Running KeywordMatchEngine：S1–N4 样例集 + 契约
+2026-10-29 04:10:49.081 INFO  [main] c.f.c.m.e.local.KeywordMatchEngine - [] 本地匹配类目词表已加载: 7 个分类
+2026-10-29 04:10:49.093 INFO  [main] c.f.c.m.e.local.KeywordMatchEngine - [] 本地匹配类目词表已加载: 7 个分类
+2026-10-29 04:10:49.104 INFO  [main] c.f.c.m.e.local.KeywordMatchEngine - [] 本地匹配类目词表已加载: 7 个分类
+2026-10-29 04:10:49.119 INFO  [main] c.f.c.m.e.local.KeywordMatchEngine - [] 本地匹配类目词表已加载: 7 个分类
+2026-10-29 04:10:49.132 INFO  [main] c.f.c.m.e.local.KeywordMatchEngine - [] 本地匹配类目词表已加载: 7 个分类
+2026-10-29 04:10:49.145 WARN  [main] c.f.c.m.e.local.KeywordMatchEngine - [] 本地匹配类目词表加载失败，本次降级为纯文本匹配: t_category unavailable (test stub)
+2026-10-29 04:10:49.155 INFO  [main] c.f.c.m.e.local.KeywordMatchEngine - [] 本地匹配类目词表已加载: 7 个分类
+2026-10-29 04:10:49.167 INFO  [main] c.f.c.m.e.local.KeywordMatchEngine - [] 本地匹配类目词表已加载: 7 个分类
+2026-10-29 04:10:49.175 INFO  [main] c.f.c.m.e.local.KeywordMatchEngine - [] 本地匹配类目词表已加载: 7 个分类
+2026-10-29 04:10:49.230 INFO  [main] c.f.c.m.e.local.KeywordMatchEngine - [] 本地匹配类目词表已加载: 7 个分类
+2026-10-29 04:10:49.253 INFO  [main] c.f.c.m.e.local.KeywordMatchEngine - [] 本地匹配类目词表已加载: 7 个分类
+2026-10-29 04:10:49.261 INFO  [main] c.f.c.m.e.local.KeywordMatchEngine - [] 本地匹配类目词表已加载: 7 个分类
+2026-10-29 04:10:49.267 INFO  [main] c.f.c.m.e.local.KeywordMatchEngine - [] 本地匹配类目词表已加载: 7 个分类
+2026-10-29 04:10:49.274 INFO  [main] c.f.c.m.e.local.KeywordMatchEngine - [] 本地匹配类目词表已加载: 7 个分类
+2026-10-29 04:10:49.280 INFO  [main] c.f.c.m.e.local.KeywordMatchEngine - [] 本地匹配类目词表已加载: 7 个分类
+[INFO] Tests run: 17, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.226 s -- in KeywordMatchEngine：S1–N4 样例集 + 契约
+[INFO] Running MatchService 编排（假引擎注入）
+2026-10-29 04:10:49.325 WARN  [main] c.f.c.match.service.MatchService - [] 匹配快照写入失败（不影响本次响应）: DB down
+[INFO] Tests run: 12, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.110 s -- in MatchService 编排（假引擎注入）
+[INFO] Running NotificationService.markRead：幂等 / 越权 / 404
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.046 s -- in NotificationService.markRead：幂等 / 越权 / 404
+[INFO] Running NotificationController：401 / 非数字 id 404 / read 响应
+2026-10-29 04:10:49.455 INFO  [main] o.s.t.c.s.AnnotationConfigContextLoaderUtils - [] Could not detect default configuration classes for test class [com.findit.campus.notification.web.NotificationApiTest]: NotificationApiTest does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+2026-10-29 04:10:49.522 INFO  [main] o.s.b.t.c.SpringBootTestContextBootstrapper - [] Found @SpringBootConfiguration com.findit.campus.FindItCampusApplication for test class com.findit.campus.notification.web.NotificationApiTest
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+
+ :: Spring Boot ::               (v3.5.16)
+
+2026-10-29 04:10:49.575 INFO  [main] c.f.c.n.web.NotificationApiTest - [] Starting NotificationApiTest using Java 17.0.20.1 with PID 8304 (started by NhNoK in C:\Project\hifox-workspaces\duancece\find-it-campus\server)
+2026-10-29 04:10:49.576 INFO  [main] c.f.c.n.web.NotificationApiTest - [] No active profile set, falling back to 1 default profile: "default"
+2026-10-29 04:10:50.145 INFO  [main] o.s.b.t.m.w.SpringBootMockServletContext - [] Initializing Spring TestDispatcherServlet ''
+2026-10-29 04:10:50.145 INFO  [main] o.s.t.w.s.TestDispatcherServlet - [] Initializing Servlet ''
+2026-10-29 04:10:50.146 INFO  [main] o.s.t.w.s.TestDispatcherServlet - [] Completed initialization in 1 ms
+2026-10-29 04:10:50.156 INFO  [main] c.f.c.n.web.NotificationApiTest - [] Started NotificationApiTest in 0.629 seconds (process running for 20.747)
+2026-10-29 04:10:50.167 WARN  [main] c.f.c.c.error.GlobalExceptionHandler - [af9e7d825d154e9a] [af9e7d825d154e9a] 业务异常 code=50004: 通知不存在
+2026-10-29 04:10:50.172 INFO  [main] c.f.c.common.config.RequestIdFilter - [af9e7d825d154e9a] PATCH /api/notifications/abc/read -> 404 (10 ms)
+2026-10-29 04:10:50.189 INFO  [main] c.f.c.common.config.RequestIdFilter - [47ad043bebf54db9] PATCH /api/notifications/1/read -> 200 (9 ms)
+2026-10-29 04:10:50.198 INFO  [main] c.f.c.common.config.RequestIdFilter - [0874a81de2ca4c1c] PATCH /api/notifications/1/read -> 401 (1 ms)
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.751 s -- in NotificationController：401 / 非数字 id 404 / read 响应
+[INFO] Running PairPolicyProperties：阈值与保留期 fail-fast
+2026-10-29 04:10:50.234 INFO  [main] c.f.c.p.config.PairPolicyProperties - [] pair thresholds default(direct=0.95 unlock=0.80 notify=0.90 completedVisible=0.95) local(direct=0.95 unlock=0.45 notify=0.90 completedVisible=0.95) deepseek(direct=0.95 unlock=0.80 notify=0.90 completedVisible=0.95)
+2026-10-29 04:10:50.260 INFO  [main] c.f.c.p.config.PairPolicyProperties - [] pair thresholds default(direct=0.95 unlock=0.80 notify=0.90 completedVisible=0.95) local(direct=0.95 unlock=0.80 notify=0.90 completedVisible=0.95) deepseek(direct=0.95 unlock=0.80 notify=0.90 completedVisible=0.95)
+2026-10-29 04:10:50.266 INFO  [main] c.f.c.p.config.PairPolicyProperties - [] pair thresholds default(direct=0.95 unlock=0.80 notify=0.90 completedVisible=0.95) local(direct=0.95 unlock=0.80 notify=0.90 completedVisible=0.95) deepseek(direct=0.95 unlock=0.80 notify=0.90 completedVisible=0.95)
+[INFO] Tests run: 11, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.065 s -- in PairPolicyProperties：阈值与保留期 fail-fast
+[INFO] Running DeepSeekPairScorer：空 Key/401/超时/非 JSON/越界 → 全部降级且不抛异常
+2026-10-29 04:10:50.401 WARN  [main] c.f.c.p.e.d.DeepSeekPairScorer - [] pair llm degraded lostId=1 foundId=2 reason=SCORE_OUT_OF_RANGE latencyMs=49
+2026-10-29 04:10:50.418 INFO  [main] c.f.c.p.e.d.DeepSeekPairScorer - [] pair llm ok lostId=1 foundId=2 engine=DEEPSEEK score=0.87 latencyMs=5 promptTokens=321 completionTokens=17 model=deepseek-chat
+2026-10-29 04:10:50.546 WARN  [main] c.f.c.p.e.d.DeepSeekPairScorer - [] pair llm degraded lostId=1 foundId=2 reason=TIMEOUT latencyMs=112 httpStatus=-1 at=2026-10-29 04:10:50
+2026-10-29 04:10:51.061 WARN  [main] c.f.c.p.e.d.DeepSeekPairScorer - [] pair llm degraded lostId=1 foundId=2 reason=HTTP_ERROR latencyMs=5 httpStatus=500 at=2026-10-29 04:10:51
+2026-10-29 04:10:51.081 WARN  [main] c.f.c.p.e.d.DeepSeekPairScorer - [] pair llm degraded lostId=1 foundId=2 reason=UNAUTHORIZED latencyMs=12 httpStatus=401 at=2026-10-29 04:10:51
+2026-10-29 04:10:51.121 WARN  [main] c.f.c.p.e.d.DeepSeekPairScorer - [] pair llm degraded lostId=1 foundId=2 reason=NON_JSON latencyMs=28
+[INFO] Tests run: 7, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.846 s -- in DeepSeekPairScorer：空 Key/401/超时/非 JSON/越界 → 全部降级且不抛异常
+[INFO] Running LlmCircuitBreaker：连续失败打开、冷却后恢复、成功即清零
+2026-10-29 04:10:51.130 WARN  [main] c.f.c.pair.engine.LlmCircuitBreaker - [] LLM 熔断打开：连续失败 3 次，5 分钟内直接本地降级
+2026-10-29 04:10:51.130 INFO  [main] c.f.c.pair.engine.LlmCircuitBreaker - [] LLM 熔断进入 HALF_OPEN：冷却结束，放行 1 次探测调用
+2026-10-29 04:10:51.136 WARN  [main] c.f.c.pair.engine.LlmCircuitBreaker - [] LLM 熔断打开：连续失败 2 次，5 分钟内直接本地降级
+2026-10-29 04:10:51.138 INFO  [main] c.f.c.pair.engine.LlmCircuitBreaker - [] LLM 熔断进入 HALF_OPEN：冷却结束，放行 1 次探测调用
+2026-10-29 04:10:51.138 INFO  [main] c.f.c.pair.engine.LlmCircuitBreaker - [] LLM 熔断恢复：HALF_OPEN 探测成功，状态 CLOSED
+2026-10-29 04:10:51.140 WARN  [main] c.f.c.pair.engine.LlmCircuitBreaker - [] LLM 熔断打开：连续失败 1 次，5 分钟内直接本地降级
+2026-10-29 04:10:51.140 INFO  [main] c.f.c.pair.engine.LlmCircuitBreaker - [] LLM 熔断进入 HALF_OPEN：冷却结束，放行 1 次探测调用
+2026-10-29 04:10:51.140 WARN  [main] c.f.c.pair.engine.LlmCircuitBreaker - [] LLM 熔断探测超过 40000ms 无回报，重新放行 1 次探测
+2026-10-29 04:10:51.143 WARN  [main] c.f.c.pair.engine.LlmCircuitBreaker - [] LLM 熔断打开：连续失败 1 次，5 分钟内直接本地降级
+2026-10-29 04:10:51.143 INFO  [main] c.f.c.pair.engine.LlmCircuitBreaker - [] LLM 熔断进入 HALF_OPEN：冷却结束，放行 1 次探测调用
+2026-10-29 04:10:51.144 WARN  [main] c.f.c.pair.engine.LlmCircuitBreaker - [] LLM 熔断打开：HALF_OPEN 探测失败，5 分钟内直接本地降级
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.018 s -- in LlmCircuitBreaker：连续失败打开、冷却后恢复、成功即清零
+[INFO] Running PairContentHasher：幂等键覆盖 title/description/location/category
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.017 s -- in PairContentHasher：幂等键覆盖 title/description/location/category
+[INFO] Running PairPrompt：比对通道只在 prompt 边界剥身份
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.007 s -- in PairPrompt：比对通道只在 prompt 边界剥身份
+[INFO] Running PairFactsMapper.xml：卡片查询只取有效高分 pair，且不 SELECT 号码
+[INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.082 s -- in PairFactsMapper.xml：卡片查询只取有效高分 pair，且不 SELECT 号码
+[INFO] Running RecordMapper.xml：全量扫描的降级冷却 + 降级重扫只取 DEGRADED
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.024 s -- in RecordMapper.xml：全量扫描的降级冷却 + 降级重扫只取 DEGRADED
+[INFO] Running PairScoreMapper.xml：重算只更新分数类列，不碰 status/授权/确认
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.086 s -- in PairScoreMapper.xml：重算只更新分数类列，不碰 status/授权/确认
+[INFO] Running DegradedRescanTrigger：恢复事件触发一次降级重扫 / 异步 / 失败不冒泡
+2026-10-29 04:10:51.517 INFO  [main] c.f.c.p.s.DegradedRescanTrigger - [] LLM 恢复事件：已提交一次降级重扫（trigger=llm-recovered）
+2026-10-29 04:10:51.555 WARN  [pair-degraded-rescan] c.f.c.p.s.DegradedRescanTrigger - [] pair degraded rescan on recovery failed cause=db down
+2026-10-29 04:10:51.571 INFO  [main] c.f.c.p.s.DegradedRescanTrigger - [] LLM 恢复事件：已提交一次降级重扫（trigger=llm-recovered）
+2026-10-29 04:10:51.574 INFO  [pair-degraded-rescan] c.f.c.p.s.DegradedRescanTrigger - [] pair degraded rescan on recovery done trigger=llm-recovered scanned=0 rescored=0 degraded=0 skipped=0 limited=false skipReason=null elapsedMs=1
+2026-10-29 04:10:51.604 INFO  [main] c.f.c.p.s.DegradedRescanTrigger - [] LLM 恢复事件：已提交一次降级重扫（trigger=llm-recovered）
+2026-10-29 04:10:51.609 INFO  [main] c.f.c.p.s.DegradedRescanTrigger - [] LLM 恢复触发的降级重扫已有一轮在排队/执行，跳过本次回调
+2026-10-29 04:10:51.610 INFO  [pair-degraded-rescan] c.f.c.p.s.DegradedRescanTrigger - [] pair degraded rescan on recovery done trigger=llm-recovered scanned=0 rescored=0 degraded=0 skipped=0 limited=false skipReason=null elapsedMs=1
+2026-10-29 04:10:51.613 WARN  [main] c.f.c.pair.engine.LlmCircuitBreaker - [] LLM 熔断打开：连续失败 1 次，0 分钟内直接本地降级
+2026-10-29 04:10:51.613 INFO  [main] c.f.c.pair.engine.LlmCircuitBreaker - [] LLM 熔断进入 HALF_OPEN：冷却结束，放行 1 次探测调用
+2026-10-29 04:10:51.613 INFO  [main] c.f.c.pair.engine.LlmCircuitBreaker - [] LLM 熔断恢复：HALF_OPEN 探测成功，状态 CLOSED
+2026-10-29 04:10:51.614 INFO  [main] c.f.c.p.s.DegradedRescanTrigger - [] LLM 恢复事件：已提交一次降级重扫（trigger=llm-recovered）
+2026-10-29 04:10:51.616 INFO  [pair-degraded-rescan] c.f.c.p.s.DegradedRescanTrigger - [] pair degraded rescan on recovery done trigger=llm-recovered scanned=0 rescored=0 degraded=0 skipped=0 limited=false skipReason=null elapsedMs=1
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.247 s -- in DegradedRescanTrigger：恢复事件触发一次降级重扫 / 异步 / 失败不冒泡
+[INFO] Running PairAccessPolicy：三档边界 / CLOSED / COMPLETED 保留期
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.019 s -- in PairAccessPolicy：三档边界 / CLOSED / COMPLETED 保留期
+[INFO] Running PairActionService：CONTACT / CONFIRM / IGNORE 状态机
+[INFO] Tests run: 13, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.114 s -- in PairActionService：CONTACT / CONFIRM / IGNORE 状态机
+[INFO] Running PairContactService：三档 / 逐端授权 / 审计结果
+[INFO] Tests run: 11, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.092 s -- in PairContactService：三档 / 逐端授权 / 审计结果
+[INFO] Running PairFactsAdapter：分组 / 逐端标志 / otherNote 门控 / 三档
+[INFO] Tests run: 8, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.065 s -- in PairFactsAdapter：分组 / 逐端标志 / otherNote 门控 / 三档
+[INFO] Running PairScanService：计数 / 单飞 409 / maxLlmCalls / 降级冷却选材 / 熔断跳过
+2026-10-29 04:10:51.978 INFO  [pool-3-thread-1] c.f.c.pair.service.PairScanService - [] pair scan done scope=FULL trigger=http scanned=1 rescored=1 degraded=0 skipped=0 expired=7 limited=false elapsedMs=2 counters={llmCalls=0, llmSuccess=0, degraded=0, skippedUnchanged=0, pairsWritten=0, enqueueRejected=0, lockMisses=0, degradedByReason={}}
+2026-10-29 04:10:51.982 INFO  [main] c.f.c.pair.service.PairScanService - [] pair scan done scope=FULL trigger=scheduled scanned=1 rescored=1 degraded=0 skipped=0 expired=7 limited=false elapsedMs=0 counters={llmCalls=0, llmSuccess=0, degraded=0, skippedUnchanged=0, pairsWritten=0, enqueueRejected=0, lockMisses=0, degradedByReason={}}
+2026-10-29 04:10:51.985 INFO  [main] c.f.c.pair.service.PairScanService - [] pair scan done scope=DEGRADED trigger=http-degraded scanned=1 rescored=1 degraded=0 skipped=0 expired=-1 limited=false elapsedMs=0 counters={llmCalls=0, llmSuccess=0, degraded=0, skippedUnchanged=0, pairsWritten=0, enqueueRejected=0, lockMisses=0, degradedByReason={}}
+2026-10-29 04:10:51.990 INFO  [main] c.f.c.pair.service.PairScanService - [] pair scan done scope=FULL trigger=http scanned=0 rescored=0 degraded=0 skipped=0 expired=7 limited=false elapsedMs=0 counters={llmCalls=0, llmSuccess=0, degraded=0, skippedUnchanged=0, pairsWritten=0, enqueueRejected=0, lockMisses=0, degradedByReason={}}
+2026-10-29 04:10:51.999 INFO  [pool-4-thread-1] c.f.c.pair.service.PairScanService - [] pair scan done scope=FULL trigger=http scanned=1 rescored=1 degraded=0 skipped=0 expired=7 limited=false elapsedMs=1 counters={llmCalls=0, llmSuccess=0, degraded=0, skippedUnchanged=0, pairsWritten=0, enqueueRejected=0, lockMisses=0, degradedByReason={}}
+2026-10-29 04:10:52.003 WARN  [main] c.f.c.pair.service.PairScanService - [] pair scan 达到 maxLlmCalls=1 上限，提前停止 scope=DEGRADED trigger=degraded-scheduled（还有 2 条待扫）
+2026-10-29 04:10:52.003 INFO  [main] c.f.c.pair.service.PairScanService - [] pair scan done scope=DEGRADED trigger=degraded-scheduled scanned=1 rescored=1 degraded=0 skipped=0 expired=-1 limited=true elapsedMs=0 counters={llmCalls=1, llmSuccess=0, degraded=0, skippedUnchanged=0, pairsWritten=0, enqueueRejected=0, lockMisses=0, degradedByReason={}}
+2026-10-29 04:10:52.010 INFO  [main] c.f.c.pair.service.PairScanService - [] pair scan done scope=FULL trigger=http scanned=3 rescored=3 degraded=1 skipped=8 expired=7 limited=false elapsedMs=0 counters={llmCalls=0, llmSuccess=0, degraded=0, skippedUnchanged=0, pairsWritten=0, enqueueRejected=0, lockMisses=0, degradedByReason={}}
+2026-10-29 04:10:52.014 WARN  [main] c.f.c.pair.service.PairScanService - [] pair scan 记录被预算截断 scope=DEGRADED trigger=degraded-scheduled recordId=1（剩余 pair 留到下一轮）
+2026-10-29 04:10:52.014 INFO  [main] c.f.c.pair.service.PairScanService - [] pair scan done scope=DEGRADED trigger=degraded-scheduled scanned=1 rescored=1 degraded=1 skipped=0 expired=-1 limited=true elapsedMs=0 counters={llmCalls=0, llmSuccess=0, degraded=0, skippedUnchanged=0, pairsWritten=0, enqueueRejected=0, lockMisses=0, degradedByReason={}}
+2026-10-29 04:10:52.021 WARN  [main] c.f.c.pair.service.PairScanService - [] pair scan 达到 maxLlmCalls=2 上限，提前停止 scope=FULL trigger=http（还有 1 条待扫）
+2026-10-29 04:10:52.021 INFO  [main] c.f.c.pair.service.PairScanService - [] pair scan done scope=FULL trigger=http scanned=2 rescored=2 degraded=0 skipped=0 expired=7 limited=true elapsedMs=0 counters={llmCalls=2, llmSuccess=0, degraded=0, skippedUnchanged=0, pairsWritten=0, enqueueRejected=0, lockMisses=0, degradedByReason={}}
+2026-10-29 04:10:52.025 WARN  [main] c.f.c.pair.engine.LlmCircuitBreaker - [] LLM 熔断打开：连续失败 5 次，5 分钟内直接本地降级
+2026-10-29 04:10:52.025 INFO  [main] c.f.c.pair.service.PairScanService - [] pair degraded scan skipped trigger=degraded-scheduled reason=CIRCUIT_OPEN remainingSeconds=300 elapsedMs=0
+[INFO] Tests run: 10, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.084 s -- in PairScanService：计数 / 单飞 409 / maxLlmCalls / 降级冷却选材 / 熔断跳过
+[INFO] Running PairScoringService：重复触发不重复计费 / 降级有分数 / 不覆盖 pair 状态
+2026-10-29 04:10:52.199 INFO  [main] c.f.c.p.service.PairScoringService - [] pair score written recordId=1 lostId=1 foundId=2 trigger=scan pairId=null engine=DEEPSEEK score=0.90 degradedReason=null latencyMs=10 promptTokens=100 completionTokens=10 elapsedMs=8
+2026-10-29 04:10:52.202 INFO  [main] c.f.c.p.service.PairScoringService - [] pair record scored recordId=1 trigger=scan candidates=2 written=1 skipped=0 locked=0 state=READY degradedPairs=0 truncated=true
+2026-10-29 04:10:52.213 INFO  [main] c.f.c.p.service.PairScoringService - [] pair score written recordId=1 lostId=1 foundId=2 trigger=publish pairId=101 engine=DEEPSEEK score=0.90 degradedReason=null latencyMs=120 promptTokens=300 completionTokens=20 elapsedMs=3
+2026-10-29 04:10:52.214 INFO  [main] c.f.c.p.service.PairScoringService - [] pair record scored recordId=1 trigger=publish candidates=1 written=1 skipped=0 locked=0 state=READY degradedPairs=0 truncated=false
+2026-10-29 04:10:52.217 INFO  [main] c.f.c.p.service.PairScoringService - [] pair score skipped reason=UNCHANGED fastPath=true lostId=1 foundId=2 trigger=scan pairId=101
+2026-10-29 04:10:52.217 INFO  [main] c.f.c.p.service.PairScoringService - [] pair record scored recordId=1 trigger=scan candidates=1 written=0 skipped=1 locked=0 state=READY degradedPairs=0 truncated=false
+2026-10-29 04:10:52.221 INFO  [main] c.f.c.p.service.PairScoringService - [] pair score skipped reason=UNCHANGED fastPath=true lostId=1 foundId=2 trigger=manual pairId=101
+2026-10-29 04:10:52.222 INFO  [main] c.f.c.p.service.PairScoringService - [] pair record scored recordId=1 trigger=manual candidates=1 written=0 skipped=1 locked=0 state=READY degradedPairs=0 truncated=false
+2026-10-29 04:10:52.236 INFO  [main] c.f.c.p.service.PairScoringService - [] pair score written recordId=1 lostId=1 foundId=2 trigger=llm-recovered pairId=101 engine=DEEPSEEK score=0.93 degradedReason=null latencyMs=88 promptTokens=410 completionTokens=12 elapsedMs=3
+2026-10-29 04:10:52.236 INFO  [main] c.f.c.p.service.PairScoringService - [] pair score upgraded event=pair_score_upgraded recordId=1 pairId=101 lostId=1 foundId=2 trigger=llm-recovered oldEngine=LOCAL_KEYWORD oldScore=0.42 newEngine=DEEPSEEK newScore=0.93 degradedReason=null latencyMs=88 elapsedMs=3
+2026-10-29 04:10:52.249 INFO  [main] c.f.c.p.service.PairScoringService - [] pair score written recordId=1 lostId=1 foundId=2 trigger=update pairId=101 engine=DEEPSEEK score=0.93 degradedReason=null latencyMs=88 promptTokens=410 completionTokens=12 elapsedMs=5
+2026-10-29 04:10:52.259 INFO  [main] c.f.c.p.service.PairScoringService - [] pair score written recordId=1 lostId=1 foundId=2 trigger=update pairId=101 engine=DEEPSEEK score=0.96 degradedReason=null latencyMs=60 promptTokens=100 completionTokens=9 elapsedMs=0
+2026-10-29 04:10:52.260 INFO  [main] c.f.c.p.service.PairScoringService - [] pair score written recordId=1 lostId=1 foundId=2 trigger=update pairId=101 engine=DEEPSEEK score=0.96 degradedReason=null latencyMs=60 promptTokens=100 completionTokens=9 elapsedMs=0
+2026-10-29 04:10:52.270 INFO  [main] c.f.c.p.service.PairScoringService - [] pair score skipped reason=UNCHANGED fastPath=true lostId=1 foundId=2 trigger=scan pairId=101
+2026-10-29 04:10:52.271 INFO  [main] c.f.c.p.service.PairScoringService - [] pair record scored recordId=1 trigger=scan candidates=1 written=0 skipped=1 locked=0 state=READY degradedPairs=0 truncated=false
+2026-10-29 04:10:52.275 INFO  [main] c.f.c.p.service.PairScoringService - [] pair score skipped reason=UNCHANGED fastPath=true lostId=1 foundId=2 trigger=llm-recovered pairId=101
+2026-10-29 04:10:52.280 INFO  [main] c.f.c.p.service.PairScoringService - [] pair score skipped reason=UNCHANGED fastPath=true lostId=1 foundId=2 trigger=publish pairId=101
+2026-10-29 04:10:52.280 INFO  [main] c.f.c.p.service.PairScoringService - [] pair record scored recordId=1 trigger=publish candidates=1 written=0 skipped=1 locked=0 state=READY degradedPairs=0 truncated=false
+2026-10-29 04:10:52.280 INFO  [main] c.f.c.p.service.PairScoringService - [] pair score skipped reason=UNCHANGED fastPath=true lostId=1 foundId=2 trigger=scan pairId=101
+2026-10-29 04:10:52.280 INFO  [main] c.f.c.p.service.PairScoringService - [] pair record scored recordId=1 trigger=scan candidates=1 written=0 skipped=1 locked=0 state=READY degradedPairs=0 truncated=false
+2026-10-29 04:10:52.281 INFO  [main] c.f.c.p.service.PairScoringService - [] pair score skipped reason=UNCHANGED fastPath=true lostId=1 foundId=2 trigger=manual pairId=101
+2026-10-29 04:10:52.281 INFO  [main] c.f.c.p.service.PairScoringService - [] pair record scored recordId=1 trigger=manual candidates=1 written=0 skipped=1 locked=0 state=READY degradedPairs=0 truncated=false
+2026-10-29 04:10:52.286 INFO  [main] c.f.c.p.service.PairScoringService - [] pair score skipped reason=LOCKED lostId=1 foundId=2 trigger=scan
+2026-10-29 04:10:52.290 INFO  [main] c.f.c.p.service.PairScoringService - [] pair score written recordId=1 lostId=1 foundId=2 trigger=publish pairId=null engine=DEEPSEEK score=0.91 degradedReason=null latencyMs=70 promptTokens=100 completionTokens=10 elapsedMs=0
+2026-10-29 04:10:52.291 INFO  [main] c.f.c.p.service.PairScoringService - [] pair score written recordId=3 lostId=3 foundId=2 trigger=publish pairId=null engine=DEEPSEEK score=0.91 degradedReason=null latencyMs=70 promptTokens=100 completionTokens=10 elapsedMs=0
+2026-10-29 04:10:52.296 INFO  [main] c.f.c.p.service.PairScoringService - [] pair score written recordId=1 lostId=1 foundId=2 trigger=publish pairId=null engine=LOCAL_KEYWORD score=0.42 degradedReason=TIMEOUT latencyMs=50 promptTokens=null completionTokens=null elapsedMs=0
+[INFO] Tests run: 12, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.268 s -- in PairScoringService：重复触发不重复计费 / 降级有分数 / 不覆盖 pair 状态
+[INFO] Running PairUnlockService：PUBLISH / REVOKE / 附言打码 / 逐端隔离
+[INFO] Tests run: 7, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.023 s -- in PairUnlockService：PUBLISH / REVOKE / 附言打码 / 逐端隔离
+[INFO] Running PairController：401 门禁 / 非数字 id 404 / contact no-store
+2026-10-29 04:10:52.329 INFO  [main] o.s.t.c.s.AnnotationConfigContextLoaderUtils - [] Could not detect default configuration classes for test class [com.findit.campus.pair.web.PairApiTest]: PairApiTest does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+2026-10-29 04:10:52.399 INFO  [main] o.s.b.t.c.SpringBootTestContextBootstrapper - [] Found @SpringBootConfiguration com.findit.campus.FindItCampusApplication for test class com.findit.campus.pair.web.PairApiTest
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+
+ :: Spring Boot ::               (v3.5.16)
+
+2026-10-29 04:10:52.447 INFO  [main] c.findit.campus.pair.web.PairApiTest - [] Starting PairApiTest using Java 17.0.20.1 with PID 8304 (started by NhNoK in C:\Project\hifox-workspaces\duancece\find-it-campus\server)
+2026-10-29 04:10:52.447 INFO  [main] c.findit.campus.pair.web.PairApiTest - [] No active profile set, falling back to 1 default profile: "default"
+2026-10-29 04:10:52.982 INFO  [main] o.s.b.t.m.w.SpringBootMockServletContext - [] Initializing Spring TestDispatcherServlet ''
+2026-10-29 04:10:52.983 INFO  [main] o.s.t.w.s.TestDispatcherServlet - [] Initializing Servlet ''
+2026-10-29 04:10:52.984 INFO  [main] o.s.t.w.s.TestDispatcherServlet - [] Completed initialization in 1 ms
+2026-10-29 04:10:52.996 INFO  [main] c.findit.campus.pair.web.PairApiTest - [] Started PairApiTest in 0.593 seconds (process running for 23.587)
+2026-10-29 04:10:53.007 INFO  [main] c.f.c.common.config.RequestIdFilter - [95d534f74aef4027] POST /api/pairs/101/contact-unlock -> 401 (2 ms)
+2026-10-29 04:10:53.019 WARN  [main] c.f.c.c.error.GlobalExceptionHandler - [475c66ee80564993] [475c66ee80564993] 业务异常 code=20004: 配对不存在或任一端记录已删除
+2026-10-29 04:10:53.021 INFO  [main] c.f.c.common.config.RequestIdFilter - [475c66ee80564993] GET /api/pairs/abc/contact -> 404 (5 ms)
+2026-10-29 04:10:53.038 INFO  [main] c.f.c.common.config.RequestIdFilter - [6e9ba6d7b1404210] GET /api/pairs/101/contact -> 200 (6 ms)
+2026-10-29 04:10:53.054 INFO  [main] c.f.c.common.config.RequestIdFilter - [e9b09c3dfb8a47ea] POST /api/pairs/101/contact-unlock -> 200 (6 ms)
+2026-10-29 04:10:53.065 INFO  [main] c.f.c.common.config.RequestIdFilter - [5da3a9392e924823] GET /api/pairs/101/contact -> 401 (1 ms)
+2026-10-29 04:10:53.089 INFO  [main] c.f.c.common.config.RequestIdFilter - [10b73fd62f7c456a] PATCH /api/pairs/101 -> 200 (15 ms)
+[INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.770 s -- in PairController：401 门禁 / 非数字 id 404 / contact no-store
+[INFO] Running RecordMapper.xml：条件更新与扫描保留期口径
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.025 s -- in RecordMapper.xml：条件更新与扫描保留期口径
+[INFO] Running MyRecordService：批量取卡片，查询条数与页大小无关
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.073 s -- in MyRecordService：批量取卡片，查询条数与页大小无关
+[INFO] Running RecordService：所有权 403 / 终态 404 / 完成前置 409
+2026-10-29 04:10:53.358 INFO  [main] c.f.c.record.service.RecordService - [] 新增记录 id=77 type=LOST publisherId=1 reviewMode=off reviewState=APPROVED
+2026-10-29 04:10:53.362 INFO  [main] c.f.c.record.service.RecordService - [3027c6c9072b4a20] 记录状态流转 id=9 PENDING -> COMPLETED publisherId=1
+2026-10-29 04:10:53.368 INFO  [main] c.f.c.record.service.RecordService - [3027c6c9072b4a20] 修改记录 id=9 publisherId=1 reviewState=APPROVED
+2026-10-29 04:10:53.392 INFO  [main] c.f.c.record.service.RecordService - [3027c6c9072b4a20] 记录状态流转 id=9 PENDING -> CLOSED publisherId=1
+[INFO] Tests run: 17, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.207 s -- in RecordService：所有权 403 / 终态 404 / 完成前置 409
+[INFO] Running RecordStatusPolicy：三态流转与完成前置
+[INFO] Tests run: 8, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.027 s -- in RecordStatusPolicy：三态流转与完成前置
+[INFO] Running RecordVisibilityPolicy：三态可见性穷举
+[INFO] Tests run: 8, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.039 s -- in RecordVisibilityPolicy：三态可见性穷举
+[INFO] Running PairCard：§5.1 字段 / 打码 / 无 contact
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.023 s -- in PairCard：§5.1 字段 / 打码 / 无 contact
+[INFO] Running /api/my/records 登录门禁与所有者视角
+2026-10-29 04:10:53.514 INFO  [main] o.s.t.c.s.AnnotationConfigContextLoaderUtils - [3027c6c9072b4a20] Could not detect default configuration classes for test class [com.findit.campus.record.web.MyRecordsApiTest]: MyRecordsApiTest does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+2026-10-29 04:10:53.614 INFO  [main] o.s.b.t.c.SpringBootTestContextBootstrapper - [3027c6c9072b4a20] Found @SpringBootConfiguration com.findit.campus.FindItCampusApplication for test class com.findit.campus.record.web.MyRecordsApiTest
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+
+ :: Spring Boot ::               (v3.5.16)
+
+2026-10-29 04:10:53.655 INFO  [main] c.f.c.record.web.MyRecordsApiTest - [3027c6c9072b4a20] Starting MyRecordsApiTest using Java 17.0.20.1 with PID 8304 (started by NhNoK in C:\Project\hifox-workspaces\duancece\find-it-campus\server)
+2026-10-29 04:10:53.655 INFO  [main] c.f.c.record.web.MyRecordsApiTest - [3027c6c9072b4a20] No active profile set, falling back to 1 default profile: "default"
+2026-10-29 04:10:54.127 INFO  [main] o.s.b.t.m.w.SpringBootMockServletContext - [3027c6c9072b4a20] Initializing Spring TestDispatcherServlet ''
+2026-10-29 04:10:54.127 INFO  [main] o.s.t.w.s.TestDispatcherServlet - [3027c6c9072b4a20] Initializing Servlet ''
+2026-10-29 04:10:54.128 INFO  [main] o.s.t.w.s.TestDispatcherServlet - [3027c6c9072b4a20] Completed initialization in 1 ms
+2026-10-29 04:10:54.135 INFO  [main] c.f.c.record.web.MyRecordsApiTest - [3027c6c9072b4a20] Started MyRecordsApiTest in 0.517 seconds (process running for 24.726)
+2026-10-29 04:10:54.155 WARN  [main] c.f.c.c.error.GlobalExceptionHandler - [3027c6c9072b4a20] [3027c6c9072b4a20] 参数校验失败: [FieldError[field=status, reason=status 取值非法：PENDING / COMPLETED / CLOSED / ALL]]
+2026-10-29 04:10:54.160 INFO  [main] c.f.c.common.config.RequestIdFilter - [3027c6c9072b4a20] GET /api/my/records -> 400 (19 ms)
+2026-10-29 04:10:54.168 INFO  [main] c.f.c.common.config.RequestIdFilter - [b6b8756e53574afd] GET /api/my/records -> 401 (0 ms)
+2026-10-29 04:10:54.190 INFO  [main] c.f.c.common.config.RequestIdFilter - [3adf5324bfb64d3e] GET /api/my/records -> 200 (14 ms)
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.692 s -- in /api/my/records 登录门禁与所有者视角
+[INFO] Running /api/records 入参校验与响应形状
+2026-10-29 04:10:54.210 INFO  [main] o.s.t.c.s.AnnotationConfigContextLoaderUtils - [] Could not detect default configuration classes for test class [com.findit.campus.record.web.RecordApiValidationTest]: RecordApiValidationTest does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+2026-10-29 04:10:54.227 INFO  [main] o.s.b.t.c.SpringBootTestContextBootstrapper - [] Found @SpringBootConfiguration com.findit.campus.FindItCampusApplication for test class com.findit.campus.record.web.RecordApiValidationTest
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+
+ :: Spring Boot ::               (v3.5.16)
+
+2026-10-29 04:10:54.273 INFO  [main] c.f.c.r.web.RecordApiValidationTest - [] Starting RecordApiValidationTest using Java 17.0.20.1 with PID 8304 (started by NhNoK in C:\Project\hifox-workspaces\duancece\find-it-campus\server)
+2026-10-29 04:10:54.274 INFO  [main] c.f.c.r.web.RecordApiValidationTest - [] No active profile set, falling back to 1 default profile: "default"
+2026-10-29 04:10:54.716 INFO  [main] o.s.b.t.m.w.SpringBootMockServletContext - [] Initializing Spring TestDispatcherServlet ''
+2026-10-29 04:10:54.717 INFO  [main] o.s.t.w.s.TestDispatcherServlet - [] Initializing Servlet ''
+2026-10-29 04:10:54.717 INFO  [main] o.s.t.w.s.TestDispatcherServlet - [] Completed initialization in 0 ms
+2026-10-29 04:10:54.726 INFO  [main] c.f.c.r.web.RecordApiValidationTest - [] Started RecordApiValidationTest in 0.496 seconds (process running for 25.317)
+2026-10-29 04:10:54.740 WARN  [main] c.f.c.c.error.GlobalExceptionHandler - [cb6af0df7a984597] [cb6af0df7a984597] 参数类型不符: field=id value=new
+2026-10-29 04:10:54.745 INFO  [main] c.f.c.common.config.RequestIdFilter - [cb6af0df7a984597] GET /api/records/new -> 400 (12 ms)
+2026-10-29 04:10:54.778 WARN  [main] c.f.c.c.error.GlobalExceptionHandler - [ea191e5fb9774b56] [ea191e5fb9774b56] 参数校验失败: [FieldError[field=description, reason=description 不得为空], FieldError[field=location, reason=location 不得为空], FieldError[field=occurredAt, reason=occurredAt 不得为空], FieldError[field=title, reason=title 长度需在 2 到 64 之间]]
+2026-10-29 04:10:54.781 INFO  [main] c.f.c.common.config.RequestIdFilter - [ea191e5fb9774b56] POST /api/records -> 400 (27 ms)
+2026-10-29 04:10:54.796 WARN  [main] c.f.c.c.error.GlobalExceptionHandler - [9bcbbdd4ff764754] [9bcbbdd4ff764754] 请求体不可解析: field=body cause=JsonEOFException detail=JSON parse error: Unexpected end-of-input within/between Object entries
+2026-10-29 04:10:54.803 INFO  [main] c.f.c.common.config.RequestIdFilter - [9bcbbdd4ff764754] POST /api/records -> 400 (9 ms)
+2026-10-29 04:10:54.819 INFO  [main] c.f.c.common.config.RequestIdFilter - [205a3c7d8f204fed] GET /api/records -> 200 (9 ms)
+2026-10-29 04:10:54.827 INFO  [main] c.f.c.common.config.RequestIdFilter - [bb99536b9cf74127] GET /api/records -> 200 (1 ms)
+2026-10-29 04:10:54.849 INFO  [main] c.f.c.common.config.RequestIdFilter - [e9edd9d308c24689] GET /api/records/13 -> 200 (11 ms)
+2026-10-29 04:10:54.860 INFO  [main] c.f.c.common.config.RequestIdFilter - [0f0f3152995d4248] GET /api/records/13 -> 200 (2 ms)
+2026-10-29 04:10:54.875 INFO  [main] c.f.c.common.config.RequestIdFilter - [cbdea72d040c48b3] GET /api/records -> 200 (4 ms)
+2026-10-29 04:10:54.886 WARN  [main] c.f.c.c.error.GlobalExceptionHandler - [beb44e63935b4ee0] [beb44e63935b4ee0] 参数校验失败: [FieldError[field=sortBy, reason=sortBy 取值非法：createdAt / occurredAt]]
+2026-10-29 04:10:54.888 INFO  [main] c.f.c.common.config.RequestIdFilter - [beb44e63935b4ee0] GET /api/records -> 400 (4 ms)
+2026-10-29 04:10:54.896 INFO  [main] c.f.c.common.config.RequestIdFilter - [d828d08e0f9543e9] POST /api/records -> 401 (1 ms)
+2026-10-29 04:10:54.904 WARN  [main] c.f.c.c.error.GlobalExceptionHandler - [c6ff6c52be444bd0] [c6ff6c52be444bd0] 参数校验失败: [FieldError[field=pageSize, reason=pageSize 不得超过 50]]
+2026-10-29 04:10:54.905 INFO  [main] c.f.c.common.config.RequestIdFilter - [c6ff6c52be444bd0] GET /api/records -> 400 (3 ms)
+2026-10-29 04:10:54.917 WARN  [main] c.f.c.c.error.GlobalExceptionHandler - [6a3375bc9e254319] [6a3375bc9e254319] 请求体不可解析: field=body cause=HttpMessageNotReadableException detail=Required request body is missing: public com.findit.campus.common.api.ApiResponse<com.findit.campus.record.web.dto.RecordDetailResponse> com.findit.campus.record.web.RecordController.create(com.findit.campus.record.web.dto.RecordCreateRequest,jakarta.servlet.http.HttpServletRequest)
+2026-10-29 04:10:54.918 INFO  [main] c.f.c.common.config.RequestIdFilter - [6a3375bc9e254319] POST /api/records -> 400 (3 ms)
+2026-10-29 04:10:54.929 WARN  [main] c.f.c.c.error.GlobalExceptionHandler - [b0ca1117e76746e5] [b0ca1117e76746e5] 参数校验失败: [FieldError[field=status, reason=status 取值非法：PENDING / COMPLETED / CLOSED / ALL（CLAIMED 已作废）]]
+2026-10-29 04:10:54.932 INFO  [main] c.f.c.common.config.RequestIdFilter - [b0ca1117e76746e5] GET /api/records -> 400 (6 ms)
+2026-10-29 04:10:54.945 WARN  [main] c.f.c.c.error.GlobalExceptionHandler - [51ce1a651ca04be4] [51ce1a651ca04be4] 参数校验失败: [FieldError[field=title, reason=title 不得为空]]
+2026-10-29 04:10:54.947 INFO  [main] c.f.c.common.config.RequestIdFilter - [51ce1a651ca04be4] POST /api/records -> 400 (5 ms)
+2026-10-29 04:10:54.959 WARN  [main] c.f.c.c.error.GlobalExceptionHandler - [23b663051df24626] [23b663051df24626] 参数校验失败: [FieldError[field=occurredAt, reason=occurredAt 不得晚于当前时间（容忍 5 分钟时钟偏差）]]
+2026-10-29 04:10:54.960 INFO  [main] c.f.c.common.config.RequestIdFilter - [23b663051df24626] POST /api/records -> 400 (5 ms)
+2026-10-29 04:10:54.971 WARN  [main] c.f.c.c.error.GlobalExceptionHandler - [58e10b0015e743a1] [58e10b0015e743a1] 请求体不可解析: field=categoryId cause=MismatchedInputException detail=JSON parse error: Cannot deserialize value of type `java.lang.Long` from Object value (token `JsonToken.START_OBJECT`)
+2026-10-29 04:10:54.973 INFO  [main] c.f.c.common.config.RequestIdFilter - [58e10b0015e743a1] POST /api/records -> 400 (5 ms)
+2026-10-29 04:10:54.982 WARN  [main] c.f.c.c.error.GlobalExceptionHandler - [29457417567444b2] [29457417567444b2] 参数校验失败: [FieldError[field=occurredAt, reason=occurredAt 不是合法的日期时间（如 2026-02-30 不存在）]]
+2026-10-29 04:10:54.983 INFO  [main] c.f.c.common.config.RequestIdFilter - [29457417567444b2] POST /api/records -> 400 (4 ms)
+2026-10-29 04:10:54.987 WARN  [main] c.f.c.c.error.GlobalExceptionHandler - [6810ec74660144d9] [6810ec74660144d9] 参数校验失败: [FieldError[field=occurredAt, reason=occurredAt 不是合法的日期时间（如 2026-02-30 不存在）]]
+2026-10-29 04:10:54.989 INFO  [main] c.f.c.common.config.RequestIdFilter - [6810ec74660144d9] POST /api/records -> 400 (4 ms)
+2026-10-29 04:10:54.992 WARN  [main] c.f.c.c.error.GlobalExceptionHandler - [75f9e0a4f1a24e32] [75f9e0a4f1a24e32] 参数校验失败: [FieldError[field=occurredAt, reason=occurredAt 不是合法的日期时间（如 2026-02-30 不存在）]]
+2026-10-29 04:10:54.993 INFO  [main] c.f.c.common.config.RequestIdFilter - [75f9e0a4f1a24e32] POST /api/records -> 400 (3 ms)
+[INFO] Tests run: 17, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.790 s -- in /api/records 入参校验与响应形状
+[INFO] Running GET /api/records/{id}：所有者 pairs[] / 非所有者字段省略
+2026-10-29 04:10:55.007 INFO  [main] o.s.t.c.s.AnnotationConfigContextLoaderUtils - [] Could not detect default configuration classes for test class [com.findit.campus.record.web.RecordPairsApiTest]: RecordPairsApiTest does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+2026-10-29 04:10:55.025 INFO  [main] o.s.b.t.c.SpringBootTestContextBootstrapper - [] Found @SpringBootConfiguration com.findit.campus.FindItCampusApplication for test class com.findit.campus.record.web.RecordPairsApiTest
+2026-10-29 04:10:55.034 INFO  [main] c.f.c.common.config.RequestIdFilter - [f72c773742d34d75] GET /api/records/13 -> 200 (2 ms)
+2026-10-29 04:10:55.050 INFO  [main] c.f.c.common.config.RequestIdFilter - [ca0fac3ab2ae43c8] GET /api/records/13 -> 200 (6 ms)
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.064 s -- in GET /api/records/{id}：所有者 pairs[] / 非所有者字段省略
+[INFO] Running A/B：改写对匹配的影响（真实 DeepSeek，需 key）
+[WARNING] Tests run: 1, Failures: 0, Errors: 0, Skipped: 1, Time elapsed: 0.015 s -- in A/B：改写对匹配的影响（真实 DeepSeek，需 key）
+[INFO] Running IdentityScrubber：身份类剥离、场景类保留
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.010 s -- in IdentityScrubber：身份类剥离、场景类保留
+[INFO] Running SensitiveTextScanner：确定性规则双检
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.009 s -- in SensitiveTextScanner：确定性规则双检
+[INFO] Running ReviewGateService：通过/拒绝/重试/转人工
+2026-10-29 04:10:55.135 WARN  [main] c.f.c.r.service.ReviewGateService - [] review retry recordId=9 attempt=1/2 reason=TIMEOUT
+2026-10-29 04:10:55.136 WARN  [main] c.f.c.r.service.ReviewGateService - [] review retry recordId=9 attempt=2/2 reason=TIMEOUT
+2026-10-29 04:10:55.137 WARN  [main] c.f.c.r.service.ReviewGateService - [] review manual required recordId=9 attempts=2 lastReason=TIMEOUT
+2026-10-29 04:10:55.143 INFO  [main] c.f.c.r.service.ReviewGateService - [] review approved recordId=9 attempts=1 engine=DEEPSEEK model=deepseek-chat latencyMs=120 tokens=150
+2026-10-29 04:10:55.147 INFO  [main] c.f.c.r.service.ReviewGateService - [] review rejected recordId=9 attempts=1 reason=规则双检命中：10-12 位长数字（疑似学号）、手机号/证件号/邮箱/QQ
+2026-10-29 04:10:55.152 INFO  [main] c.f.c.r.service.ReviewGateService - [] review rejected recordId=9 attempts=1 reason=内容无法在保留特征的前提下去身份化
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.037 s -- in ReviewGateService：通过/拒绝/重试/转人工
+[INFO] 
+[INFO] Results:
+[INFO] 
+[INFO] Tests run: 297, Failures: 0, Errors: 0, Skipped: 1
+[INFO] 
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  40.667 s
+[INFO] Finished at: 2026-10-29T04:10:55+08:00
+[INFO] ------------------------------------------------------------------------

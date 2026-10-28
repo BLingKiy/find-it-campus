@@ -1,0 +1,23 @@
+HTTP/1.1 200 
+Server: nginx
+Date: Wed, 28 Oct 2026 19:58:59 GMT
+Content-Type: application/json
+Transfer-Encoding: chunked
+Connection: keep-alive
+X-Request-Id: 6ea28fac3b374d42
+Cache-Control: no-store
+Vary: Cookie
+X-Content-Type-Options: nosniff
+X-Frame-Options: DENY
+Referrer-Policy: no-referrer
+Content-Security-Policy: default-src 'none'; frame-ancestors 'none'
+Vary: Origin
+Vary: Access-Control-Request-Method
+Vary: Access-Control-Request-Headers
+Access-Control-Allow-Origin: http://localhost:5173
+Access-Control-Expose-Headers: X-Request-Id
+Access-Control-Allow-Credentials: true
+X-Content-Type-Options: nosniff
+X-Frame-Options: SAMEORIGIN
+Referrer-Policy: no-referrer-when-downgrade
+

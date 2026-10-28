@@ -1,0 +1,54 @@
+{
+  "apiBase": "http://127.0.0.1:18085",
+  "label": "local",
+  "runAt": "2026-10-28T20:06:46.476Z",
+  "pairs": [
+    {
+      "sample": "P01",
+      "expect": "MATCH",
+      "class": "A",
+      "lostId": 1,
+      "foundId": 2,
+      "publishHttp": [
+        200,
+        200
+      ],
+      "pairState": "READY",
+      "cardVisible": true,
+      "card": {
+        "score": 0.73,
+        "scorePercent": 73,
+        "engine": "LOCAL_KEYWORD",
+        "tier": "AUTHORIZABLE",
+        "degraded": true,
+        "contactAvailable": false,
+        "contactHint": "对方尚未公开"
+      },
+      "lowConfidenceCount": 0
+    },
+    {
+      "sample": "P13",
+      "expect": "NO_MATCH",
+      "class": "C",
+      "lostId": 3,
+      "foundId": 4,
+      "publishHttp": [
+        200,
+        200
+      ],
+      "pairState": "READY",
+      "cardVisible": false,
+      "card": null,
+      "lowConfidenceCount": 1
+    }
+  ],
+  "checks": {
+    "p01CardVisible": true,
+    "p01TierAuthorizable": true,
+    "p01EngineLocal": true,
+    "p01ScoreAround073": true,
+    "p13NoCard": true,
+    "p13LowCount1": true
+  },
+  "passed": true
+}

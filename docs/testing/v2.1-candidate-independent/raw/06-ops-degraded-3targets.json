@@ -1,0 +1,29 @@
+﻿{
+    "code":  0,
+    "message":  "éçº§éæ«å®æ",
+    "data":  {
+                 "scanned":  3,
+                 "rescored":  0,
+                 "degraded":  3,
+                 "skipped":  32,
+                 "expired":  -1,
+                 "limited":  false,
+                 "elapsedMs":  266,
+                 "trigger":  "http-degraded",
+                 "scope":  "DEGRADED",
+                 "skipReason":  null,
+                 "counters":  {
+                                  "llmCalls":  0,
+                                  "llmSuccess":  0,
+                                  "degraded":  8,
+                                  "skippedUnchanged":  34,
+                                  "pairsWritten":  8,
+                                  "enqueueRejected":  0,
+                                  "lockMisses":  0,
+                                  "degradedByReason":  {
+                                                           "EMPTY_KEY":  8
+                                                       }
+                              }
+             },
+    "requestId":  "a3425c20ecca4e4e"
+}

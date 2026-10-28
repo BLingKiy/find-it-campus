@@ -1,0 +1,35 @@
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+
+ :: Spring Boot ::               (v3.5.16)
+
+2026-10-29 04:08:30.952 INFO  [main] c.f.campus.FindItCampusApplication - [] Starting FindItCampusApplication v0.0.1-SNAPSHOT using Java 17.0.20.1 with PID 12856 (C:\Project\deploy-accept\Z91-20261029-035223\pkg\find-it-campus-windows-x64\app\find-it-campus-0.0.1-SNAPSHOT.jar started by NhNoK in C:\Project\deploy-accept\Z91-20261029-035223\pkg\find-it-campus-windows-x64)
+2026-10-29 04:08:30.991 INFO  [main] c.f.campus.FindItCampusApplication - [] No active profile set, falling back to 1 default profile: "default"
+2026-10-29 04:08:34.210 INFO  [main] o.s.b.w.e.tomcat.TomcatWebServer - [] Tomcat initialized with port 18085 (http)
+2026-10-29 04:08:34.239 INFO  [main] o.a.catalina.core.StandardService - [] Starting service [Tomcat]
+2026-10-29 04:08:34.240 INFO  [main] o.a.catalina.core.StandardEngine - [] Starting Servlet engine: [Apache Tomcat/10.1.55]
+2026-10-29 04:08:34.323 INFO  [main] o.a.c.c.C.[Tomcat].[localhost].[/] - [] Initializing Spring embedded WebApplicationContext
+2026-10-29 04:08:34.326 INFO  [main] o.s.b.w.s.c.ServletWebServerApplicationContext - [] Root WebApplicationContext: initialization completed in 3108 ms
+2026-10-29 04:08:35.604 INFO  [main] c.f.c.p.config.PairPolicyProperties - [] pair thresholds default(direct=0.95 unlock=0.8 notify=0.9 completedVisible=0.95) local(direct=0.9 unlock=0.45 notify=0.9 completedVisible=0.9) deepseek(direct=0.95 unlock=0.8 notify=0.9 completedVisible=0.95)
+2026-10-29 04:08:36.881 INFO  [main] o.s.b.w.e.tomcat.TomcatWebServer - [] Tomcat started on port 18085 (http) with context path '/'
+2026-10-29 04:08:36.919 INFO  [main] c.f.campus.FindItCampusApplication - [] Started FindItCampusApplication in 7.63 seconds (process running for 8.523)
+2026-10-29 04:08:37.484 INFO  [http-nio-18085-exec-1] o.a.c.c.C.[Tomcat].[localhost].[/] - [] Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-10-29 04:08:37.484 INFO  [http-nio-18085-exec-1] o.s.web.servlet.DispatcherServlet - [] Initializing Servlet 'dispatcherServlet'
+2026-10-29 04:08:37.486 INFO  [http-nio-18085-exec-1] o.s.web.servlet.DispatcherServlet - [] Completed initialization in 1 ms
+2026-10-29 04:08:37.542 INFO  [http-nio-18085-exec-1] com.zaxxer.hikari.HikariDataSource - [77307fd6c1654807] findit-pool - Starting...
+2026-10-29 04:08:37.883 INFO  [http-nio-18085-exec-1] com.zaxxer.hikari.pool.HikariPool - [77307fd6c1654807] findit-pool - Added connection com.mysql.cj.jdbc.ConnectionImpl@78088bff
+2026-10-29 04:08:37.887 INFO  [http-nio-18085-exec-1] com.zaxxer.hikari.HikariDataSource - [77307fd6c1654807] findit-pool - Start completed.
+2026-10-29 04:08:38.026 INFO  [http-nio-18085-exec-1] c.f.c.common.config.RequestIdFilter - [77307fd6c1654807] GET /api/health -> 200 (533 ms)
+2026-10-29 04:08:45.107 INFO  [scheduling-1] c.f.c.pair.service.PairScanService - [] pair scan done scope=DEGRADED trigger=degraded-scheduled scanned=0 rescored=0 degraded=0 skipped=0 expired=-1 limited=false elapsedMs=105 counters={llmCalls=0, llmSuccess=0, degraded=0, skippedUnchanged=0, pairsWritten=0, enqueueRejected=0, lockMisses=0, degradedByReason={}}
+2026-10-29 04:08:45.107 INFO  [scheduling-1] c.f.c.pair.service.PairScanService - [] pair scan summary scope=DEGRADED trigger=degraded-scheduled scanned=0 rescored=0 degraded=0 skipped=0 expired=-1 limited=false skipReason=null elapsedMs=105
+2026-10-29 04:09:00.015 INFO  [scheduling-1] c.f.c.pair.service.PairScanService - [] pair scan done scope=DEGRADED trigger=degraded-scheduled scanned=0 rescored=0 degraded=0 skipped=0 expired=-1 limited=false elapsedMs=3 counters={llmCalls=0, llmSuccess=0, degraded=0, skippedUnchanged=0, pairsWritten=0, enqueueRejected=0, lockMisses=0, degradedByReason={}}
+2026-10-29 04:09:00.015 INFO  [scheduling-1] c.f.c.pair.service.PairScanService - [] pair scan summary scope=DEGRADED trigger=degraded-scheduled scanned=0 rescored=0 degraded=0 skipped=0 expired=-1 limited=false skipReason=null elapsedMs=3
+2026-10-29 04:09:15.017 INFO  [scheduling-1] c.f.c.pair.service.PairScanService - [] pair scan done scope=DEGRADED trigger=degraded-scheduled scanned=0 rescored=0 degraded=0 skipped=0 expired=-1 limited=false elapsedMs=3 counters={llmCalls=0, llmSuccess=0, degraded=0, skippedUnchanged=0, pairsWritten=0, enqueueRejected=0, lockMisses=0, degradedByReason={}}
+2026-10-29 04:09:15.017 INFO  [scheduling-1] c.f.c.pair.service.PairScanService - [] pair scan summary scope=DEGRADED trigger=degraded-scheduled scanned=0 rescored=0 degraded=0 skipped=0 expired=-1 limited=false skipReason=null elapsedMs=3
+2026-10-29 04:09:30.011 INFO  [scheduling-1] c.f.c.pair.service.PairScanService - [] pair scan done scope=DEGRADED trigger=degraded-scheduled scanned=0 rescored=0 degraded=0 skipped=0 expired=-1 limited=false elapsedMs=1 counters={llmCalls=0, llmSuccess=0, degraded=0, skippedUnchanged=0, pairsWritten=0, enqueueRejected=0, lockMisses=0, degradedByReason={}}
+2026-10-29 04:09:30.011 INFO  [scheduling-1] c.f.c.pair.service.PairScanService - [] pair scan summary scope=DEGRADED trigger=degraded-scheduled scanned=0 rescored=0 degraded=0 skipped=0 expired=-1 limited=false skipReason=null elapsedMs=1

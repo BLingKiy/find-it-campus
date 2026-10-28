@@ -1,0 +1,15 @@
+﻿[2026-10-29 03:56:33] [INFO] 
+[2026-10-29 03:56:33] [STEP] ==== find-it-campus Windows 状态 ====
+
+组件       状态 详情                                        PID  最近日志                 
+--       -- --                                        ---  ----                 
+后端       UP 127.0.0.1:18080 / db=UP / engine=local    8960 logs\backend.log     
+Nginx    UP 8088 / nginx 1.30.6                       6956 logs\nginx-error.log 
+MySQL    OK 127.0.0.1:3306 / MySQL 8.0.29             -    -                    
+8088 健康  UP code=0 / status=UP / db=UP / engine=local -    logs\nginx-access.log
+8088 监听  OK 监听 PID 3252 / nginx（master 6956）          3252 -                    
+18080 监听 OK PID 8960 / java                           8960 -                    
+
+
+
+[2026-10-29 03:56:36] [OK] RESULT: HEALTHY

@@ -1,0 +1,8 @@
+M7 独立验收 · 判据 3 之 nginx -t（包内配置，2026-10-29 04:03 +08:00）
+
+PS> & <pkg>\nginx\nginx.exe -t -p <pkg>\nginx -c conf/nginx.conf
+nginx: the configuration file <pkg>\nginx/conf/nginx.conf syntax is ok
+nginx: configuration file <pkg>\nginx/conf/nginx.conf test is successful
+NGINX_T_EXIT=0
+
+（PowerShell 5.1 把原生 stderr 包成 ErrorRecord 打印，退出码仍为 0，属已知显示行为，非失败。）

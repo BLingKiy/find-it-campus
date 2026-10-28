@@ -1,0 +1,4 @@
+
+> find-it-campus-web@0.0.0 type-check
+> vue-tsc --noEmit -p tsconfig.json && vue-tsc --noEmit -p tsconfig.node.json
+

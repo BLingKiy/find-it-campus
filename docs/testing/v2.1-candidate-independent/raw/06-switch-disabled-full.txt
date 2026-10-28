@@ -1,0 +1,27 @@
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+
+ :: Spring Boot ::               (v3.5.16)
+
+2026-10-29 04:07:18.113 INFO  [main] c.f.campus.FindItCampusApplication - [] Starting FindItCampusApplication v0.0.1-SNAPSHOT using Java 17.0.20.1 with PID 1960 (C:\Project\deploy-accept\Z91-20261029-035223\pkg\find-it-campus-windows-x64\app\find-it-campus-0.0.1-SNAPSHOT.jar started by NhNoK in C:\Project\deploy-accept\Z91-20261029-035223\pkg\find-it-campus-windows-x64)
+2026-10-29 04:07:18.120 INFO  [main] c.f.campus.FindItCampusApplication - [] No active profile set, falling back to 1 default profile: "default"
+2026-10-29 04:07:21.922 INFO  [main] o.s.b.w.e.tomcat.TomcatWebServer - [] Tomcat initialized with port 18085 (http)
+2026-10-29 04:07:21.958 INFO  [main] o.a.catalina.core.StandardService - [] Starting service [Tomcat]
+2026-10-29 04:07:21.959 INFO  [main] o.a.catalina.core.StandardEngine - [] Starting Servlet engine: [Apache Tomcat/10.1.55]
+2026-10-29 04:07:22.060 INFO  [main] o.a.c.c.C.[Tomcat].[localhost].[/] - [] Initializing Spring embedded WebApplicationContext
+2026-10-29 04:07:22.063 INFO  [main] o.s.b.w.s.c.ServletWebServerApplicationContext - [] Root WebApplicationContext: initialization completed in 3809 ms
+2026-10-29 04:07:23.495 INFO  [main] c.f.c.p.config.PairPolicyProperties - [] pair thresholds default(direct=0.95 unlock=0.8 notify=0.9 completedVisible=0.95) local(direct=0.9 unlock=0.45 notify=0.9 completedVisible=0.9) deepseek(direct=0.95 unlock=0.8 notify=0.9 completedVisible=0.95)
+2026-10-29 04:07:24.788 INFO  [main] o.s.b.w.e.tomcat.TomcatWebServer - [] Tomcat started on port 18085 (http) with context path '/'
+2026-10-29 04:07:24.833 INFO  [main] c.f.campus.FindItCampusApplication - [] Started FindItCampusApplication in 8.64 seconds (process running for 9.912)
+2026-10-29 04:07:25.376 INFO  [http-nio-18085-exec-1] o.a.c.c.C.[Tomcat].[localhost].[/] - [] Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-10-29 04:07:25.377 INFO  [http-nio-18085-exec-1] o.s.web.servlet.DispatcherServlet - [] Initializing Servlet 'dispatcherServlet'
+2026-10-29 04:07:25.381 INFO  [http-nio-18085-exec-1] o.s.web.servlet.DispatcherServlet - [] Completed initialization in 3 ms
+2026-10-29 04:07:25.452 INFO  [http-nio-18085-exec-1] com.zaxxer.hikari.HikariDataSource - [557a20c8d1bb4f3f] findit-pool - Starting...
+2026-10-29 04:07:25.900 INFO  [http-nio-18085-exec-1] com.zaxxer.hikari.pool.HikariPool - [557a20c8d1bb4f3f] findit-pool - Added connection com.mysql.cj.jdbc.ConnectionImpl@3c8bfe1e
+2026-10-29 04:07:25.905 INFO  [http-nio-18085-exec-1] com.zaxxer.hikari.HikariDataSource - [557a20c8d1bb4f3f] findit-pool - Start completed.
+2026-10-29 04:07:26.061 INFO  [http-nio-18085-exec-1] c.f.c.common.config.RequestIdFilter - [557a20c8d1bb4f3f] GET /api/health -> 200 (672 ms)

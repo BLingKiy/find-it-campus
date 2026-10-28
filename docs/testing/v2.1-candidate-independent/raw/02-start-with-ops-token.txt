@@ -1,0 +1,25 @@
+﻿[2026-10-29 04:04:29] [INFO] 
+[2026-10-29 04:04:29] [STEP] ==== find-it-campus Windows 启动 ====
+[2026-10-29 04:04:29] [INFO] 部署包目录：C:\Project\deploy-accept\Z91-20261029-035223\pkg\find-it-campus-windows-x64
+[2026-10-29 04:04:29] [OK] JDK 17：C:\Project\tools\jdk17\jdk-17.0.20.1+1\bin\java.exe
+[2026-10-29 04:04:29] [INFO] 后端 jar：C:\Project\deploy-accept\Z91-20261029-035223\pkg\find-it-campus-windows-x64\app\find-it-campus-0.0.1-SNAPSHOT.jar
+[2026-10-29 04:04:29] [INFO] 前端目录：C:\Project\deploy-accept\Z91-20261029-035223\pkg\find-it-campus-windows-x64\web\dist
+[2026-10-29 04:04:29] [INFO] Nginx：C:\Project\deploy-accept\Z91-20261029-035223\pkg\find-it-campus-windows-x64\nginx\nginx.exe
+[2026-10-29 04:04:29] [INFO] 数据库：127.0.0.1:3306/findit_accept91，引擎：local
+[2026-10-29 04:04:29] [WARN] 发现 backend.pid 指向非本包进程：PID 8960 存在但命令行/路径与部署包不匹配，拒绝操作；将移除陈旧 PID 文件后继续。
+[2026-10-29 04:04:31] [INFO] 
+[2026-10-29 04:04:31] [STEP] ==== 启动后端（127.0.0.1:18080） ====
+[2026-10-29 04:04:32] [INFO] 已拉起后端：PID 10212，日志：C:\Project\deploy-accept\Z91-20261029-035223\pkg\find-it-campus-windows-x64\logs\backend.log
+[2026-10-29 04:04:34] [INFO] 等待后端健康检查：无法连接到远程服务器
+[2026-10-29 04:04:46] [OK] 后端健康：code=0, status=UP, db=UP, engine=local
+[2026-10-29 04:04:46] [WARN] 清理陈旧/不匹配的 nginx.pid：PID 6956 对应进程不存在（陈旧 PID 文件）
+[2026-10-29 04:04:47] [INFO] 
+[2026-10-29 04:04:47] [STEP] ==== 启动 Nginx（8088） ====
+[2026-10-29 04:04:48] [OK] Nginx 已就绪：http://127.0.0.1:8088/ → code=0, status=UP, db=UP
+[2026-10-29 04:04:48] [INFO] 
+[2026-10-29 04:04:48] [STEP] ==== 启动完成 ====
+[2026-10-29 04:04:48] [OK] 后端：PID 10212，http://127.0.0.1:18080/api/health
+[2026-10-29 04:04:48] [OK] Nginx：PID 4312，http://127.0.0.1:8088/
+[2026-10-29 04:04:48] [OK] 健康：code=0, status=UP, db=UP, engine=local
+[2026-10-29 04:04:48] [INFO] 访问：http://127.0.0.1:8088/
+[2026-10-29 04:04:48] [INFO] 启动日志：C:\Project\deploy-accept\Z91-20261029-035223\pkg\find-it-campus-windows-x64\logs\start-20261029-040429.log

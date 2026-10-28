@@ -1,0 +1,29 @@
+﻿[2026-10-29 03:55:45] [INFO] 
+[2026-10-29 03:55:45] [STEP] ==== find-it-campus Windows 部署安装 ====
+[2026-10-29 03:55:45] [INFO] 部署包目录：C:\Project\deploy-accept\Z91-20261029-035223\pkg\find-it-campus-windows-x64
+[2026-10-29 03:55:45] [INFO] 安装日志：C:\Project\deploy-accept\Z91-20261029-035223\pkg\find-it-campus-windows-x64\logs\install-20261029-035545.log
+[2026-10-29 03:55:45] [INFO] 目标 MySQL：127.0.0.1:3306，库：findit_accept91，账号：root，引擎：local
+[2026-10-29 03:55:45] [INFO] 
+[2026-10-29 03:55:45] [STEP] ==== 检查 JDK 17 ====
+[2026-10-29 03:55:46] [OK] JDK 17 可用：C:\Project\tools\jdk17\jdk-17.0.20.1+1\bin\java.exe
+[2026-10-29 03:55:46] [INFO] openjdk version "17.0.20.1" 2026-08-18
+[2026-10-29 03:55:46] [INFO] 
+[2026-10-29 03:55:46] [STEP] ==== 检查 MySQL 8 客户端与连通性 ====
+[2026-10-29 03:55:46] [OK] MySQL 客户端：C:\Project\tools\mysql\mysql-8.0.29-winx64\bin\mysql.exe
+[2026-10-29 03:55:46] [OK] MySQL 服务端版本：8.0.29
+[2026-10-29 03:55:46] [OK] 数据库已创建（utf8mb4）：findit_accept91
+[2026-10-29 03:55:46] [INFO] 
+[2026-10-29 03:55:46] [STEP] ==== 导入 schema.sql 与 seed.sql ====
+[2026-10-29 03:55:46] [INFO] 执行 schema.sql → findit_accept91
+[2026-10-29 03:55:59] [INFO] 执行 seed.sql → findit_accept91
+[2026-10-29 03:56:13] [OK] 导入校验：t_category=9 行，t_record=24 行
+[2026-10-29 03:56:13] [INFO] 
+[2026-10-29 03:56:13] [STEP] ==== 生成部署连接配置 ====
+[2026-10-29 03:56:13] [OK] 已生成（含真实密码，已被 .gitignore 忽略）：C:\Project\deploy-accept\Z91-20261029-035223\pkg\find-it-campus-windows-x64\config\deploy.env.ps1
+[2026-10-29 03:56:13] [INFO] 
+[2026-10-29 03:56:13] [STEP] ==== 安装完成 ====
+[2026-10-29 03:56:13] [OK] 数据库：127.0.0.1:3306/findit_accept91（utf8mb4）
+[2026-10-29 03:56:13] [OK] 配置：C:\Project\deploy-accept\Z91-20261029-035223\pkg\find-it-campus-windows-x64\config\deploy.env.ps1
+[2026-10-29 03:56:13] [INFO] 下一步：powershell -NoProfile -ExecutionPolicy Bypass -File scripts\start.ps1  （启动后端 18080 与 Nginx 8088）
+[2026-10-29 03:56:13] [INFO] 访问：http://127.0.0.1:8088/
+[2026-10-29 03:56:13] [INFO] 安装日志：C:\Project\deploy-accept\Z91-20261029-035223\pkg\find-it-campus-windows-x64\logs\install-20261029-035545.log

@@ -1,0 +1,43 @@
+M7 独立验收 · 判据 1 包完整性复算（端测测实跑，2026-10-29 03:52 +08:00）
+环境：Windows 10 Pro for Workstations，PowerShell 5.1
+
+[1] zip SHA256 与大小
+PS> Get-FileHash -Algorithm SHA256 -Path <pkg>\find-it-campus-windows-x64-30002de.zip
+SHA256 = ACBA7323689DA1387A5D51569720B7FDE7737D92F4F1FE3630EBB8F0122D1557
+Length = 28535449
+
+[2] 同目录 .sha256 内容
+ACBA7323689DA1387A5D51569720B7FDE7737D92F4F1FE3630EBB8F0122D1557 *find-it-campus-windows-x64-30002de.zip
+→ 与实算一致
+
+[3] 解包后 BUILD-INFO.txt（节选）
+Package layout version: 7.4
+Build time: 2026-10-29T03:11:04+08:00
+Git branch: test/v2-M6-candidate-package
+Git commit: 30002ded5893661f680eaea4e0b858e40ca23255
+Git dirty: false
+Git dirty files: (none)
+Backend jar SHA256: 516653FD56D511579FF90210C24BDA0E2C207CA1B071D7CFFC94487F76254E83
+Web index SHA256: E76443CA5CFFA718591537AFCAB8B2D0494E196B6A60564B6912AE99DF33E55F
+Runtime ports: 8088 (nginx, public) -> 127.0.0.1:18080 (backend)
+
+[4] 包内文件实算（独立复算，不看 BUILD-INFO 结论）
+PS> Get-FileHash app\find-it-campus-0.0.1-SNAPSHOT.jar
+516653FD56D511579FF90210C24BDA0E2C207CA1B071D7CFFC94487F76254E83
+PS> Get-FileHash web\dist\index.html
+E76443CA5CFFA718591537AFCAB8B2D0494E196B6A60564B6912AE99DF33E55F
+→ 两个值与 BUILD-INFO 逐位一致
+
+[5] 证据分支
+git rev-parse origin/test/v2-M6-candidate-package
+bb3d15d5fef2978870996ecdbebfbbd9133ef4a0
+git diff --name-only 30002ded5893661f680eaea4e0b858e40ca23255..bb3d15d5fef2978870996ecdbebfbbd9133ef4a0 | wc -l
+40
+按目录聚合（sed 去掉文件名后 uniq -c）：
+   8 docs/testing/v2.1-candidate
+  17 docs/testing/v2.1-candidate/raw
+   7 docs/testing/v2.1-candidate/raw/tools
+   8 docs/testing/v2.1-candidate/shots
+非 docs/testing/v2.1-candidate/ 路径的文件数：0
+
+判定：通过
