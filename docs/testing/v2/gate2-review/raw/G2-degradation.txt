@@ -1,0 +1,38 @@
+=== 2.2 三种 LLM 故障下的发布与落库（目标 pair lost#33 ↔ found#34）===
+  基线行：116	0.8700	DEEPSEEK	NULL	1	213	19	NEW	2026-10-28 01:32:08
+  [stub mode -> 401]
+[2.21(401)-a 发布一条新启事（发布链路不受 LLM 影响）] POST /api/records -> HTTP 200 / 0.241260s
+        body: {"code":0,"message":"已提交","data":{"id":133,"type":"LOST","status":"PENDING","title":"丢失银色不锈钢保温杯","description":"杯身贴着一张黄色小猫贴纸，昨晚在实验楼四楼走廊遗失，杯盖有点松。","categoryId":2,"categoryName":"手机数码","location":"实验楼四楼走廊","occurredAt":"2026-10-27 21:00:00","completedAt":null,"contact":"13900008888","publi
+[2.21(401)-b PUT record 33 改标题触发重算] PUT /api/records/33 -> HTTP 200 / 0.654820s
+        body: {"code":0,"message":"已更新","data":{"id":33,"type":"LOST","status":"PENDING","title":"丢失银色不锈钢保温杯A","description":"杯身贴着一张黄色小猫贴纸，昨晚在实验楼四楼走廊遗失，杯盖有点松。","categoryId":2,"categoryName":"手机数码","location":"实验楼四楼走廊","occurredAt":"2026-10-27 21:00:00","completedAt":null,"contact":"13900008888","publi
+  记录 33 pair_state=DEGRADED
+  落库行：116	0.7100	LOCAL_KEYWORD	UNAUTHORIZED	3	NULL	NULL	NEW	2026-10-28 01:32:19
+  该轮受影响的 pair 引擎分布：
+LOCAL_KEYWORD	UNAUTHORIZED	14
+  [stub mode -> timeout]
+[2.22(超时)-a 发布一条新启事（发布链路不受 LLM 影响）] POST /api/records -> HTTP 200 / 0.464987s
+        body: {"code":0,"message":"已提交","data":{"id":134,"type":"LOST","status":"PENDING","title":"丢失银色不锈钢保温杯","description":"杯身贴着一张黄色小猫贴纸，昨晚在实验楼四楼走廊遗失，杯盖有点松。","categoryId":2,"categoryName":"手机数码","location":"实验楼四楼走廊","occurredAt":"2026-10-27 21:00:00","completedAt":null,"contact":"13900008888","publi
+[2.22(超时)-b PUT record 33 改标题触发重算] PUT /api/records/33 -> HTTP 200 / 0.558390s
+        body: {"code":0,"message":"已更新","data":{"id":33,"type":"LOST","status":"PENDING","title":"丢失银色不锈钢保温杯B","description":"杯身贴着一张黄色小猫贴纸，昨晚在实验楼四楼走廊遗失，杯盖有点松。","categoryId":2,"categoryName":"手机数码","location":"实验楼四楼走廊","occurredAt":"2026-10-27 21:00:00","completedAt":null,"contact":"13900008888","publi
+  记录 33 pair_state=DEGRADED
+  落库行：116	0.7100	LOCAL_KEYWORD	TIMEOUT	1010	NULL	NULL	NEW	2026-10-28 01:32:35
+  该轮受影响的 pair 引擎分布：
+LOCAL_KEYWORD	TIMEOUT	14
+  [stub mode -> nonjson]
+[2.23(非 JSON)-a 发布一条新启事（发布链路不受 LLM 影响）] POST /api/records -> HTTP 200 / 0.018125s
+        body: {"code":0,"message":"已提交","data":{"id":135,"type":"LOST","status":"PENDING","title":"丢失银色不锈钢保温杯","description":"杯身贴着一张黄色小猫贴纸，昨晚在实验楼四楼走廊遗失，杯盖有点松。","categoryId":2,"categoryName":"手机数码","location":"实验楼四楼走廊","occurredAt":"2026-10-27 21:00:00","completedAt":null,"contact":"13900008888","publi
+[2.23(非 JSON)-b PUT record 33 改标题触发重算] PUT /api/records/33 -> HTTP 200 / 0.161631s
+        body: {"code":0,"message":"已更新","data":{"id":33,"type":"LOST","status":"PENDING","title":"丢失银色不锈钢保温杯C","description":"杯身贴着一张黄色小猫贴纸，昨晚在实验楼四楼走廊遗失，杯盖有点松。","categoryId":2,"categoryName":"手机数码","location":"实验楼四楼走廊","occurredAt":"2026-10-27 21:00:00","completedAt":null,"contact":"13900008888","publi
+  记录 33 pair_state=DEGRADED
+  落库行：116	0.7100	LOCAL_KEYWORD	NON_JSON	1	NULL	NULL	NEW	2026-10-28 01:32:45
+  该轮受影响的 pair 引擎分布：
+LOCAL_KEYWORD	NON_JSON	14
+
+=== 2.3 恢复后兜底可重算（stub 恢复 200 + 合法 JSON）===
+  [stub mode -> ok]
+  先把 3 轮降级行的 updated_at 回拨 2 小时（模拟已过 degraded-retry-minutes=1 冷却窗口）
+  回拨前降级行数：45；回拨后仍为降级行：45
+  目标 pair 回拨后：116	0.7100	LOCAL_KEYWORD	NON_JSON	2026-10-27 23:32:45
+  scan: {"code":0,"message":"扫描完成","data":{"scanned":4,"rescored":44,"degraded":0,"skipped":0,"expired":1,"limited":false,"elapsedMs":10062,"trigger":"http","counters":{"llmCalls":360,"llmSuccess":288,"degraded":72,"skippedUnchanged":200,"pairsWritten":360,"enqueueRejected":0,"lockMisses":0,"degradedByReason":{"UNAUTHORIZED":24,"TIMEOUT":24,"NON_JSON":24}}},"requestId":"112e50a7f8b14ace"}
+  目标 pair 重算后：116	0.8700	DEEPSEEK	NULL	1	213	19	2026-10-28 01:32:56
+  全表降级行剩余：1

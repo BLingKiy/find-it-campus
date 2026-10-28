@@ -1,0 +1,292 @@
+{
+  "generatedAt": "2026-10-27T12:43:36.720Z",
+  "base": "http://127.0.0.1:5173",
+  "backend": "feat/v2-C1-masking @ 0fff831 (http://127.0.0.1:18080)",
+  "phonePattern": "1[3-9]\\d{9}",
+  "cases": [
+    {
+      "label": "匿名详情：DOM 无 11 位手机号",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "匿名详情：联系方式渲染「登录后可查看」占位",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "匿名详情：无管理入口",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "匿名详情：无 tel: 链接",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "匿名点「查看联系方式」→ /login",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "匿名点「查看联系方式」→ 带回跳地址",
+      "ok": true,
+      "detail": "/records/13"
+    },
+    {
+      "label": "匿名列表：DOM 无 11 位手机号",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "匿名列表：无管理入口",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "登录非本人详情：DOM 无 11 位手机号",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "登录非本人详情：遮蔽位仍是「登录后可查看」",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "登录非本人详情：无编辑 / 关闭入口",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "非本人列表：DOM 无 11 位手机号",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "非本人列表：管理入口只出现在本人卡片上",
+      "ok": true,
+      "detail": "本人卡片 9 / 共 10"
+    },
+    {
+      "label": "本人详情：出现编辑与关闭入口",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "本人详情：联系方式为本人原文（非占位）",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "本人详情：未达 MATCHED 时「标记完成」不可点，给出说明",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "本人列表：出现管理入口",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "本人列表：无遮蔽占位（本人数据不遮蔽）",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "本人详情点「编辑」→ 进入编辑页且表单已预填",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "编辑保存后回详情且标题已更新",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "本人详情点「关闭」→ 进入关闭流程并落到我的启事",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "关闭后我的启事给出一次性结果提示",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "关闭后详情接口 404（code 20001）",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "本人列表点「关闭」→ 卡片即时移除并给出提示",
+      "ok": true,
+      "detail": ""
+    }
+  ],
+  "anonymousDetail": {
+    "url": "http://127.0.0.1:5173/records/13",
+    "phoneHitsInHtml": [],
+    "phoneHitsInText": [],
+    "maskedCount": 1,
+    "maskedTexts": [
+      "登录后可查看"
+    ],
+    "manageEntryCount": 0,
+    "editEntryCount": 0,
+    "closeEntryCount": 0,
+    "telLinks": 0,
+    "shot": "C2-frontend-masking/detail-01-anonymous.png",
+    "loginRedirect": {
+      "url": "http://127.0.0.1:5173/login?redirect=%2Frecords%2F13",
+      "redirect": "/records/13"
+    },
+    "loginShot": "C2-frontend-masking/detail-02-anonymous-login-cta.png"
+  },
+  "anonymousList": {
+    "url": "http://127.0.0.1:5173/",
+    "phoneHitsInHtml": [],
+    "phoneHitsInText": [],
+    "maskedCount": 0,
+    "maskedTexts": [],
+    "manageEntryCount": 0,
+    "editEntryCount": 0,
+    "closeEntryCount": 0,
+    "telLinks": 0,
+    "shot": "C2-frontend-masking/list-01-anonymous.png"
+  },
+  "nonOwnerDetail": {
+    "url": "http://127.0.0.1:5173/records/13",
+    "phoneHitsInHtml": [],
+    "phoneHitsInText": [],
+    "maskedCount": 1,
+    "maskedTexts": [
+      "登录后可查看"
+    ],
+    "manageEntryCount": 0,
+    "editEntryCount": 0,
+    "closeEntryCount": 0,
+    "telLinks": 0,
+    "shot": "C2-frontend-masking/detail-03-non-owner.png"
+  },
+  "nonOwnerList": {
+    "url": "http://127.0.0.1:5173/",
+    "phoneHitsInHtml": [],
+    "phoneHitsInText": [],
+    "maskedCount": 0,
+    "maskedTexts": [],
+    "manageEntryCount": 9,
+    "editEntryCount": 9,
+    "closeEntryCount": 9,
+    "telLinks": 0,
+    "shot": "C2-frontend-masking/list-02-non-owner.png",
+    "cards": [
+      {
+        "id": "#26",
+        "mine": true,
+        "manage": true
+      },
+      {
+        "id": "#22",
+        "mine": true,
+        "manage": true
+      },
+      {
+        "id": "#15",
+        "mine": true,
+        "manage": true
+      },
+      {
+        "id": "#3",
+        "mine": true,
+        "manage": true
+      },
+      {
+        "id": "#7",
+        "mine": true,
+        "manage": true
+      },
+      {
+        "id": "#18",
+        "mine": true,
+        "manage": true
+      },
+      {
+        "id": "#6",
+        "mine": false,
+        "manage": false
+      },
+      {
+        "id": "#19",
+        "mine": true,
+        "manage": true
+      },
+      {
+        "id": "#4",
+        "mine": true,
+        "manage": true
+      },
+      {
+        "id": "#1",
+        "mine": true,
+        "manage": true
+      }
+    ]
+  },
+  "ownerDetail": {
+    "url": "http://127.0.0.1:5173/records/16",
+    "phoneHitsInHtml": [
+      "13800000104"
+    ],
+    "phoneHitsInText": [
+      "13800000104"
+    ],
+    "maskedCount": 0,
+    "maskedTexts": [],
+    "manageEntryCount": 1,
+    "editEntryCount": 1,
+    "closeEntryCount": 1,
+    "telLinks": 0,
+    "shot": "C2-frontend-masking/detail-04-owner.png"
+  },
+  "ownerList": {
+    "url": "http://127.0.0.1:5173/",
+    "phoneHitsInHtml": [],
+    "phoneHitsInText": [],
+    "maskedCount": 0,
+    "maskedTexts": [],
+    "manageEntryCount": 1,
+    "editEntryCount": 1,
+    "closeEntryCount": 1,
+    "telLinks": 0,
+    "shot": "C2-frontend-masking/list-03-owner.png"
+  },
+  "ownerEdit": {
+    "url": "http://127.0.0.1:5173/records/16/edit",
+    "prefilledTitle": "食堂捡到一把折叠伞",
+    "shot": "C2-frontend-masking/detail-05-owner-edit-form.png",
+    "savedTitle": "食堂捡到一把折叠伞（已核对）",
+    "savedShot": "C2-frontend-masking/detail-06-owner-edit-saved.png"
+  },
+  "ownerClose": {
+    "url": "http://127.0.0.1:5173/my?updated=closed",
+    "notice": "已关闭\n这条启事不再公开展示，也不再参与匹配。",
+    "shot": "C2-frontend-masking/detail-07-owner-closed-my.png",
+    "afterCloseApi": {
+      "status": 404,
+      "code": 20001,
+      "message": "记录不存在或已删除"
+    }
+  },
+  "listClose": {
+    "url": "http://127.0.0.1:5173/",
+    "notice": "已关闭\n启事 #6 已关闭，不再出现在公共列表。可在「我的启事」查看。\n去我的启事",
+    "remainingCards": 0,
+    "shot": "C2-frontend-masking/list-04-owner-closed.png"
+  },
+  "summary": {
+    "total": 24,
+    "failed": 0
+  }
+}

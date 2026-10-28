@@ -6,14 +6,15 @@ import com.findit.campus.record.domain.RecordType;
 import com.findit.campus.record.domain.SortDirection;
 
 /**
- * 列表查询条件（mapper 入参）。
+ * 公共列表查询条件（mapper 入参）。
  *
- * <p>字段语义：{@code null} = 该维度不限（{@code status} 的"不限"由 service 用 {@code null} 表达，
- * 契约上的 {@code ALL} 在入参层就已被翻译成它 —— SQL 里不存在 "ALL" 这个状态值）。
+ * <p>{@code status} 在 service 层被强制归一到 {@code PENDING}（契约 §4.1：公共列表可见集合恒为
+ * {@code PENDING}）。请求里的 {@code COMPLETED/CLOSED/ALL} 只是"确认它们不在公共列表"，
+ * 不改变结果集 —— 因此这里保留字段，但 SQL 里仍硬写 {@code status='PENDING'}，
+ * 不给调用方"传个 status 就能查到终态记录"的口子。
  *
  * <p>{@code sortField}/{@code sortDirection} 存的是<b>枚举名而非请求原文</b>（ADR-014）：
- * XML 的 {@code ORDER BY} 只能是硬编码字面量，这里给它的值先经过枚举查表，
- * 请求字符串永远进不到 SQL 文本里。
+ * XML 的 {@code ORDER BY} 只能是硬编码字面量，请求字符串永远进不到 SQL 文本里。
  */
 public record RecordCondition(
         RecordType type,

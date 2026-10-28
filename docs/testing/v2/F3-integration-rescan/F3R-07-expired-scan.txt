@@ -1,0 +1,104 @@
+# F3-R 项7 · verify 阶段（触发扫描并取证）· 2026-10-28T07:38:13.626Z
+- 夹具：X1=27(过期+DEGRADED) X2=28(过期+PENDING) ｜ 对照 X3=29 X4=30 ｜ 对手端 C1=31 C2=32
+
+## ① 启动扫描（PairScanOnceRunner，需启动参数 --pair-scan-once；未带参数时该触发点不会跑）
+  2026-10-28 15:38:06.634 INFO  [main] c.f.c.pair.service.PairScanService - [] pair scan done trigger=startup scanned=5 rescored=14 degraded=5 skipped=36 expired=3 limited=false elapsedMs=4978 counters={llmCalls=0, llmSuccess=0, degraded=14, skippedUnchanged=36, pairsWritten=14, enqueueRejected=0, lockMisses=0, degradedByReason={EMPTY_KEY=14}}
+  2026-10-28 15:38:06.634 INFO  [main] c.f.c.pair.config.PairScanOnceRunner - [] pair scan once done scanned=5 rescored=14 degraded=5 skipped=36 expired=3 limited=false elapsedMs=4978 counters={llmCalls=0, llmSuccess=0, degraded=14, skippedUnchanged=36, pairsWritten=14, enqueueRejected=0, lockMisses=0, degradedByReason={EMPTY_KEY=14}}
+
+## ② POST /api/ops/pair-scan（X-Ops-Token 认证）
+- 不带 token：HTTP 404 / code=10003（未配置或无 token 都应是 404，不暴露入口存在）
+- 第 1 次：HTTP 200 / code=0 / message="扫描完成" / requestId=6ac8a5da0dc54159
+- 结果：{"scanned":5,"rescored":0,"degraded":5,"skipped":50,"expired":3,"limited":false,"elapsedMs":3149,"trigger":"http","counters":{"llmCalls":0,"llmSuccess":0,"degraded":14,"skippedUnchanged":86,"pairsWritten":14,"enqueueRejected":0,"lockMisses":0,"degradedByReason":{"EMPTY_KEY":14}}}
+- 第 2 次（幂等对照）：{"scanned":5,"rescored":0,"degraded":5,"skipped":50,"expired":3,"limited":false,"elapsedMs":2398,"trigger":"http","counters":{"llmCalls":0,"llmSuccess":0,"degraded":14,"skippedUnchanged":136,"pairsWritten":14,"enqueueRejected":0,"lockMisses":0,"degradedByReason":{"EMPTY_KEY":14}}}
+
+## ③ EV-SQL 对照（扫描前 → 扫描后）
+- X1（过期+DEGRADED）：pair_state DEGRADED→DEGRADED，pair_scored_at 2026-09-27 15:37:48.000000→2026-09-27 15:37:48.000000，updated_at 2026-09-27 15:37:48.000000→2026-09-27 15:37:48.000000
+- X2（过期+PENDING）：pair_state PENDING→PENDING，pair_scored_at null→null，updated_at 2026-09-27 15:37:48.000000→2026-09-27 15:37:48.000000
+- X3（保留期内，对照）：pair_state PENDING→DEGRADED，pair_scored_at null→2026-10-28 15:38:17.000000，updated_at 2026-10-27 15:37:48.000000→2026-10-27 15:37:48.000000
+- X4（PENDING+DEGRADED，对照）：pair_state DEGRADED→DEGRADED，pair_scored_at 2026-10-28 13:37:49.000000→2026-10-28 15:38:18.000000，updated_at 2026-10-28 15:37:42.000000→2026-10-28 15:37:42.000000
+- 端点为过期记录的 pair 行数：24 → 24
+- 端点为过期记录的通知数：0 → 0
+- 端点为对照记录的 pair 行数：0 → 20；通知 0 → 0（对照必须会动，否则扫描等于没跑）
+- 全表 pair 行数：70 → 84；通知总数：8 → 8
+- 预置 pair 行：score 0.8200→0.8200，status MATCHED→MATCHED，lost_hash ffffffffffff…→ffffffffffff…，updated_at 2026-10-28 15:37:49→2026-10-28 15:37:49
+
+## ④ 后端日志原文（本轮重启后新增，含启动扫描与两次手动扫描）
+  2026-10-28 15:38:02.467 INFO  [main] c.f.c.p.service.PairScoringService - [] pair score written lostId=1 foundId=26 trigger=startup pairId=72 engine=LOCAL_KEYWORD score=0.03 degradedReason=EMPTY_KEY latencyMs=null promptTokens=null completionTokens=null
+  2026-10-28 15:38:02.507 INFO  [main] c.f.c.p.service.PairScoringService - [] pair score written lostId=2 foundId=26 trigger=startup pairId=73 engine=LOCAL_KEYWORD score=0.02 degradedReason=EMPTY_KEY latencyMs=null promptTokens=null completionTokens=null
+  2026-10-28 15:38:02.546 INFO  [main] c.f.c.p.service.PairScoringService - [] pair score written lostId=3 foundId=26 trigger=startup pairId=74 engine=LOCAL_KEYWORD score=0.04 degradedReason=EMPTY_KEY latencyMs=null promptTokens=null completionTokens=null
+  2026-10-28 15:38:02.583 INFO  [main] c.f.c.p.service.PairScoringService - [] pair score written lostId=4 foundId=26 trigger=startup pairId=75 engine=LOCAL_KEYWORD score=0.04 degradedReason=EMPTY_KEY latencyMs=null promptTokens=null completionTokens=null
+  2026-10-28 15:38:02.617 INFO  [main] c.f.c.p.service.PairScoringService - [] pair score written lostId=5 foundId=26 trigger=startup pairId=76 engine=LOCAL_KEYWORD score=0.02 degradedReason=EMPTY_KEY latencyMs=null promptTokens=null completionTokens=null
+  2026-10-28 15:38:02.645 INFO  [main] c.f.c.p.service.PairScoringService - [] pair score written lostId=6 foundId=26 trigger=startup pairId=77 engine=LOCAL_KEYWORD score=0.02 degradedReason=EMPTY_KEY latencyMs=null promptTokens=null completionTokens=null
+  2026-10-28 15:38:02.679 INFO  [main] c.f.c.p.service.PairScoringService - [] pair score written lostId=7 foundId=26 trigger=startup pairId=78 engine=LOCAL_KEYWORD score=0.03 degradedReason=EMPTY_KEY latencyMs=null promptTokens=null completionTokens=null
+  2026-10-28 15:38:02.715 INFO  [main] c.f.c.p.service.PairScoringService - [] pair score written lostId=8 foundId=26 trigger=startup pairId=79 engine=LOCAL_KEYWORD score=0.01 degradedReason=EMPTY_KEY latencyMs=null promptTokens=null completionTokens=null
+  2026-10-28 15:38:02.743 INFO  [main] c.f.c.p.service.PairScoringService - [] pair score written lostId=9 foundId=26 trigger=startup pairId=80 engine=LOCAL_KEYWORD score=0.02 degradedReason=EMPTY_KEY latencyMs=null promptTokens=null completionTokens=null
+  2026-10-28 15:38:02.769 INFO  [main] c.f.c.p.service.PairScoringService - [] pair score written lostId=10 foundId=26 trigger=startup pairId=81 engine=LOCAL_KEYWORD score=0.03 degradedReason=EMPTY_KEY latencyMs=null promptTokens=null completionTokens=null
+  2026-10-28 15:38:03.129 INFO  [main] c.f.c.p.service.PairScoringService - [] pair record scored recordId=26 trigger=startup candidates=10 written=10 skipped=0 locked=0 state=DEGRADED degradedPairs=12
+  2026-10-28 15:38:03.187 INFO  [main] c.f.c.p.service.PairScoringService - [] pair score skipped reason=UNCHANGED fastPath=true lostId=29 foundId=13 trigger=startup pairId=35
+  2026-10-28 15:38:03.190 INFO  [main] c.f.c.p.service.PairScoringService - [] pair score skipped reason=UNCHANGED fastPath=true lostId=29 foundId=14 trigger=startup pairId=37
+  2026-10-28 15:38:03.194 INFO  [main] c.f.c.p.service.PairScoringService - [] pair score skipped reason=UNCHANGED fastPath=true lostId=29 foundId=15 trigger=startup pairId=39
+  2026-10-28 15:38:03.196 INFO  [main] c.f.c.p.service.PairScoringService - [] pair score skipped reason=UNCHANGED fastPath=true lostId=29 foundId=17 trigger=startup pairId=41
+  2026-10-28 15:38:03.200 INFO  [main] c.f.c.p.service.PairScoringService - [] pair score skipped reason=UNCHANGED fastPath=true lostId=29 foundId=18 trigger=startup pairId=43
+  2026-10-28 15:38:03.204 INFO  [main] c.f.c.p.service.PairScoringService - [] pair score skipped reason=UNCHANGED fastPath=true lostId=29 foundId=19 trigger=startup pairId=45
+  2026-10-28 15:38:03.207 INFO  [main] c.f.c.p.service.PairScoringService - [] pair score skipped reason=UNCHANGED fastPath=true lostId=29 foundId=21 trigger=startup pairId=47
+  2026-10-28 15:38:03.211 INFO  [main] c.f.c.p.service.PairScoringService - [] pair score skipped reason=UNCHANGED fastPath=true lostId=29 foundId=22 trigger=startup pairId=49
+  2026-10-28 15:38:03.216 INFO  [main] c.f.c.p.service.PairScoringService - [] pair score skipped reason=UNCHANGED fastPath=true lostId=29 foundId=31 trigger=startup pairId=51
+  2026-10-28 15:38:03.221 INFO  [main] c.f.c.p.service.PairScoringService - [] pair score skipped reason=UNCHANGED fastPath=true lostId=29 foundId=32 trigger=startup pairId=53
+  2026-10-28 15:38:03.578 INFO  [main] c.f.c.p.service.PairScoringService - [] pair record scored recordId=29 trigger=startup candidates=10 written=0 skipped=10 locked=0 state=DEGRADED degradedPairs=10
+  2026-10-28 15:38:03.949 INFO  [main] c.f.c.p.service.PairScoringService - [] pair score skipped reason=UNCHANGED fastPath=true lostId=30 foundId=13 trigger=startup pairId=36
+  2026-10-28 15:38:03.951 INFO  [main] c.f.c.p.service.PairScoringService - [] pair score skipped reason=UNCHANGED fastPath=true lostId=30 foundId=14 trigger=startup pairId=38
+  2026-10-28 15:38:03.954 INFO  [main] c.f.c.p.service.PairScoringService - [] pair score skipped reason=UNCHANGED fastPath=true lostId=30 foundId=15 trigger=startup pairId=40
+  2026-10-28 15:38:03.957 INFO  [main] c.f.c.p.service.PairScoringService - [] pair score skipped reason=UNCHANGED fastPath=true lostId=30 foundId=17 trigger=startup pairId=42
+  2026-10-28 15:38:03.959 INFO  [main] c.f.c.p.service.PairScoringService - [] pair score skipped reason=UNCHANGED fastPath=true lostId=30 foundId=18 trigger=startup pairId=44
+  2026-10-28 15:38:03.961 INFO  [main] c.f.c.p.service.PairScoringService - [] pair score skipped reason=UNCHANGED fastPath=true lostId=30 foundId=21 trigger=startup pairId=46
+  2026-10-28 15:38:03.964 INFO  [main] c.f.c.p.service.PairScoringService - [] pair score skipped reason=UNCHANGED fastPath=true lostId=30 foundId=22 trigger=startup pairId=48
+  2026-10-28 15:38:03.966 INFO  [main] c.f.c.p.service.PairScoringService - [] pair score skipped reason=UNCHANGED fastPath=true lostId=30 foundId=23 trigger=startup pairId=50
+  2026-10-28 15:38:03.968 INFO  [main] c.f.c.p.service.PairScoringService - [] pair score skipped reason=UNCHANGED fastPath=true lostId=30 foundId=31 trigger=startup pairId=52
+  2026-10-28 15:38:03.971 INFO  [main] c.f.c.p.service.PairScoringService - [] pair score skipped reason=UNCHANGED fastPath=true lostId=30 foundId=32 trigger=startup pairId=54
+  2026-10-28 15:38:03.984 INFO  [main] c.f.c.p.service.PairScoringService - [] pair record scored recordId=30 trigger=startup candidates=10 written=0 skipped=10 locked=0 state=DEGRADED degradedPairs=10
+  2026-10-28 15:38:04.020 INFO  [main] c.f.c.p.service.PairScoringService - [] pair score skipped reason=UNCHANGED fastPath=true lostId=1 foundId=31 trigger=startup pairId=55
+  2026-10-28 15:38:04.022 INFO  [main] c.f.c.p.service.PairScoringService - [] pair score skipped reason=UNCHANGED fastPath=true lostId=3 foundId=31 trigger=startup pairId=56
+  2026-10-28 15:38:04.025 INFO  [main] c.f.c.p.service.PairScoringService - [] pair score skipped reason=UNCHANGED fastPath=true lostId=4 foundId=31 trigger=startup pairId=58
+  2026-10-28 15:38:04.027 INFO  [main] c.f.c.p.service.PairScoringService - [] pair score skipped reason=UNCHANGED fastPath=true lostId=5 foundId=31 trigger=startup pairId=60
+  2026-10-28 15:38:04.410 INFO  [main] c.f.c.p.service.PairScoringService - [] pair score written lostId=6 foundId=31 trigger=startup pairId=82 engine=LOCAL_KEYWORD score=0.02 degradedReason=EMPTY_KEY latencyMs=null promptTokens=null completionTokens=null
+  2026-10-28 15:38:04.780 INFO  [main] c.f.c.p.service.PairScoringService - [] pair score written lostId=7 foundId=31 trigger=startup pairId=83 engine=LOCAL_KEYWORD score=0.02 degradedReason=EMPTY_KEY latencyMs=null promptTokens=null completionTokens=null
+  2026-10-28 15:38:04.783 INFO  [main] c.f.c.p.service.PairScoringService - [] pair score skipped reason=UNCHANGED fastPath=true lostId=8 foundId=31 trigger=startup pairId=62
+
+## ⑤ SQL 层反证：同一个 WHERE，修复前 / 修复后分别选中谁
+- 修复前条件选中的目标（含本轮全部夹具）：26,27,28,29,30,31,32
+- 修复后条件选中的目标：26,29,30,31,32
+- 过期夹具在「修复前」被选中：2 / 2；在「修复后」被选中：0 / 2
+- 对照夹具在「修复后」仍被选中：2 / 2（29,30 = X3,X4）
+
+## 判据
+PASS  V1 过期夹具 X1/X2 未被重算：pair_state 与 pair_scored_at 一字不变（连 markPairScoring 都没进）
+        X1：pair_state DEGRADED→DEGRADED，pair_scored_at 2026-09-27 15:37:48.000000→2026-09-27 15:37:48.000000，updated_at 2026-09-27 15:37:48.000000→2026-09-27 15:37:48.000000
+        X2：pair_state PENDING→PENDING，pair_scored_at null→null，updated_at 2026-09-27 15:37:48.000000→2026-09-27 15:37:48.000000
+PASS  V2 未新建 pair：端点为 X1/X2 的 t_pair_score 行数不增
+        24 → 24（预置那一行仍为 24 行，无新增）
+PASS  V3 预置 pair 行未被重算覆盖：score/status/lost_hash/updated_at 全部不变
+        旧：{"score":"0.8200","status":"MATCHED","hash":"ffffffffffffffff","at":"2026-10-28 15:37:49"}
+        新：{"score":"0.8200","status":"MATCHED","hash":"ffffffffffffffff","at":"2026-10-28 15:37:49"}
+PASS  V4 未发通知：端点为 X1/X2 的通知数扫描前后都为 0
+        过期端通知：0 → 0
+        全表通知：8 → 8
+        对照端（X3/X4）通知：0 —— 保留期内允许新增，作为「通知通路本身还活着」的旁证
+PASS  V5 日志里没有 X1/X2 的打分痕迹（没有 record scored、也没有 written）
+        record scored X1=0 X2=0；pair score written X1=0 X2=0
+PASS  V6 正对照成立：X3（保留期内 COMPLETED）与 X4（PENDING+DEGRADED）确实被扫到
+        X3 pair_state PENDING → DEGRADED，scored_at null → 2026-10-28 15:38:17.000000
+        X4 pair_state DEGRADED → DEGRADED，scored_at 2026-10-28 13:37:49.000000 → 2026-10-28 15:38:18.000000
+        日志：record scored X3=3 行、X4=3 行
+        2026-10-28 15:38:03.578 INFO  [main] c.f.c.p.service.PairScoringService - [] pair record scored recordId=29 trigger=startup candidates=10 written=0 skipped=10 locked=0 state=DEGRADED degradedPairs=10
+        2026-10-28 15:38:03.984 INFO  [main] c.f.c.p.service.PairScoringService - [] pair record scored recordId=30 trigger=startup candidates=10 written=0 skipped=10 locked=0 state=DEGRADED degradedPairs=10
+PASS  V7 SQL 层反证：修复前的 WHERE 会选中 X1/X2，修复后的不会，而对照仍在
+        修复前选中：26,27,28,29,30,31,32
+        修复后选中：26,29,30,31,32
+        X1/X2 命中修复后条件：0；X3/X4 命中：2
+PASS  V8 ops 返回的 expired 计数与库内过期 COMPLETED 行数一致（只计数、不改写任何列）
+        ops 响应 expired=3，EV-SQL 实数=3（含 X1/X2）
+        扫描后 X1/X2 仍为 status=COMPLETED、completed_at=2026-09-27 15:37:48，未被任何清扫改写
+
+## 结论
+- 断言项 8，失败 0
+- P2-4 复验通过：过期 COMPLETED 既不重算也不新建 pair/通知，且对照仍能正常打分。

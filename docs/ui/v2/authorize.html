@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>A3 · 授权交互</title>
+  <link rel="stylesheet" href="../../../web/src/styles/tokens.css" />
+  <link rel="stylesheet" href="../../../web/src/styles/base.css" />
+  <link rel="stylesheet" href="../../../web/src/styles/components.css" />
+  <link rel="stylesheet" href="mockup.css" />
+  <style>
+    .auth-grid { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr); gap: var(--sp-4); }
+    .auth-col { display: flex; flex-direction: column; gap: var(--sp-3); }
+    .auth-state { padding: var(--sp-3); border: 1px solid var(--color-border); border-radius: var(--radius-sm); background-color: var(--color-surface); }
+    .auth-state__label { display: flex; align-items: baseline; justify-content: space-between; gap: var(--sp-2); margin-bottom: var(--sp-2); color: var(--color-text-subtle); font-family: var(--font-mono); font-size: 11px; }
+    .auth-state__label b { color: var(--color-text); font-family: var(--font-sans); font-size: var(--fs-sm); font-weight: var(--fw-semibold); }
+    .confirm-box { padding: var(--sp-3); border: 1px solid var(--color-danger); border-radius: var(--radius-sm); background-color: var(--color-danger-soft); color: var(--color-danger); }
+    .confirm-box__title { font-size: var(--fs-sm); font-weight: var(--fw-semibold); }
+    .confirm-box__desc { margin-top: var(--sp-1); font-size: var(--fs-xs); line-height: var(--lh-snug); }
+    .confirm-box__actions { display: flex; flex-wrap: wrap; gap: var(--sp-2); margin-top: var(--sp-2); }
+    @media (max-width: 900px) { .auth-grid { grid-template-columns: minmax(0, 1fr); } }
+  </style>
+</head>
+<body class="board">
+  <header class="board__head">
+    <div>
+      <p class="board__kicker">A3 · v2 UI Baseline · Authorize</p>
+      <h1 class="board__title">授权交互：公开 / 撤回 + 附言 ≤ 200 字</h1>
+    </div>
+    <p class="board__meta">界面稿 07 / 只对当前这一条配对生效。公开与撤回都即时生效；撤回时附言一并清空。</p>
+  </header>
+
+  <div class="board__grid">
+    <div class="app-frame">
+      <div class="app-frame__bar" aria-hidden="true">
+        <span class="app-frame__dot"></span><span class="app-frame__dot"></span><span class="app-frame__dot"></span>
+        <span class="app-frame__url">find-it-campus / records/13 · pair #31</span>
+      </div>
+      <div class="app-shell">
+        <header class="app-header">
+          <div class="app-header__inner">
+            <span class="app-header__brand"><span class="app-header__logo" aria-hidden="true">FI</span><span class="app-header__brand-text">校园失物招领</span></span>
+            <nav class="app-header__nav" aria-label="主导航">
+              <a class="app-header__link is-active" href="#" aria-current="page">启事列表</a>
+              <a class="app-header__link" href="#">我的启事</a>
+              <a class="app-header__link nav-dot" href="#">通知<span class="nav-dot__badge">3</span></a>
+              <a class="app-header__link app-header__link--cta" href="#">发布启事</a>
+              <span class="app-header__user"><span class="app-header__avatar" aria-hidden="true">陈</span>陈同学</span>
+            </nav>
+          </div>
+        </header>
+
+        <main class="app-main">
+          <div class="container">
+            <a class="back-link" href="#">← 返回启事详情</a>
+            <div class="page-head">
+              <div>
+                <div class="record-kicker">
+                  <span class="badge badge--tier-mid badge--dot">可授权查看</span>
+                  <span class="pair__score">置信度 <strong>80%</strong></span>
+                  <span class="mono">#13 ↔ #31</span>
+                </div>
+                <h1 class="page-head__title">这一条配对</h1>
+                <p class="page-head__desc">黑色钱包（图书馆三楼）↔ 10 月 20 日下午在图书馆捡到黑色钱包</p>
+              </div>
+            </div>
+
+            <section class="panel" aria-labelledby="auth-title">
+              <header class="panel__head">
+                <div>
+                  <h2 id="auth-title" class="panel__title">公开与撤回</h2>
+                  <p class="panel__desc">只有你能公开自己的联系方式；对方是否公开由对方决定。授权只作用于这一条配对。</p>
+                </div>
+              </header>
+
+              <div class="auth-grid">
+                <div class="auth-col">
+                  <div class="auth-state">
+                    <p class="auth-state__label"><b>A · 公开中（展开附言）</b><span>已保存</span></p>
+                    <label class="switch" for="switch-public">
+                      <input id="switch-public" type="checkbox" role="switch" checked />
+                      <span class="switch__track" aria-hidden="true"></span>
+                      公开我的联系方式
+                      <span class="switch__state">已公开</span>
+                    </label>
+                    <p class="tiny muted" style="margin: var(--sp-1) 0 var(--sp-2);">对方现在可以在 #13 ↔ #31 这一条配对里看到 <span class="mono">138 0000 1234</span>。</p>
+
+                    <div class="note-form">
+                      <div class="note-form__head">
+                        <label class="note-form__label" for="note-public">附言（选填）</label>
+                        <span class="note-form__counter">37/200</span>
+                      </div>
+                      <textarea id="note-public" class="control" rows="3" aria-describedby="note-public-hint note-public-hint2">钱包里有校园卡和一张公交卡，卡面姓名为陈同学。约在图书馆三楼服务台交接即可。</textarea>
+                      <p id="note-public-hint" class="note-form__hint">会随授权一起展示给对方；撤回时一并清空。请勿填写与配对无关的隐私信息。</p>
+                      <p id="note-public-hint2" class="note-form__hint">最多 200 字；超出上限时保存按钮禁用并提示删减字数。</p>
+                      <div class="note-form__actions">
+                        <button class="btn btn--primary btn--sm" type="button">保存并公开</button>
+                        <button class="btn btn--ghost btn--sm" type="button">取消</button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="masked">
+                    <span class="masked__title">对方尚未公开</span>
+                    <span class="masked__desc">对方公开后，这里会显示号码；你无法替对方公开。</span>
+                  </div>
+                </div>
+
+                <div class="auth-col">
+                  <div class="auth-state">
+                    <p class="auth-state__label"><b>B · 撤回确认</b><span>破坏性操作</span></p>
+                    <div class="confirm-box">
+                      <p class="confirm-box__title">撤回后对方将看不到你的联系方式</p>
+                      <p class="confirm-box__desc">附言也会一并清空，无法恢复。撤回只影响这一条配对，其他配对与启事状态不变。</p>
+                      <div class="confirm-box__actions">
+                        <button class="btn btn--danger btn--sm" type="button">确认撤回</button>
+                        <button class="btn btn--ghost btn--sm" type="button">取消</button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="auth-state">
+                    <p class="auth-state__label"><b>C · 超出 200 字（粘贴后）</b><span>字段级错误</span></p>
+                    <div class="note-form note-form--over">
+                      <div class="note-form__head">
+                        <label class="note-form__label" for="note-over">附言（选填）</label>
+                        <span class="note-form__counter is-over">213/200</span>
+                      </div>
+                      <textarea id="note-over" class="control" rows="2" aria-invalid="true" aria-describedby="note-over-error">钱包里有校园卡、公交卡、宿舍门禁卡，卡面姓名为陈同学。约在图书馆三楼服务台交接即可，我下午都在。</textarea>
+                      <ul id="note-over-error" class="field-error">
+                        <li>附言最多 200 字，请删减 13 字后再保存。</li>
+                      </ul>
+                      <div class="note-form__actions">
+                        <button class="btn btn--primary btn--sm" type="button" disabled aria-disabled="true">保存并公开</button>
+                        <button class="btn btn--ghost btn--sm" type="button">取消</button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </section>
+          </div>
+        </main>
+
+        <footer class="app-footer">
+          <div class="app-footer__inner"><span>find-it-campus · 校园失物招领</span><span>已登录 · 陈同学 · 退出登录</span></div>
+        </footer>
+      </div>
+    </div>
+
+    <aside class="notes" aria-label="设计说明">
+      <p class="notes__title">这一稿要说明什么 <span class="notes__tag">07</span></p>
+      <ol class="notes__list">
+        <li class="notes__item"><b>开关不是唯一通道</b>开关旁有「已公开 / 未公开」文字；读屏用 role="switch" + aria-checked，状态不靠颜色。</li>
+        <li class="notes__item"><b>附言上限</b>textarea maxlength=200；计数实时更新；粘贴超长时截断并提示「已截断到 200 字」。服务端 200 上限仍会再校验，字段错误文案固定。</li>
+        <li class="notes__item"><b>撤回要二次确认</b>撤回会清空附言且不可恢复；确认框说明「只影响这一条配对」。</li>
+        <li class="notes__item"><b>不提供低档入口</b>&lt;75% 不出现开关；&gt;=90% 也没有开关（双方直接可见）。只有 75%–89% 有这一段。</li>
+      </ol>
+      <div class="notes__rule"></div>
+      <p class="notes__foot">保存成功用 role="status" 播报「已公开，对方现在可以查看」；失败保留表单内容并给重试，不清空已输入的附言。</p>
+    </aside>
+  </div>
+</body>
+</html>

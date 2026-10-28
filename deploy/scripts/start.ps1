@@ -206,6 +206,20 @@ try {
             -WorkingDirectory $pkgRoot -StdOutPath $backendLog -StdErrPath $backendErrLog
         $backendPid = Wait-ChildProcessId -ParentId ([int]$backendLauncher.Id) -Name 'java.exe' -TimeoutSec 20
         if ($backendPid -le 0) {
+            # 受限主机上 Get-CimInstance 可能被策略拒绝（拒绝访问），进程树查询因此永远为空。
+            # 18080 在拉起前已确认空闲，此时监听它的 java 只可能是本次启动的后端；
+            # 再用可执行文件路径核对一次，避免把别的 java 误当成本包进程。
+            $fallbackOwner = @(Get-PortOwners -Port 18080) | Select-Object -First 1
+            if ($fallbackOwner) {
+                $fallbackDetails = Get-ProcessDetails -ProcessId $fallbackOwner.ProcessId
+                if ($fallbackDetails.Exists -and $fallbackDetails.ExecutablePath -and
+                    (Normalize-PathText $fallbackDetails.ExecutablePath) -eq (Normalize-PathText $javaExe)) {
+                    $backendPid = [int]$fallbackOwner.ProcessId
+                    Write-Log ('进程树查询不可用，按 18080 端口归属回退识别后端 PID {0}' -f $backendPid) 'WARN'
+                }
+            }
+        }
+        if ($backendPid -le 0) {
             foreach ($line in (Get-FileTail -Path $backendErrLog -Lines 20)) { Write-Log ('stderr | ' + $line) 'ERROR' }
             throw '后端进程未能启动：java.exe 没有起来。请检查 JDK17 与 logs\backend-error.log。'
         }

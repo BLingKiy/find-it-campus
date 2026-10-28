@@ -1,0 +1,51 @@
+# F3-R 项7 补充 · 以「重启后端 + --pair-scan-once」为触发点 · 2026-10-28T07:37:51.370Z
+- 重启前：X1/X2 = [{"id":"27","status":"COMPLETED","pair_state":"DEGRADED","scored_at":"2026-09-27 15:37:48","updated_at":"2026-09-27 15:37:48.000000"},{"id":"28","status":"COMPLETED","pair_state":"PENDING","scored_at":null,"updated_at":"2026-09-27 15:37:48.000000"}]
+- 重启前：过期端 pair 行数=24，通知=0，全表 pair=70
+- 日志偏移：921702 字节（只读之后新增部分）
+
+## 重启命令留档
+- netstat -ano -p TCP | grep :18080 → PID 8928
+- taskkill /PID 8928 /F
+    �ɹ�: ����ֹ PID Ϊ 8928 �Ľ��̡�
+- C:/Project/tools/jdk17/jdk-17.0.20.1+1/bin/java.exe -jar server/target/find-it-campus-0.0.1-SNAPSHOT.jar --pair-scan-once   （OPS_SCAN_TOKEN 已设为一次性本地值，此处不落档）>> qa/reports/server.log 2>&1
+- 健康检查：第 6 次探测 HTTP 200
+
+## 启动扫描日志（本轮新增，GBK 解码）
+  2026-10-28 15:38:01.649 INFO  [main] c.f.campus.FindItCampusApplication - [] Started FindItCampusApplication in 6.715 seconds (process running for 7.603)
+  2026-10-28 15:38:02.467 INFO  [main] c.f.c.p.service.PairScoringService - [] pair score written lostId=1 foundId=26 trigger=startup pairId=72 engine=LOCAL_KEYWORD score=0.03 degradedReason=EMPTY_KEY latencyMs=null promptTokens=null completionTokens=null
+  2026-10-28 15:38:02.507 INFO  [main] c.f.c.p.service.PairScoringService - [] pair score written lostId=2 foundId=26 trigger=startup pairId=73 engine=LOCAL_KEYWORD score=0.02 degradedReason=EMPTY_KEY latencyMs=null promptTokens=null completionTokens=null
+  2026-10-28 15:38:02.546 INFO  [main] c.f.c.p.service.PairScoringService - [] pair score written lostId=3 foundId=26 trigger=startup pairId=74 engine=LOCAL_KEYWORD score=0.04 degradedReason=EMPTY_KEY latencyMs=null promptTokens=null completionTokens=null
+  2026-10-28 15:38:02.583 INFO  [main] c.f.c.p.service.PairScoringService - [] pair score written lostId=4 foundId=26 trigger=startup pairId=75 engine=LOCAL_KEYWORD score=0.04 degradedReason=EMPTY_KEY latencyMs=null promptTokens=null completionTokens=null
+  2026-10-28 15:38:02.617 INFO  [main] c.f.c.p.service.PairScoringService - [] pair score written lostId=5 foundId=26 trigger=startup pairId=76 engine=LOCAL_KEYWORD score=0.02 degradedReason=EMPTY_KEY latencyMs=null promptTokens=null completionTokens=null
+  2026-10-28 15:38:02.645 INFO  [main] c.f.c.p.service.PairScoringService - [] pair score written lostId=6 foundId=26 trigger=startup pairId=77 engine=LOCAL_KEYWORD score=0.02 degradedReason=EMPTY_KEY latencyMs=null promptTokens=null completionTokens=null
+  2026-10-28 15:38:02.679 INFO  [main] c.f.c.p.service.PairScoringService - [] pair score written lostId=7 foundId=26 trigger=startup pairId=78 engine=LOCAL_KEYWORD score=0.03 degradedReason=EMPTY_KEY latencyMs=null promptTokens=null completionTokens=null
+  2026-10-28 15:38:02.715 INFO  [main] c.f.c.p.service.PairScoringService - [] pair score written lostId=8 foundId=26 trigger=startup pairId=79 engine=LOCAL_KEYWORD score=0.01 degradedReason=EMPTY_KEY latencyMs=null promptTokens=null completionTokens=null
+  2026-10-28 15:38:02.743 INFO  [main] c.f.c.p.service.PairScoringService - [] pair score written lostId=9 foundId=26 trigger=startup pairId=80 engine=LOCAL_KEYWORD score=0.02 degradedReason=EMPTY_KEY latencyMs=null promptTokens=null completionTokens=null
+  2026-10-28 15:38:02.769 INFO  [main] c.f.c.p.service.PairScoringService - [] pair score written lostId=10 foundId=26 trigger=startup pairId=81 engine=LOCAL_KEYWORD score=0.03 degradedReason=EMPTY_KEY latencyMs=null promptTokens=null completionTokens=null
+  2026-10-28 15:38:03.129 INFO  [main] c.f.c.p.service.PairScoringService - [] pair record scored recordId=26 trigger=startup candidates=10 written=10 skipped=0 locked=0 state=DEGRADED degradedPairs=12
+  2026-10-28 15:38:03.187 INFO  [main] c.f.c.p.service.PairScoringService - [] pair score skipped reason=UNCHANGED fastPath=true lostId=29 foundId=13 trigger=startup pairId=35
+  2026-10-28 15:38:03.190 INFO  [main] c.f.c.p.service.PairScoringService - [] pair score skipped reason=UNCHANGED fastPath=true lostId=29 foundId=14 trigger=startup pairId=37
+  2026-10-28 15:38:03.194 INFO  [main] c.f.c.p.service.PairScoringService - [] pair score skipped reason=UNCHANGED fastPath=true lostId=29 foundId=15 trigger=startup pairId=39
+  2026-10-28 15:38:03.196 INFO  [main] c.f.c.p.service.PairScoringService - [] pair score skipped reason=UNCHANGED fastPath=true lostId=29 foundId=17 trigger=startup pairId=41
+  2026-10-28 15:38:03.200 INFO  [main] c.f.c.p.service.PairScoringService - [] pair score skipped reason=UNCHANGED fastPath=true lostId=29 foundId=18 trigger=startup pairId=43
+  2026-10-28 15:38:03.204 INFO  [main] c.f.c.p.service.PairScoringService - [] pair score skipped reason=UNCHANGED fastPath=true lostId=29 foundId=19 trigger=startup pairId=45
+  2026-10-28 15:38:03.207 INFO  [main] c.f.c.p.service.PairScoringService - [] pair score skipped reason=UNCHANGED fastPath=true lostId=29 foundId=21 trigger=startup pairId=47
+  2026-10-28 15:38:03.211 INFO  [main] c.f.c.p.service.PairScoringService - [] pair score skipped reason=UNCHANGED fastPath=true lostId=29 foundId=22 trigger=startup pairId=49
+
+## 前后对照
+- X1/X2 重启前：[{"id":"27","status":"COMPLETED","pair_state":"DEGRADED","scored_at":"2026-09-27 15:37:48","updated_at":"2026-09-27 15:37:48.000000"},{"id":"28","status":"COMPLETED","pair_state":"PENDING","scored_at":null,"updated_at":"2026-09-27 15:37:48.000000"}]
+- X1/X2 重启后：[{"id":"27","status":"COMPLETED","pair_state":"DEGRADED","scored_at":"2026-09-27 15:37:48","updated_at":"2026-09-27 15:37:48.000000"},{"id":"28","status":"COMPLETED","pair_state":"PENDING","scored_at":null,"updated_at":"2026-09-27 15:37:48.000000"}]
+- 过期端 pair：24 → 24；通知：0 → 0；全表 pair：70 → 84
+- 新增日志里 record scored 总行数=5，其中命中 X1/X2 的=0；pair score written 命中 X1/X2 端点的=0
+
+## 判据
+PASS  U1 启动扫描（--pair-scan-once）确实跑了：日志有 pair scan once 汇总行
+        2026-10-28 15:38:06.634 INFO  [main] c.f.c.pair.config.PairScanOnceRunner - [] pair scan once done scanned=5 rescored=14 degraded=5 skipped=36 expired=3 limited=false elapsedMs=4978 counters={llmCalls=0, llmSuccess=0, degraded=14, skippedUnchanged=36, pairsWritten=14, enqueueRejected=0, lockMisses=0, degradedByReason={EMPTY_KEY=14}}
+PASS  U2 扫描真的在做的事：新增日志里存在 record scored 行（非零工作量）
+        record scored 5 行
+PASS  U3 过期夹具未被打分：X1/X2 的 record scored / written 次数为 0
+        scored=0 written=0
+PASS  U4 库层零变化：X1/X2 全行指纹不变，过期端 pair 与通知数不增
+        pairs 24→24，notifs 0→0
+
+## 结论：以「重启」为触发点同样复验通过（P2-4 的两个触发口径一致）

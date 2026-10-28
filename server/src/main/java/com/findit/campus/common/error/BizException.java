@@ -23,22 +23,42 @@ public class BizException extends RuntimeException {
     private final ErrorCode errorCode;
     private final Map<String, Object> data;
 
+    /**
+     * 可安全回给客户端的文案；{@code null} = 用 {@link ErrorCode#message()}。
+     *
+     * <p>为什么不直接用 {@link #getMessage()}：{@code getMessage()} 是给人看的排障细节
+     * （"分类已停用不可选: 证件"、"已关闭的记录不可再修改内容"），把它当响应文案等于把内部细节
+     * 和实现措辞钉进对外契约。默认出口刻意只回 {@code ErrorCode} 的稳定文案，
+     * 少数契约明确要求"同一 code、不同对外文案"的分支（如 10006 的登录失败）才显式打开这个口子。
+     */
+    private final String publicMessage;
+
     public BizException(ErrorCode errorCode, String message) {
         super(message);
         this.errorCode = errorCode;
         this.data = null;
+        this.publicMessage = null;
     }
 
     public BizException(ErrorCode errorCode, String message, Throwable cause) {
         super(message, cause);
         this.errorCode = errorCode;
         this.data = null;
+        this.publicMessage = null;
     }
 
     public BizException(ErrorCode errorCode, String message, Map<String, Object> data) {
         super(message);
         this.errorCode = errorCode;
         this.data = data;
+        this.publicMessage = null;
+    }
+
+    private BizException(ErrorCode errorCode, String message, Map<String, Object> data, String publicMessage) {
+        super(message);
+        this.errorCode = errorCode;
+        this.data = data;
+        this.publicMessage = publicMessage;
     }
 
     /** 文案用 {@link ErrorCode#message()} 的默认文案。 */
@@ -56,6 +76,16 @@ public class BizException extends RuntimeException {
         return new BizException(errorCode, message, data);
     }
 
+    /**
+     * 同一 {@link ErrorCode} 需要不同<b>对外</b>文案时用这个（如 10006：未登录="请先登录"，登录失败="学号或密码不正确"）。
+     *
+     * <p>参数只有一个文案：日志与响应共用它。这类文案本身就是"可以公开的固定措辞"，
+     * 不需要再区分内部细节 —— 需要区分时说明该分支不该走这里。
+     */
+    public static BizException withPublicMessage(ErrorCode errorCode, String publicMessage) {
+        return new BizException(errorCode, publicMessage, null, publicMessage);
+    }
+
     public ErrorCode errorCode() {
         return errorCode;
     }
@@ -63,5 +93,10 @@ public class BizException extends RuntimeException {
     /** 错误附加数据；绝大多数分支为 {@code null}。 */
     public Map<String, Object> data() {
         return data;
+    }
+
+    /** 对外文案；{@code null} 表示用 {@link #errorCode()} 的默认文案（见字段注释）。 */
+    public String publicMessage() {
+        return publicMessage;
     }
 }

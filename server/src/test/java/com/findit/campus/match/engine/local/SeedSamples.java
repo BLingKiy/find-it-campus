@@ -24,9 +24,14 @@ import com.findit.campus.record.domain.RecordType;
 final class SeedSamples {
 
     private static final Path SEED = locateSeed();
+    // v2 seed（B1）的 t_record 列序：id, type, status, completed_at, title, description, category_id, location。
+    // 与 v1 的差别有两处，都会让旧正则静默解析出 0 条：
+    //   ① status 只有 PENDING / COMPLETED / CLOSED（CLAIMED 已作废）；
+    //   ② status 与 title 之间多了一列 completed_at，值可能是 NULL、DATE_SUB(NOW(), INTERVAL n DAY) 或字符串。
     private static final Pattern RECORD = Pattern.compile(
-            "\\((\\d+), '(LOST|FOUND)', '(PENDING|CLAIMED|CLOSED)', '([^']*)',\\s*'([^']*)',"
-                    + "\\s*(NULL|\\d+), '([^']*)'");
+            "\\((\\d+), '(LOST|FOUND)', '(PENDING|COMPLETED|CLOSED)', "
+                    + "(NULL|DATE_SUB\\(NOW\\(\\), INTERVAL \\d+ DAY\\)|'[^']*'),\\s*'([^']*)',"
+                    + "\\s*'([^']*)',\\s*(NULL|\\d+), '([^']*)'");
     private static final Pattern CATEGORY = Pattern.compile(
             "\\((\\d+), '([A-Z]+)',\\s*'([^']*)',\\s*(?:NULL|'([^']*)'),\\s*\\d+, ([01])\\)");
 
@@ -44,11 +49,17 @@ final class SeedSamples {
         return CATEGORIES;
     }
 
-    /** 与 RecordCandidatePoolAdapter 同口径：未删除 + PENDING（seed 里 25 号是逻辑删除）。 */
+    /**
+     * 与 RecordCandidatePoolAdapter 同口径：未删除 + PENDING。
+     *
+     * <p>v2 seed 里 #23 / #25 是 COMPLETED、#24 是 CLOSED（#25 还已过 30 天保留期），
+     * 三者都不在召回池里；这里只按状态过滤，不再额外写死 id —— 写死 id 会把"为什么排除它"
+     * 藏进一个魔数，状态变了也不会有人记得回来改。
+     */
     static List<MatchCandidateSource> pool(String type) {
         List<MatchCandidateSource> pool = new ArrayList<>();
         for (SeedRecord record : RECORDS) {
-            if (!"PENDING".equals(record.status()) || record.id() == 25L) {
+            if (!"PENDING".equals(record.status())) {
                 continue;
             }
             if (type != null && !type.equals(record.type())) {
@@ -130,10 +141,10 @@ final class SeedSamples {
                     Long.parseLong(matcher.group(1)),
                     matcher.group(2),
                     matcher.group(3),
-                    matcher.group(4),
                     matcher.group(5),
-                    "NULL".equals(matcher.group(6)) ? null : Long.parseLong(matcher.group(6)),
-                    matcher.group(7)));
+                    matcher.group(6),
+                    "NULL".equals(matcher.group(7)) ? null : Long.parseLong(matcher.group(7)),
+                    matcher.group(8)));
         }
         if (records.size() != 24) {
             throw new IllegalStateException("db/seed.sql 解析出 " + records.size() + " 条记录，期望 24 条");

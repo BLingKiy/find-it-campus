@@ -237,7 +237,20 @@ try {
         }
     }
     if (-not $mavenExe) { throw '未找到 Maven。请安装 Maven，或传入 -MavenBin，或在 server\ 下保留 mvnw.cmd。' }
-    $mavenVersion = Get-FileToolVersion -FilePath $mavenExe -Arguments @('-v')
+    # mvn.cmd 自身需要 JAVA_HOME 才能打印版本；探版本时也要先指向已校验的 JDK17，
+    # 否则 BUILD-INFO 里会出现 "The JAVA_HOME environment variable is not defined correctly"。
+    $jdkHome = Split-Path -Parent (Split-Path -Parent $javaExe)
+    $savedJavaHomeForMavenProbe = $env:JAVA_HOME
+    $env:JAVA_HOME = $jdkHome
+    try {
+        $mavenVersion = Get-FileToolVersion -FilePath $mavenExe -Arguments @('-v')
+    } finally {
+        if ($savedJavaHomeForMavenProbe) {
+            $env:JAVA_HOME = $savedJavaHomeForMavenProbe
+        } else {
+            Remove-Item Env:JAVA_HOME -ErrorAction SilentlyContinue
+        }
+    }
     Write-BuildLog ('Maven：' + $mavenVersion) 'OK'
 
     $npmExe = $null

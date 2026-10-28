@@ -1,6 +1,7 @@
 package com.findit.campus.match.service;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashSet;
@@ -23,6 +24,7 @@ import com.findit.campus.common.api.ErrorCode;
 import com.findit.campus.common.api.FieldError;
 import com.findit.campus.common.config.MatchEngineConfig;
 import com.findit.campus.common.error.BizException;
+import com.findit.campus.common.masking.MaskingPolicy;
 import com.findit.campus.match.domain.MatchResult;
 import com.findit.campus.match.engine.MatchCandidate;
 import com.findit.campus.match.engine.MatchCandidatePoolPort;
@@ -34,6 +36,7 @@ import com.findit.campus.match.mapper.MatchResultMapper;
 import com.findit.campus.match.web.dto.MatchItemResponse;
 import com.findit.campus.match.web.dto.MatchRequest;
 import com.findit.campus.match.web.dto.MatchResponse;
+import com.findit.campus.pair.config.PairPolicyProperties;
 import com.findit.campus.record.domain.RecordSummary;
 import com.findit.campus.record.domain.RecordType;
 import com.findit.campus.record.mapper.RecordMapper;
@@ -46,23 +49,20 @@ import com.fasterxml.jackson.databind.ObjectMapper;
  * <p><b>只依赖 {@link MatchEngine} 这个抽象</b>：本类与 {@code MatchController} 里不出现任何实现类名
  * （验收 V1），换实现靠 {@code findit.match.engine} 一个配置值，本文件不改一行。
  *
- * <p>为什么用 {@link ObjectProvider} 而不是直接构造注入 {@code MatchEngine}：3.1 阶段 3.2 的引擎实现类
- * 还没落地，硬依赖会让整个应用在启动期就失败（连 record/category 接口都起不来）。
- * 用 ObjectProvider 取"如果有" —— 3.2 注册了实现就自动生效（本文件零改动），没注册则明确返回
- * 503 + 30002，而不是假装算出了一个空结果。这是 3.1 的临时形态，不是设计取舍：
- * 等 3.2 落地后可以改回构造注入，届时行为不变。
- *
- * <p>步骤与失败点（按 {@code ai-match-module.md} §5）：
+ * <p>步骤与失败点：
  * <ol>
  *   <li>text 校验 → 30001 · type/topN/minScore → 10001（DTO 层）· categoryId → 40001</li>
- *   <li>取候选池（池上限封顶，剔除 excludeRecordId）</li>
+ *   <li>取候选池（MATCHABLE：PENDING + 保留期内 COMPLETED；剔除 excludeRecordId）</li>
  *   <li>调引擎；{@code MatchEngineException} 带 30002/30003 原样上抛并补 {@code data.engine}</li>
- *   <li>回表补展示字段 <b>并过滤</b>：已删/非 PENDING 的候选直接消失（ADR-008）</li>
+ *   <li>回表补展示字段 <b>并过滤</b>：已删/CLOSED/刚过保留期的候选直接消失（ADR-008）</li>
  *   <li>先过滤后截断到 topN（顺序反了会在 topN=1 时返回一条已删记录）</li>
- *   <li>写快照：失败只 warn，不影响已算出的响应（§8.5）</li>
+ *   <li>按身份遮蔽 title/location，{@code reason} 恒打码</li>
+ *   <li>写快照：<b>写入前脱敏</b>（input_text 与 candidates 内文都过同一套打码）；失败只 warn</li>
  * </ol>
- * 引擎抛的其它异常不在这里 catch：{@code GlobalExceptionHandler} 会统一记 error 并回 10005，
- * 响应体不含堆栈 —— 契约 §8.3 的"不许裸抛"由那一层保证，这里再包一层只会丢掉原始栈。
+ *
+ * <p>为什么快照要脱敏而不是"快照只给内部看"：{@code t_match_result} 是评估证据，会被导出、贴进文档、
+ * 甚至交给第三方评估。输入文本里本来就可能含手机号/证件号，写库前不过 {@link MaskingPolicy}，
+ * 等于给自己留了一份明文语料 —— 这正是 A1 H8 要挡的事。
  */
 @Service
 public class MatchService {
@@ -78,6 +78,7 @@ public class MatchService {
     private final MatchResultMapper matchResultMapper;
     private final CategoryService categoryService;
     private final MatchEngineConfig matchEngineConfig;
+    private final PairPolicyProperties pairPolicy;
     private final ObjectMapper objectMapper;
     private final int poolSize;
 
@@ -87,6 +88,7 @@ public class MatchService {
                         MatchResultMapper matchResultMapper,
                         CategoryService categoryService,
                         MatchEngineConfig matchEngineConfig,
+                        PairPolicyProperties pairPolicy,
                         ObjectMapper objectMapper,
                         @Value("${findit.match.pool-size:500}") int poolSize) {
         this.engineProvider = engineProvider;
@@ -95,11 +97,20 @@ public class MatchService {
         this.matchResultMapper = matchResultMapper;
         this.categoryService = categoryService;
         this.matchEngineConfig = matchEngineConfig;
+        this.pairPolicy = pairPolicy;
         this.objectMapper = objectMapper;
         this.poolSize = poolSize;
     }
 
+    /** 兼容单测/内部调用的匿名视角入口（不传身份 = 遮蔽）。web 层必须走带 viewerId 的重载。 */
     public MatchResponse match(MatchRequest request) {
+        return match(request, null);
+    }
+
+    /**
+     * @param viewerId 当前会话用户；{@code null} = 匿名（本接口在门禁层要求登录，正常不会为 null）
+     */
+    public MatchResponse match(MatchRequest request, Long viewerId) {
         String text = requireText(request.getText());
         RecordType inputType = request.getType() == null ? null : RecordType.valueOf(request.getType());
         int topN = request.topNOrDefault();
@@ -127,8 +138,13 @@ public class MatchService {
         Map<Long, RecordSummary> summaries = loadSummaries(candidates);
         List<MatchItemResponse> items = candidates.stream()
                 .filter(candidate -> summaries.containsKey(candidate.recordId()))
-                .map(candidate -> MatchItemResponse.of(candidate.recordId(), candidate.score(), candidate.reason(),
-                        summaries.get(candidate.recordId())))
+                .map(candidate -> {
+                    RecordSummary summary = summaries.get(candidate.recordId());
+                    boolean ownerView = viewerId != null && summary.getPublisherId() != null
+                            && summary.getPublisherId().equals(viewerId);
+                    return MatchItemResponse.of(candidate.recordId(), candidate.score(), candidate.reason(),
+                            summary, ownerView);
+                })
                 .toList();
 
         MatchResponse response = new MatchResponse();
@@ -209,8 +225,8 @@ public class MatchService {
     }
 
     /**
-     * 回表补展示字段（ADR-008）。SQL 里再校验一次"未删除 + PENDING"：
-     * 取池与回表之间可能已经过了几十毫秒，期间记录可能已被删除或认领。
+     * 回表补展示字段（ADR-008）。SQL 里再校验一次 MATCHABLE：取池与回表之间可能已经过了几十毫秒，
+     * 期间记录可能已被删除、关闭，或刚跨过保留期边界。
      */
     private Map<Long, RecordSummary> loadSummaries(List<MatchCandidate> candidates) {
         List<Long> ids = candidates.stream()
@@ -221,7 +237,8 @@ public class MatchService {
         if (ids.isEmpty()) {
             return Map.of();
         }
-        return recordMapper.selectSummariesByIds(ids).stream()
+        LocalDateTime cutoff = pairPolicy.completedCutoff(LocalDateTime.now());
+        return recordMapper.selectSummariesByIds(ids, cutoff).stream()
                 .collect(Collectors.toMap(RecordSummary::getId, Function.identity(), (first, second) -> first));
     }
 
@@ -229,13 +246,17 @@ public class MatchService {
      * 写快照（含空结果）。失败只 warn：快照是评估证据不是业务数据，
      * 不该让用户体验承担它的一致性（§8.5 / A9）。
      *
+     * <p><b>写库前脱敏</b>（H8）：{@code input_text} 与 {@code candidates} 里的 {@code reason}
+     * 都过 {@link MaskingPolicy#maskDescription}。快照的 candidates 与响应 items 同构但不含展示字段，
+     * 因此不需要对 title/location 再打一遍码。
+     *
      * @return 快照主键；写失败时 {@code null}（响应体的 {@code matchId} 随之为空，前端据此可感知"本次未留痕"）
      */
     private Long writeSnapshot(String text, RecordType inputType, Long categoryId, String impl, int topN,
                                BigDecimal minScore, List<MatchCandidate> candidates, int costMs) {
         try {
             MatchResult result = new MatchResult();
-            result.setInputText(text);
+            result.setInputText(MaskingPolicy.maskDescription(text));
             result.setInputType(inputType == null ? null : inputType.name());
             result.setInputCategoryId(categoryId);
             result.setImpl(impl);
@@ -251,14 +272,14 @@ public class MatchService {
         }
     }
 
-    /** 快照里的候选与响应体 items 同构，只是不含展示字段（schema.sql 注释同口径）。 */
+    /** 快照里的候选与响应体 items 同构，只是不含展示字段（schema.sql 注释同口径）。reason 已脱敏。 */
     private static List<Map<String, Object>> toCandidateJson(List<MatchCandidate> candidates) {
         return candidates.stream()
                 .map(candidate -> {
                     Map<String, Object> item = new LinkedHashMap<>();
                     item.put("recordId", candidate.recordId());
                     item.put("score", candidate.score());
-                    item.put("reason", candidate.reason());
+                    item.put("reason", MaskingPolicy.maskDescription(candidate.reason()));
                     return item;
                 })
                 .toList();

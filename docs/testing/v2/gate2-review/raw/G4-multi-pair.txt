@@ -1,0 +1,58 @@
+=== 4.0 登录 ===
+3 个账号已登录
+
+=== 4.1 造夹具：1 条招领（demo03）+ 2 条寻物（demo01 / demo02），文本一致 ===
+[4.1a demo03 发布 FOUND] POST /api/records -> HTTP 200
+        body: {"code":0,"message":"已提交","data":{"id":27,"type":"FOUND","status":"PENDING","title":"图书馆三楼捡到黑色充电宝","description":"黑色充电宝，带白色星星贴纸，昨晚落在靠窗座位，拾到请联系我。","categoryId":2,"categoryName":"手机数码","location":"图书馆三楼靠窗座位","occurredAt":"2026-10-27 20:00:00","completedAt":null,"contact":"13900002222","publisherName":"演示丙","allowedStatuses":["CLOSED"],"hasMatchedPair":false,"matchedPairCount":0,"isMine":true,"pairState":"PENDING","lowConfidenceCount":0,"pairs":[],"createdAt":"2026-10-28 01:20:07","updatedAt":"2026-10-28 01:20:07"},"requestId":"5126e72482644396"}
+[4.1b demo01 发布 LOST-1] POST /api/records -> HTTP 200
+        body: {"code":0,"message":"已提交","data":{"id":28,"type":"LOST","status":"PENDING","title":"图书馆三楼捡到黑色充电宝","description":"黑色充电宝，带白色星星贴纸，昨晚落在靠窗座位，拾到请联系我。","categoryId":2,"categoryName":"手机数码","location":"图书馆三楼靠窗座位","occurredAt":"2026-10-27 20:00:00","completedAt":null,"contact":"13900003333","publisherName":"演示甲","allowedStatuses":["CLOSED"],"hasMatchedPair":false,"matchedPairCount":0,"isMine":true,"pairState":"PENDING","lowConfidenceCount":0,"pairs":[],"createdAt":"2026-10-28 01:20:08","updatedAt":"2026-10-28 01:20:08"},"requestId":"363870d16d054abd"}
+[4.1c demo02 发布 LOST-2] POST /api/records -> HTTP 200
+        body: {"code":0,"message":"已提交","data":{"id":29,"type":"LOST","status":"PENDING","title":"图书馆三楼捡到黑色充电宝","description":"黑色充电宝，带白色星星贴纸，昨晚落在靠窗座位，拾到请联系我。","categoryId":2,"categoryName":"手机数码","location":"图书馆三楼靠窗座位","occurredAt":"2026-10-27 20:00:00","completedAt":null,"contact":"13900004444","publisherName":"演示乙","allowedStatuses":["CLOSED"],"hasMatchedPair":false,"matchedPairCount":0,"isMine":true,"pairState":"PENDING","lowConfidenceCount":0,"pairs":[],"createdAt":"2026-10-28 01:20:09","updatedAt":"2026-10-28 01:20:09"},"requestId":"bf054e7f3fa2418e"}
+FOUND_ID=27 LOST1=28 LOST2=29
+
+=== 4.2 等待异步打分（最多 40s，轮询两条 LOST 的 pair_state）===
+  t=1s pair_state=DEGRADED,PENDING,SCORING
+  t=2s pair_state=DEGRADED,SCORING
+  t=3s pair_state=DEGRADED
+
+=== 4.3 库里：招领对应的 pair 恰好 2 行（1:1 × 2）===
+15	1	27	0.1800	LOCAL_KEYWORD	EMPTY_KEY	NEW
+16	2	27	0.0400	LOCAL_KEYWORD	EMPTY_KEY	NEW
+17	3	27	0.0600	LOCAL_KEYWORD	EMPTY_KEY	NEW
+18	4	27	0.1000	LOCAL_KEYWORD	EMPTY_KEY	NEW
+20	5	27	0.1000	LOCAL_KEYWORD	EMPTY_KEY	NEW
+22	6	27	0.0200	LOCAL_KEYWORD	EMPTY_KEY	NEW
+24	7	27	0.0500	LOCAL_KEYWORD	EMPTY_KEY	NEW
+26	8	27	0.0700	LOCAL_KEYWORD	EMPTY_KEY	NEW
+28	9	27	0.0400	LOCAL_KEYWORD	EMPTY_KEY	NEW
+30	10	27	0.0700	LOCAL_KEYWORD	EMPTY_KEY	NEW
+35	28	27	1.0000	LOCAL_KEYWORD	EMPTY_KEY	NEW
+44	29	27	1.0000	LOCAL_KEYWORD	EMPTY_KEY	NEW
+PAIR_A(lost28<->found27)=35  PAIR_B(lost29<->found27)=44
+该招领的 pair 行数 = 12
+
+=== 4.4 把 PAIR_A 置 CONTACTED，PAIR_B 必须仍 NEW 且仍可解锁 ===
+[4.4a demo01 PATCH pair 35 CONTACT] PATCH /api/pairs/35 -> HTTP 200
+        body: {"code":0,"message":"已联系","data":{"pairId":35,"status":"CONTACTED","matched":false,"mySide":"LOST","myConfirmed":false,"otherConfirmed":false,"lostConfirmedAt":null,"foundConfirmedAt":null,"updatedAt":"2026-10-28 01:20:13"},"requestId":"cbc3e58104264671"}
+35	28	27	1.0000	CONTACTED	2026-10-28 01:20:13
+44	29	27	1.0000	NEW	2026-10-28 01:20:11
+[4.4b demo02 PATCH pair 44 CONTACT] PATCH /api/pairs/44 -> HTTP 200
+        body: {"code":0,"message":"已联系","data":{"pairId":44,"status":"CONTACTED","matched":false,"mySide":"LOST","myConfirmed":false,"otherConfirmed":false,"lostConfirmedAt":null,"foundConfirmedAt":null,"updatedAt":"2026-10-28 01:20:14"},"requestId":"c5e57fc32c3f43b8"}
+[4.4c demo02 PUBLISH pair 44] POST /api/pairs/44/contact-unlock -> HTTP 200
+        body: {"code":0,"message":"ok","data":{"pairId":44,"side":"LOST","unlockedAt":"2026-10-28 01:20:15","note":"第4组:我在图书馆三楼，可以来取","public":true},"requestId":"8170675b130f4765"}
+[4.4d demo01 GET contact pair 44（对端已公开）] GET /api/pairs/44/contact -> HTTP 403
+        body: {"code":10007,"message":"无权操作该资源","data":null,"requestId":"e3231d0b36094ae6"}
+[4.4e demo01 GET contact pair 35（另一对不受影响）] GET /api/pairs/35/contact -> HTTP 200
+        body: {"code":0,"message":"ok","data":{"pairId":35,"score":1.0000,"scorePercent":100,"tier":"DIRECT","viewerSide":"LOST","targetSide":"FOUND","available":true,"contact":"13900002222","reason":null,"message":"匹配度较高，可直接查看","unlockedAt":null,"note":null},"requestId":"820509d2e16949d9"}
+35	28	27	1.0000	CONTACTED	NULL	NULL
+44	29	27	1.0000	CONTACTED	2026-10-28 01:20:15	NULL
+
+=== 4.5 该招领仍在候选池（/api/match 命中，PENDING + OPEN）===
+[4.5 POST /api/match] POST /api/match -> HTTP 200
+        body: {"code":0,"message":"ok","data":{"matchId":1,"engine":"LOCAL_KEYWORD","inputType":null,"topN":20,"minScore":0.01,"tookMs":11,"total":20,"items":[{"recordId":27,"score":0.96,"scorePercent":96,"reason":"关键词命中:充电宝、色充、三楼、馆三；分类词表命中:手机数码","type":"FOUND","status":"PENDING","recordStatus":"PENDING","detailAccess":"OPEN","title":"图书馆三楼捡到黑色充电宝","categoryName":"手机数码","location":"图书馆三楼靠窗座…","occurredAt":"2026-10-27 20:00:00","createdAt":"2026-10-28 01:20:07"},{"recordId":28,"score":0.96,"scorePercent":96,"reason":"关键词命中:充电宝、色充、三楼、馆三；分类词表命中:手机数码","type":"LOST","status":"PENDING","recordStatus":"PENDING","detailAccess":"OPEN","title":"图书馆三楼捡到黑色充电宝","categoryName":"手机数码","location":"图书馆三楼靠窗座位","occurredAt":"2026-10-27 20:00:00","createdAt":"2026-10-28 01:20:08"},{"recordId":29,"score":0.96,"scorePercent":96,"reason":"关键词命中:充电宝、色充、三楼、馆三；分类词表命中:手机数码","type":"LOST","status":"PENDING","recordStatus":"PENDING","detailAccess":"OPEN","title":"图书馆三楼捡到黑色充电宝","categoryName":"手机数码","location":"图书馆三楼靠窗座…","occurredAt":"2026-10-27 20:00:00","createdAt":"2026-10-28 01:20:09"},{"recordId":13,"score":0.36,"scorePercent":36,"reason":"关键词命中:黑色、书馆、图书、拾","type":"FOUND","status":"PENDING","recordStatus":"PENDING","detailAccess":"OPEN","title":"图书馆拾到黑色钱包","categoryName":"钱包卡证","location":"图书馆三楼自习区","occurredAt":"2026-09-15 15:00:00","createdAt":"2026-09-15 15:30:00"},{"recordId":1,"score":0.26,"scorePercent":26,"reason":"关键词命中:黑色、书馆、图书、三楼","type":"LOST","status":"PENDING","recordStatus":"PENDING","detailAccess":"OPEN","title":"图书馆丢了黑色钱包","categoryName":"钱包卡证","location":"图书馆三楼自习区","occurredAt":"2026-10-19 17:30:00","createdAt":"2026-10-20 09:10:00"},{"recordId":5,"score":0.18,"scorePercent":18,"reason":"关键词命中:充电、书馆、图书、白色","type":"LOST","status":"PENDING","recordStatus":"PENDING","detailAccess":"OPEN","title":"蓝牙耳机连充电盒一起丢了","categoryName":"手机数码","location":"图书馆一楼自习室","occurredAt":"2026-10-15 16:00:00","createdAt":"2026-10-16 10:00:00"},{"recordId":17,"score":0.18,"scorePercent":18,"reason":"关键词命中:充电、白色、书馆、图书","type":"FOUND","status":"PENDING","recordStatus":"PENDING","detailAccess":"OPEN","title":"自习室捡到白色耳机和充电盒","categoryName":"手机数码","location":"图书馆一楼自习室","occurredAt":"2026-10-16 18:00:00","createdAt":"2026-10-16 18:20:00"},{"recordId":8,"score":0.12,"scorePercent":12,"reason":"关键词命中:黑色、白色、落、馆","type":"LOST","status":"PENDING","recordStatus":"PENDING","detailAccess":"OPEN","title":"丢失黑色篮球袜一双","categoryName":"衣物饰品","location":"体育馆更衣室","occurredAt":"2026-10-18 21:00:00","createdAt":"2026-10-19 10:00:00"},{"recordId":21,"score":0.11,"scorePercent":11,"reason":"关键词命中:书、书馆、图书、楼","type":"FOUND","status":"PENDING","recordStatus":"PENDING","detailAccess":"OPEN","title":"捡到一本大学英语词汇书","categoryName":"书籍文具","location":"图书馆二楼","occurredAt":"2026-10-16 14:00:00","createdAt":"2026-10-16 15:00:00"},{"recordId":4,"score":0.09,"scorePercent":9,"reason":"关键词命中:色、楼靠、靠窗、落","type":"LOST","status":"PENDING","recordStatus":"PENDING","detailAccess":"OPEN","title":"丢失深蓝色折叠雨伞","categoryName":"衣物饰品","location":"第二食堂二楼","occurredAt":"2026-10-19 18:50:00","createdAt":"2026-10-20 12:00:00"},{"recordId":14,"score":0.09,"scorePercent":9,"reason":"关键词命中:白色、贴纸、图","type":"FOUND","status":"PENDING","recordStatus":"PENDING","detailAccess":"OPEN","title":"捡到白色 iPhone 带透明壳","categoryName":"手机数码","location":"南操场跑道边台阶","occurredAt":"2026-10-19 07:40:00","createdAt":"2026-10-19 08:10:00"},{"recordId":2,"score":0.08,"scorePercent":8,"reason":"关键词命中:白色、贴纸","type":"LOST","status":"PENDING","recordStatus":"PENDING","detailAccess":"OPEN","title":"白色苹果手机丢了","categoryName":"手机数码","location":"南操场跑道边台阶","occurredAt":"2026-10-18 20:15:00","createdAt":"2026-10-19 08:00:00"},{"recordId":16,"score":0.08,"scorePercent":8,"reason":"关键词命中:楼靠、靠窗、色","type":"FOUND","status":"PENDING","recordStatus":"PENDING","detailAccess":"OPEN","title":"食堂捡到一把折叠伞","categoryName":"衣物饰品","location":"第二食堂…","occurredAt":"2026-10-19 20:30:00","createdAt":"2026-10-19 21:00:00"},{"recordId":9,"score":0.07,"scorePercent":7,"reason":"关键词命中:黑色、座、楼","type":"LOST","status":"PENDING","recordStatus":"PENDING","detailAccess":"OPEN","title":"丢了一个不锈钢保温杯","categoryName":"其他","location":"实验楼402","occurredAt":"2026-10-19 15:00:00","createdAt":"2026-10-20 08:30:00"},{"recordId":19,"score":0.04,"scorePercent":4,"reason":"关键词命中:色、座","type":"FOUND","status":"PENDING","recordStatus":"PENDING","detailAccess":"OPEN","title":"捡到一副红色羽毛球拍","categoryName":"其他","location":"体育场看台","occurredAt":"2026-10-20 17:00:00","createdAt":"2026-10-20 17:30:00"},{"recordId":3,"score":0.03,"scorePercent":3,"reason":"关键词命中:落、书、三、楼","type":"LOST","status":"PENDING","recordStatus":"PENDING","detailAccess":"OPEN","title":"学生证和校园卡一起丢了","categoryName":"证件资料","location":"第三教学楼201","occurredAt":"2026-10-21 10:40:00","createdAt":"2026-10-21 11:05:00"},{"recordId":6,"score":0.02,"scorePercent":2,"reason":"关键词命中:三、楼、色","type":"LOST","status":"PENDING","recordStatus":"PENDING","detailAccess":"OPEN","title":"一串宿舍钥匙丢了","categoryName":"钥匙","location":"7号宿舍楼下快递…","occurredAt":"2026-10-20 19:20:00","createdAt":"2026-10-20 20:00:00"},{"recordId":10,"score":0.02,"scorePercent":2,"reason":"关键词命中:楼、色、落","type":"LOST","status":"PENDING","recordStatus":"PENDING","detailAccess":"OPEN","title":"教学楼丢了一串钥匙（蓝色挂件）","categoryName":"钥匙","location":"第二教学楼楼梯口","occurredAt":"2026-10-11 19:00:00","createdAt":"2026-10-12 08:00:00"},{"recordId":18,"score":0.02,"scorePercent":2,"reason":"关键词命中:三、楼、色","type":"FOUND","status":"PENDING","recordStatus":"PENDING","detailAccess":"OPEN","title":"快递点捡到三把钥匙带小熊挂件","categoryName":"钥匙","location":"7号宿舍楼下快递点","occurredAt":"2026-10-20 21:00:00","createdAt":"2026-10-20 21:20:00"},{"recordId":22,"score":0.02,"scorePercent":2,"reason":"关键词命中:黑、楼、色","type":"FOUND","status":"PENDING","recordStatus":"PENDING","detailAccess":"OPEN","title":"捡到一副黑框眼镜","categoryName":"其他","location":"第一食堂一楼门口","occurredAt":"2026-10-21 12:40:00","createdAt":"2026-10-21 13:00:00"}]},"requestId":"4d398c92c0764e99"}
+命中该招领? 1 次
+
+=== 4.6 记录状态未被 pair 进展改写（3 条仍 PENDING）===
+27	FOUND	PENDING	3	DEGRADED
+28	LOST	PENDING	1	DEGRADED
+29	LOST	PENDING	2	DEGRADED

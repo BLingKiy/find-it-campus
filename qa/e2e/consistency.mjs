@@ -26,6 +26,13 @@ const browser = await chromium.launch({ channel: 'msedge', headless: true });
 const context = await browser.newContext({ viewport: { width: 1280, height: 900 }, locale: 'zh-CN' });
 const page = await context.newPage();
 
+// v2：/records/new 需要登录（提交页守卫）。先以 demo01 登录，再量三页样式。
+await page.goto(BASE + '/login', { waitUntil: 'domcontentloaded' });
+await page.fill('#field-studentNo', 'demo01');
+await page.fill('#field-password', 'Demo@123456');
+await page.getByRole('button', { name: '登录', exact: true }).click();
+await page.waitForURL((url) => !url.pathname.startsWith('/login'), { timeout: 10000 });
+
 const PAGES = [
   { path: '/', name: '列表页', section: '.record-list' },
   { path: '/records/new', name: '提交页', section: '.record-create' },
@@ -221,9 +228,12 @@ await t.case('CON-06', 'P1', '加载态：列表与详情用同一骨架类（.s
 });
 
 await t.case('CON-07', 'P1', '空态与错误态：三页共用 .empty / .alert--danger 结构', async () => {
-  // 列表空态
+  // 列表空态 / 详情 404 空态：用匿名上下文。v2 登录用户遇到记录 404 会被引导回「我的启事」，
+  // 量不到详情页自己的空态。
+  const anonCtx = await browser.newContext({ viewport: { width: 1280, height: 900 }, locale: 'zh-CN' });
+  const anonPage = await anonCtx.newPage();
   const isEmptyList = (url) => url.pathname === '/api/records';
-  await page.route(isEmptyList, (route) =>
+  await anonPage.route(isEmptyList, (route) =>
     route.fulfill({
       status: 200,
       contentType: 'application/json',
@@ -235,15 +245,16 @@ await t.case('CON-07', 'P1', '空态与错误态：三页共用 .empty / .alert-
       }),
     }),
   );
-  await page.goto(BASE + '/', { waitUntil: 'domcontentloaded' });
-  await page.locator('.empty').waitFor();
-  const emptyList = await styleOf('.empty__title', ['font-size', 'color']);
-  await page.unroute(isEmptyList);
+  await anonPage.goto(BASE + '/', { waitUntil: 'domcontentloaded' });
+  await anonPage.locator('.empty').waitFor();
+  const emptyList = await anonPage.locator('.empty__title').first().evaluate((el) => { const cs = getComputedStyle(el); return { 'font-size': cs.fontSize, color: cs.color }; });
+  await anonPage.unroute(isEmptyList);
 
   // 详情 404 空态（真实接口）
-  await page.goto(BASE + '/records/999999', { waitUntil: 'domcontentloaded' });
-  await page.locator('.empty').waitFor();
-  const emptyDetail = await styleOf('.empty__title', ['font-size', 'color']);
+  await anonPage.goto(BASE + '/records/999999', { waitUntil: 'domcontentloaded' });
+  await anonPage.locator('.empty').waitFor();
+  const emptyDetail = await anonPage.locator('.empty__title').first().evaluate((el) => { const cs = getComputedStyle(el); return { 'font-size': cs.fontSize, color: cs.color }; });
+  await anonCtx.close();
 
   // 错误态：列表请求 500
   await page.route(isEmptyList, (route) =>

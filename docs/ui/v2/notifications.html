@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>A3 · 通知列表</title>
+  <link rel="stylesheet" href="../../../web/src/styles/tokens.css" />
+  <link rel="stylesheet" href="../../../web/src/styles/base.css" />
+  <link rel="stylesheet" href="../../../web/src/styles/components.css" />
+  <link rel="stylesheet" href="mockup.css" />
+</head>
+<body class="board">
+  <header class="board__head">
+    <div>
+      <p class="board__kicker">A3 · v2 UI Baseline · /notifications</p>
+      <h1 class="board__title">通知：未读红点 + 文字状态，空态有下一步</h1>
+    </div>
+    <p class="board__meta">界面稿 03 / 未读用「红点 + 加粗标题 + 浅底」三通道，读屏另有「未读」标签。示例数据均为虚构。</p>
+  </header>
+
+  <div class="board__grid">
+    <div class="app-frame">
+      <div class="app-frame__bar" aria-hidden="true">
+        <span class="app-frame__dot"></span><span class="app-frame__dot"></span><span class="app-frame__dot"></span>
+        <span class="app-frame__url">find-it-campus / notifications</span>
+      </div>
+      <div class="app-shell">
+        <header class="app-header">
+          <div class="app-header__inner">
+            <span class="app-header__brand"><span class="app-header__logo" aria-hidden="true">FI</span><span class="app-header__brand-text">校园失物招领</span></span>
+            <nav class="app-header__nav" aria-label="主导航">
+              <a class="app-header__link" href="#">启事列表</a>
+              <a class="app-header__link" href="#">我的启事</a>
+              <a class="app-header__link nav-dot is-active" href="#" aria-current="page">通知<span class="nav-dot__badge">2</span></a>
+              <a class="app-header__link app-header__link--cta" href="#">发布启事</a>
+              <span class="app-header__user"><span class="app-header__avatar" aria-hidden="true">陈</span>陈同学</span>
+            </nav>
+          </div>
+        </header>
+
+        <main class="app-main">
+          <div class="container">
+            <div class="page-head">
+              <div>
+                <h1 class="page-head__title">通知</h1>
+                <p class="page-head__desc">有人公开联系方式，或你的启事有了新的可能相关结果时，会在这里提醒你。</p>
+              </div>
+              <div class="page-head__actions">
+                <button class="btn btn--ghost" type="button">全部标为已读</button>
+              </div>
+            </div>
+
+            <nav class="tabs" aria-label="按已读状态筛选">
+              <a class="tabs__item is-active" href="#" aria-current="page">全部 <span class="tabs__count">4</span></a>
+              <a class="tabs__item" href="#">未读 <span class="tabs__count">2</span></a>
+            </nav>
+
+            <div class="notif-list">
+              <a class="notif notif--unread" href="#" aria-label="未读：黑色钱包有 2 条新的可能相关启事">
+                <span class="notif__dot" aria-hidden="true"></span>
+                <span class="notif__body">
+                  <span class="notif__title">「黑色钱包」有 2 条新的可能相关启事</span>
+                  <span class="notif__desc">置信度分别为 92% 和 80%。92% 可直接查看联系方式；80% 需要对方先公开。</span>
+                </span>
+                <span class="notif__time">2 分钟前</span>
+              </a>
+
+              <a class="notif notif--unread" href="#" aria-label="未读：林同学公开了联系方式">
+                <span class="notif__dot" aria-hidden="true"></span>
+                <span class="notif__body">
+                  <span class="notif__title">林同学公开了联系方式</span>
+                  <span class="notif__desc">在「黑色钱包」#13 ↔ #31 的配对中，对方已公开手机号，现在可以查看。</span>
+                </span>
+                <span class="notif__time">18 分钟前</span>
+              </a>
+
+              <a class="notif" href="#">
+                <span class="notif__dot" aria-hidden="true"></span>
+                <span class="notif__body">
+                  <span class="notif__title">「图书馆拾到一把雨伞」的分析已降级</span>
+                  <span class="notif__desc">AI 服务暂不可用，本次改用本地关键词分析；结果可能不够准，可以稍后重试。</span>
+                </span>
+                <span class="notif__time">昨天 16:20</span>
+              </a>
+
+              <a class="notif" href="#">
+                <span class="notif__dot" aria-hidden="true"></span>
+                <span class="notif__body">
+                  <span class="notif__title">你标记了一条配对为「已联系」</span>
+                  <span class="notif__desc">「蓝色保温水杯」#18 ↔ #09 已标记为已联系；其余配对不受影响，记录状态没有改变。</span>
+                </span>
+                <span class="notif__time">10 月 21 日</span>
+              </a>
+            </div>
+
+            <p class="tiny subtle" style="margin-top: var(--sp-3);">通知按时间倒序排列；未读状态只由你本人标记。</p>
+          </div>
+        </main>
+
+        <footer class="app-footer">
+          <div class="app-footer__inner"><span>find-it-campus · 校园失物招领</span><span>已登录 · 陈同学 · 退出登录</span></div>
+        </footer>
+      </div>
+    </div>
+
+    <aside class="notes" aria-label="设计说明">
+      <p class="notes__title">这一稿要说明什么 <span class="notes__tag">03 / 06</span></p>
+      <ol class="notes__list">
+        <li class="notes__item"><b>未读不是只有红点</b>红点 + 标题加粗 + 行浅底，三通道；读屏用 aria-label 读「未读：…」，不依赖颜色。</li>
+        <li class="notes__item"><b>通知必须能行动</b>每条都链到对应启事 / 配对；「全部标为已读」在未读为 0 时禁用，并使用 aria-disabled。</li>
+        <li class="notes__item"><b>文案带上下文</b>说清楚是哪条启事、哪个配对、发生了什么；不写「系统通知」这种无法行动的话。</li>
+        <li class="notes__item"><b>空态</b>见 03b：一句结论 + 为什么空 + 回列表动作，不放插画。</li>
+      </ol>
+      <div class="notes__rule"></div>
+      <p class="notes__foot">顶部导航的未读数是同一份数据：角标数字 + aria-label「通知，2 条未读」；为 0 时角标不渲染，避免 0 这个噪音。</p>
+    </aside>
+  </div>
+</body>
+</html>

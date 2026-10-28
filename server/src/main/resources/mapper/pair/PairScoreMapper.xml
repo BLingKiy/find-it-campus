@@ -1,0 +1,190 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!--
+  t_pair_score 的写路径（D1 所有）。
+
+  三条纪律，改这个文件前先读：
+  1. ON DUPLICATE KEY UPDATE 的列清单**只允许**是分数类列：
+     score / engine / degraded_reason / prompt_version / latency_ms / prompt_tokens /
+     completion_tokens / lost_hash / found_hash。
+     出现 status / lost_unlocked_at / found_unlocked_at / lost_unlock_note / found_unlock_note /
+     lost_confirmed_at / found_confirmed_at / created_at 就是 bug（任务书 #2：重算不得重置 IGNORED）。
+     这条纪律由 PairScoreUpsertSqlTest 解析本文件断言，不靠人眼。
+  2. INSERT 不写 status：让 DDL 默认值 NEW 只对"首次插入"生效。显式写 status='NEW' 会在
+     ON DUPLICATE 分支里被忽略（无害），但一旦有人把它挪进 UPDATE 分支就会把 IGNORED 翻回 NEW。
+     不写，就没有这个位置。
+  3. 没有 DELETE：pair 是评估证据，失效是读时谓词（CLOSED/到期），不是删行。
+-->
+<mapper namespace="com.findit.campus.pair.mapper.PairScoreMapper">
+
+    <resultMap id="pairScoreMap" type="com.findit.campus.pair.domain.PairScore">
+        <id property="id" column="id"/>
+        <result property="lostId" column="lost_id"/>
+        <result property="foundId" column="found_id"/>
+        <result property="score" column="score"/>
+        <result property="engine" column="engine"/>
+        <result property="degradedReason" column="degraded_reason"/>
+        <result property="promptVersion" column="prompt_version"/>
+        <result property="latencyMs" column="latency_ms"/>
+        <result property="promptTokens" column="prompt_tokens"/>
+        <result property="completionTokens" column="completion_tokens"/>
+        <result property="lostHash" column="lost_hash"/>
+        <result property="foundHash" column="found_hash"/>
+        <result property="lostUnlockedAt" column="lost_unlocked_at"/>
+        <result property="foundUnlockedAt" column="found_unlocked_at"/>
+        <result property="lostUnlockNote" column="lost_unlock_note"/>
+        <result property="foundUnlockNote" column="found_unlock_note"/>
+        <result property="lostConfirmedAt" column="lost_confirmed_at"/>
+        <result property="foundConfirmedAt" column="found_confirmed_at"/>
+        <result property="status" column="status"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="updatedAt" column="updated_at"/>
+    </resultMap>
+
+    <select id="selectByPair" resultMap="pairScoreMap">
+        SELECT id, lost_id, found_id, score, engine, degraded_reason, prompt_version,
+               latency_ms, prompt_tokens, completion_tokens, lost_hash, found_hash,
+               lost_unlocked_at, found_unlocked_at, lost_unlock_note, found_unlock_note,
+               lost_confirmed_at, found_confirmed_at, status, created_at, updated_at
+        FROM t_pair_score
+        WHERE lost_id = #{lostId} AND found_id = #{foundId}
+    </select>
+
+    <select id="selectById" resultMap="pairScoreMap">
+        SELECT id, lost_id, found_id, score, engine, degraded_reason, prompt_version,
+               latency_ms, prompt_tokens, completion_tokens, lost_hash, found_hash,
+               lost_unlocked_at, found_unlocked_at, lost_unlock_note, found_unlock_note,
+               lost_confirmed_at, found_confirmed_at, status, created_at, updated_at
+        FROM t_pair_score
+        WHERE id = #{id}
+    </select>
+
+    <!--
+      幂等写入：唯一键 (lost_id, found_id) 命中时只更新分数类列。
+      VALUES(col) 在 MySQL 8.0.20+ 被标记为 deprecated 但仍可用；换成 `AS new` 语法会
+      放弃 MariaDB 兼容（本项目的本地演示库是 MySQL 8.0.29，但 A2 的兼容性陈述里没排除
+      MariaDB），因此这里用仍被两边支持的写法，并接受 deprecation 警告。
+    -->
+    <insert id="upsertScore">
+        INSERT INTO t_pair_score
+            (lost_id, found_id, score, engine, degraded_reason, prompt_version,
+             latency_ms, prompt_tokens, completion_tokens, lost_hash, found_hash)
+        VALUES
+            (#{lostId}, #{foundId}, #{score}, #{engine}, #{degradedReason}, #{promptVersion},
+             #{latencyMs}, #{promptTokens}, #{completionTokens}, #{lostHash}, #{foundHash})
+        ON DUPLICATE KEY UPDATE
+            score             = VALUES(score),
+            engine            = VALUES(engine),
+            degraded_reason   = VALUES(degraded_reason),
+            prompt_version    = VALUES(prompt_version),
+            latency_ms        = VALUES(latency_ms),
+            prompt_tokens     = VALUES(prompt_tokens),
+            completion_tokens = VALUES(completion_tokens),
+            lost_hash         = VALUES(lost_hash),
+            found_hash        = VALUES(found_hash)
+    </insert>
+
+    <select id="selectDegradedPairs" resultMap="pairScoreMap">
+        SELECT id, lost_id, found_id, score, engine, degraded_reason, prompt_version,
+               latency_ms, prompt_tokens, completion_tokens, lost_hash, found_hash,
+               lost_unlocked_at, found_unlocked_at, lost_unlock_note, found_unlock_note,
+               lost_confirmed_at, found_confirmed_at, status, created_at, updated_at
+        FROM t_pair_score
+        WHERE engine = 'LOCAL_KEYWORD'
+          AND updated_at &lt; #{updatedBefore}
+        ORDER BY updated_at ASC, id ASC
+        LIMIT #{limit}
+    </select>
+
+    <!-- 两端任一命中即可；两条单列索引在 OR 下走 index_merge，数据量到十万级再评估 -->
+    <select id="countDegradedByRecord" resultType="int">
+        SELECT COUNT(*)
+        FROM t_pair_score
+        WHERE (lost_id = #{recordId} OR found_id = #{recordId})
+          AND engine = 'LOCAL_KEYWORD'
+    </select>
+
+    <!-- 重算时补齐"未进本次 topN 的老 pair"；升序 = 最旧的优先，避免饿死 -->
+    <select id="selectByRecord" resultMap="pairScoreMap">
+        SELECT id, lost_id, found_id, score, engine, degraded_reason, prompt_version,
+               latency_ms, prompt_tokens, completion_tokens, lost_hash, found_hash,
+               lost_unlocked_at, found_unlocked_at, lost_unlock_note, found_unlock_note,
+               lost_confirmed_at, found_confirmed_at, status, created_at, updated_at
+        FROM t_pair_score
+        WHERE lost_id = #{recordId} OR found_id = #{recordId}
+        ORDER BY updated_at ASC, id ASC
+        LIMIT #{limit}
+    </select>
+
+    <!--
+      ===================== E1：用户动作写路径 =====================
+      这三组 SQL 只被 PairActionService / PairUnlockService 调用；D1 的重算 upsert 不碰这些列。
+      所有 UPDATE 都带 status 条件：并发下影响 0 行 = 状态已被别人改过，由 service 回读再判定，
+      不在这里用 SELECT ... FOR UPDATE 加锁（pair 进展不是资金，行锁只会把接口串行化）。
+    -->
+
+    <update id="markContacted">
+        UPDATE t_pair_score
+        SET status = 'CONTACTED'
+        WHERE id = #{id} AND status = 'NEW'
+    </update>
+
+    <update id="markIgnored">
+        UPDATE t_pair_score
+        SET status = 'IGNORED'
+        WHERE id = #{id} AND status IN ('NEW', 'CONTACTED')
+    </update>
+
+    <!--
+      confirmed_at 用 COALESCE：重复 CONFIRM 不刷新第一次的时间（契约 §4.13 幂等）。
+      status 赋值刻意放在两个 confirmed_at 之后：MySQL 的 SET 子句从左到右求值，
+      status 的 CASE 能看到前面刚写入的确认时间，并与行内另一端的当前值一起判断是否 MATCHED。
+      这样「两端并发各确认一端」在行锁下也能得到 MATCHED，而不是被 CHECK 约束打回 500。
+    -->
+    <update id="confirmOwned">
+        UPDATE t_pair_score
+        <set>
+            <if test="ownsLost">
+                lost_confirmed_at = COALESCE(lost_confirmed_at, #{at}),
+            </if>
+            <if test="ownsFound">
+                found_confirmed_at = COALESCE(found_confirmed_at, #{at}),
+            </if>
+            status = CASE
+                WHEN lost_confirmed_at IS NOT NULL AND found_confirmed_at IS NOT NULL THEN 'MATCHED'
+                ELSE 'CONTACTED'
+            END
+        </set>
+        WHERE id = #{id} AND status IN ('NEW', 'CONTACTED')
+    </update>
+
+    <update id="publishLost">
+        UPDATE t_pair_score
+        SET lost_unlocked_at = COALESCE(lost_unlocked_at, #{at}),
+            lost_unlock_note = #{note}
+        WHERE id = #{id}
+    </update>
+
+    <update id="publishFound">
+        UPDATE t_pair_score
+        SET found_unlocked_at = COALESCE(found_unlocked_at, #{at}),
+            found_unlock_note = #{note}
+        WHERE id = #{id}
+    </update>
+
+    <!-- 两列在同一条语句里一起置空，满足 ck_pair_lost_note「有附言 ⇒ 有授权时间」的终态要求 -->
+    <update id="revokeLost">
+        UPDATE t_pair_score
+        SET lost_unlock_note = NULL,
+            lost_unlocked_at = NULL
+        WHERE id = #{id}
+    </update>
+
+    <update id="revokeFound">
+        UPDATE t_pair_score
+        SET found_unlock_note = NULL,
+            found_unlocked_at = NULL
+        WHERE id = #{id}
+    </update>
+
+</mapper>

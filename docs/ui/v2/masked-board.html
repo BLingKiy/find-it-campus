@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>A3 · 匿名遮蔽态 · 390 / 320 双视口</title>
+  <link rel="stylesheet" href="../../../web/src/styles/tokens.css" />
+  <link rel="stylesheet" href="../../../web/src/styles/base.css" />
+  <link rel="stylesheet" href="../../../web/src/styles/components.css" />
+  <link rel="stylesheet" href="mockup.css" />
+  <style>
+    .phones { display: flex; align-items: flex-start; gap: var(--sp-5); }
+    .phone { display: flex; flex-direction: column; gap: var(--sp-2); }
+    .phone__label { display: flex; align-items: baseline; justify-content: space-between; color: var(--color-text-muted); font-family: var(--font-mono); font-size: 11px; }
+    .phone__label b { color: var(--color-text); font-family: var(--font-sans); font-size: var(--fs-sm); }
+    .phone__frame { overflow: hidden; border: 1px solid var(--color-border-strong); border-radius: 18px; background-color: var(--color-surface); box-shadow: var(--shadow-md); }
+    .phone__frame iframe { display: block; border: 0; background-color: var(--color-bg); }
+    .board__grid--phones { grid-template-columns: minmax(0, 1fr) 280px; }
+    @media (max-width: 1100px) { .phones { flex-wrap: wrap; } }
+  </style>
+</head>
+<body class="board">
+  <header class="board__head">
+    <div>
+      <p class="board__kicker">A3 · v2 UI Baseline · Masked / Responsive</p>
+      <h1 class="board__title">匿名遮蔽态：390 与 320 两个真实视口</h1>
+    </div>
+    <p class="board__meta">界面稿 09 / 两个 iframe 各自是独立视口，媒体查询真实生效；320 下无横向滚动，底部安全区不压内容。</p>
+  </header>
+
+  <div class="board__grid board__grid--phones">
+    <div class="phones">
+      <div class="phone">
+        <p class="phone__label"><b>390 × 1180</b><span>主流手机</span></p>
+        <div class="phone__frame"><iframe src="masked-390.html" width="390" height="1180" title="390px 匿名遮蔽态" scrolling="no"></iframe></div>
+      </div>
+      <div class="phone">
+        <p class="phone__label"><b>320 × 1180</b><span>最窄支持宽度</span></p>
+        <div class="phone__frame"><iframe src="masked-390.html" width="320" height="1180" title="320px 匿名遮蔽态" scrolling="no"></iframe></div>
+      </div>
+    </div>
+
+    <aside class="notes" aria-label="设计说明">
+      <p class="notes__title">这一稿要说明什么 <span class="notes__tag">09</span></p>
+      <ol class="notes__list">
+        <li class="notes__item"><b>遮蔽不是 CSS 遮挡</b>真实号码与完整描述根本不进匿名响应；占位块是唯一渲染内容，查看源码和读屏都拿不到。</li>
+        <li class="notes__item"><b>占位样式统一</b>虚线 + 浅底 + 「登录后可查看」，内联（地点）与块级（描述/联系方式）两种尺寸，语义相同。</li>
+        <li class="notes__item"><b>登录 CTA 带回路</b>「去登录」跳 /login?redirect=当前路径；只接受站内相对路径，防开放重定向。</li>
+        <li class="notes__item"><b>390 / 320 都可用</b>320 下品牌文字收起、标题换行、占位块满宽；页面无横向滚动，底部安全区留白。</li>
+      </ol>
+      <div class="notes__rule"></div>
+      <p class="notes__foot">390/320 是 iframe 的真实视口宽度，不是把 1280 稿缩小的假移动端。生产实现时用 Chrome DevTools 的 320×568 复核一次。</p>
+    </aside>
+  </div>
+</body>
+</html>

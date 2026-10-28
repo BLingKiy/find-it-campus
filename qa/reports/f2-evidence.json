@@ -1,0 +1,63 @@
+{
+  "summary": {
+    "title": "f2-evidence",
+    "startedAt": "2026-10-28T02:25:41.459Z",
+    "total": 7,
+    "passed": 7,
+    "failed": 0,
+    "knownFailures": 0,
+    "passRate": "100.0%",
+    "durationMs": 103494
+  },
+  "cases": [
+    {
+      "id": "F2-MP-01",
+      "priority": "P0",
+      "name": "一条招领 × 两条寻物各成一对：处理 A 不影响 B，招领仍在候选池",
+      "status": "PASS",
+      "durationMs": 34866
+    },
+    {
+      "id": "F2-TERM-01",
+      "priority": "P0",
+      "name": "未达 MATCHED 调「标记完成」→ 409 + 20005，status/completed_at/updated_at 零变化",
+      "status": "PASS",
+      "durationMs": 5381
+    },
+    {
+      "id": "F2-TERM-02",
+      "priority": "P0",
+      "name": "COMPLETED：列表/搜索 0 命中、匹配仍召回、0.90 门槛决定详情可见性",
+      "status": "PASS",
+      "durationMs": 17766
+    },
+    {
+      "id": "F2-TERM-03",
+      "priority": "P0",
+      "name": "COMPLETED 分数 0.80 的非合格对端详情 404（阈值是硬门槛）",
+      "status": "PASS",
+      "durationMs": 9582
+    },
+    {
+      "id": "F2-TERM-04",
+      "priority": "P0",
+      "name": "CLOSED：列表与匹配双 0、详情三身份 404、pair 取号/改状态 403 + 50005",
+      "status": "PASS",
+      "durationMs": 14374
+    },
+    {
+      "id": "F2-TERM-05",
+      "priority": "P0",
+      "name": "到期 COMPLETED（completed_at + 31 天）：匹配消失、详情 404、status 不被自动改写",
+      "status": "PASS",
+      "durationMs": 14731
+    },
+    {
+      "id": "F2-DEG-01",
+      "priority": "P0",
+      "name": "无 DEEPSEEK_API_KEY 发布：200、pair 落 LOCAL_KEYWORD + EMPTY_KEY、记录 pairState=DEGRADED",
+      "status": "PASS",
+      "durationMs": 6432
+    }
+  ]
+}

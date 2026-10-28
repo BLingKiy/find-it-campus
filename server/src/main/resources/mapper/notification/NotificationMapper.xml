@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!--
+  t_notification 只读查询（C1）。两条纪律：
+  1. 所有查询都带 user_id = #{userId}（服务端从会话取，不读请求参数）—— 越权读他人通知在 SQL 层就不成立。
+  2. 排序追加 id DESC：created_at 是秒精度，同秒通知不追加 id 会导致分页重复/漏行。
+-->
+<mapper namespace="com.findit.campus.notification.mapper.NotificationMapper">
+
+    <resultMap id="notificationMap" type="com.findit.campus.notification.domain.Notification">
+        <id property="id" column="id"/>
+        <result property="userId" column="user_id"/>
+        <result property="pairId" column="pair_id"/>
+        <result property="type" column="type"/>
+        <result property="title" column="title"/>
+        <result property="body" column="body"/>
+        <result property="readAt" column="read_at"/>
+        <result property="createdAt" column="created_at"/>
+    </resultMap>
+
+    <select id="countByUser" resultType="long">
+        SELECT COUNT(*) FROM t_notification WHERE user_id = #{userId}
+    </select>
+
+    <select id="selectByUser" resultMap="notificationMap">
+        SELECT id, user_id, pair_id, type, title, body, read_at, created_at
+        FROM t_notification
+        WHERE user_id = #{userId}
+        ORDER BY created_at DESC, id DESC
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <select id="countUnreadByUser" resultType="long">
+        SELECT COUNT(*) FROM t_notification WHERE user_id = #{userId} AND read_at IS NULL
+    </select>
+
+    <select id="selectById" resultMap="notificationMap">
+        SELECT id, user_id, pair_id, type, title, body, read_at, created_at
+        FROM t_notification
+        WHERE id = #{id}
+    </select>
+
+    <!-- 已读只写一次：read_at IS NULL 是幂等条件，第二次 update 返回 0 且时间不变 -->
+    <update id="markRead">
+        UPDATE t_notification
+        SET read_at = #{at}
+        WHERE id = #{id} AND user_id = #{userId} AND read_at IS NULL
+    </update>
+
+    <!--
+      幂等写入：唯一键 (user_id, pair_id, type) 命中时 id = id 是 no-op。
+      标题/正文由调用方在写入前打码（D1 的 PairNotificationPublisher），本文件不做脱敏 ——
+      脱敏只有一个实现点（MaskingPolicy），不在 SQL 里再复制一份规则。
+    -->
+    <insert id="insertIfAbsent">
+        INSERT INTO t_notification (user_id, pair_id, type, title, body)
+        VALUES (#{userId}, #{pairId}, #{type}, #{title}, #{body})
+        ON DUPLICATE KEY UPDATE id = id
+    </insert>
+
+</mapper>

@@ -14,13 +14,14 @@
 //
 // 运行：node qa/match/evaluate.mjs
 
-import { Api, brief, isOk } from '../lib/client.mjs';
+import { brief, isOk } from '../lib/client.mjs';
+import { login } from '../lib/auth.mjs';
 import { writeFile, mkdir } from 'node:fs/promises';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const here = dirname(fileURLToPath(import.meta.url));
-const api = new Api();
+const api = await login(undefined, 'demo01'); // v2：/api/match 要求登录
 
 // 人工标注：related = 该输入在业务上「确实相关」的记录（同事件另一侧 + 期望目标）
 const SAMPLES = [
@@ -111,10 +112,10 @@ const SAMPLES = [
     intent: '拾到者找钥匙（不限类型）',
     text: '捡到一串钥匙',
     type: null,
-    expectTop1: 18,
-    related: [6, 18],
-    mustExclude: [23, 25],
-    note: 'seed 要求 23（CLAIMED）与 25（已删除）都不得出现',
+    expectTop1: 10,
+    related: [6, 10, 18, 23],
+    mustExclude: [24, 25],
+    note: 'v2：10/18/23 都是钥匙相关（10 寻物、18 招领、23 保留期内 COMPLETED）；24 CLOSED 与 25 到期 COMPLETED 不得出现',
   },
 ];
 
@@ -135,6 +136,7 @@ async function callMatch(sample, withType) {
 
 function judge(sample, data) {
   const items = data.items;
+  const raw = JSON.stringify(items);
   const ids = items.map((i) => i.recordId);
   const reasons = [];
   let pass = true;
@@ -153,6 +155,22 @@ function judge(sample, data) {
   if (leaked.length > 0) {
     pass = false;
     reasons.push(`出现应排除的记录 ${JSON.stringify(leaked)}`);
+  }
+
+  // v2 遮蔽：候选是别人的记录，输出必须走同一打码器；号码/联系人/发布者一律不得出现
+  if (/1[3-9]d{9}/.test(raw)) {
+    pass = false;
+    reasons.push('候选响应出现手机号');
+  }
+  for (const item of items) {
+    if ('contact' in item || 'publisherName' in item) {
+      pass = false;
+      reasons.push(`候选 ${item.recordId} 返回了 contact/publisherName`);
+    }
+    if (!['PENDING', 'COMPLETED'].includes(item.recordStatus) || !['OPEN', 'RESTRICTED'].includes(item.detailAccess)) {
+      pass = false;
+      reasons.push(`候选 ${item.recordId} 缺少 recordStatus/detailAccess`);
+    }
   }
 
   const fps = items.filter((i) => i.score >= FALSE_POSITIVE_SCORE && !sample.related.includes(i.recordId));
@@ -275,7 +293,9 @@ const payload = { generatedAt: new Date().toISOString(), params: { topN: TOP_N, 
 
 await mkdir(resolve(here, '..', 'reports'), { recursive: true });
 await writeFile(resolve(here, '..', 'reports', 'match-eval.md'), md, 'utf8');
+payload.baseline = product.rows.map((r) => ({ id: r.sample.id, top1: r.verdict.top1, items: r.verdict.ids }));
 await writeFile(resolve(here, '..', 'reports', 'match-eval.json'), JSON.stringify(payload, null, 2), 'utf8');
+await writeFile(resolve(here, '..', 'reports', 'match-baseline.json'), JSON.stringify(payload.baseline, null, 2), 'utf8');
 
 console.log(md);
 console.log('\n报告：qa/reports/match-eval.md（同内容 JSON：match-eval.json）');

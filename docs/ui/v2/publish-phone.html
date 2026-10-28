@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>A3 · 发布表单手机号提示</title>
+  <link rel="stylesheet" href="../../../web/src/styles/tokens.css" />
+  <link rel="stylesheet" href="../../../web/src/styles/base.css" />
+  <link rel="stylesheet" href="../../../web/src/styles/components.css" />
+  <link rel="stylesheet" href="mockup.css" />
+  <style>
+    .form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--sp-3); }
+    .form-grid .span-2 { grid-column: 1 / -1; }
+    .form-actions { display: flex; flex-wrap: wrap; gap: var(--sp-2); margin-top: var(--sp-4); padding-top: var(--sp-4); border-top: 1px solid var(--color-border); }
+    @media (max-width: 640px) { .form-grid { grid-template-columns: minmax(0, 1fr); } .form-grid .span-2 { grid-column: auto; } }
+  </style>
+</head>
+<body class="board">
+  <header class="board__head">
+    <div>
+      <p class="board__kicker">A3 · v2 UI Baseline · /records/new</p>
+      <h1 class="board__title">发布表单：手机号旁的「自行填写，请自行核实」</h1>
+    </div>
+    <p class="board__meta">界面稿 08 / 手机号只做格式校验，没有短信验证；文案紧邻输入框，不折叠、不放进帮助页。</p>
+  </header>
+
+  <div class="board__grid">
+    <div class="app-frame">
+      <div class="app-frame__bar" aria-hidden="true">
+        <span class="app-frame__dot"></span><span class="app-frame__dot"></span><span class="app-frame__dot"></span>
+        <span class="app-frame__url">find-it-campus / records/new</span>
+      </div>
+      <div class="app-shell">
+        <header class="app-header">
+          <div class="app-header__inner">
+            <span class="app-header__brand"><span class="app-header__logo" aria-hidden="true">FI</span><span class="app-header__brand-text">校园失物招领</span></span>
+            <nav class="app-header__nav" aria-label="主导航">
+              <a class="app-header__link" href="#">启事列表</a>
+              <a class="app-header__link" href="#">我的启事</a>
+              <a class="app-header__link nav-dot" href="#">通知<span class="nav-dot__badge">3</span></a>
+              <a class="app-header__link app-header__link--cta is-active" href="#" aria-current="page">发布启事</a>
+              <span class="app-header__user"><span class="app-header__avatar" aria-hidden="true">陈</span>陈同学</span>
+            </nav>
+          </div>
+        </header>
+
+        <main class="app-main">
+          <div class="container">
+            <div class="page-head">
+              <div>
+                <h1 class="page-head__title">发布启事</h1>
+                <p class="page-head__desc">带 <span style="color: var(--color-danger);">*</span> 为必填。发布后可随时在「我的启事」里关闭；系统不会自动下架。</p>
+              </div>
+            </div>
+
+            <form class="panel" style="max-width: 760px;" novalidate>
+              <div class="form-grid">
+                <div class="field span-2">
+                  <span class="field__label">类型 <span class="field__req">*</span></span>
+                  <div class="row-wrap">
+                    <label class="radio"><input type="radio" name="type" checked /> 寻物</label>
+                    <label class="radio"><input type="radio" name="type" /> 招领</label>
+                  </div>
+                </div>
+
+                <div class="field span-2">
+                  <label class="field__label" for="title">标题 <span class="field__req">*</span><span class="field__counter">14/64</span></label>
+                  <input id="title" class="control" value="黑色钱包（图书馆三楼）" />
+                </div>
+
+                <div class="field span-2">
+                  <label class="field__label" for="desc">详细描述 <span class="field__req">*</span><span class="field__counter">52/2000</span></label>
+                  <textarea id="desc" class="control" rows="2">黑色短款钱包，内有校园卡、公交卡和一张宿舍门禁卡。10 月 20 日下午在图书馆三楼自习区遗失。</textarea>
+                </div>
+
+                <div class="field">
+                  <label class="field__label" for="location">地点 <span class="field__req">*</span></label>
+                  <input id="location" class="control" value="图书馆三楼自习区" />
+                </div>
+
+                <div class="field">
+                  <label class="field__label" for="occurred">发生时间 <span class="field__req">*</span></label>
+                  <input id="occurred" class="control" value="2026-10-20 15:00" />
+                </div>
+
+                <div class="field span-2">
+                  <label class="field__label" for="phone">手机号 <span class="field__req">*</span><span class="field__counter">11/11</span></label>
+                  <input id="phone" class="control" type="tel" inputmode="numeric" autocomplete="tel" value="13800001234" aria-describedby="phone-hint" />
+                  <p id="phone-hint" class="phone-hint"><b>自行填写，请自行核实</b><span>平台不发送短信验证码，也不校验号码归属；请确认号码可用，联系前先核对对方身份。</span></p>
+                  <p class="field__hint">只做格式校验：11 位数字，以 1 开头。不会向你或对方发送任何短信。</p>
+                </div>
+
+                <div class="field span-2">
+                  <label class="field__label" for="other">其他联系方式（选填）<span class="field__counter">12/64</span></label>
+                  <input id="other" class="control" value="微信：chen_2023" placeholder="QQ / 微信，最多 64 字" />
+                  <p class="field__hint">与手机号二选一即可；填了手机号时，这一项只作为补充。</p>
+                </div>
+              </div>
+
+              <div class="alert alert--warning" role="note" style="margin-top: var(--sp-4);">
+                <span class="alert__title">发布后不会自动下架</span>
+                <span class="alert__text">时间过去、匹配成功、被联系都不会改变状态；只有你能手动关闭这条启事。关闭不会删除已有配对记录。</span>
+              </div>
+
+              <div class="alert alert--info" role="note" style="margin-top: var(--sp-2);">
+                <span class="alert__title">号码什么时候对别人可见？</span>
+                <span class="alert__text">默认不公开；在 75%–89% 的配对里由你主动公开，≥90% 的配对双方直接可见。低于 75% 不展示详情。</span>
+              </div>
+
+              <div class="form-actions">
+                <button class="btn btn--primary btn--lg" type="submit">发布启事</button>
+                <a class="btn btn--ghost btn--lg" href="#">取消并返回</a>
+              </div>
+            </form>
+          </div>
+        </main>
+
+        <footer class="app-footer">
+          <div class="app-footer__inner"><span>find-it-campus · 校园失物招领</span><span>已登录 · 陈同学 · 退出登录</span></div>
+        </footer>
+      </div>
+    </div>
+
+    <aside class="notes" aria-label="设计说明">
+      <p class="notes__title">这一稿要说明什么 <span class="notes__tag">08</span></p>
+      <ol class="notes__list">
+        <li class="notes__item"><b>提示必须紧邻</b>「自行填写，请自行核实」在输入框下方第一行，不折叠、不放进 tooltip；后面跟一句「不发送短信验证码」。</li>
+        <li class="notes__item"><b>只做格式校验</b>11 位、以 1 开头；错误文案「请输入 11 位手机号（示例：138 0000 0000）」，不承诺号码真实。</li>
+        <li class="notes__item"><b>不存到用户表</b>号码只挂在启事上；t_user 不存手机号。UI 不提供「保存为我的手机号」。</li>
+        <li class="notes__item"><b>与已知限制一致</b>发布页出现「不会自动下架」与「号码可见规则」；完整三条在 /my 的使用说明区块。</li>
+      </ol>
+      <div class="notes__rule"></div>
+      <p class="notes__foot">字段命名依赖 A1：手机号列名、是否与「其他联系方式」并存，以 A1 契约为准；本稿只锁定 UI 标签、提示文案与校验规则。</p>
+    </aside>
+  </div>
+</body>
+</html>

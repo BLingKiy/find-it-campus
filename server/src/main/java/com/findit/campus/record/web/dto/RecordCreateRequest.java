@@ -75,9 +75,15 @@ public class RecordCreateRequest {
     @NotFutureMinutes(value = 5, message = "occurredAt 不得晚于当前时间（容忍 5 分钟时钟偏差）")
     private String occurredAt;
 
-    /** 选填（Q-01 未拍板，取基线：不强制）。自由格式，不做真实性校验（无登录体系）。 */
-    @Size(max = 64, message = "contact 长度不得超过 64")
-    @Pattern(regexp = "[0-9A-Za-z\\u4e00-\\u9fa5_()\\-]+", message = "contact 只允许数字、字母、中文与 -_()")
+    /**
+     * 联系方式（契约 §4.3）：新写入只接受 11 位大陆手机号（{@code ^1[3-9]\d{9}$}），
+     * <b>只做格式校验、不做短信验证</b>，也不存进 {@code t_user}。
+     *
+     * <p>为什么不继续允许自由格式：号码要在详情里原样回显给本人、在三档授权里作为"联系方式"给出，
+     * 自由格式会让"这是不是号码"变成前端猜；QQ/微信写进描述（描述会被打码）。
+     * 历史非手机号值仍可读（DB 里保留），只有更新时必须改成合法号码或 null。
+     */
+    @Pattern(regexp = "^1[3-9]\\d{9}$", message = "contact 须为 11 位手机号")
     private String contact;
 
     @Size(max = 32, message = "publisherName 长度不得超过 32")

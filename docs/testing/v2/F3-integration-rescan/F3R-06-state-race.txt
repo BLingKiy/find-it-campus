@@ -1,0 +1,79 @@
+# F3-R 项6 · P2-1 终态竞态复验 · 2026-10-28T07:23:33.538Z
+- 基线分支 test/v2-F3-integration-rescan；被验对象 updateContent WHERE id AND deleted_at IS NULL AND status='PENDING'
+- 夹具终态由 SQL 置位并把 updated_at 冻结在 2026-10-20 12:00:00；任何写入都会推进 updated_at，故「零写入」可判
+
+## ① 所有者对终态记录发 PUT：期望 409 + 20003，且全行指纹不变
+
+PASS  C1 对照组：PENDING 记录 PUT 必须仍然成功并写入（否则下面的 PASS 没有意义）
+        HTTP 200 / code=0
+        库内 title="QA F3R-C1 已被 PUT 改写" updated_at=2026-10-28 15:23:33.000000
+PASS  C2 所有者 PUT COMPLETED 记录：期望 HTTP 409 + code 20003 且全行零写入
+        HTTP 409 / code=20003 / message="记录当前状态不可执行该操作"
+        响应：HTTP 409 / code=20003 / message="记录当前状态不可执行该操作" / requestId=afa1a97f31fd4c06
+        指纹逐字符相同（167 字符，含 updated_at=2026-10-20 12:00:00.000000 未前进）
+        pair_state 未被重置：PENDING
+PASS  C3 所有者 PUT CLOSED 记录：期望 HTTP 409 + code 20003 且全行零写入
+        HTTP 409 / code=20003 / message="记录当前状态不可执行该操作"
+        响应：HTTP 409 / code=20003 / message="记录当前状态不可执行该操作" / requestId=77f544443e8146ec
+        指纹逐字符相同（139 字符，含 updated_at=2026-10-20 12:00:00.000000 未前进）
+        pair_state 未被重置：PENDING
+
+## ① 续 已删除记录 PUT、终态之间的 PATCH
+
+PASS  C4 所有者 PUT 已软删记录：期望 404 + 20001 且零写入
+        DELETE：HTTP 200 / code=0
+        PUT：HTTP 404 / code=20001 / message="记录不存在或已删除" / requestId=68db72b4d4d24c43
+        指纹相同（deleted_at 未被改写）
+PASS  C5 COMPLETED → CLOSED 的 PATCH：期望 409 + 20002（非法流转）且零写入
+        PATCH：HTTP 409 / code=20002 / message="状态流转非法" / requestId=7b9bb89c73e94ccb
+        指纹相同
+PASS  C6 CLOSED → COMPLETED 的 PATCH：期望 409 + 20002 且零写入
+        PATCH：HTTP 409 / code=20002 / message="状态流转非法" / requestId=8c741dd5c5bb4034
+        指纹相同
+
+## ② 非所有者与匿名 PUT：P2-1 的 20003 不得先于 404/403 命中（否则终态身份泄漏）
+
+PASS  C7 匿名 401 / 非所有者 404|403，且都不得返回 20003；终态行零写入
+        匿名 PUT：HTTP 401 / code=10006 / message="请先登录" / requestId=e038d14af61a4561
+        非本人(demo02) PUT：HTTP 404 / code=20001 / message="记录不存在或已删除" / requestId=5e1dd3ea38804571 → 是否泄漏终态(20003)=false
+        指纹相同
+
+## ③ SQL 层反证：同一条 UPDATE 去掉 status 条件能否改写终态行（测试自发的对照 SQL，不经应用）
+
+PASS  S1 带 status=PENDING 条件：0 行；去掉条件：1 行且真的改写（证明挡住写入的是条件本身）
+        guarded ROW_COUNT()=0，行仍为 "QA F3R-S 条件更新对照"（status=CLOSED）
+        unguarded ROW_COUNT()=1，行变为 "UNGUARDED-WRITE"，updated_at 由 2026-10-20 12:00:00 前进到 2026-10-28 15:23:40.000000
+
+## ④ 真并发（InnoDB 行锁编排，把交错钉在指定位次上）
+
+编排：A 会话持该行 X 锁 3s（FOR UPDATE + DO SLEEP，不改任何列）
+      → C 会话在 A 之后入队，把 status 改成 CLOSED 并提交（排队等锁）
+      → HTTP PUT 最后入队：它的快照读早已读到 PENDING（A 从未改 status），
+        所以预检查通过、必定走到 updateContent，然后被锁挡住，等 C 提交 CLOSED 之后才执行。
+      此时若返回 20003 且正文未变，就是「预检查与 UPDATE 之间的窗口被条件更新关闭」的直接证据，而不是串行巧合。
+
+PASS  R1 锁编排：PUT 应因条件更新返回 409/20003，正文零写入，且 PUT 确实被行锁阻塞过
+        PUT：HTTP 409 / code=20003 / message="记录当前状态不可执行该操作" / requestId=7cf1a8257e9240bb / 耗时 2648 ms（>1200 ms 才说明真在等行锁）
+        A 会话：err=无 耗时 3403 ms
+        C 会话：err=无 耗时 3237 ms
+        终态行：status=CLOSED title="QA F3R-R1 锁编排竞态原正文" updated_at=2026-10-28 15:23:42.000000 pair_state=SCORING
+PASS  R2 控制组：同编排但无并发终态提交，PUT 应等锁后 200 成功（排除「阻塞导致失败」的解释）
+        PUT：HTTP 200 / code=0 / message="已更新" / requestId=9ca41a03134f42ff / 耗时 3201 ms
+        行：title="QA F3R-R2 PUT 等锁后应写入" status=PENDING updated_at=2026-10-28 15:23:46.000000
+
+## ⑤ 裸并发：PUT 与 PATCH(CLOSED) 同时发出，跑 20 轮看结局分布
+
+- 结局分布：
+    11 × PUT=200/0 × PATCH=200/0
+    9 × PUT=409/20003 × PATCH=200/0
+PASS  B1 裸并发 20 轮：终态记录未出现「PUT 被拒却仍写入正文」
+        终态行被后写签名次数=0
+        无「拒绝但已写入」「成功但流转失败」的不一致轮次
+        诚实说明：两条请求确实在服务端同时在飞（同一 tick 发出），但「PUT 的快照读发生在 PATCH 提交之前」这一点对裸并发不可外部观测，重叠窗口是否命中只能由上面的分布推断；可复现的窗口证明在 R1 锁编排那一条。
+
+## 结论
+- 断言项：11；失败：0
+- P2-1 复验通过：终态 PUT 一律 409/20003（或非所有者 404/403、匿名 401），库里零写入；条件更新在真实锁编排下挡住了窗口，SQL 层反证也说明没有条件时窗口会被打穿。
+
+## 收尾：恢复 seed 初始态
+- resetSeed() 已执行（db/schema.sql + db/seed.sql），本轮造的 30 条记录与 pair 全部清除

@@ -1,0 +1,13 @@
+# f2-evidence
+开始时间: 2026-10-28T02:25:41.459Z | 用例总数: 7 | 通过: 7 | 失败: 0（其中已登记缺陷: 0）| 通过率: 100.0% | 耗时: 103496ms
+
+[PASS] F2-MP-01 (P0) 一条招领 × 两条寻物各成一对：处理 A 不影响 B，招领仍在候选池  34866ms
+[PASS] F2-TERM-01 (P0) 未达 MATCHED 调「标记完成」→ 409 + 20005，status/completed_at/updated_at 零变化  5381ms
+[PASS] F2-TERM-02 (P0) COMPLETED：列表/搜索 0 命中、匹配仍召回、0.90 门槛决定详情可见性  17766ms
+[PASS] F2-TERM-03 (P0) COMPLETED 分数 0.80 的非合格对端详情 404（阈值是硬门槛）  9582ms
+[PASS] F2-TERM-04 (P0) CLOSED：列表与匹配双 0、详情三身份 404、pair 取号/改状态 403 + 50005  14374ms
+[PASS] F2-TERM-05 (P0) 到期 COMPLETED（completed_at + 31 天）：匹配消失、详情 404、status 不被自动改写  14731ms
+[PASS] F2-DEG-01 (P0) 无 DEEPSEEK_API_KEY 发布：200、pair 落 LOCAL_KEYWORD + EMPTY_KEY、记录 pairState=DEGRADED  6432ms
+
+--- 失败明细 ---
+（无）

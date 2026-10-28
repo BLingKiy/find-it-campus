@@ -29,8 +29,13 @@ public class RecordQuery {
     @Pattern(regexp = "LOST|FOUND", message = "type 取值非法：LOST / FOUND")
     private String type;
 
-    /** {@code ALL} = 不限状态；缺省 {@code PENDING}（契约 §3.1：默认只看待领）。 */
-    @Pattern(regexp = "PENDING|CLAIMED|CLOSED|ALL", message = "status 取值非法：PENDING / CLAIMED / CLOSED / ALL")
+    /**
+     * 公共列表的 {@code status} 只是"确认终态确实不在列表里"：SQL 恒按 {@code PENDING} 过滤，
+     * 传 {@code COMPLETED/CLOSED} 返回 200 + 空列表（契约 §4.1）。{@code ALL} 同理不等于"三态都查"，
+     * 三态管理视图在 {@code /api/my/records}。
+     */
+    @Pattern(regexp = "PENDING|COMPLETED|CLOSED|ALL",
+            message = "status 取值非法：PENDING / COMPLETED / CLOSED / ALL（CLAIMED 已作废）")
     private String status = "PENDING";
 
     private Long categoryId;

@@ -1,0 +1,107 @@
+mysql_ready=True pid=9068
+schema_exit=0
+seed_exit=0
+seed_counts records/pairs/notifications = 24
+14
+8
+app_ready=True pid=12216
+login_demo01 http=200 body={"code":0,"message":"登录成功","data":{"id":1,"studentNo":"demo01","displayName":"演示甲"},"requestId":"9536f5ae201340f8"}
+login_demo02 http=200 body={"code":0,"message":"登录成功","data":{"id":2,"studentNo":"demo02","displayName":"演示乙"},"requestId":"b27c619c533b4789"}
+login_demo03 http=200 body={"code":0,"message":"登录成功","data":{"id":3,"studentNo":"demo03","displayName":"演示丙"},"requestId":"37fa6847b4134816"}
+me_demo01={"id":1,"studentNo":"demo01","displayName":"演示甲"}
+create_x http=200 id=27 body={"code":0,"message":"已提交","data":{"id":27,"type":"LOST","status":"PENDING","title":"C1 证据：第三教学楼丢了黑色钱包","description":"昨天 14:30 在第三教学楼 201 捡到，联系 13900001111，QQ 123456789，证件 110101199001011234","categoryId":1,"categoryName":"钱包卡证","location":"第三教学楼201","occurredAt":"2026-10-26 20:16:48","completedAt":null,"contact":"13900001111","publisherName":"李同学","allowedStatuses":["CLOSED"],"hasMatchedPair":false,"matchedPairCount":0,"isMine":true,"pairState":"PENDING","lowConfidenceCount":0,"createdAt":"2026-10-27 20:16:48","updatedAt":"2026-10-27 20:16:48"},"requestId":"9f3f69251f0e43d6"}
+PASS  create returns PENDING and masked contact visible to owner  | http=200 status=PENDING contact=13900001111
+x_detail_anon={"id":27,"type":"LOST","status":"PENDING","title":"C1 证据:第三教学楼丢了黑色钱包","description":"[时间已隐藏] 在第三教学楼 201 捡到，联系 [手机号已隐藏]，QQ[QQ号已隐藏]，证件 [证件号已隐藏]","categoryId":1,"categoryName":"钱包卡证","location":"第三教学楼…","occurredAt":"2026-10-26 20:16:48","completedAt":null,"contact":null,"publisherName":"李**","allowedStatuses":[],"hasMatchedPair":false,"matchedPairCount":0,"isMine":false,"pairState":null,"lowConfidenceCount":0,"createdAt":"2026-10-27 20:16:48","updatedAt":"2026-10-27 20:16:48"}
+x_detail_demo02={"id":27,"type":"LOST","status":"PENDING","title":"C1 证据:第三教学楼丢了黑色钱包","description":"[时间已隐藏] 在第三教学楼 201 捡到，联系 [手机号已隐藏]，QQ[QQ号已隐藏]，证件 [证件号已隐藏]","categoryId":1,"categoryName":"钱包卡证","location":"第三教学楼…","occurredAt":"2026-10-26 20:16:48","completedAt":null,"contact":null,"publisherName":"李**","allowedStatuses":[],"hasMatchedPair":false,"matchedPairCount":0,"isMine":false,"pairState":null,"lowConfidenceCount":0,"createdAt":"2026-10-27 20:16:48","updatedAt":"2026-10-27 20:16:48"}
+x_detail_owner={"id":27,"type":"LOST","status":"PENDING","title":"C1 证据：第三教学楼丢了黑色钱包","description":"昨天 14:30 在第三教学楼 201 捡到，联系 13900001111，QQ 123456789，证件 110101199001011234","categoryId":1,"categoryName":"钱包卡证","location":"第三教学楼201","occurredAt":"2026-10-26 20:16:48","completedAt":null,"contact":"13900001111","publisherName":"李同学","allowedStatuses":["CLOSED"],"hasMatchedPair":false,"matchedPairCount":0,"isMine":true,"pairState":"PENDING","lowConfidenceCount":0,"createdAt":"2026-10-27 20:16:48","updatedAt":"2026-10-27 20:16:48"}
+PASS  anon detail 200 masked  | contact= publisherName=李** location=第三教学楼…
+PASS  anon detail description regex-masked  | [时间已隐藏] 在第三教学楼 201 捡到，联系 [手机号已隐藏]，QQ[QQ号已隐藏]，证件 [证件号已隐藏]
+PASS  anon detail body has 0 mobile hits  | hits=0
+PASS  non-owner detail 200 masked  | contact=
+PASS  anon and non-owner see identical masked fields (5-exit consistency)  | title/description/location/publisherName equal
+PASS  owner detail 200 plaintext  | contact=13900001111 location=第三教学楼201
+PASS  non-owner detail body has 0 mobile hits  | hits=0
+x_in_anon_list={"id":27,"type":"LOST","status":"PENDING","title":"C1 证据:第三教学楼丢了黑色钱包","categoryId":1,"categoryName":"钱包卡证","location":"第三教学楼…","occurredAt":"2026-10-26 20:16:48","createdAt":"2026-10-27 20:16:48","isMine":false}
+x_in_owner_list={"id":27,"type":"LOST","status":"PENDING","title":"C1 证据：第三教学楼丢了黑色钱包","categoryId":1,"categoryName":"钱包卡证","location":"第三教学楼201","occurredAt":"2026-10-26 20:16:48","createdAt":"2026-10-27 20:16:48","isMine":true}
+PASS  public list 200 and contains X masked  | location=第三教学楼…
+PASS  owner list row isMine=true plaintext location  | isMine=True location=第三教学楼201
+PASS  non-owner list row masked  | location=第三教学楼…
+PASS  public list status=COMPLETED -> 200 + empty  | total=0
+PASS  public list status=CLOSED -> 200 + empty  | total=0
+PASS  public list never contains COMPLETED/CLOSED seed ids (23/24/25)  | ids=27,26,22,15,3,7,18,6,19,4,1,9,16,8,14,2,20,17,21,5,10,13
+PASS  public list body has 0 mobile hits  | hits=0
+PASS  public list status=ALL still returns only PENDING  | ids=27,26,22,15,3,7,18,6,19,4,1,9,16,8,14,2,20,17,21,5,10,13
+match_x http=200 total=20 item={"recordId":27,"score":1.00,"scorePercent":100,"reason":"关键词命中:钱包、三教、第三、色钱；分类词表命中:钱包卡证","type":"LOST","status":"PENDING","recordStatus":"PENDING","detailAccess":"OPEN","title":"C1 证据:第三教学楼丢了黑色钱包","categoryName":"钱包卡证","location":"第三教学楼…","occurredAt":"2026-10-26 20:16:48","createdAt":"2026-10-27 20:16:48"}
+PASS  match 200 and X candidate masked  | title=C1 证据:第三教学楼丢了黑色钱包 location=第三教学楼… detailAccess=OPEN
+PASS  match body has 0 mobile hits  | hits=0
+match_23_item={"recordId":23,"score":1.00,"scorePercent":100,"reason":"关键词命中:钥匙、二教、色挂、第二；分类词表命中:钥匙","type":"FOUND","status":"COMPLETED","recordStatus":"COMPLETED","detailAccess":"RESTRICTED","title":"已归还:第二教学楼捡到的蓝色挂件钥匙","categoryName":"钥匙","location":"第二教学楼楼梯口","occurredAt":"2026-10-12 19:00:00","createdAt":"2026-10-12 19:30:00"}
+PASS  COMPLETED candidate marked RESTRICTED  | recordStatus=COMPLETED detailAccess=RESTRICTED
+match_phone http=200 body_hits=0
+latest_snapshot_input=[时间已隐藏] 联系 [手机号已隐藏]，QQ[QQ号已隐藏]
+latest_snapshot_candidates=[{"score": 0.78, "reason": "关键词命中:[手机号已隐藏]qq[QQ号已隐藏]、1430、昨天、联系", "recordId": 27}, {"score": 0.33, "reason": "关键词命中:昨天、联系", "recordId": 1}, {"score": 0.33, "reason": "关键词命中:昨天、联系", "recordId": 16}, {"score": 0.21, "reason": "关键词命中:昨天", "recordId": 6}, {"score": 0.16, "reason": "关键词命中:联系、天", "recordId": 3}]
+PASS  match body has 0 mobile hits  | hits=0
+PASS  match snapshot input_text masked before write  | input=[时间已隐藏] 联系 [手机号已隐藏]，QQ[QQ号已隐藏]
+PASS  match snapshot candidates has no mobile  | candidates clean
+my_x={"id":27,"type":"LOST","status":"PENDING","title":"C1 证据：第三教学楼丢了黑色钱包","categoryId":1,"categoryName":"钱包卡证","location":"第三教学楼201","occurredAt":"2026-10-26 20:16:48","completedAt":null,"contact":"13900001111","publisherName":"李同学","pairState":"PENDING","pairCount":0,"relatedCount":0,"lowConfidenceCount":0,"hasMatchedPair":false,"matchedPairCount":0,"detailVisible":true,"createdAt":"2026-10-27 20:16:48","updatedAt":"2026-10-27 20:16:48"}
+my_23_demo03={"id":23,"type":"FOUND","status":"COMPLETED","title":"已归还：第二教学楼捡到的蓝色挂件钥匙","categoryId":3,"categoryName":"钥匙","location":"第二教学楼楼梯口","occurredAt":"2026-10-12 19:00:00","completedAt":"2026-10-24 20:16:36","contact":"13800000111","publisherName":"何同学","pairState":"READY","pairCount":2,"relatedCount":2,"lowConfidenceCount":0,"hasMatchedPair":true,"matchedPairCount":1,"detailVisible":false,"createdAt":"2026-10-12 19:30:00","updatedAt":"2026-10-24 20:16:36"}
+PASS  my/records owner sees own X plaintext  | contact=13900001111
+PASS  my/records is scoped: demo02 does not see X  | X absent from demo02 my list
+PASS  my/records shows COMPLETED with detailVisible=false  | status=COMPLETED detailVisible=False
+PASS  my/records body has plaintext phone only for owner  | hits=18
+notifications_before total=5 unread=5 first={"id":8,"type":"SYSTEM","pairId":null,"title":"平台维护通知","body":"平台将于近期进行例行维护，维护期间写操作可能短暂不可用，请提前保存草稿。","read":false,"createdAt":"2026-10-26 09:00:00"}
+PASS  notifications 200 and 0 mobile hits (seeded bodies)  | hits=0
+notification_fixture={"id":9,"type":"SYSTEM","pairId":null,"title":"C1 防御性夹具 [手机号已隐藏]","body":"正文含 [手机号已隐藏] 与 QQ[QQ号已隐藏]","read":false,"createdAt":"2026-10-27 20:16:50"}
+PASS  notification exit masks title/body with same policy  | title=C1 防御性夹具 [手机号已隐藏] body=正文含 [手机号已隐藏] 与 QQ[QQ号已隐藏]
+PASS  notification exit body has 0 mobile hits  | hits=0
+nonowner_patch http=403 body={"code":10007,"message":"无权操作该资源","data":null,"requestId":"1cb37d4ed1014851"}
+row_before=PENDING	NULL	2026-10-27 20:16:48	NULL row_after=PENDING	NULL	2026-10-27 20:16:48	NULL access=0->0
+PASS  non-owner PATCH -> 403/10007  | http=403 code=10007
+PASS  non-owner PATCH leaves DB row unchanged  | before=PENDING	NULL	2026-10-27 20:16:48	NULL after=PENDING	NULL	2026-10-27 20:16:48	NULL
+PASS  non-owner PATCH adds no t_access_log row  | 0 -> 0
+nonowner_delete http=403 body={"code":10007,"message":"无权操作该资源","data":null,"requestId":"1a0cc15897c445d0"}
+PASS  non-owner DELETE -> 403/10007 and deleted_at stays NULL  | row=PENDING	NULL	2026-10-27 20:16:48	NULL
+nonowner_put http=403 body={"code":10007,"message":"无权操作该资源","data":null,"requestId":"08cb5b62c63c421b"}
+PASS  non-owner PUT -> 403/10007 and content unchanged  | title=C1 证据：第三教学楼丢了黑色钱包
+complete_without_pair http=409 body={"code":20005,"message":"需双方确认匹配后才能标记完成","data":{"currentStatus":"PENDING","required":"MATCHED_PAIR","matchedPairCount":0},"requestId":"efee4aad994342e6"}
+row_pre=PENDING	NULL	2026-10-27 20:16:48	NULL row_post=PENDING	NULL	2026-10-27 20:16:48	NULL
+PASS  mark complete without MATCHED -> 409/20005  | http=409 code=20005
+PASS  409 zero-write: status/completed_at/updated_at unchanged  | pre=PENDING	NULL	2026-10-27 20:16:48	NULL post=PENDING	NULL	2026-10-27 20:16:48	NULL
+PASS  409 adds no t_access_log row  | 0 -> 0
+pair_inserted=15	27	13	0.9500	MATCHED
+complete_with_pair http=200 body={"code":0,"message":"已标记完成","data":{"id":27,"status":"COMPLETED","completedAt":"2026-10-27 20:16:54","updatedAt":"2026-10-27 20:16:54","allowedStatuses":[],"hasMatchedPair":true,"matchedPairCount":1},"requestId":"a4e221a8333e43e4"}
+PASS  mark complete with MATCHED -> 200 + same UPDATE writes completed_at  | status=COMPLETED completed_at=2026-10-27 20:16:54
+x_completed_demo02(qualified peer)={"id":27,"type":"LOST","status":"COMPLETED","title":"C1 证据:第三教学楼丢了黑色钱包","description":"[时间已隐藏] 在第三教学楼 201 捡到，联系 [手机号已隐藏]，QQ[QQ号已隐藏]，证件 [证件号已隐藏]","categoryId":1,"categoryName":"钱包卡证","location":"第三教学楼…","occurredAt":"2026-10-26 20:16:48","completedAt":null,"contact":null,"publisherName":"李**","allowedStatuses":[],"hasMatchedPair":false,"matchedPairCount":0,"isMine":false,"pairState":null,"lowConfidenceCount":0,"createdAt":"2026-10-27 20:16:48","updatedAt":"2026-10-27 20:16:54"}
+x_completed_anon={"code":20001,"message":"记录不存在或已删除","data":null,"requestId":"510719a978ba4454"}
+x_completed_owner={"code":20001,"message":"记录不存在或已删除","data":null,"requestId":"c1f4466501744225"}
+PASS  COMPLETED qualified peer -> 200 masked, contact=null completedAt=null  | contact=
+PASS  COMPLETED owner -> 404/20001  | body={"code":20001,"message":"记录不存在或已删除","data":null,"requestId":"c1f4466501744225"}
+PASS  COMPLETED anonymous -> 404/20001 and hides title  | body={"code":20001,"message":"记录不存在或已删除","data":null,"requestId":"510719a978ba4454"}
+PASS  COMPLETED unrelated user -> 404/20001  | body={"code":20001,"message":"记录不存在或已删除","data":null,"requestId":"f2d0ed02f6814a87"}
+record23_demo01(qualified)={"id":23,"type":"FOUND","status":"COMPLETED","title":"已归还:第二教学楼捡到的蓝色挂件钥匙","description":"在第二教学楼楼梯口捡到一串钥匙，一共两把，带蓝色塑料挂件，已由失主本人核实认领，本条标记完成留档。","categoryId":3,"categoryName":"钥匙","location":"第二教学楼楼梯口","occurredAt":"2026-10-12 19:00:00","completedAt":null,"contact":null,"publisherName":"何**","allowedStatuses":[],"hasMatchedPair":false,"matchedPairCount":0,"isMine":false,"pairState":null,"lowConfidenceCount":0,"createdAt":"2026-10-12 19:30:00","updatedAt":"2026-10-24 20:16:36"}
+record23_demo02(IGNORED only)={"code":20001,"message":"记录不存在或已删除","data":null,"requestId":"9b9e8a1667a241f5"}
+record23_demo03(owner)={"code":20001,"message":"记录不存在或已删除","data":null,"requestId":"bb7d382809164afb"}
+PASS  seed 23 COMPLETED qualified peer (pair 0.95 MATCHED) -> 200 masked  | status=COMPLETED
+PASS  seed 23 IGNORED-only pair 0.93 -> 404/20001 same code as no pair  | body={"code":20001,"message":"记录不存在或已删除","data":null,"requestId":"9b9e8a1667a241f5"}
+PASS  seed 23 owner -> 404/20001  | body={"code":20001,"message":"记录不存在或已删除","data":null,"requestId":"bb7d382809164afb"}
+PASS  seed 23 anonymous -> 404/20001  | body={"code":20001,"message":"记录不存在或已删除","data":null,"requestId":"eeaffd353d2c42af"}
+record24_closed_owner={"code":20001,"message":"记录不存在或已删除","data":null,"requestId":"3c2ddfda75c140d0"}
+record25_expired_owner={"code":20001,"message":"记录不存在或已删除","data":null,"requestId":"82980f8c12844f6a"}
+PASS  CLOSED record 24 -> 404 for owner and non-owner  | owner=20001 other=20001
+PASS  expired COMPLETED record 25 -> 404 for owner and non-owner  | owner=20001 other=20001
+PASS  terminal 404s add no t_access_log row  | 0 -> 0
+db_plaintext_contacts=13	13800000101
+23	13800000111
+27	13900001111
+PASS  DB contact remains plaintext (masking is output-only)  | row=COMPLETED	13900001111
+task_round_record13 PENDING	NULL	2026-09-15 15:30:00	NULL -> PENDING	NULL	2026-09-15 15:30:00	NULL
+task_round_record1 PENDING	NULL	2026-10-20 09:10:00	NULL -> PENDING	NULL	2026-10-20 09:10:00	NULL
+PASS  scoring/fallback round does not change t_record.status/updated_at  | rows 13 and 1 unchanged
+grep_migration-v1-to-v2 count=1 lines=449 text=不适用：v1 无真实历史数据，B1 直接重建 schema.sql + seed.sql，不提供 migration-v1-to-v2.sql
+PASS  A1 doc migration reference only the "not applicable" note  | count=1
+sql_set_status_lines=218,226 text=SET status       = 'COMPLETED', | SET status       = 'CLOSED',
+PASS  status UPDATE statements are exactly markCompleted + close  | count=2
+main_java_CLAIMED_mentions=6 code_refs=0
+PASS  CLAIMED removed from enum and code (mentions only in deprecation comments/messages)  | code_refs=0
+SUMMARY pass=54 fail=0
+stopped app and mysqld (exact child pids)
+POSTRUN docs_recursive_grep count=1 files=docs\design\v2-architecture.md:449 text=不适用：v1 无真实历史数据，B1 直接重建 schema.sql + seed.sql，不提供 migration-v1-to-v2.sql

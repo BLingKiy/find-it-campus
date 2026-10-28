@@ -10,27 +10,31 @@ import com.findit.campus.common.error.BizException;
 import com.findit.campus.record.domain.RecordStatus;
 
 /**
- * 状态机：<b>唯一</b>的流转规则持有者（架构基线 §7.4 流转表）。
+ * 三态状态机：<b>唯一</b>的流转规则持有者（架构 §9.2，契约 §4.5）。
  *
- * <p>为什么单独成类而不是散在 service 的 if 里：{@code allowedStatuses}（详情出参）、
+ * <p>为什么单独成类而不是散在 service 的 if 里：{@code allowedStatuses}（详情/我的启事出参）、
  * PATCH 的合法性判定、20002 错误体里的 {@code allowed} 三处必须永远说同一句话。
  * 规则一旦有两份，改一处忘一处就是"详情页按钮点了才报 409"这种当场丢人的 bug。
  *
- * <p>取值说明（1.1 未产出，此处取基线默认值，绑定待拍板项）：
+ * <p>状态机与「完成前置」<b>分成两个方法</b>，因为它们对应两个不同的错误码：
  * <ul>
- *   <li>{@code PENDING → CLAIMED / CLOSED}：正常认领或直接下架</li>
- *   <li>{@code CLAIMED → CLOSED}：撤销认领回到 PENDING <b>不允许</b>（Q-03 推荐值）</li>
- *   <li>{@code CLOSED}：终态（ADR：历史状态不允许被改写）</li>
+ *   <li>{@link #requireTransition}：纯粹的状态图判定 —— 同值、终态再流转 → <b>20002</b></li>
+ *   <li>{@link #requireCompletable}：{@code PENDING→COMPLETED} 的业务前置（有效 MATCHED pair）
+ *       → <b>20005</b>，且调用方必须在任何 UPDATE 之前调用，保证零写入</li>
  * </ul>
- * 三处规则都是常量级的，1.1 拍板后改这张表即可，不动接口与调用方。
+ * 合成一个方法看似省事，实际会让「终态再点完成」和「没有配对就点完成」返回同一个码，
+ * 前端就没法把「刷新页面」和「去找对方确认」两个动作区分开。
+ *
+ * <p>取值（A1 冻结，不得改）：{@code PENDING → COMPLETED / CLOSED}；{@code COMPLETED}/{@code CLOSED}
+ * 都是终态，{@code CLAIMED} 已作废（收到即 10001，由 DTO 的 {@code @Pattern} 挡住）。
  */
 public final class RecordStatusPolicy {
 
     private static final Map<RecordStatus, List<RecordStatus>> TRANSITIONS = new EnumMap<>(RecordStatus.class);
 
     static {
-        TRANSITIONS.put(RecordStatus.PENDING, List.of(RecordStatus.CLAIMED, RecordStatus.CLOSED));
-        TRANSITIONS.put(RecordStatus.CLAIMED, List.of(RecordStatus.CLOSED));
+        TRANSITIONS.put(RecordStatus.PENDING, List.of(RecordStatus.COMPLETED, RecordStatus.CLOSED));
+        TRANSITIONS.put(RecordStatus.COMPLETED, List.of());
         TRANSITIONS.put(RecordStatus.CLOSED, List.of());
     }
 
@@ -47,16 +51,28 @@ public final class RecordStatusPolicy {
     }
 
     /**
-     * 判定一次流转是否合法，不合法抛 {@code 20002}。
+     * 「标记完成」是否可点：{@code PENDING} 且已有一对有效 MATCHED。
      *
-     * <p>错误体按契约 §6.1 带 {@code current} 与 {@code allowed}：前端拿到后能直接刷新按钮，
-     * 不需要"猜"当前变成了什么状态（状态可能已被别人改过）。
+     * <p>详情/我的启事的 {@code allowedStatuses} 用它过滤，与 PATCH 的前置检查共用同一个判断，
+     * 避免"按钮可点但点了 409"这种自相矛盾的界面。
+     */
+    public static List<RecordStatus> allowedNext(RecordStatus current, boolean hasValidMatchedPair) {
+        return allowedNext(current).stream()
+                .filter(status -> status != RecordStatus.COMPLETED || hasValidMatchedPair)
+                .toList();
+    }
+
+    /**
+     * 判定一次流转是否合法（只看状态图），不合法抛 {@code 20002}。
      *
      * @param current 库中读到的当前状态
      * @param target  请求要迁往的状态
      * @throws BizException 20002（HTTP 409）
      */
     public static void requireTransition(RecordStatus current, RecordStatus target) {
+        if (current == null) {
+            throw illegal(null, "记录状态未知");
+        }
         if (current == target) {
             throw illegal(current, "记录已处于状态 " + current);
         }
@@ -65,16 +81,52 @@ public final class RecordStatusPolicy {
         }
     }
 
+    /**
+     * {@code PENDING→COMPLETED} 的业务前置：必须有一对有效 MATCHED pair。
+     *
+     * <p><b>调用位置在 UPDATE 之前</b>：不满足时抛 20005，事务里没有任何 DML，
+     * {@code status}/{@code completed_at}/{@code updated_at} 三个值都不变（契约 §4.5 零写入口径）。
+     *
+     * @param matchedPairCount 有效 MATCHED pair 数（两端 confirmed_at 非空、两端未删且非 CLOSED）
+     */
+    public static void requireCompletable(int matchedPairCount) {
+        if (matchedPairCount <= 0) {
+            throw BizException.of(ErrorCode.PAIR_REQUIRED_FOR_COMPLETE,
+                    ErrorCode.PAIR_REQUIRED_FOR_COMPLETE.message(),
+                    completionErrorData(matchedPairCount));
+        }
+    }
+
+    /** 契约 §4.5 的 20005 错误体；{@code matchedPairCount} 让前端能直接把按钮置灰。 */
+    public static Map<String, Object> completionErrorData(int matchedPairCount) {
+        Map<String, Object> data = new LinkedHashMap<>();
+        data.put("currentStatus", RecordStatus.PENDING.name());
+        data.put("required", "MATCHED_PAIR");
+        data.put("matchedPairCount", matchedPairCount);
+        return data;
+    }
+
     /** 契约 §6.1 的错误体：{@code allowed} 为空时用 {@code ["(无)"]}（契约给的展示占位）。 */
     public static Map<String, Object> transitionErrorData(RecordStatus current) {
-        List<String> allowed = allowedNext(current).isEmpty()
+        return transitionErrorData(current, true);
+    }
+
+    /** 带「完成前置」过滤的错误体：没有 MATCHED 时 {@code allowed} 里不出现 COMPLETED。 */
+    public static Map<String, Object> transitionErrorData(RecordStatus current, boolean hasValidMatchedPair) {
+        List<RecordStatus> allowed = current == null
+                ? List.of()
+                : allowedNext(current, hasValidMatchedPair);
+        List<String> names = allowed.isEmpty()
                 ? List.of("(无)")
-                : allowedNext(current).stream().map(RecordStatus::name).toList();
-        return Map.of("current", current.name(), "allowed", allowed);
+                : allowed.stream().map(RecordStatus::name).toList();
+        Map<String, Object> data = new LinkedHashMap<>();
+        data.put("current", current == null ? null : current.name());
+        data.put("allowed", names);
+        return data;
     }
 
     private static BizException illegal(RecordStatus current, String detail) {
         return BizException.of(ErrorCode.RECORD_ILLEGAL_STATUS_TRANSITION, detail,
-                new LinkedHashMap<>(transitionErrorData(current)));
+                transitionErrorData(current));
     }
 }

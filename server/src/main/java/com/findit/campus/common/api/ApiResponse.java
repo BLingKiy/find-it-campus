@@ -49,6 +49,16 @@ public final class ApiResponse<T> {
         return new ApiResponse<>(errorCode.code(), errorCode.message(), data, RequestContext.requestId());
     }
 
+    /**
+     * 失败出口（覆盖对外文案）：仅当契约要求"同一 code、不同 message"时使用
+     * （目前只有 10006 的登录失败分支，见 {@code BizException#withPublicMessage}）。
+     *
+     * @param message 对外文案；必须是不含内部细节的固定措辞
+     */
+    public static <T> ApiResponse<T> fail(ErrorCode errorCode, String message, T data) {
+        return new ApiResponse<>(errorCode.code(), message, data, RequestContext.requestId());
+    }
+
     /** 失败出口（无附加数据）。 */
     public static <T> ApiResponse<T> fail(ErrorCode errorCode) {
         return fail(errorCode, null);

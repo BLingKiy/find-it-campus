@@ -1,0 +1,586 @@
+# v2 · F1 全量回归 · 2026-10-28T02:05:23.954Z
+- 后端：http://localhost:18080
+- 前端：http://localhost:5173
+- MySQL 客户端：C:/Project/tools/mysql/mysql-8.0.29-winx64/bin/mysql.exe
+  前置检查 后端 /api/health: HTTP 200
+  前置检查 前端 dev server: HTTP 200
+
+=== 开始前：重置库（schema.sql + seed.sql） ===
+  已重置为种子状态
+
+=== 接口测试（node qa/api/run.mjs） ===
+
+  [EV-SQL] PAIR-07 pairId=651 重算前 status=IGNORED unlocked=2026-10-26 10:00:00/2026-10-26 10:05:00 notes=失主端附言/拾获端附言 hashes=e7966f26…
+  [EV-SQL] PAIR-07 pairId=651 重算后 status=IGNORED unlocked=2026-10-26 10:00:00/2026-10-26 10:05:00 notes=失主端附言/拾获端附言 hashes=adf4371c…
+  [EV-LOG] PAIR-07 pairId=651 日志 C:\Project\hifox-workspaces\duancece\find-it-campus\qa\reports\server.log：新增 1 行，llmCalls=0
+  [EV-LOG] 摘录：2026-10-28 10:10:50.253 INFO  [pair-score-2] c.f.c.p.service.PairScoringService - [9016fb28c6164289] pair score skipped reason=UNCHANGED fastPath=true lostId=94 foundId=93 trigger=publish pairId=651 | 2026-10-28 10:10:53.185 INFO  [pair-score-1] c.f.c.p.service.PairScoringService - [e6528a55b2194dba] pair score written lostId=94 foundId=93 trigger=update pairId=651 engine=LOCAL_KEYWORD score=0.78 degradedReason=EMPTY_KEY latencyMs=null promptTokens=null completionTokens=null
+
+  [EV-SQL] TERM-06 pairId=805 通道 IGNORED=IGNORED；访问审计 before=0 after=0；改 NEW→200，改回 IGNORED→404
+  [EV-LOG] TERM-06 pairId=805 日志新增 0 行，llmCalls=0（详情读取不应触发打分/LLM）
+
+  清理：逻辑删除本轮创建的 82 条记录（种子数据未改动）
+  清理后基线自检：默认列表 total=21（应为 21）
+  PASS  ENV-01 [P0] 后端可达且数据库为 seed 初始状态（total=21） (23ms)
+  PASS  ENV-02 [P0] 数据库为 v2 七表；t_user 不存手机号（PHONE 口径） (6459ms)
+  PASS  API-CON-01 [P1] 外层响应体恒含 code/message/data/requestId 四字段 (28ms)
+  PASS  API-CON-02 [P1] 未知路径返回 404 + 10003，而非框架默认错误页 (7ms)
+  PASS  API-CON-03 [P1] 动词不支持返回 405 + 10004（登录态下越过会话门禁） (16ms)
+  PASS  API-CON-04 [P2] 请求体不是合法 JSON 时返回 400 + 10001 (26ms)
+  PASS  API-CON-05 [P2] 错误响应不含堆栈信息 (28ms)
+  PASS  API-L-01 [P0] 默认参数：status=PENDING、page=1、pageSize=10、createdAt desc (19ms)
+  PASS  API-L-02 [P0] 列表项字段白名单：不含 description / contact / publisherName，含 isMine (20ms)
+  PASS  API-L-03 [P0] type=FOUND 过滤后全部为 FOUND (22ms)
+  PASS  API-L-04 [P1] 公共列表恒为 PENDING：status=ALL 仍 21；COMPLETED/CLOSED 0 命中 (38ms)
+  PASS  API-L-05 [P1] categoryId 过滤且停用分类返回 40002 (38ms)
+  PASS  API-L-06 [P1] keyword 命中标题与描述（中文，不区分字段） (16ms)
+  PASS  API-L-07 [P1] keyword 中的 % 与 _ 按字面量处理，不当通配符 (17ms)
+  PASS  API-L-08 [P1] 分页无重复且末页 hasNext=false (52ms)
+  PASS  API-L-09 [P1] sortBy=occurredAt&asc 按发生时间升序 (20ms)
+  PASS  API-L-10 [P1] sortBy=createdAt&desc 严格降序且两次调用顺序一致 (49ms)
+  PASS  API-L-11 [P2] 分页与枚举参数非法逐项返回 10001 + fieldErrors (62ms)
+  PASS  API-L-12 [P3] 页码越界返回空列表而非报错 (11ms)
+  PASS  AUTH-01 [P0] 登录成功签发 JSESSIONID（HttpOnly/SameSite=Lax），me 返回本人 (101ms)
+  PASS  AUTH-02 [P0] 错口令与不存在账号同为 401 + 10006 + 同一文案（防枚举） (181ms)
+  PASS  AUTH-03 [P1] 登录参数缺失/超长返回 400 + 10001 + fieldErrors (13ms)
+  PASS  AUTH-04 [P1] 登出幂等：匿名 200；已登出会话再用 401 (132ms)
+  PASS  AUTH-05 [P0] 三套登录上下文互不串会话：me 分别返回 1/2/3 (12ms)
+  PASS  AUTH-06 [P1] 会话失效（未登录）后读私有集合与 pair 均 401，未实现路径也先 401 (11ms)
+  PASS  AUTHZ-01 [P0] POST /records 三态：匿名 401；本人 200；另一登录用户 200（发布归自己） (146ms)
+  PASS  AUTHZ-02 [P0] PUT /records 三态：匿名 401；本人 200；非本人 403 + 10007 (169ms)
+  PASS  AUTHZ-03 [P0] PATCH status 三态：匿名 401；本人 200；非本人 403 + 10007 (402ms)
+  PASS  AUTHZ-04 [P0] DELETE /records 三态：匿名 401；非本人 403；本人 200 (806ms)
+  PASS  AUTHZ-05 [P0] pair 写接口三态：匿名 401；参与方 200；非参与方 403 + 10007 (14985ms)
+  PASS  AUTHZ-06 [P0] 通知已读三态：匿名 401；接收人 200；他人 403 + 10007 (2835ms)
+  PASS  AUTHZ-07 [P0] POST /match 三态：匿名 401；任一登录用户 200（候选对所有人遮蔽） (443ms)
+  PASS  API-D-01 [P0] 所有者详情返回完整字段、allowedStatuses 与 pairs (25ms)
+  PASS  API-D-02 [P1] 逻辑删除记录 404 + 20001 (1099ms)
+  PASS  API-D-03 [P1] 不存在的 id 404 + 20001 (5ms)
+  PASS  API-D-04 [P1] 非数字 id 400 + 10001（/records/new 路由不被 id 抢走） (10ms)
+  PASS  API-D-05 [P1] CLOSED / 到期 COMPLETED 任何身份 404；保留期 COMPLETED 仅合格对端可见 (58ms)
+  PASS  API-D-06 [P2] 无分类记录的 categoryId / categoryName 为 null (6ms)
+  PASS  API-C-01 [P0] 合法提交返回与详情同构的对象，初始状态 PENDING (319ms)
+  PASS  API-C-02 [P1] 可选字段缺省时落为 null (702ms)
+  PASS  API-C-03 [P1] 分类不存在 404/40001，分类停用 409/40002 (20ms)
+  PASS  API-C-04 [P1] 标题长度边界：1 字与 65 字均 10001 (12ms)
+  PASS  API-C-05 [P1] 描述长度边界：1 字拒绝、2000 字通过 (353ms)
+  PASS  API-C-06 [P1] 地点 129 字拒绝、1 字通过 (712ms)
+  PASS  API-C-07 [P1] occurredAt 未来 10 分钟拒绝、3 分钟放行（容差 5 分钟） (388ms)
+  PASS  API-C-08 [P1] occurredAt 格式严格（分隔符、时间必须合法） (25ms)
+  PASS  API-C-09 [P1] type 非法 10001，必填项缺失一并返回 fieldErrors (18ms)
+  PASS  API-C-10 [P1] contact 只做手机号格式校验：^1[3-9]\d{9}$，无短信验证 (407ms)
+  PASS  API-C-11 [P2] 中文与 emoji 往返无损（UTF-8 全链路） (21ms)
+  PASS  API-C-12 [P2] 纯空格标题被 strip 后判空 (7ms)
+  PASS  API-C-13 [P3] 重复提交不幂等（契约 §4.3 已知行为，产生两条记录） (809ms)
+  PASS  API-U-01 [P0] 全量更新成功且不改 status (1146ms)
+  PASS  API-U-02 [P1] 未传的可选字段按全量语义清空为 null (441ms)
+  PASS  API-U-03 [P1] 已关闭记录不可修改 409 + 20003；非本人 403 (67ms)
+  PASS  API-U-04 [P1] PUT 不存在的记录 404 + 20001 (11ms)
+  PASS  API-U-05 [P1] PUT 缺 type 或字段非法时 10001 (34ms)
+  PASS  API-S-01 [P0] PENDING → CLOSED 成功；终态再流转 409 + 20002 (405ms)
+  PASS  API-S-02 [P1] 终态不可再流转 409 + 20002，且带 current / allowed (1129ms)
+  PASS  API-S-03 [P1] 流转到当前相同状态 409 + 20002（PENDING 不是合法目标值 → 400） (797ms)
+  PASS  API-S-04 [P1] 目标状态非法 400 + 10001（field=status，CLAIMED 亦非法） (406ms)
+  PASS  API-S-05 [P1] 对不存在的记录流转 404 + 20001 (7ms)
+  PASS  API-X-01 [P0] 逻辑删除后详情 404、列表不可见、匹配候选池不含 (826ms)
+  PASS  API-X-02 [P1] 重复删除 404 + 20001 (60ms)
+  PASS  API-X-03 [P1] 删除不存在的记录 404 + 20001 (5ms)
+  PASS  API-CAT-01 [P0] 默认只返启用分类，按 sortOrder 升序，字段与契约一致 (9ms)
+  PASS  API-CAT-02 [P1] onlyActive=false 含停用分类 (6ms)
+  PASS  API-M-01 [P0] S1–S6 正例 top1 命中（失主找招领帖 ⇒ type=FOUND） (1609ms)
+  PASS  API-M-02 [P0] 结果结构与排序：倒序、去重、score 口径、total=items.length (31ms)
+  PASS  API-M-03 [P1] excludeRecordId 生效（详情页发起匹配时排除自身） (735ms)
+  PASS  API-M-04 [P1] N1 计算器问句命中 7（拾到者找失物帖 ⇒ type=LOST） (30ms)
+  PASS  API-M-05 [P1] N2 负例返回 200 + 空结果（不是错误、不是高分误报） (23ms)
+  PASS  API-M-06 [P1] N4：COMPLETED 保留期内进候选池并标 RESTRICTED；CLOSED 与到期记录 0 命中 (25ms)
+  PASS  API-M-07 [P1] N3 同时命中 4 与 16（雨伞语义两侧都能召回） (383ms)
+  PASS  API-M-08 [P1] 同一输入两次调用结果完全一致（本地实现必须确定） (776ms)
+  PASS  API-M-09 [P1] topN / minScore / type / categoryId 约束生效 (1143ms)
+  PASS  API-M-10 [P1] text 非法统一回 400 + 30001（空/1 字/超长） (20ms)
+  PASS  API-M-11 [P2] topN / minScore / type / categoryId 非法各自 10001 或 40001 (38ms)
+  PASS  API-M-12 [P2] 并发 10 次匹配全部 200 且快照 id 唯一 (360ms)
+  PASS  MASK-01 [P0] 列表出口：标题号码打码、地点截断、无 contact/publisherName/description (404ms)
+  PASS  MASK-02 [P0] 详情出口：非本人 contact=null、描述打码、地点截断；本人原值 (23ms)
+  PASS  MASK-03 [P0] 匹配出口：候选 title/location/reason 走同一打码器，不返回 contact/publisherName (759ms)
+  PASS  MASK-04 [P0] 通知出口：title/body 不含手机号（写入前已打码） (24ms)
+  PASS  MASK-05 [P0] 我的启事出口：本人数据不遮蔽（与公共出口口径不同，但只对本人） (78ms)
+  PASS  MASK-06 [P0] 非本人响应全量扫描 1[3-9]\d{9}：列表/详情/匹配/通知 0 命中 (315ms)
+  PASS  TIER-01 [P0] DIRECT（≥0.90）：两端各自拿到对方号码，且写 GRANTED 审计 (21579ms)
+  PASS  TIER-02 [P0] AUTHORIZABLE（0.75–0.90）：未公开 available=false → 公开有号带打码附言 → 撤回回退 (12460ms)
+  PASS  TIER-03 [P0] <0.75 LOW：取号/授权/改 pair 全部 403 + 50002，并留 DENIED_LOW_SCORE (11370ms)
+  PASS  TIER-04 [P1] 阈值边界：0.90=DIRECT、0.75=AUTHORIZABLE、0.7499=LOW (27692ms)
+  PASS  IDEM-01 [P0] 同一 pair 重复 CONTACT：200 且 updatedAt 不变（不写库） (13526ms)
+  PASS  IDEM-02 [P0] 重复 CONFIRM：单端不刷新 confirmed_at；两端齐后 MATCHED，重复不再改 (13832ms)
+  PASS  IDEM-03 [P1] 重复 PUBLISH：unlockedAt 不变且不重复写 PAIR_UNLOCK 通知 (13850ms)
+  PASS  IDEM-04 [P1] 重复 REVOKE：200 且保持 null（自然幂等） (9213ms)
+  PASS  DEG-01 [P0] 空 Key 发布：记录照常 200，pair 落 LOCAL_KEYWORD + EMPTY_KEY，记录 pairState=DEGRADED (6766ms)
+  PASS  DEG-02 [P1] 降级不影响 /api/match：仍返回 200 + LOCAL_KEYWORD（不是 503） (20ms)
+  PASS  DEG-03 [P0] hash 变化触发重算：仍为 LOCAL_KEYWORD + EMPTY_KEY，分数写新值（不静默成功） (12846ms)
+  PASS  PAIR-01 [P0] 一条招领与两条寻物各成 pair：A 标已联系后 B 仍 NEW，招领仍在候选池，记录全 PENDING (23112ms)
+  PASS  PAIR-02 [P0] 唯一键 (lost_id, found_id)：重算/重复触发仍只有一行 (24628ms)
+  PASS  PAIR-03 [P0] 无占用/锁定：A pair MATCHED 后 B pair 仍可联系，招领仍可被匹配 (8237ms)
+  PASS  PAIR-04 [P0] pair 进展不触发记录状态变更：status / updated_at 前后一致 (17643ms)
+  PASS  PAIR-05 [P1] pair 不接受 status 直传 / 已解决 action；状态只允许四态 (9317ms)
+  PASS  PAIR-06 [P0] 1:1 ×N 可同时 MATCHED：两条 pair 各自两端确认，互不影响 (14633ms)
+  PASS  PAIR-07 [P0] hash 变化重算不重置 IGNORED：unlocked 列/附言原样；系统无恢复路径 (17914ms)
+  PASS  PAIR-07b [P1] 只有手动恢复才翻转：SQL 置回 NEW 后重算保持 NEW (11352ms)
+  PASS  STAT-01 [P0] 未达 MATCHED 标完成 → 409 + 20005，status/completed_at/updated_at 零变化 (5377ms)
+  PASS  STAT-02 [P0] COMPLETED：列表/搜索 0 命中、匹配可命中、owner 404、合格对端 200、非合格 404 (14519ms)
+  PASS  STAT-03 [P0] COMPLETED 分数 <0.90 的非合格对端：详情 404（score 是硬门槛） (11378ms)
+  PASS  STAT-04 [P0] CLOSED：列表与匹配双 0 命中，详情任何身份 404，pair 取号 403 + 50005 (12130ms)
+  PASS  STAT-05 [P0] 到期 COMPLETED：completed_at 推出保留期后从匹配消失、详情 404，status 不被自动改写 (14328ms)
+  PASS  TERM-06 [P0] IGNORED pair 不作 COMPLETED 详情通道：非所有者与所有者均 404、t_access_log 不新增；改回 NEW 后 200 (18373ms)
+  PASS  NOUNPUB-01 [P0] 「不自动下架」限定 PENDING：打分跑完仍 PENDING、deleted_at 为空、列表可见、updated_at 不变 (7220ms)
+  PASS  PHONE-01 [P1] 手机号只做格式校验：不落 t_user、接口无短信验证、contact 明文入库仅输出层遮蔽 (4281ms)
+
+  api-f1-v2: 总数 111 / 通过 111 / 失败 0（已登记缺陷 0） / 通过率 100.0%
+
+  报告：C:\Project\hifox-workspaces\duancece\find-it-campus\qa\reports\api-f1-v2.txt
+  报告：C:\Project\hifox-workspaces\duancece\find-it-campus\qa\reports\api-f1-v2.json
+--- 接口测试（node qa/api/run.mjs） 退出码 0
+
+=== 匹配效果评估（node qa/match/evaluate.mjs） ===
+# /api/match 匹配效果评估（ZHYYKFX-10 · 5.1）
+
+- 引擎：LOCAL_KEYWORD（impl 分组：本轮只有这一种实现，契约 §8.4 要求不与其他实现混池）
+- 参数：topN=5 · minScore=0.3
+- 样例来源：db/seed.sql 文末 S1–S6 / N1–N4（3.2 预置）
+- 生成时间：2026-10-28T02:12:53.914Z
+
+## 协议 P1：产品路径（按详情页真实调用方式带 type）
+
+| # | 意图 | 输入 | 期望 | 实际（top5，recordId@score） | 判定 | 耗时 |
+|---|---|---|---|---|---|---|
+| S1 | 失主找招领帖 | 我在图书馆三楼弄丢了一个黑色皮钱包，里面有银行卡 | top1 = 13 | 13@0.95 | 通过 | 0ms |
+| S2 | 失主找招领帖 | 操场跑步忘拿了白色 iPhone，透明壳带小熊贴纸 | top1 = 14 | 14@0.74 | 通过 | 0ms |
+| S3 | 失主找招领帖 | 高数课上的学生证校园卡不见了，姓名张三 | top1 = 15 | 15@0.60 | 通过 | 0ms |
+| S4 | 失主找招领帖 | 食堂丢了把深蓝自动伞，木头伞柄 | top1 = 16 | 16@0.65 | 通过 | 0ms |
+| S5 | 失主找招领帖 | 白色的无线耳机加充电盒，右耳有划痕 | top1 = 17 | 17@0.80 | 通过 | 0ms |
+| S6 | 失主找招领帖 | 快递点掉的钥匙串，黄色小熊挂饰 | top1 = 18 | 18@0.81 → 23@0.36 | 通过 | 0ms |
+| N1 | 拾到者找失物帖 | 捡到过一个计算器吗？灰色的卡西欧 | top1 = 7 | 7@0.72 | 通过 | 0ms |
+| N2 | 拾到者找失物帖（纯负例） | 有人在体育馆捡到泳镜吗 | 空结果 | （空） | 通过 | 0ms |
+| N3 | 失主找伞（不限类型） | 丢了一把雨伞 | top1 = 4 | 4@0.79 → 16@0.35 | 通过 | 0ms |
+| N4 | 拾到者找钥匙（不限类型） | 捡到一串钥匙 | top1 = 10 | 10@1.00 → 18@1.00 → 23@1.00 → 6@0.76 | 通过 | 1ms |
+
+## 协议 P2：不限类型（对照，观察原始召回）
+
+| # | 输入 | 期望 | 实际（top5） | 判定 |
+|---|---|---|---|---|
+| S1 | 我在图书馆三楼弄丢了一个黑色皮钱包，里面有银行卡 | top1 = 13 | 13@0.95 → 1@0.87 | 通过 |
+| S2 | 操场跑步忘拿了白色 iPhone，透明壳带小熊贴纸 | top1 = 14 | 2@0.76 → 14@0.75 | 不通过：top1 期望 14，实际 2 |
+| S3 | 高数课上的学生证校园卡不见了，姓名张三 | top1 = 15 | 3@0.75 → 15@0.60 | 不通过：top1 期望 15，实际 3 |
+| S4 | 食堂丢了把深蓝自动伞，木头伞柄 | top1 = 16 | 4@0.75 → 16@0.66 | 不通过：top1 期望 16，实际 4 |
+| S5 | 白色的无线耳机加充电盒，右耳有划痕 | top1 = 17 | 17@0.79 → 5@0.77 | 通过 |
+| S6 | 快递点掉的钥匙串，黄色小熊挂饰 | top1 = 18 | 6@0.90 → 18@0.81 → 10@0.36 → 23@0.36 | 不通过：top1 期望 18，实际 6 |
+| N1 | 捡到过一个计算器吗？灰色的卡西欧 | top1 = 7 | 7@0.71 | 通过 |
+| N2 | 有人在体育馆捡到泳镜吗 | 空结果 | （空） | 通过 |
+| N3 | 丢了一把雨伞 | top1 = 4 | 4@0.79 → 16@0.35 | 通过 |
+| N4 | 捡到一串钥匙 | top1 = 10 | 10@1.00 → 18@1.00 → 23@1.00 → 6@0.76 | 通过 |
+
+## 指标
+
+| 指标 | P1 产品路径 | P2 不限类型 |
+|---|---|---|
+| top1 命中率 | 10/10（100%） | 6/10（60%） |
+| top3 命中率 | 10/10（100%） | 10/10（100%） |
+| 两次调用结果一致 | 10/10 | 10/10 |
+| 耗时（后端 tookMs，仅引擎）avg / p95 / max | 0.1 / 1 / 1 ms | 0.3 / 1 / 1 ms |
+| 耗时（客户端端到端）avg / p95 / max | 90.1 / 394.3 / 394.3 ms | 87.6 / 385.3 / 385.3 ms |
+
+报告：qa/reports/match-eval.md（同内容 JSON：match-eval.json）
+--- 匹配效果评估（node qa/match/evaluate.mjs） 退出码 0
+
+=== E2E 走查（node qa/e2e/walkthrough.mjs） ===
+  PASS  E2E-L-01 [P0] 匿名列表默认加载：10 条 / 共 21 条 / 3 页 (871ms)
+  PASS  E2E-L-02 [P0] 匿名类型筛选 FOUND：卡片全部是「招领」且 URL 同步 (595ms)
+  PASS  E2E-L-03 [P0] 匿名关键词「钱包」：命中 2 条且 URL 带 keyword (505ms)
+  PASS  E2E-L-04 [P1] 重置筛选同时清空 URL（刷新后不重现筛选） (867ms)
+  PASS  E2E-L-05 [P1] 翻到第 2 页：URL page=2 且卡片与第 1 页不重复 (955ms)
+  PASS  E2E-A-01 [P0] 列表三态：匿名全员遮蔽、本人行原值+「我的启事」、非本人对他人行仍遮蔽 (1365ms)
+  PASS  E2E-A-02 [P0] 详情三态：匿名登录引导 / 本人明文+管理动作 / 非本人遮蔽横幅 (1572ms)
+  PASS  E2E-A-03 [P0] 提交页三态：匿名被守卫送回登录、本人可填、非本人同样可填（发布归自己） (1069ms)
+  PASS  E2E-D-01 [P0] 匿名从卡片进详情：标题/分类/地点/描述与列表一致，号码不可得 (590ms)
+  PASS  E2E-D-02 [P0] 本人详情展示 pair 卡片（分数/档位/状态），不暴露对方号码 (417ms)
+  PASS  E2E-D-03 [P0] 非本人详情发起匹配：出现名次、相似度与排序说明，候选不含号码 (475ms)
+  PASS  E2E-D-04 [P0] 本人「标记为已完成」：记录 10 有 MATCHED pair，点击后移到已完成页签 (644ms)
+  PASS  E2E-D-05 [P0] 完成后可见性：公共列表 0 命中；所有者详情 404 并回我的启事 (932ms)
+  PASS  E2E-D-06 [P1] DIRECT 档 pair 可取号：点击后显示对方号码（三档 UI 的直看路径） (1228ms)
+  PASS  E2E-C-01 [P0] 本人提交页黄金路径：填写 → 提交 → 跳详情并提示发布成功 (1043ms)
+  PASS  E2E-C-02 [P0] 列表能看到刚提交的记录（createdAt desc 首位） (518ms)
+  PASS  E2E-C-03 [P1] 关键词检索刚提交的记录，详情可回跳 (177ms)
+  PASS  E2E-C-04 [P0] 全新匿名上下文直接打开该记录详情：仍走 GET /api/records/:id，且号码被遮蔽 (959ms)
+  PASS  E2E-E-01 [P0] 本人提交页校验失败：空表单出现页级摘要 + 字段级错误 (492ms)
+  PASS  E2E-E-02 [P0] 匿名后端不可用：列表显示错误条，恢复后「重试」能拉到数据 (799ms)
+  PASS  E2E-E-03 [P1] 匿名空数据：显示空态而不是错误或空白页 (500ms)
+  PASS  E2E-E-04 [P1] 匿名详情 404：显示记录不存在空态，不给重试 (348ms)
+  PASS  E2E-E-05 [P1] 接口 500：错误条带 requestId，便于按 id 查日志 (534ms)
+  PASS  E2E-E-06 [P1] 匹配服务 503：非本人详情只降级匹配区，详情主体照常可用 (639ms)
+  PASS  E2E-Z-01 [P2] 全程无未捕获的前端异常 (0ms)
+  e2e-f1-v2: 总数 25 / 通过 25 / 失败 0（已登记缺陷 0） / 通过率 100.0%
+
+  截图目录：C:\Project\hifox-workspaces\duancece\find-it-campus\qa\reports\screenshots
+  报告：C:\Project\hifox-workspaces\duancece\find-it-campus\qa\reports\e2e-f1-v2.txt
+  本轮通过 UI 创建的记录 id=109（供落库取证用）
+--- E2E 走查（node qa/e2e/walkthrough.mjs） 退出码 0
+
+=== 落库取证（node qa/db/evidence.mjs） ===
+# v2 · F1 真实落库取证（MySQL 直查）
+
+- 生成时间：2026-10-28T02:13:53.024Z
+- 客户端：C:/Project/tools/mysql/mysql-8.0.29-winx64/bin/mysql.exe · 库：find_it_campus
+- 取证对象：E2E 通过 UI 创建的记录 id=109（标题「E2E 走查记录 qznonv0d」）
+
+## ① 七张表的行数（v2 数据面）
+
+```sql
+
+SELECT 't_user' AS table_name, COUNT(*) AS rows_count FROM t_user
+UNION ALL SELECT 't_category', COUNT(*) FROM t_category
+UNION ALL SELECT 't_record', COUNT(*) FROM t_record
+UNION ALL SELECT 't_match_result', COUNT(*) FROM t_match_result
+UNION ALL SELECT 't_pair_score', COUNT(*) FROM t_pair_score
+UNION ALL SELECT 't_notification', COUNT(*) FROM t_notification
+UNION ALL SELECT 't_access_log', COUNT(*) FROM t_access_log;
+```
+```
+t_user	3
+t_category	9
+t_record	107
+t_match_result	81
+t_pair_score	785
+t_notification	543
+t_access_log	13
+```
+
+## ② t_record 三态分布与 completed_at 不变量
+
+```sql
+
+SELECT status, COUNT(*) AS cnt, SUM(completed_at IS NOT NULL) AS with_completed_at
+FROM t_record GROUP BY status ORDER BY status;
+```
+```
+CLOSED	7	0
+COMPLETED	6	6
+PENDING	94	0
+```
+
+## ③ E2E 通过 UI 提交的记录（id=109）在 MySQL 中的整行
+
+```sql
+
+SELECT id, type, status, title, LEFT(description, 50) AS description_head, category_id, location,
+       occurred_at, contact, publisher_name, publisher_id,
+       IFNULL(DATE_FORMAT(deleted_at, '%Y-%m-%d %H:%i:%s'), 'NULL') AS deleted_at,
+       created_at, updated_at
+FROM t_record WHERE id = 109;
+```
+```
+*************************** 1. row ***************************
+              id: 109
+            type: LOST
+          status: PENDING
+           title: E2E 走查记录 qznonv0d
+description_head: 这条记录由 v2 端到端走查脚本创建（fi4l0inp），用于验证「提交 → 列表 → 详情」真实接
+     category_id: 5
+        location: E2E 测试地点 · 第三教学楼
+     occurred_at: 2026-10-21 15:20:00
+         contact: 13800001234
+  publisher_name: 端测测
+    publisher_id: 1
+      deleted_at: NULL
+      created_at: 2026-10-28 10:13:12
+      updated_at: 2026-10-28 10:13:12
+```
+
+## ④ 记录 10 的完成状态（E2E 点「标记为已完成」的真实落库）
+
+```sql
+
+SELECT id, status, completed_at, updated_at FROM t_record WHERE id = 10;
+```
+```
+10	COMPLETED	2026-10-28 10:13:09	2026-10-28 10:13:09
+```
+
+## ⑤ 该记录的分类关联（真实 category_id，不是前端硬编码文案）
+
+```sql
+
+SELECT r.id, r.title, r.category_id, c.code, c.name
+FROM t_record r LEFT JOIN t_category c ON c.id = r.category_id
+WHERE r.id = 109;
+```
+```
+109	E2E 走查记录 qznonv0d	5	BAG	包袋
+```
+
+## ⑥ 默认公共列表 SQL 口径（PENDING + 未删除）应能看到该记录
+
+```sql
+
+SELECT COUNT(*) AS hit FROM t_record
+WHERE deleted_at IS NULL AND status = 'PENDING'
+  AND (title LIKE '%E2E 走查记录 qznonv0d%' OR description LIKE '%E2E 走查记录 qznonv0d%');
+```
+```
+1
+```
+
+## ⑦ t_pair_score 唯一键与四态：无重复 (lost,found)、无「已解决」态
+
+```sql
+
+SELECT status, COUNT(*) AS cnt FROM t_pair_score GROUP BY status ORDER BY status;
+SELECT COUNT(*) AS rows_count, COUNT(DISTINCT lost_id, found_id) AS distinct_pairs FROM t_pair_score;
+```
+```
+CONTACTED	11
+IGNORED	2
+MATCHED	11
+NEW	761
+785	785
+```
+
+## ⑧ t_pair_score 的确认/授权不变量（两端均确认 ⇔ MATCHED）
+
+```sql
+
+SELECT id, lost_id, found_id, score, status,
+       IFNULL(DATE_FORMAT(lost_confirmed_at,'%Y-%m-%d %H:%i:%s'),'NULL') AS lost_confirmed_at,
+       IFNULL(DATE_FORMAT(found_confirmed_at,'%Y-%m-%d %H:%i:%s'),'NULL') AS found_confirmed_at
+FROM t_pair_score WHERE status IN ('MATCHED','IGNORED') ORDER BY id;
+```
+```
+11	6	23	0.9300	IGNORED	NULL	NULL
+12	10	23	0.9500	MATCHED	2026-10-24 10:06:00	2026-10-24 10:06:00
+14	25	13	0.9000	MATCHED	2026-09-26 10:06:00	2026-09-26 10:06:00
+383	70	71	0.9600	MATCHED	2026-10-28 10:08:22	2026-10-28 10:08:26
+549	84	83	0.9600	MATCHED	2026-10-26 10:00:00	2026-10-26 10:01:00
+584	86	87	0.9600	MATCHED	2026-10-28 10:10:18	2026-10-28 10:10:18
+622	91	90	0.9600	MATCHED	2026-10-28 10:10:40	2026-10-28 10:10:40
+635	92	90	0.9400	MATCHED	2026-10-28 10:10:42	2026-10-28 10:10:43
+710	96	97	0.9500	MATCHED	2026-10-26 10:00:00	2026-10-26 10:05:00
+732	98	99	0.8000	MATCHED	2026-10-26 10:00:00	2026-10-26 10:05:00
+774	102	103	0.9500	MATCHED	2026-10-26 10:00:00	2026-10-26 10:05:00
+795	105	104	0.9500	MATCHED	2026-10-26 10:00:00	2026-10-26 10:01:00
+805	106	104	0.9300	IGNORED	NULL	NULL
+```
+
+## ⑨ 匹配快照落库（t_match_result）与候选脱敏
+
+```sql
+
+SELECT COUNT(*) AS snapshots FROM t_match_result;
+SELECT id, impl, IFNULL(input_type,'NULL') AS input_type, top_n, min_score, cost_ms, created_at,
+       LEFT(candidates, 160) AS candidates_head
+FROM t_match_result ORDER BY id DESC LIMIT 1;
+```
+```
+*************************** 1. row ***************************
+snapshots: 81
+*************************** 1. row ***************************
+             id: 81
+           impl: LOCAL_KEYWORD
+     input_type: FOUND
+          top_n: 5
+      min_score: 0.3000
+        cost_ms: 0
+     created_at: 2026-10-28 10:13:08
+candidates_head: [{"score": 0.57, "reason": "关键词命中:钱包、现金、银行卡、书馆；分类词表命中:钱包卡证", "recordId": 13}]
+```
+
+## ⑩ 联系方式查看审计（append-only；无 contact/note 列）
+
+```sql
+
+SELECT id, pair_id, viewer_id, viewer_side, target_side, score, result, request_id, created_at
+FROM t_access_log ORDER BY id DESC LIMIT 10;
+```
+```
+*************************** 1. row ***************************
+         id: 13
+    pair_id: 1
+  viewer_id: 1
+viewer_side: LOST
+target_side: FOUND
+      score: 0.9600
+     result: GRANTED
+ request_id: b71505d05c914bcf
+ created_at: 2026-10-28 10:13:11
+*************************** 2. row ***************************
+         id: 12
+    pair_id: 754
+  viewer_id: 1
+viewer_side: LOST
+target_side: FOUND
+      score: 0.9600
+     result: DENIED_PAIR_INVALID
+ request_id: 25ba1f5c5ed5407d
+ created_at: 2026-10-28 10:11:56
+*************************** 3. row ***************************
+         id: 11
+    pair_id: 341
+  viewer_id: 1
+viewer_side: LOST
+target_side: FOUND
+      score: 0.7499
+     result: DENIED_LOW_SCORE
+ request_id: 083cd563b2b940ae
+ created_at: 2026-10-28 10:07:59
+*************************** 4. row ***************************
+         id: 10
+    pair_id: 320
+  viewer_id: 1
+viewer_side: LOST
+target_side: FOUND
+      score: 0.7500
+     result: DENIED_NOT_PUBLIC
+ request_id: 8fecb4a54ac641f0
+ created_at: 2026-10-28 10:07:49
+*************************** 5. row ***************************
+         id: 9
+    pair_id: 299
+  viewer_id: 1
+viewer_side: LOST
+target_side: FOUND
+      score: 0.9000
+     result: GRANTED
+ request_id: 6327941064fc4cf2
+ created_at: 2026-10-28 10:07:40
+*************************** 6. row ***************************
+         id: 8
+    pair_id: 278
+  viewer_id: 1
+viewer_side: LOST
+target_side: FOUND
+      score: 0.4200
+     result: DENIED_LOW_SCORE
+ request_id: bef4a38b0c2f49c5
+ created_at: 2026-10-28 10:07:29
+*************************** 7. row ***************************
+         id: 7
+    pair_id: 257
+  viewer_id: 1
+viewer_side: LOST
+target_side: FOUND
+      score: 0.8600
+     result: DENIED_NOT_PUBLIC
+ request_id: 60114b20f8284614
+ created_at: 2026-10-28 10:07:17
+*************************** 8. row ***************************
+         id: 6
+    pair_id: 257
+  viewer_id: 1
+viewer_side: LOST
+target_side: FOUND
+      score: 0.8600
+     result: GRANTED
+ request_id: 61963eec810b4285
+ created_at: 2026-10-28 10:07:17
+*************************** 9. row ***************************
+         id: 5
+    pair_id: 257
+  viewer_id: 1
+viewer_side: LOST
+target_side: FOUND
+      score: 0.8600
+     result: DENIED_NOT_PUBLIC
+ request_id: 200c36dd49cd4f18
+ created_at: 2026-10-28 10:07:17
+*************************** 10. row ***************************
+         id: 4
+    pair_id: 235
+  viewer_id: 2
+viewer_side: FOUND
+target_side: LOST
+      score: 0.9600
+     result: GRANTED
+ request_id: f300c9a70bfb403a
+ created_at: 2026-10-28 10:07:05
+```
+
+## ⑪ t_user 不存手机号；通知正文不含号码
+
+```sql
+
+SELECT column_name FROM information_schema.columns
+WHERE table_schema = DATABASE() AND table_name = 't_user' ORDER BY ordinal_position;
+SELECT COUNT(*) AS notifications_with_phone FROM t_notification WHERE title REGEXP '1[3-9][0-9]{9}' OR body REGEXP '1[3-9][0-9]{9}';
+```
+```
+id
+student_no
+password_hash
+display_name
+is_active
+created_at
+updated_at
+0
+```
+
+## 判定
+
+| 检查项 | 结果 | 证据 |
+|---|---|---|
+| E2E 记录存在于 t_record（不是 sessionStorage） | 通过 | 109	E2E 走查记录 qznonv0d	PENDING	5	13800001234	端测测	1	NULL |
+| 标题与 UI 提交内容一致 | 通过 | DB=E2E 走查记录 qznonv0d / UI=E2E 走查记录 qznonv0d |
+| 状态为 PENDING（发布初始态，系统未自动置位） | 通过 | status=PENDING |
+| 分类真实写入 category_id=5 | 通过 | category_id=5 |
+| 联系方式 / 联系人 / 发布者落库 | 通过 | contact=13800001234 publisher=端测测 publisher_id=1 |
+| 未被逻辑删除 | 通过 | deleted_at=NULL |
+| 描述按 UTF-8 完整落库（长度 > 0） | 通过 | CHAR_LENGTH=65 |
+| E2E 标记完成已落库（10 号 COMPLETED + completed_at 非空） | 通过 | COMPLETED\|2026-10-28 10:13:09 |
+| 数据库恰好 7 张表 | 通过 | t_access_log,t_category,t_match_result,t_notification,t_pair_score,t_record,t_user |
+| 公共列表（PENDING + 未删除）总数为 21 | 通过 | PENDING=21 |
+| E2E 记录在公共列表 SQL 口径内 | 通过 | hit=1 |
+| 匹配快照有行且 impl=LOCAL_KEYWORD | 通过 | snapshots=81 impl=LOCAL_KEYWORD |
+| 快照候选 JSON 未出现手机号（输入本身含号码的除外） | 通过 | hits=0 |
+| DIRECT 档取号写入 GRANTED 审计（pair 1） | 通过 | GRANTED=1 |
+| t_access_log 无 contact/note 列（审计不复制敏感值） | 通过 | id,pair_id,viewer_id,viewer_side,target_side,score,result,request_id,ip,user_agent,created_at |
+| t_pair_score 行数 = 唯一 (lost,found) 对数 | 通过 | rows=785 distinct=785 |
+| pair 状态只有 NEW/CONTACTED/MATCHED/IGNORED（无已解决） | 通过 | CONTACTED,IGNORED,MATCHED,NEW |
+| t_record 的 status/completed_at 双向绑定 | 通过 | violations=0 |
+| t_user 无 phone/mobile/contact 列 | 通过 | id,student_no,password_hash,display_name,is_active,created_at,updated_at |
+
+**结论**：通过 —— 19/19 项检查符合预期。数据来自 MySQL 直查，不采信接口自述。
+
+报告：C:\Project\hifox-workspaces\duancece\find-it-campus\qa\reports\db-evidence.txt
+--- 落库取证（node qa/db/evidence.mjs） 退出码 0
+
+=== 跨页一致性（node qa/e2e/consistency.mjs） ===
+  PASS  CON-01 [P0] 三页读取到同一套 token（品牌色 / 圆角 / 容器宽） (1387ms)
+  PASS  CON-02 [P0] 按钮：三页所有 .btn 变体圆角一致，主按钮配色一致 (894ms)
+  PASS  CON-03 [P0] 表单控件：高度 / 圆角 / 描边一致（列表筛选区 + 提交表单） (895ms)
+  PASS  CON-04 [P1] 面板与徽标：面板 10px、徽标 pill，卡片与面板各用一档间距 (951ms)
+  PASS  CON-05 [P1] 页面头（.page-head）三页同字号、同容器宽、同内边距 (1015ms)
+  PASS  CON-06 [P1] 加载态：列表与详情用同一骨架类（.skeleton），不是各自一套 (799ms)
+  PASS  CON-07 [P1] 空态与错误态：三页共用 .empty / .alert--danger 结构 (1814ms)
+  PASS  CON-08 [P0] 320 / 768 / 1280 三档 × 三页均无横向溢出 (4907ms)
+  PASS  CON-09 [P2] 深色模式本期不做：暗色偏好下颜色不变（口径接受，不计缺陷） (839ms)
+
+  consistency-5.1: 总数 9 / 通过 9 / 失败 0（已登记缺陷 0） / 通过率 100.0%
+
+报告：C:\Project\hifox-workspaces\duancece\find-it-campus\qa\reports\consistency-5.1.md
+报告：C:\Project\hifox-workspaces\duancece\find-it-campus\qa\reports\consistency-5.1.txt
+--- 跨页一致性（node qa/e2e/consistency.mjs） 退出码 0
+
+=== 结束后：重置库（schema.sql + seed.sql） ===
+  已重置为种子状态
+
+=== 汇总 ===
+| 阶段 | 退出码 | 结论 |
+|---|---|---|
+| 接口测试（node qa/api/run.mjs） | 0 | 通过 |
+| 匹配效果评估（node qa/match/evaluate.mjs） | 0 | 通过 |
+| E2E 走查（node qa/e2e/walkthrough.mjs） | 0 | 通过 |
+| 落库取证（node qa/db/evidence.mjs） | 0 | 通过 |
+| 跨页一致性（node qa/e2e/consistency.mjs） | 0 | 通过 |
+
+- 接口：111 条，通过 111，失败 0
+
+- E2E：25 条，通过 25，失败 0
+
+- 一致性：9 条，通过 9，失败 0
+
+说明：本入口对应 docs/testing/v2/F1-regression-assets.md；接口用例 111 条（原 64 + 新增 47），全部按 v2 契约断言；
+      「有失败」即为新回归，先看 reports/api-f1-v2.txt 与 reports/e2e-f1-v2.txt 的失败原因。

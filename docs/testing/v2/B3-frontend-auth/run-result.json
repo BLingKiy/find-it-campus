@@ -1,0 +1,78 @@
+{
+  "app": "http://127.0.0.1:5173",
+  "edgePid": 12160,
+  "steps": [
+    {
+      "name": "未登录访问 /records/new 被守卫拦截",
+      "ok": true,
+      "ms": 5519,
+      "url": "http://127.0.0.1:5173/login?redirect=%2Frecords%2Fnew",
+      "header": "启事列表 发布启事 登录",
+      "search": "?redirect=%2Frecords%2Fnew",
+      "capture": "window hwnd=2753000 pid=12160 size=1280x900 title=校园失物招领 - 用户配置 1 - Microsoft? Edge\r\nPrintWindow flag=2 ok=True\r\ncaptured-by-printwindow C:/Project/hifox-workspaces/wubage/b3/docs/testing/v2/B3-frontend-auth/01-guard-redirect-login.png"
+    },
+    {
+      "name": "登录失败提示统一为「学号或密码不正确」",
+      "ok": true,
+      "ms": 4183,
+      "url": "http://127.0.0.1:5173/login?redirect=%2Frecords%2Fnew",
+      "alertText": "登录失败 学号或密码不正确 requestId e8778f0bcd004225",
+      "capture": "window hwnd=2753000 pid=12160 size=1280x900 title=校园失物招领 - 用户配置 1 - Microsoft? Edge\r\nPrintWindow flag=2 ok=True\r\ncaptured-by-printwindow C:/Project/hifox-workspaces/wubage/b3/docs/testing/v2/B3-frontend-auth/02-login-failure.png"
+    },
+    {
+      "name": "登录成功后回到 /records/new（不是首页）",
+      "ok": true,
+      "ms": 5926,
+      "url": "http://127.0.0.1:5173/records/new",
+      "header": "启事列表 发布启事 学号 demo01 退出",
+      "capture": "window hwnd=2753000 pid=12160 size=1280x900 title=校园失物招领 - 用户配置 1 - Microsoft? Edge\r\nPrintWindow flag=2 ok=True\r\ncaptured-by-printwindow C:/Project/hifox-workspaces/wubage/b3/docs/testing/v2/B3-frontend-auth/03-login-redirect-back.png"
+    },
+    {
+      "name": "刷新后仍为登录态，顶栏仍显示学号",
+      "ok": true,
+      "ms": 3454,
+      "url": "http://127.0.0.1:5173/records/new",
+      "header": "启事列表 发布启事 学号 demo01 退出",
+      "capture": "window hwnd=2753000 pid=12160 size=1280x900 title=校园失物招领 - 用户配置 1 - Microsoft? Edge\r\nPrintWindow flag=2 ok=True\r\ncaptured-by-printwindow C:/Project/hifox-workspaces/wubage/b3/docs/testing/v2/B3-frontend-auth/04-refresh-keeps-session.png"
+    },
+    {
+      "name": "并发 401 只跳转/提示一次",
+      "ok": true,
+      "ms": 2572,
+      "url": "http://127.0.0.1:5173/login?redirect=%2Frecords%2Fnew",
+      "header": "启事列表 发布启事 登录",
+      "concurrentStatuses": "[401,401,401]",
+      "loginPromptCount": 1,
+      "redirectLogCount": 1,
+      "capture": "window hwnd=2753000 pid=12160 size=1280x900 title=校园失物招领 - 用户配置 1 - Microsoft? Edge\r\nPrintWindow flag=2 ok=True\r\ncaptured-by-printwindow C:/Project/hifox-workspaces/wubage/b3/docs/testing/v2/B3-frontend-auth/05-401-single-prompt.png"
+    },
+    {
+      "name": "退出后回首页且顶栏变为登录入口",
+      "ok": true,
+      "ms": 2833,
+      "url": "http://127.0.0.1:5173/",
+      "header": "启事列表 发布启事 登录",
+      "capture": "window hwnd=2753000 pid=12160 size=1280x900 title=校园失物招领 - 用户配置 1 - Microsoft? Edge\r\nPrintWindow flag=2 ok=True\r\ncaptured-by-printwindow C:/Project/hifox-workspaces/wubage/b3/docs/testing/v2/B3-frontend-auth/06-logout-home.png"
+    },
+    {
+      "name": "退出后再访问 /records/new 仍被守卫拦截",
+      "ok": true,
+      "ms": 3095,
+      "url": "http://127.0.0.1:5173/login?redirect=%2Frecords%2Fnew",
+      "header": "启事列表 发布启事 登录",
+      "search": "?redirect=%2Frecords%2Fnew",
+      "capture": "window hwnd=2753000 pid=12160 size=1280x900 title=校园失物招领 - 用户配置 1 - Microsoft? Edge\r\nPrintWindow flag=2 ok=True\r\ncaptured-by-printwindow C:/Project/hifox-workspaces/wubage/b3/docs/testing/v2/B3-frontend-auth/07-guard-after-logout.png"
+    }
+  ],
+  "consoleLogs": [
+    "[vite] connecting...",
+    "[vite] connected.",
+    "[vite] connecting...",
+    "[vite] connected.",
+    "[vite] connecting...",
+    "[vite] connected.",
+    "[auth] POST /records 返回 401，跳转登录",
+    "[vite] connecting...",
+    "[vite] connected."
+  ]
+}

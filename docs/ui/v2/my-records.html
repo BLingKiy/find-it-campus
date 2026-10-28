@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>A3 · 我的启事（三种分析状态）</title>
+  <link rel="stylesheet" href="../../../web/src/styles/tokens.css" />
+  <link rel="stylesheet" href="../../../web/src/styles/base.css" />
+  <link rel="stylesheet" href="../../../web/src/styles/components.css" />
+  <link rel="stylesheet" href="mockup.css" />
+</head>
+<body class="board">
+  <header class="board__head">
+    <div>
+      <p class="board__kicker">A3 · v2 UI Baseline · /my</p>
+      <h1 class="board__title">我的启事：每条都带可能相关条数与分析状态</h1>
+    </div>
+    <p class="board__meta">界面稿 02 / 三种状态同屏：分析中、已出结果、已降级。示例数据均为虚构。</p>
+  </header>
+
+  <div class="board__grid">
+    <div class="app-frame">
+      <div class="app-frame__bar" aria-hidden="true">
+        <span class="app-frame__dot"></span><span class="app-frame__dot"></span><span class="app-frame__dot"></span>
+        <span class="app-frame__url">find-it-campus / my</span>
+      </div>
+      <div class="app-shell">
+        <header class="app-header">
+          <div class="app-header__inner">
+            <span class="app-header__brand"><span class="app-header__logo" aria-hidden="true">FI</span><span class="app-header__brand-text">校园失物招领</span></span>
+            <nav class="app-header__nav" aria-label="主导航">
+              <a class="app-header__link" href="#">启事列表</a>
+              <a class="app-header__link is-active" href="#" aria-current="page">我的启事</a>
+              <a class="app-header__link nav-dot" href="#">通知<span class="nav-dot__badge">3</span></a>
+              <a class="app-header__link app-header__link--cta" href="#">发布启事</a>
+              <span class="app-header__user"><span class="app-header__avatar" aria-hidden="true">陈</span>陈同学</span>
+            </nav>
+          </div>
+        </header>
+
+        <main class="app-main">
+          <div class="container">
+            <div class="page-head">
+              <div>
+                <h1 class="page-head__title">我的启事</h1>
+                <p class="page-head__desc">你发布的启事，以及每一条可能相关结果的分析进度。数量按「配对」计，一条启事可以同时与多条对方启事各自配对。</p>
+              </div>
+              <div class="page-head__actions">
+                <a class="btn btn--primary" href="#">发布启事</a>
+              </div>
+            </div>
+
+            <nav class="tabs" aria-label="按启事状态筛选">
+              <a class="tabs__item is-active" href="#" aria-current="page">全部 <span class="tabs__count">3</span></a>
+              <a class="tabs__item" href="#">进行中 <span class="tabs__count">3</span></a>
+              <a class="tabs__item" href="#">已关闭 <span class="tabs__count">0</span></a>
+            </nav>
+
+            <section class="panel record-row" aria-labelledby="rec-13">
+              <div class="record-row__main">
+                <div class="record-kicker">
+                  <span class="badge badge--lost badge--dot">寻物</span>
+                  <span class="badge badge--pending badge--dot">进行中</span>
+                  <span class="mono">#13 · 发布于 10 月 20 日 15:12</span>
+                </div>
+                <h2 id="rec-13" class="record-row__title">黑色钱包（图书馆三楼）</h2>
+                <p class="record-row__meta">钱包卡证 · 图书馆三楼自习区 · 丢失 10-20 15:00</p>
+                <div class="record-row__actions">
+                  <a class="btn btn--ghost btn--sm" href="#">查看详情</a>
+                  <button class="btn btn--subtle btn--sm" type="button">关闭启事</button>
+                </div>
+              </div>
+              <div class="record-row__match">
+                <div class="match-status match-status--analyzing">
+                  <span class="match-status__spinner" aria-hidden="true"></span>
+                  <span>分析中</span>
+                </div>
+                <div class="match-count">
+                  <span class="match-count__number">—</span>
+                  <span class="match-count__unit">条可能相关</span>
+                </div>
+                <p class="tiny muted">正在比对候选启事，通常几秒内完成。离开页面不会中断分析。</p>
+                <p class="tiny subtle">已等待 4 秒</p>
+              </div>
+            </section>
+
+            <section class="panel record-row" aria-labelledby="rec-22">
+              <div class="record-row__main">
+                <div class="record-kicker">
+                  <span class="badge badge--found badge--dot">招领</span>
+                  <span class="badge badge--pending badge--dot">进行中</span>
+                  <span class="mono">#22 · 发布于 10 月 21 日 09:40</span>
+                </div>
+                <h2 id="rec-22" class="record-row__title">图书馆拾到一把雨伞</h2>
+                <p class="record-row__meta">雨伞 · 图书馆一楼大厅 · 拾到 10-21 09:20</p>
+                <div class="record-row__actions">
+                  <a class="btn btn--ghost btn--sm" href="#">查看详情</a>
+                  <button class="btn btn--subtle btn--sm" type="button">关闭启事</button>
+                </div>
+              </div>
+              <div class="record-row__match">
+                <div class="match-status match-status--done">
+                  <span class="match-status__dot" aria-hidden="true"></span>
+                  <span>已出结果</span>
+                </div>
+                <div class="match-count">
+                  <span class="match-count__number">3</span>
+                  <span class="match-count__unit">条可能相关</span>
+                </div>
+                <p class="tiny muted">3 条配对相互独立；处理其中一条，其余配对不受影响。</p>
+                <a class="btn btn--ghost btn--sm" href="#" style="align-self: flex-start;">查看可能相关</a>
+              </div>
+            </section>
+
+            <section class="panel record-row" aria-labelledby="rec-18">
+              <div class="record-row__main">
+                <div class="record-kicker">
+                  <span class="badge badge--lost badge--dot">寻物</span>
+                  <span class="badge badge--pending badge--dot">进行中</span>
+                  <span class="mono">#18 · 发布于 10 月 19 日 18:05</span>
+                </div>
+                <h2 id="rec-18" class="record-row__title">蓝色保温水杯（带贴纸）</h2>
+                <p class="record-row__meta">水杯 · 二教 305 · 丢失 10-19 17:40</p>
+                <div class="record-row__actions">
+                  <a class="btn btn--ghost btn--sm" href="#">查看详情</a>
+                  <button class="btn btn--subtle btn--sm" type="button">关闭启事</button>
+                </div>
+              </div>
+              <div class="record-row__match">
+                <div class="match-status match-status--degraded">
+                  <span class="match-status__dot" aria-hidden="true"></span>
+                  <span>已降级</span>
+                </div>
+                <div class="match-count">
+                  <span class="match-count__number">2</span>
+                  <span class="match-count__unit">条可能相关</span>
+                </div>
+                <p class="tiny muted">AI 服务暂不可用，本次改用本地关键词分析；结果可能不够准，请结合描述自行核对。</p>
+                <div class="row-wrap">
+                  <a class="btn btn--ghost btn--sm" href="#">查看可能相关</a>
+                  <button class="btn btn--subtle btn--sm" type="button">重试分析</button>
+                </div>
+              </div>
+            </section>
+
+            <section class="panel limitations section" aria-labelledby="limits-title">
+              <h2 id="limits-title" class="panel__title">使用说明与已知限制</h2>
+              <p class="panel__desc">这三条会影响你对结果与联系方式的判断，放在这里而不是藏进帮助页。</p>
+              <ol class="limitations__list">
+                <li class="limitations__item"><b>手机号自行填写，请自行核实</b>平台不发送短信验证码，也不保证号码真实有效；联系前请先核对对方身份与物品特征。</li>
+                <li class="limitations__item"><b>不会自动下架</b>启事不会因为时间过去、匹配成功或被联系而自动关闭；只能由发布者本人手动关闭，系统不自动置位。</li>
+                <li class="limitations__item"><b>内存 session，重启失效</b>登录状态保存在服务端内存中，服务重启后需要重新登录；已发布的启事与配对数据不受影响。</li>
+              </ol>
+            </section>
+          </div>
+        </main>
+
+        <footer class="app-footer">
+          <div class="app-footer__inner"><span>find-it-campus · 校园失物招领</span><span>已登录 · 陈同学 · 退出登录</span></div>
+        </footer>
+      </div>
+    </div>
+
+    <aside class="notes" aria-label="设计说明">
+      <p class="notes__title">这一稿要说明什么 <span class="notes__tag">02 / 06</span></p>
+      <ol class="notes__list">
+        <li class="notes__item"><b>三种状态各有确定文案</b>分析中 / 已出结果 / 已降级。状态行同时给文字与形状（转圈、实心点、警示色点），不只靠颜色。</li>
+        <li class="notes__item"><b>条数 = 配对数</b>「3 条可能相关」是 3 个 1:1 配对，不是 3 条记录被锁定；每条独立，处理一条不影响其余。</li>
+        <li class="notes__item"><b>已降级不是失败</b>结果仍然可用，只是引擎换成 LOCAL_KEYWORD；页面必须说明「可能不够准」，并给「重试分析」。</li>
+        <li class="notes__item"><b>关闭只能本人</b>关闭启事是发布者操作；没有定时下架、没有匹配成功自动关闭。关闭不动已有配对。</li>
+      </ol>
+      <div class="notes__rule"></div>
+      <p class="notes__foot">布局：≥900px 时「记录信息 / 匹配摘要」两列；窄屏改为上下堆叠，匹配摘要顶部分隔线，320px 无横向滚动。记录行内不嵌套第二张卡片，只用分隔线分组。</p>
+    </aside>
+  </div>
+</body>
+</html>

@@ -1,0 +1,73 @@
+=== 3.0 档位夹具（种子即成，未改库）===
+1	1	13	0.9600	CONTACTED
+3	3	15	0.9200	CONTACTED
+4	4	16	0.8600	NEW
+8	8	20	0.3400	NEW
+10	10	22	0.4200	NEW
+
+=== 3.1 ≥0.90 直看档：双端各自可取到对方号码 ===
+-- pair 1 = LOST#1(demo01) ↔ FOUND#13(demo02)，score 0.9600
+[3.1a demo01(失主端) GET contact] GET /api/pairs/1/contact -> HTTP 200
+        body: {"code":0,"message":"ok","data":{"pairId":1,"score":0.9600,"scorePercent":96,"tier":"DIRECT","viewerSide":"LOST","targetSide":"FOUND","available":true,"contact":"13800000101","reason":null,"message":"匹配度较高，可直接查看","unlockedAt":null,"note":null},"requestId":"38aa292af7c2447d"}
+[3.1b demo02(拾获端) GET contact] GET /api/pairs/1/contact -> HTTP 200
+        body: {"code":0,"message":"ok","data":{"pairId":1,"score":0.9600,"scorePercent":96,"tier":"DIRECT","viewerSide":"FOUND","targetSide":"LOST","available":true,"contact":"13800000001","reason":null,"message":"匹配度较高，可直接查看","unlockedAt":null,"note":null},"requestId":"5027439bbe10454e"}
+-- score 恰为 0.92 的 pair 3（两端同属 demo01，验证确定性 viewerSide）
+[3.1c demo01 GET contact pair3] GET /api/pairs/3/contact -> HTTP 200
+        body: {"code":0,"message":"ok","data":{"pairId":3,"score":0.9200,"scorePercent":92,"tier":"DIRECT","viewerSide":"LOST","targetSide":"FOUND","available":true,"contact":"13800000103","reason":null,"message":"匹配度较高，可直接查看","unlockedAt":null,"note":null},"requestId":"8fd5fe96a1d94c5e"}
+
+=== 3.2 0.75–0.90 授权档：pair 4 = LOST#4(demo01) ↔ FOUND#16(demo02)，score 0.8600 ===
+-- 步骤0：清场，demo02 先撤回种子里的公开
+        db[4]: 4	0.8600	NEW	NULL	2026-10-28 01:18:08	NULL	周六下午三点图书馆三楼见，看到请联系我 [手机号已隐藏]
+[3.2-0 demo02 REVOKE] POST /api/pairs/4/contact-unlock -> HTTP 200
+        body: {"code":0,"message":"ok","data":{"pairId":4,"side":"FOUND","unlockedAt":null,"note":null,"public":false},"requestId":"29ae4ac06f704511"}
+        db[4]: 4	0.8600	NEW	NULL	NULL	NULL	NULL
+[3.2-1 demo01 GET contact（对方未公开）] GET /api/pairs/4/contact -> HTTP 200
+        body: {"code":0,"message":"ok","data":{"pairId":4,"score":0.8600,"scorePercent":86,"tier":"AUTHORIZABLE","viewerSide":"LOST","targetSide":"FOUND","available":false,"contact":null,"reason":"NOT_PUBLIC","message":"对方尚未公开","unlockedAt":null,"note":null},"requestId":"75d6006a21344dd5"}
+        db[4]: 4	0.8600	NEW	NULL	NULL	NULL	NULL
+-- 步骤2：demo02 公开并带附言
+[3.2-2 demo02 PUBLISH + note] POST /api/pairs/4/contact-unlock -> HTTP 200
+        body: {"code":0,"message":"ok","data":{"pairId":4,"side":"FOUND","unlockedAt":"2026-10-28 01:18:26","note":"周六下午三点图书馆三楼见，看到请联系我 [手机号已隐藏]","public":true},"requestId":"5a97f4724a124072"}
+        db[4]: 4	0.8600	NEW	NULL	2026-10-28 01:18:26	NULL	周六下午三点图书馆三楼见，看到请联系我 [手机号已隐藏]
+[3.2-3 demo01 GET contact（已授权）] GET /api/pairs/4/contact -> HTTP 200
+        body: {"code":0,"message":"ok","data":{"pairId":4,"score":0.8600,"scorePercent":86,"tier":"AUTHORIZABLE","viewerSide":"LOST","targetSide":"FOUND","available":true,"contact":"13800000104","reason":null,"message":"对方已公开联系方式","unlockedAt":"2026-10-28 01:18:26","note":"周六下午三点图书馆三楼见，看到请联系我 [手机号已隐藏]"},"requestId":"cc021bf8490b40c1"}
+[3.2-3b demo02 GET contact（对端视角）] GET /api/pairs/4/contact -> HTTP 200
+        body: {"code":0,"message":"ok","data":{"pairId":4,"score":0.8600,"scorePercent":86,"tier":"AUTHORIZABLE","viewerSide":"FOUND","targetSide":"LOST","available":false,"contact":null,"reason":"NOT_PUBLIC","message":"对方尚未公开","unlockedAt":null,"note":null},"requestId":"89e3c494149744e2"}
+-- 步骤4：demo02 撤回
+[3.2-4 demo02 REVOKE] POST /api/pairs/4/contact-unlock -> HTTP 200
+        body: {"code":0,"message":"ok","data":{"pairId":4,"side":"FOUND","unlockedAt":null,"note":null,"public":false},"requestId":"6ce310e077fd46de"}
+        db[4]: 4	0.8600	NEW	NULL	NULL	NULL	NULL
+[3.2-5 demo01 GET contact（撤回后回退）] GET /api/pairs/4/contact -> HTTP 200
+        body: {"code":0,"message":"ok","data":{"pairId":4,"score":0.8600,"scorePercent":86,"tier":"AUTHORIZABLE","viewerSide":"LOST","targetSide":"FOUND","available":false,"contact":null,"reason":"NOT_PUBLIC","message":"对方尚未公开","unlockedAt":null,"note":null},"requestId":"272c79c653844a7f"}
+
+=== 3.3 <0.75 一律 403/50002（取号 / 公开 / 联系三个入口）===
+-- pair 10 score=0.4200，pair 8 score=0.3400
+[3.3 pair10 GET contact] GET /api/pairs/10/contact -> HTTP 403
+        body: {"code":50002,"message":"匹配度不足，无法查看联系方式","data":null,"requestId":"3fe7d1a426e04cbd"}
+[3.3 pair10 POST unlock] POST /api/pairs/10/contact-unlock -> HTTP 403
+        body: {"code":50002,"message":"匹配度不足，无法查看联系方式","data":null,"requestId":"a2b24544e76f45c8"}
+[3.3 pair10 PATCH CONTACT] PATCH /api/pairs/10 -> HTTP 403
+        body: {"code":50002,"message":"匹配度不足，无法查看联系方式","data":null,"requestId":"931533fa0f8b451a"}
+[3.3 pair8 GET contact] GET /api/pairs/8/contact -> HTTP 403
+        body: {"code":50002,"message":"匹配度不足，无法查看联系方式","data":null,"requestId":"3b6de6be58aa452d"}
+[3.3 pair8 POST unlock] POST /api/pairs/8/contact-unlock -> HTTP 403
+        body: {"code":50002,"message":"匹配度不足，无法查看联系方式","data":null,"requestId":"04b428f7a0314d4a"}
+[3.3 pair8 PATCH CONTACT] PATCH /api/pairs/8 -> HTTP 403
+        body: {"code":50002,"message":"匹配度不足，无法查看联系方式","data":null,"requestId":"442065bc43894b6b"}
+审计尾部：
+38	8	1	0.3400	DENIED_LOW_SCORE
+37	10	1	0.4200	DENIED_LOW_SCORE
+36	4	1	0.8600	DENIED_NOT_PUBLIC
+35	4	2	0.8600	DENIED_NOT_PUBLIC
+34	4	1	0.8600	GRANTED
+33	4	1	0.8600	DENIED_NOT_PUBLIC
+
+=== 3.4 对照：0.86 已可 PUBLISH（说明 3.3 的 403 是档位而非权限）===
+[3.4 demo01 PUBLISH pair4] POST /api/pairs/4/contact-unlock -> HTTP 200
+        body: {"code":0,"message":"ok","data":{"pairId":4,"side":"LOST","unlockedAt":"2026-10-28 01:18:30","note":"周六下午三点图书馆三楼见，看到请联系我 [手机号已隐藏]","public":true},"requestId":"13d5f5c163304eeb"}
+[3.4 demo01 PUBLISH pair4 again(幂等)] POST /api/pairs/4/contact-unlock -> HTTP 200
+        body: {"code":0,"message":"ok","data":{"pairId":4,"side":"LOST","unlockedAt":"2026-10-28 01:18:30","note":"周六下午三点图书馆三楼见，看到请联系我 [手机号已隐藏]","public":true},"requestId":"8faf82b331f94445"}
+        db[4]: 4	0.8600	NEW	2026-10-28 01:18:30	NULL	周六下午三点图书馆三楼见，看到请联系我 [手机号已隐藏]	NULL
+[3.4 复原 demo01 REVOKE pair4] POST /api/pairs/4/contact-unlock -> HTTP 200
+        body: {"code":0,"message":"ok","data":{"pairId":4,"side":"LOST","unlockedAt":null,"note":null,"public":false},"requestId":"ca71fd9249814c95"}
+[3.4 复原 demo02 PUBLISH pair4(种子状态)] POST /api/pairs/4/contact-unlock -> HTTP 200
+        body: {"code":0,"message":"ok","data":{"pairId":4,"side":"FOUND","unlockedAt":"2026-10-28 01:18:32","note":"周六下午三点图书馆三楼见，看到请联系我 [手机号已隐藏]","public":true},"requestId":"775d060193ae4243"}

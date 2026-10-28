@@ -1,6 +1,7 @@
 package com.findit.campus.match.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -78,7 +79,8 @@ class MatchServiceTest {
             return 1;
         });
         matchService = new MatchService(engineProvider, poolPort, recordMapper, matchResultMapper, categoryService,
-                new MatchEngineConfig("local"), new ObjectMapper(), 500);
+                new MatchEngineConfig("local"), new com.findit.campus.pair.config.PairPolicyProperties(),
+                new ObjectMapper(), 500);
     }
 
     @Test
@@ -88,7 +90,7 @@ class MatchServiceTest {
                 candidate(13L, "0.83", "标题命中"),
                 candidate(26L, "0.31", "弱相关"))));
         when(poolPort.load(any(), any(), anyInt())).thenReturn(List.of(source(13L), source(26L)));
-        when(recordMapper.selectSummariesByIds(List.of(13L, 26L))).thenReturn(List.of(summary(13L), summary(26L)));
+        when(recordMapper.selectSummariesByIds(eq(List.of(13L, 26L)), any())).thenReturn(List.of(summary(13L), summary(26L)));
 
         MatchResponse response = matchService.match(request("在图书馆丢了一个黑色钱包", "FOUND", 5, "0.3", null));
 
@@ -110,7 +112,7 @@ class MatchServiceTest {
                 candidate(10L, "0.50", "同分"),
                 candidate(30L, "0.90", "高分"))));
         when(poolPort.load(any(), any(), anyInt())).thenReturn(List.of(source(10L), source(20L), source(30L)));
-        when(recordMapper.selectSummariesByIds(any())).thenReturn(List.of(summary(10L), summary(20L), summary(30L)));
+        when(recordMapper.selectSummariesByIds(any(), any())).thenReturn(List.of(summary(10L), summary(20L), summary(30L)));
 
         MatchResponse response = matchService.match(request("随便一段描述文本", null, 5, "0.3", null));
 
@@ -129,7 +131,7 @@ class MatchServiceTest {
                 candidate(99L, "0.60", "被排除自身"))));
         when(poolPort.load(any(), any(), anyInt())).thenReturn(List.of(source(1L), source(2L), source(3L)));
         // 3 号回表查不到（已删除/已认领），99 号被 excludeRecordId 排除
-        when(recordMapper.selectSummariesByIds(any())).thenReturn(List.of(summary(1L), summary(2L)));
+        when(recordMapper.selectSummariesByIds(any(), any())).thenReturn(List.of(summary(1L), summary(2L)));
 
         MatchResponse response = matchService.match(request("一段用于匹配的描述", "FOUND", 5, "0.3", 99L));
 
@@ -143,7 +145,7 @@ class MatchServiceTest {
         useEngine(new FakeEngine(List.of(
                 candidate(1L, "0.90", "a"), candidate(2L, "0.80", "b"), candidate(3L, "0.70", "c"))));
         when(poolPort.load(any(), any(), anyInt())).thenReturn(List.of(source(1L), source(2L), source(3L)));
-        when(recordMapper.selectSummariesByIds(any())).thenReturn(List.of(summary(1L), summary(2L), summary(3L)));
+        when(recordMapper.selectSummariesByIds(any(), any())).thenReturn(List.of(summary(1L), summary(2L), summary(3L)));
 
         MatchResponse response = matchService.match(request("一段用于匹配的描述", "FOUND", 2, "0.3", null));
 
@@ -218,7 +220,7 @@ class MatchServiceTest {
     void snapshotFailureDoesNotBreakResponse() {
         useEngine(new FakeEngine(List.of(candidate(13L, "0.83", "命中"))));
         when(poolPort.load(any(), any(), anyInt())).thenReturn(List.of(source(13L)));
-        when(recordMapper.selectSummariesByIds(any())).thenReturn(List.of(summary(13L)));
+        when(recordMapper.selectSummariesByIds(any(), any())).thenReturn(List.of(summary(13L)));
         when(matchResultMapper.insert(any(MatchResult.class))).thenThrow(new RuntimeException("DB down"));
 
         MatchResponse response = matchService.match(request("一段用于匹配的描述", "FOUND", 5, "0.3", null));
@@ -240,6 +242,39 @@ class MatchServiceTest {
             matchService.match(request);
         });
         verify(poolPort, org.mockito.Mockito.never()).load(any(), any(), anyInt());
+    }
+
+    @Test
+    @DisplayName("快照写库前脱敏：input_text 与 candidates.reason 都不含手机号（A1 H8）")
+    void snapshotIsMaskedBeforeWrite() {
+        useEngine(new FakeEngine(List.of(candidate(13L, "0.83", "描述里带 13812345678"))));
+        when(poolPort.load(any(), any(), anyInt())).thenReturn(List.of(source(13L)));
+        when(recordMapper.selectSummariesByIds(any(), any())).thenReturn(List.of(summary(13L)));
+
+        matchService.match(request("昨天 14:30 联系 13812345678", "FOUND", 5, "0.3", null));
+
+        org.mockito.ArgumentCaptor<MatchResult> captor = org.mockito.ArgumentCaptor.forClass(MatchResult.class);
+        verify(matchResultMapper).insert(captor.capture());
+        MatchResult snapshot = captor.getValue();
+        assertFalse(snapshot.getInputText().contains("13812345678"), snapshot.getInputText());
+        assertFalse(snapshot.getCandidates().contains("13812345678"), snapshot.getCandidates());
+        assertTrue(snapshot.getInputText().contains("[手机号已隐藏]"));
+    }
+
+    @Test
+    @DisplayName("COMPLETED 候选：recordStatus=COMPLETED、detailAccess=RESTRICTED（命中≠详情授权）")
+    void completedCandidateIsRestricted() {
+        useEngine(new FakeEngine(List.of(candidate(23L, "0.95", "高分"))));
+        when(poolPort.load(any(), any(), anyInt())).thenReturn(List.of(source(23L)));
+        RecordSummary completed = summary(23L);
+        completed.setStatus(RecordStatus.COMPLETED);
+        completed.setCompletedAt(LocalDateTime.now().minusDays(3));
+        when(recordMapper.selectSummariesByIds(any(), any())).thenReturn(List.of(completed));
+
+        MatchResponse response = matchService.match(request("一段用于匹配的描述", "FOUND", 5, "0.3", null));
+
+        assertEquals("COMPLETED", response.getItems().get(0).getRecordStatus());
+        assertEquals("RESTRICTED", response.getItems().get(0).getDetailAccess());
     }
 
     // ------------------------------------------------------------------ 辅助

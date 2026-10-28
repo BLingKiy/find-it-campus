@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!--
+  t_user：登录身份的只读 SQL。
+
+  为什么这里没有 is_active 条件：停用与不存在在响应上必须无法区分（同一句 401 + 同一文案），
+  但日志里要能分清两者；把过滤放到 SQL 会把两种"登录失败"压成同一个 null。
+  启用状态由 AuthService 判定，判定结果只影响日志与是否继续做 bcrypt 校验。
+
+  为什么用 resultMap 而不是 mapUnderscoreToCamelCase 自动映射：
+  password_hash -> passwordHash 自动映射本身没问题，但显式列出来可以让 code review 一眼看到
+  "这个查询把口令哈希读进了内存"，也避免将来加列时被自动带进 DTO。
+-->
+<mapper namespace="com.findit.campus.auth.mapper.UserMapper">
+
+    <resultMap id="userMap" type="com.findit.campus.auth.domain.User">
+        <id property="id" column="id"/>
+        <result property="studentNo" column="student_no"/>
+        <result property="passwordHash" column="password_hash"/>
+        <result property="displayName" column="display_name"/>
+        <result property="active" column="is_active"/>
+    </resultMap>
+
+    <select id="selectByStudentNo" resultMap="userMap">
+        SELECT id, student_no, password_hash, display_name, is_active
+        FROM t_user
+        WHERE student_no = #{studentNo}
+    </select>
+
+</mapper>

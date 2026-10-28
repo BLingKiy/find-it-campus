@@ -1,0 +1,8 @@
+=== 当前分数（调整前）: 74	0.5800	LOCAL_KEYWORD	EMPTY_KEY	NEW ===
+[5.2c PUT record 31（补 categoryId=2）] PUT /api/records/31 -> HTTP 200
+        body: {"code":0,"message":"已更新","data":{"id":31,"type":"LOST","status":"PENDING","title":"丢了一个充电宝","description":"黑色外壳带白色星星贴纸，昨天落在靠窗座位上，好心人捡到请联系我。","categoryId":2,"categoryName":"手机数码","location":"图书馆三楼靠窗座位","occurredAt":"2026-10-27 19:00:00","completedAt":null,"contact":"13900006666","publisherName":null,"allowedStatuses":["CLOSED"],"hasMatchedPair":false,"matchedPairCount":0,"isMine":true,"pairState":"PENDING","lowConfidenceCount":11,"pairs":[],"createdAt":"2026-10-28 01:21:20","updatedAt":"2026-10-28 01:21:44"},"requestId":"7f136280428c4c63"}
+[5.2d PUT record 32（补 categoryId=2 + 描述含「充电宝」）] PUT /api/records/32 -> HTTP 200
+        body: {"code":0,"message":"已更新","data":{"id":32,"type":"FOUND","status":"PENDING","title":"捡到充电设备一件","description":"黑色外壳带白色星星贴纸，可能是充电宝，昨天落在靠窗座位上，好心人捡到请联系我。","categoryId":2,"categoryName":"手机数码","location":"图书馆三楼靠窗座位","occurredAt":"2026-10-27 19:00:00","completedAt":null,"contact":"13900007777","publisherName":null,"allowedStatuses":["CLOSED"],"hasMatchedPair":false,"matchedPairCount":0,"isMine":true,"pairState":"PENDING","lowConfidenceCount":10,"pairs":[],"createdAt":"2026-10-28 01:21:21","updatedAt":"2026-10-28 01:21:45"},"requestId":"270f533d765d4c53"}
+=== 调整后 pair: 74	31	32	0.8000	LOCAL_KEYWORD	EMPTY_KEY	NEW ===
+=== 记录 31/32 的 pair_state: 31	DEGRADED	PENDING
+32	DEGRADED	PENDING ===

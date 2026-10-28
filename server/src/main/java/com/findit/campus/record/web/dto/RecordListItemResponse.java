@@ -3,19 +3,22 @@ package com.findit.campus.record.web.dto;
 import java.time.LocalDateTime;
 
 import com.findit.campus.common.config.JacksonConfig;
+import com.findit.campus.common.masking.MaskingPolicy;
 import com.findit.campus.record.domain.RecordSummary;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 
 /**
- * 列表项出参（契约 §3.2）。
+ * 公共列表项出参（契约 §4.1）。
  *
  * <p>刻意不含 {@code description}/{@code contact}/{@code publisherName}：列表一次最多 50 条，
- * 卡片也不展示它们；联系人只在详情给（最小暴露，契约 §3.2 末段）。
+ * 卡片也不展示它们；联系人只在详情给（最小暴露）。因此列表的遮蔽只有两处：
+ * {@code title}（自由文本，防御性打码）与 {@code location}（截断）。
  *
- * <p>时间字段统一 {@code @JsonFormat}：{@code LocalDateTime} 默认走 ISO-8601（带 {@code T}），
- * 与契约 {@code yyyy-MM-dd HH:mm:ss} 不一致，前端要么自己转、要么出现时区漂移。
- * 常量取自 {@link JacksonConfig#DATE_TIME_PATTERN}，格式只有一处定义。
+ * <p>{@code isMine} 是 v2 新增：本人行不遮蔽标题/地点，前端据它决定是否渲染"管理"入口。
+ * 判定依据是 {@code publisher_id}，不是可能重名的展示名。
+ *
+ * <p>{@link #from(RecordSummary)} 是<b>遮蔽视角</b>默认（fail-closed）；本人视角必须显式传 viewerId。
  */
 public class RecordListItemResponse {
 
@@ -33,17 +36,32 @@ public class RecordListItemResponse {
     @JsonFormat(pattern = JacksonConfig.DATE_TIME_PATTERN)
     private LocalDateTime createdAt;
 
+    private Boolean isMine;
+
+    /** 遮蔽视角（匿名/非所有者）。 */
     public static RecordListItemResponse from(RecordSummary summary) {
+        return from(summary, null);
+    }
+
+    /**
+     * 按查看者身份装配本行。
+     *
+     * @param viewerId 当前会话用户；{@code null} = 匿名
+     */
+    public static RecordListItemResponse from(RecordSummary summary, Long viewerId) {
+        boolean mine = viewerId != null && summary.getPublisherId() != null
+                && summary.getPublisherId().equals(viewerId);
         RecordListItemResponse response = new RecordListItemResponse();
         response.id = summary.getId();
         response.type = summary.getType() == null ? null : summary.getType().name();
         response.status = summary.getStatus() == null ? null : summary.getStatus().name();
-        response.title = summary.getTitle();
+        response.title = mine ? summary.getTitle() : MaskingPolicy.maskDescription(summary.getTitle());
         response.categoryId = summary.getCategoryId();
         response.categoryName = summary.getCategoryName();
-        response.location = summary.getLocation();
+        response.location = mine ? summary.getLocation() : MaskingPolicy.maskLocation(summary.getLocation());
         response.occurredAt = summary.getOccurredAt();
         response.createdAt = summary.getCreatedAt();
+        response.isMine = mine;
         return response;
     }
 
@@ -81,5 +99,9 @@ public class RecordListItemResponse {
 
     public LocalDateTime getCreatedAt() {
         return createdAt;
+    }
+
+    public Boolean getIsMine() {
+        return isMine;
     }
 }

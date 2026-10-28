@@ -1,23 +1,29 @@
 <script setup lang="ts">
 // 详情页（基线 §2）：id 非正整数直接跳 NotFound，不带非法 id 去打接口；
 // 状态机在后端（allowedStatuses），前端不自己推流转规则。
-// 4.2：h1 固定为「启事详情」以保证五状态结构一致，记录标题降为 h2；
-// 状态流转区在无可用流转时给出明确说明（原来直接不渲染，用户会以为页面缺了一块）。
+// C2：身份维度落到页面上 —— 非本人看到的是服务端遮蔽后的字段（contact 为 null），
+// 联系方式位渲染「登录后可查看」占位并给登录引导（带 redirect 回本页）；
+// 本人多一组管理入口（编辑 / 关闭）。真正的越权拦截仍在服务端。
 import { computed, onBeforeMount, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { getRecord, patchStatus } from '@/api/records'
 import { BizError } from '@/api/http'
 import RecordStatusTag from '@/components/record/RecordStatusTag.vue'
 import RecordTypeTag from '@/components/record/RecordTypeTag.vue'
+import MaskedField from '@/components/record/MaskedField.vue'
+import OwnRecordActions from '@/components/record/OwnRecordActions.vue'
 import MatchPanel from '@/components/match/MatchPanel.vue'
+import PairPanel from '@/components/match/PairPanel.vue'
 import EmptyState from '@/components/common/EmptyState.vue'
 import ErrorBanner from '@/components/common/ErrorBanner.vue'
 import LoadingBlock from '@/components/common/LoadingBlock.vue'
+import { useAuth } from '@/composables/useAuth'
 import { useRequest } from '@/composables/useRequest'
 import type { RecordStatus } from '@/types/api'
 
 const route = useRoute()
 const router = useRouter()
+const { isAuthenticated } = useAuth()
 
 const recordId = computed(() => Number(route.params.id))
 const isValidId = computed(() => Number.isInteger(recordId.value) && recordId.value > 0)
@@ -43,15 +49,43 @@ watch(
 /** 20001 单独展示：这是业务空态，不是「请求失败」（契约 §9） */
 const notFound = computed(() => error.value instanceof BizError && error.value.code === 20001)
 
+/**
+ * 404 分流（A1 §13）：已登录用户遇到 20001 统一回「我的启事」并提示，
+ * 详情页不白屏 —— 典型场景是本人刚把启事标记完成 / 关闭（终态详情按 A9 就是 404）。
+ * 匿名用户留在原地看空态，不能把人往一个还要登录的页面推。
+ */
+watch(error, (err) => {
+  if (!(err instanceof BizError) || err.code !== 20001) return
+  if (isAuthenticated.value) void router.replace({ name: 'MyRecords', query: { unavailable: '1' } })
+})
+
+/** 未登录点「查看联系方式」：走登录引导，并带回跳地址（只接受站内路径，白名单在路由层） */
+function goLogin(): void {
+  void router.push({ name: 'Login', query: { redirect: route.fullPath } })
+}
+
 const { error: statusError, loading: statusLoading, run: runPatchStatus } = useRequest(patchStatus, {
   immediate: false
 })
 
-async function changeStatus(status: RecordStatus): Promise<void> {
-  const outcome = await runPatchStatus(recordId.value, status)
+/**
+ * 详情页只保留「标记完成」这一个流转按钮：
+ * 「关闭」由上方管理入口承担（两段式确认），同一页出现两个关闭按钮会让人不敢点。
+ * 20005（未达 MATCHED）不刷新页面，原地给出后端文案。
+ */
+const canComplete = computed(
+  () => record.value?.isMine === true && record.value.allowedStatuses.includes('COMPLETED')
+)
+
+async function markCompleted(): Promise<void> {
+  const outcome = await runPatchStatus(recordId.value, 'COMPLETED' as RecordStatus)
   if (!outcome) return
-  // 成功后重新拉详情：allowedStatuses 由后端重新计算
-  void run(recordId.value)
+  // 终态详情对所有者也是 404（A9）：直接回我的启事，避免刷新一次白屏
+  void router.replace({ name: 'MyRecords', query: { updated: 'completed' } })
+}
+
+function handleOwnChanged(): void {
+  void router.replace({ name: 'MyRecords', query: { updated: 'closed' } })
 }
 
 watch(statusError, (err) => {
@@ -64,17 +98,16 @@ const seedText = computed(() =>
   record.value ? `${record.value.title}。${record.value.description}` : ''
 )
 
+/** 前端不把 CLOSED 详情当降级内容渲染：即使拿到陈旧响应也按不可查看处理 */
+const closedGuard = computed(() => record.value?.status === 'CLOSED')
+const completed = computed(() => record.value?.status === 'COMPLETED')
+
 /** 提交页 replace 过来时带 ?created=1，只作为一次性成功反馈（刷新/回退不重复弹） */
 const justCreated = computed(() => route.query.created === '1')
+const justUpdated = computed(() => route.query.updated === '1')
 
 function reload(): void {
   if (isValidId.value) void run(recordId.value)
-}
-
-const STATUS_ACTION_LABEL: Record<RecordStatus, string> = {
-  PENDING: '待认领',
-  CLAIMED: '已认领',
-  CLOSED: '已关闭'
 }
 </script>
 
@@ -87,6 +120,15 @@ const STATUS_ACTION_LABEL: Record<RecordStatus, string> = {
       </div>
       <div class="page-head__actions">
         <RouterLink :to="{ name: 'RecordList' }" class="btn btn--ghost">← 返回列表</RouterLink>
+        <!-- 本人管理入口：编辑 / 关闭；非本人这一整块不渲染 -->
+        <OwnRecordActions
+          v-if="record?.isMine"
+          :record-id="record.id"
+          :status="record.status"
+          :is-mine="record.isMine"
+          variant="block"
+          @changed="handleOwnChanged"
+        />
       </div>
     </header>
 
@@ -94,8 +136,8 @@ const STATUS_ACTION_LABEL: Record<RecordStatus, string> = {
 
     <template v-else-if="notFound">
       <EmptyState
-        title="记录不存在或已删除"
-        description="这条启事可能已被发布者删除，或链接里的编号不对"
+        title="记录不存在或不可查看"
+        description="这条启事可能已被发布者删除、关闭，或链接里的编号不对"
         action-label="回到启事列表"
         :to="{ name: 'RecordList' }"
       />
@@ -103,16 +145,72 @@ const STATUS_ACTION_LABEL: Record<RecordStatus, string> = {
 
     <ErrorBanner v-else-if="error" :error="error" retry-label="重试" @retry="reload" />
 
+    <EmptyState
+      v-else-if="closedGuard"
+      title="记录已关闭，不可查看"
+      description="已关闭的启事不再提供详情；这是我的启事时可回到「我的启事」处理其他记录"
+      action-label="回到启事列表"
+      :to="{ name: 'RecordList' }"
+    />
+
     <template v-else-if="record">
+      <!-- vF：COMPLETED 只在门槛命中时可见，详情页给明确的已完成标识 -->
+      <p
+        v-if="completed"
+        class="alert alert--success record-detail__completed"
+        role="status"
+        data-testid="detail-completed-badge"
+      >
+        <span class="alert__title">已完成</span>
+        <span class="alert__text">
+          这条启事已完成，不会再出现在公共列表；保留期内仍参与匹配，且仅合格对端可查看详情。
+        </span>
+      </p>
+
+      <!-- 身份提示：匿名看遮蔽态；登录非本人看非发布者视角 -->
+      <p
+        v-if="!isAuthenticated"
+        class="alert alert--info record-detail__identity"
+        role="status"
+        data-testid="anonymous-banner"
+      >
+        <span class="alert__title">你正在匿名浏览</span>
+        <span class="alert__text">
+          登录后可管理你发布的启事，并在配对确认后查看对方联系方式。
+        </span>
+        <button type="button" class="btn btn--sm btn--ghost alert__action" @click="goLogin">
+          去登录
+        </button>
+      </p>
+      <p
+        v-else-if="!record.isMine"
+        class="alert alert--info record-detail__identity"
+        role="status"
+        data-testid="non-owner-banner"
+      >
+        <span class="alert__title">非发布者视角</span>
+        <span class="alert__text">
+          完整描述、联系方式与联系人按遮蔽规则展示；只有发布者本人能编辑或关闭。
+        </span>
+      </p>
+
       <p v-if="justCreated" class="alert alert--success record-detail__created" role="status">
         <span class="alert__title">发布成功</span>
         <span class="alert__text">这条启事已经出现在列表里了。</span>
+      </p>
+
+      <p v-else-if="justUpdated" class="alert alert--success record-detail__created" role="status">
+        <span class="alert__title">修改已保存</span>
+        <span class="alert__text">详情已刷新为最新内容。</span>
       </p>
 
       <article class="panel record-detail__card">
         <div class="record-detail__tags">
           <RecordTypeTag :type="record.type" />
           <RecordStatusTag :status="record.status" />
+          <span v-if="record.isMine" class="record-detail__mine" data-testid="detail-mine-badge">
+            我的启事
+          </span>
           <span class="record-detail__id">#{{ record.id }}</span>
         </div>
 
@@ -139,38 +237,64 @@ const STATUS_ACTION_LABEL: Record<RecordStatus, string> = {
             <dt>最后更新</dt>
             <dd>{{ record.updatedAt }}</dd>
           </div>
-          <div class="record-detail__fact">
+          <div class="record-detail__fact record-detail__fact--contact">
             <dt>联系方式</dt>
-            <dd>{{ record.contact ?? '未填写' }}</dd>
+            <dd>
+              <!-- 本人：明文或「未填写」；非本人：只渲染占位，服务端已把 contact 置空 -->
+              <template v-if="record.isMine">
+                <span data-testid="contact-owner">{{ record.contact ?? '未填写' }}</span>
+              </template>
+              <template v-else>
+                <MaskedField hint="联系方式仅发布者本人及已确认配对的对方可见" />
+                <button
+                  v-if="!isAuthenticated"
+                  type="button"
+                  class="btn btn--sm btn--ghost record-detail__contact-cta"
+                  data-testid="contact-login-cta"
+                  @click="goLogin"
+                >
+                  查看联系方式
+                </button>
+              </template>
+            </dd>
           </div>
           <div class="record-detail__fact">
             <dt>联系人</dt>
-            <dd>{{ record.publisherName ?? '未填写' }}</dd>
+            <dd>{{ record.publisherName ?? (record.isMine ? '未填写' : '匿名同学') }}</dd>
           </div>
         </dl>
 
         <div class="record-detail__body">
           <h3 class="record-detail__section-title">详细描述</h3>
-          <p class="record-detail__description">{{ record.description }}</p>
+          <p class="record-detail__description" data-testid="detail-description">
+            {{ record.description }}
+          </p>
+          <p v-if="!isAuthenticated" class="hint record-detail__mask-hint">
+            登录后可参与匹配、管理自己的启事；联系方式在配对确认后可见。
+          </p>
         </div>
 
-        <footer class="record-detail__actions">
-          <template v-if="record.allowedStatuses.length > 0">
+        <!-- 状态操作只属于本人：非本人 allowedStatuses 恒为空，不能落到「已归档」的假说明上 -->
+        <footer v-if="record.isMine" class="record-detail__actions">
+          <template v-if="canComplete">
             <span class="record-detail__actions-label">更新状态</span>
             <button
-              v-for="status in record.allowedStatuses"
-              :key="status"
               type="button"
               class="btn btn--ghost"
               :disabled="statusLoading"
-              @click="changeStatus(status)"
+              data-testid="action-complete"
+              @click="markCompleted"
             >
               <span v-if="statusLoading" class="btn__spinner" aria-hidden="true"></span>
-              标记为{{ STATUS_ACTION_LABEL[status] }}
+              标记为已完成
             </button>
           </template>
-          <p v-else class="hint">当前状态没有可执行的流转，启事已归档。</p>
+          <p v-else class="hint" data-testid="complete-hint">
+            当前状态没有可执行的流转；「标记完成」需要已有双方确认的匹配（当前有效匹配
+            {{ record.matchedPairCount }} 对）。
+          </p>
         </footer>
+
         <ErrorBanner
           v-if="statusError"
           class="record-detail__status-error"
@@ -179,7 +303,18 @@ const STATUS_ACTION_LABEL: Record<RecordStatus, string> = {
         />
       </article>
 
+      <!-- 本人看真实配对（pairs[] 仅所有者返回）；非本人保留手动匹配用于发现候选 -->
+      <PairPanel
+        v-if="record.isMine"
+        class="record-detail__match"
+        :pairs="record.pairs ?? []"
+        :pair-state="record.pairState"
+        :low-confidence-count="record.lowConfidenceCount"
+        :record-status="record.status"
+        @refresh="reload"
+      />
       <MatchPanel
+        v-else
         class="record-detail__match"
         :seed-text="seedText"
         :exclude-record-id="record.id"
@@ -191,7 +326,9 @@ const STATUS_ACTION_LABEL: Record<RecordStatus, string> = {
 </template>
 
 <style scoped>
-.record-detail__created {
+.record-detail__identity,
+.record-detail__created,
+.record-detail__completed {
   margin-bottom: var(--sp-4);
 }
 
@@ -200,6 +337,16 @@ const STATUS_ACTION_LABEL: Record<RecordStatus, string> = {
   flex-wrap: wrap;
   align-items: center;
   gap: var(--sp-2);
+}
+
+.record-detail__mine {
+  padding: 0 var(--sp-2);
+  border-radius: var(--radius-pill);
+  background-color: var(--color-primary-soft);
+  color: var(--color-primary-strong);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-medium);
+  line-height: 22px;
 }
 
 .record-detail__id {
@@ -238,6 +385,18 @@ const STATUS_ACTION_LABEL: Record<RecordStatus, string> = {
   font-variant-numeric: tabular-nums;
 }
 
+/* 联系方式可能同时有占位与按钮，允许换行而不是把占位挤成省略号 */
+.record-detail__fact--contact dd {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-1) var(--sp-2);
+}
+
+.record-detail__contact-cta {
+  padding: 0 var(--sp-2);
+}
+
 .record-detail__body {
   margin-top: var(--sp-5);
   padding-top: var(--sp-4);
@@ -256,6 +415,10 @@ const STATUS_ACTION_LABEL: Record<RecordStatus, string> = {
   margin-top: var(--sp-2);
   white-space: pre-wrap;
   line-height: var(--lh-relaxed);
+}
+
+.record-detail__mask-hint {
+  margin-top: var(--sp-2);
 }
 
 .record-detail__actions {

@@ -21,10 +21,10 @@ const TYPE_OPTIONS = [
   { value: 'FOUND', label: '招领' }
 ]
 
+// v2 公共列表的可见集合恒为 PENDING（契约 §3.1：请求 COMPLETED/CLOSED 返回空页），
+// 所以这里不再提供「已认领 / 已关闭」两个永远查不到东西的选项。
 const STATUS_OPTIONS = [
-  { value: 'PENDING', label: '待认领' },
-  { value: 'CLAIMED', label: '已认领' },
-  { value: 'CLOSED', label: '已关闭' },
+  { value: 'PENDING', label: '进行中' },
   // 服务端认 ALL，URL 里保留 status=ALL，刷新/分享后筛选态不丢
   { value: 'ALL', label: '全部状态' }
 ]
