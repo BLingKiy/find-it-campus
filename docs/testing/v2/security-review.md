@@ -1,12 +1,13 @@
 # v2 · F3 安全与代码审查（ZHYYKFX-60）
 
-> 状态：**报告已交付；P1 未闭环 → 门禁 3 暂不通过**
+> 状态：**P1 已闭环（修复 + 复验通过）→ 门禁 3 通过**
 > 审查分支：`feat/v2-F3-security-review`（从 `feat/v2-F2-integration@941fdee` 切出；`origin/main` 实读 `21784f67`，v1，无 v2 代码）
 > 审查基线：`941fdee506e6dad2263a6ba383cf4d84ca1d936a`（含 D1/E1/E1b/E2/D2 与 F1 回归资产）
 > 审查时间：2026-10-28（Asia/Shanghai）
 > 审查方式：静态代码审查 + 仓库 `MaskingPolicy` 纯函数 harness + 项目同版本 Jackson（2.21.4）反序列化 harness + 重新构建 jar 解包 + Git 历史扫描。
+> 复验：2026-10-28，基于 `941fdee` + `08f4bb9`（Z-71）+ `fbd538f`（Z-72）合并后的独立工作树；服务端全量 **242/242** 通过。详见 §18。
 > 未执行：本机 MySQL（3306）未运行，因此没有启动后端做 HTTP 级复验。会话/Cookie/缓存头等结论按代码与配置判定；动态复核项已标注「建议本地验证」。
-> 修复单：P1 `ZHYYKFX-71`（磐石石）；P2 `ZHYYKFX-72`（磐石石）。
+> 修复单：P1 `ZHYYKFX-71`（磐石石）→ `fix/v2-F3-p1-masking-normalize@08f4bb9`；P2 `ZHYYKFX-72`（磐石石）→ `fix/v2-F3-p2-hardening@fbd538f`。均基于 `941fdee`，尚未合并进集成分支。
 
 ---
 
@@ -15,17 +16,20 @@
 | 项 | 结果 |
 |---|---|
 | P0（可直接利用的高危漏洞 / 数据丢失 / 密钥明文） | **0** |
-| P1（门禁阻塞；必须修复单 + 复验结论） | **1**：MaskingPolicy 分隔符/国际前缀绕过 |
-| P2（建议修复；不阻塞本轮门禁） | **4 + 1 可选**：状态竞态、个性化响应无缓存头、日志注入、过期 COMPLETED 仍可成为扫描目标；可选：提示注入/LLM 配额、Cookie Secure/HSTS、XFF 审计、安全响应头 |
-| P3（细节/文档/加固） | 见 §4.3 |
+| P1（门禁阻塞；必须修复单 + 复验结论） | **0 未闭环**（原 1：MaskingPolicy 分隔符/国际前缀绕过，已由 Z-71 修复并复验通过） |
+| P2（建议修复；不阻塞本轮门禁） | **0 未闭环**（原 4：状态竞态、缓存头、日志注入、过期扫描，已由 Z-72 修复并复验；可选 P2-5 部分完成） |
+| P3（细节/文档/加固） | 见 §4.3；复验新增 R-1/R-2 两项非阻塞遗留，见 §18.3 |
 
-**门禁 3 判定：暂不通过。** 依据任务验收标准「有 P1 时必须修复单 + 复验结论齐备才可判通过」：修复单 `ZHYYKFX-71` 已开，但修复与 F3 复验尚未发生，因此本报告不能写「通过」。P0 为 0；其余安全边界（会话、越权、密钥、SQL、pair 语义）未发现阻塞级问题。
+**门禁 3 判定：通过。** 依据任务验收标准「有 P1 时必须修复单 + 复验结论齐备才可判通过」：P0 为 0；唯一的 P1-1 已由 `ZHYYKFX-71` 在 `fix/v2-F3-p1-masking-normalize@08f4bb9` 修复，§7 的 8 类输入与 JSON 入口全部复验命中，服务端全量 242/242 通过；P2-1..P2-4 也已在 `ZHYYKFX-72@fbd538f` 修复并复验。两个修复分支均基于 `941fdee`，与报告分支无文件重叠，可独立合并。
 
-**最重要的三个关切：**
+**最重要的三个关切（原始审查）：**
+
 
 1. **遮蔽可被自然写法绕过**：`138 1234 5678`、`138-1234-5678`、`+8613812345678` 等输入不会被 `MaskingPolicy` 打码，匿名/非所有者响应、pair 附言、LLM prompt 与 `t_match_result` 快照都可能出现完整号码，等于绕过 0.75/0.90 的联系方式分档。
 2. **一个终态不可改的竞态**：`PUT /api/records/{id}` 在「Java 查 PENDING」与「UPDATE」之间没有 `status='PENDING'` 条件；并发 `PATCH` 先关闭后，PUT 仍可改终态记录正文。见 P2-1。
 3. **个性化 GET 响应没有 `Cache-Control`**：本人详情（明文 `contact`）、`/api/my/records`、通知等响应未设 `no-store/private`；当前单实例本地部署不构成现网可利用，但上共享缓存/CDN 后可能跨身份返回视图，绕过 COMPLETED 详情的 404 门槛。见 P2-2。
+
+> 以上三项均已处理：关切 1 → §3 复验通过（Z-71）；关切 2 → §4.1.1 P2-1（Z-72）；关切 3 → §4.1.1 P2-2（Z-72）。
 
 **做得好的地方（不是客套）：** 登录的时序等化与统一失败文案（`AuthService`）、`changeSessionId()` + 失效 + 清 Cookie（`SessionAuth`）、写默认拦 + controller 二次 `requireUser`（`AuthGateFilter`/各 controller）、pair 三档判定与错误码顺序（`PairAccessPolicy`/`PairContactService`）、审计 fail-closed（`AccessLogService`）、pair 重算只更新分数列（`PairScoreMapper.upsertScore`）、状态写入收敛（`RecordService`/`RecordMapper`）、SQL 全 `#{}` + ORDER BY 白名单、密钥只走 env。详见 §13。
 
@@ -89,7 +93,29 @@
 - 回写修复 commit SHA + 新增用例执行输出；F3 复验后在本文 §3 更新 P1 状态与复验结论。
 - 只改 `MaskingPolicy` + 测试，不改业务状态机、DB、接口契约。
 
-**复验状态：未复验（等待 `ZHYYKFX-71` 修复）。** 因此本报告不能判「通过」。
+**复验状态：已复验通过（2026-10-28）。**
+
+- **修复**：`fix/v2-F3-p1-masking-normalize@08f4bb9`（基线 `941fdee`），只改 `MaskingPolicy.java` 与 `MaskingPolicyTest.java`，未改业务状态机、DB、接口契约。
+- **方法**：用修复后的仓库 `MaskingPolicy` 重跑 §7 的 16 组输入 + 5 组 JSON 入口；同时在「`941fdee` + Z-71 + Z-72」工作树跑服务端全量测试。命令与原始输出见 §18.1/§18.2。
+- **8 类判据逐条**（`FULL_PHONE=false` 表示输出中不再存在完整 11 位号码）：
+
+| 原编号 | 变形 | 修复后输出 | 完整号码残留 |
+|---|---|---|---|
+| V3 | 空格分隔 | `联系 [手机号已隐藏]` | 否 |
+| V4 | 换行拼接 | `联系 [手机号已隐藏]` | 否 |
+| V5 | 连字符分隔 | `联系 [手机号已隐藏]` | 否 |
+| V6 | 零宽字符 | `联系 [手机号已隐藏]` | 否 |
+| V7 | `+86` 前缀 | `联系 [手机号已隐藏]` | 否 |
+| V12 | 带空格 18 位证件号 | `证件 [证件号已隐藏]` | 否（`FULL_ID=false`） |
+| V15 | 制表符分隔 | `联系 [手机号已隐藏]` | 否 |
+| V16 | 全角空格 | `联系 [手机号已隐藏]` | 否 |
+
+- **回归口径**：V1 连续号码、V2 全角数字仍正常遮蔽；V8/V9 仍原样保留（人眼不可读为号码，未计入绕过）；V13/V14 地点字段仍只残留 1–4 位（P3-4 未变，不构成完整号码）；J1 仍命中，J2 仍 400，J3/J4/J5 修复后全部命中。
+- **测试**：`MaskingPolicyTest` **18/18**；出口层 `RecordDetailResponse`/`RecordListItemResponse` 的分隔号码断言通过；服务端全量 **242/242**、0 fail（§18.1）。
+- **判据结论**：8 类输入在匿名/非所有者出口不再出现完整号码 ✓；现有 `MaskingPolicyTest` 与 C1 断言 0 回归 ✓；只改 `MaskingPolicy` + 测试 ✓。**P1-1 闭环。**
+- **未覆盖**：本机 MySQL 未运行，未做 HTTP 级 28 探针重扫；出口 DTO 层已由单测覆盖，建议在集成环境重跑 `F2-phone-scan`。
+- **复验新增遗留（非阻塞）**：逗号/冒号/分号（含全角）不在分隔符集合内，`138,1234,5678`、`138：1234：5678` 等仍可绕过；详见 §18.3 R-1。这不改变本轮 8 类判据的结论，但建议在 Z-71 追加一轮小修或另开单。
+
 
 ---
 
@@ -104,6 +130,17 @@
 | P2-3 | 日志注入：客户端可控值未净化 | `AuthService.java:83-84` 直接 log `studentNo`；`LoginAttemptTracker.java:65-66` 直接 log key；`GlobalExceptionHandler.java:142` 直接 log 查询参数 `ex.getValue()`；`LoginRequest.java:18-20` 只限制长度 | JSON 字符串可含换行，查询参数经 URL 解码后也可含 `%0A`；可伪造日志行，影响审计可信度（不是数据泄露） | 统一 log-safe（替换 CR/LF/TAB/控制字符并限长），或给 `studentNo` 加严格 `@Pattern`；补单测 |
 | P2-4 | 过期 COMPLETED 仍可能成为扫描目标 | `RecordMapper.xml:303-313`（只排除 CLOSED，没有 `completed_at` 保留期条件）；`PairScoringService.java:109-120`（只跳过 CLOSED） | 过期 COMPLETED 若处于 PENDING/SCORING/DEGRADED，会被重新打分，可能新建 pair/通知并消耗 LLM 额度；通知指向的详情按规则 404。与「到期不召回」不一致，但不改 status、不泄露号码 | 扫描目标加 `(status='PENDING' OR completed_at > #{cutoff})`，或在 `scoreRecord` 用 `RecordVisibilityPolicy.isMatchable` 跳过；补「过期 + DEGRADED」组合用例 |
 
+### 4.1.1 P2 复验状态（Z-72 `fix/v2-F3-p2-hardening@fbd538f`，基线 `941fdee`）
+
+| # | 状态 | 修复要点与证据 |
+|---|---|---|
+| P2-1 | **已修复** | `RecordMapper.xml:229` 的 `updateContent` WHERE 增加 `status='PENDING'`；0 行时 `selectStatusByIdForUpdate`（`FOR UPDATE` 当前读）区分 20001（不存在/已删）与 20003（并发终态）。`RecordServiceAccessTest` 新增并发终态、已删除、正常路径 3 例。JDBC URL 未设 `useAffectedRows=true`，Connector/J 默认返回 matched rows，提交相同内容不会把「无变化」误判成冲突。 |
+| P2-2 | **已修复** | 新增 `ApiResponseHeadersFilter`：`/api/**` 统一 `Cache-Control: no-store` + `Vary: Cookie`，并补 `X-Content-Type-Options`/`X-Frame-Options`/`Referrer-Policy`/CSP 最小头；顺序为 `RequestIdFilter`（HIGHEST）→ 本过滤器（+10）→ `AuthGateFilter`（默认最低），401 短路响应同样覆盖。`RecordApiValidationTest` 对 200 详情/列表与 401 断言响应头。 |
+| P2-3 | **已修复** | 新增 `LogSafe`：CR/LF/TAB→`_`，其余控制字符与 U+2028/U+2029→`?`，限长 128 并标注原始长度；应用于 `AuthService` 登录失败、`LoginAttemptTracker` 阈值日志、`GlobalExceptionHandler` 的参数值/请求体/路径。`LogSafeTest` 4/4，`AuthServiceTest`/`LoginAttemptTrackerTest` 各补 1 例日志注入断言。 |
+| P2-4 | **已修复** | `selectPairScanTargets` 改为 `PENDING OR (COMPLETED AND completed_at > #{completedCutoff})`；`scoreRecord` 用 `RecordVisibilityPolicy.isMatchable` 再兜一层，过期返回 `EXPIRED` 且 `failed()=false`。`RecordMapperSqlTest` 断言 WHERE 结构，`PairScanServiceTest` 断言 cutoff ≈ now-30d，`PairScoringServiceTest` 覆盖「过期 + DEGRADED」与「保留期内仍重算」。`completedCutoff(now)=now-30d` 与 `isWithinRetention` 的严格 `>` 语义一致。 |
+
+**复验结论：P2-1..P2-4 全部闭环。** 两个修复分支与报告分支文件不重叠，合并无冲突；在合并工作树上服务端全量 242/242 通过（§18.1）。
+
 ### 4.2 P2-5（可选加固，需产品/部署确认）
 
 | 项 | 位置 | 建议 |
@@ -113,6 +150,8 @@
 | 审计 IP 可伪造 | `AuditMeta.java:22-28` 信任 `X-Forwarded-For` | 审计字段用于追溯，可被客户端伪造；建议可信代理配置，或同时记录 `remoteAddr` |
 | Session tracking modes | `application.yml:16-32` 未显式设置 | 建议显式 `server.servlet.session.tracking-modes: cookie`，避免 `;jsessionid` 出现在 URL/Referer |
 | 安全响应头 | `WebConfig.java:27-36` 只有 CORS | 未用 Spring Security，默认无 `X-Content-Type-Options`/`X-Frame-Options`/CSP/HSTS；可加统一 filter（低风险，建议补） |
+
+**P2-5 复验（Z-72，部分完成）：** `server.servlet.session.tracking-modes: cookie` 已加，禁止 `;jsessionid` URL 重写；`ApiResponseHeadersFilter` 同时补了上面最后一项的最小安全响应头。生产 Cookie `Secure`/HSTS、XFF 可信代理、提示注入/LLM 配额仍属部署或产品决策，保持「可选加固、不阻塞本轮」。
 
 ### 4.3 P3（细节 / 文档 / 已知风险）
 
@@ -171,6 +210,8 @@
 ---
 
 ## 7. 遮蔽绕过用例（≥6 种变形）
+
+> 下表是**修复前**（基线 `941fdee`）的原始结果，保留作为漏洞证据；修复后（Z-71 `08f4bb9`）的同一组输入复验见 §3 与 §18.2。
 
 **方法：** 直接编译仓库 `server/src/main/java/com/findit/campus/common/masking/MaskingPolicy.java`，调用 `maskDescription`/`maskLocation`；JSON 变体用项目 jar 内的 Jackson 2.21.4 先反序列化再调用同一 `maskDescription`。
 
@@ -241,7 +282,7 @@ J5-plus86           PARSE=OK   MASKED=联系 +8613812345678  FULL_PHONE_VISIBLE=
 | 反序列化异常 | **未带请求体** | 项目 Jackson 2.21.4 `INCLUDE_SOURCE_IN_LOCATION disabled`，`ex.getMessage()` 只含行/列/字段路径；本地 harness 输出见下 |
 | 手机号/附言原文 | **未发现** | 没有 `log.*contact/note/description`；`AccessLogService.java:44-46` 只记 pairId/viewerId/result；`PairUnlockService` 不打印 note；`DeepSeekPairScorer` 不打印 prompt/response/key |
 | SQL 参数 | **默认 INFO 不打印** | `application.yml:127-133` root/`com.findit.campus` 均 INFO；MyBatis `Slf4jImpl` 的 SQL/参数在 DEBUG。若运维把包调到 DEBUG，`Parameters` 可能包含 `contact`——这是运维配置风险，不是默认泄漏 |
-| 日志注入 | **存在（P2-3）** | `AuthService.java:83-84` 的 `studentNo`、`LoginRequest.java:18-20` 只限长度；`GlobalExceptionHandler.java:142` 的查询参数值未净化 |
+| 日志注入 | **已修复（原 P2-3）** | `AuthService.java:83-84` 的 `studentNo`、`LoginAttemptTracker` 的 key、`GlobalExceptionHandler` 的参数/请求体/路径均已过 `LogSafe`；`LoginRequest` 的长度约束保留。复验见 §4.1.1。 |
 | 学号 PII | **存在（P3-3）** | 登录失败日志含学号明文；建议脱敏或至少 log-safe |
 | F2 实测 | **0 命中** | `docs/testing/v2/F2-phone-scan.txt`：28 个探针（匿名/非本人响应、通知 title+body）0 命中；`t_match_result`/通知/访问审计均不含号码 |
 | 仓库 docs/seed 号码 | **402 处形状命中；抽查为夹具/误报** | `git grep -hoE '1[3-9][0-9]{9}' -- 'docs/**' 'db/**'`：seed 明确声明 `138xxxxxxxx` 假号；`179...`/`19900101123` 等为编号/身份证片段，不是真实号码。未发现与真实用户关联的号码；如需对外发布文档，建议再按真实号段人工抽查一遍 |
@@ -350,7 +391,7 @@ pair 侧：
 | pair 卡片 | 否 | `PairCard` 没有 contact 字段；`PairFactsMapper` 只取 `counterpart_contact_present` 布尔 |
 | `GET /api/pairs/{id}/contact` | 否（只返回号码） | 参与方 + 档位 + 授权 + 审计 fail-closed；`Cache-Control: no-store` |
 | 管理/导出 | **不存在** | 端点清单 §6；无 MultipartFile/导出 |
-| 服务端缓存 | **不存在** | 无 `@Cacheable`/Caffeine/Ehcache；但响应头缺失（P2-2） |
+| 服务端缓存 | **不存在** | 无 `@Cacheable`/Caffeine/Ehcache；响应头已由 `ApiResponseHeadersFilter` 补齐（P2-2 已修复） |
 
 ### 11.5 三态/四态枚举一致性
 
@@ -370,26 +411,31 @@ pair 侧：
 - 唯一键 `(lost_id, found_id)` 一行一对（`schema.sql:224`）；`PairScoreMapper` 的所有用户动作都按 `id` 更新**这一行**（`:126-188`），不批量改其他 pair。
 - `PairActionService` 不写 `t_record`、不更新其他 pair、不发通知（类注释 + 代码 `:51-143`）；`PairUnlockService` 只写本端解锁列/本对通知；`PairScoringService` 的 upsert 只更新分数列，不会把 IGNORED 翻回 NEW。
 - 一条招领可与多条寻物各成 pair，处理完一对不影响其他 pair——代码没有占用/锁定字段或过滤条件（`PairStatuses` 只有四态；`PairActionService` 无「已认领」判断；候选池不按 pair 状态排除记录）。
-- 例外/边界：P2-4 的过期 COMPLETED 扫描目标（不涉及 status/pair 独立性，但属于「到期不召回」的遗漏），以及 P2-1 的 `updateContent` 竞态。两者都不破坏「一对一 pair 行/不自动改记录状态」的核心语义。
+- 例外/边界：P2-4 的过期 COMPLETED 扫描目标（不涉及 status/pair 独立性，但属于「到期不召回」的遗漏），以及 P2-1 的 `updateContent` 竞态。两者都不破坏「一对一 pair 行/不自动改记录状态」的核心语义，且均已在 Z-72 修复（§4.1.1）。
 
 ---
 
 ## 12. 测试覆盖评估
 
-**已有：**
-- C1 提交记录称 127 tests / 0 failures；`MaskingPolicyTest` 10 条覆盖 P1–P3、N1–N3、全角归一、所有者/列表/详情身份维度、QQ 大小写（`MaskingPolicyTest.java:34-141`）。
+**已有（复验后）：**
+- `MaskingPolicyTest` 由 10 条增至 **18 条**：保留 P1–P3、N1–N3、全角归一、所有者/列表/详情身份维度、QQ 大小写，新增分隔符 8 类、`+86/86/0086`、带分隔证件号、粘贴在其它数字后的号码、随机分隔符 fuzz（200 轮）、出口 DTO 层断言（`MaskingPolicyTest.java:144-252`）。
+- 服务端全量 **242/242**、0 fail（`941fdee` + Z-71 + Z-72 工作树，§18.1）；C1 的原始 127 条断言包含在内，0 回归。
 - F2：111 API / 25 E2E / 9 consistency，0 fail；手机号 28 探针 0 命中（`F2-phone-scan.txt`）。
-- Pair/record 侧有 `RecordServiceAccessTest`（319 行）、`PairAccessPolicyTest`、`PairContactServiceTest`、`PairActionServiceTest`、`PairScanServiceTest`、`RecordStatusPolicyTest` 等，覆盖了大量 403/404/409/零写入分支。
+- Pair/record 侧有 `RecordServiceAccessTest`（新增并发 0 行 3 例）、`PairAccessPolicyTest`、`PairContactServiceTest`、`PairActionServiceTest`、`PairScanServiceTest`（新增 cutoff 断言）、`RecordStatusPolicyTest` 等，覆盖了大量 403/404/409/零写入分支。
+- 新增 `LogSafeTest` 4 条、`RecordMapperSqlTest` 2 条，以及 `RecordApiValidationTest` 的 `Cache-Control`/`Vary`/安全头断言。
 
-**缺口（建议补）：**
-- `MaskingPolicyTest` 没有分隔符/`+86`/带空格证件号用例 → P1-1 的 8 条输入应固化。
-- 没有 `updateContent` 并发竞态测试 → P2-1。
-- 没有响应头 `Cache-Control`/`Vary` 断言 → P2-2。
-- 没有日志注入（换行/查询参数）测试 → P2-3。
-- 没有「过期 COMPLETED + DEGRADED/PENDING」扫描目标测试 → P2-4。
-- 没有全链路 HTTP 级会话/Cookie/CSRF 复验的自动化断言（F2 有部分人工证据）。
+**已关闭的缺口：**
+- `MaskingPolicyTest` 已固化 P1-1 的 8 类输入 + fuzz + 出口层断言。
+- `updateContent` 0 行分支已覆盖（service 层 mock；真实 MySQL 并发交错仍建议在集成环境补一次）。
+- 响应头 `Cache-Control`/`Vary` 已在 MockMvc 层断言（200 与 401 短路）。
+- 日志注入（学号换行、阈值 key、控制字符、限长）已覆盖。
+- 「过期 COMPLETED + DEGRADED」与「保留期内仍重算」已覆盖；扫描 SQL 的 WHERE 结构有结构性测试防止后人删条件。
 
-**未执行：** 本次 F3 没有跑完整测试套件/HTTP 级（本机 3306 未运行）；上述缺口建议在修复单里补测，或在 F2 环境复验。
+**仍缺：**
+- 没有全链路 HTTP 级会话/Cookie/CSRF 复验的自动化断言（F2 有部分人工证据）；本机 3306 未运行，本轮未补。
+- 没有针对逗号/冒号分隔符的回归用例（见 §18.3 R-1）。
+
+**未执行：** 本次 F3 复验跑了服务端全量单测，但没有启动后端做 HTTP 级重扫；动态项建议在 F2 集成环境复验。
 
 ---
 
@@ -410,8 +456,8 @@ pair 侧：
 
 ## 14. 待确认的问题（不替作者做决定）
 
-1. **遮蔽规则扩展 vs 输入拒绝**：P1-1 的修复需要改 A1 §6.2 的规则 2（增加分隔符归一）或增加输入校验（拒绝带分隔符的号码）。前者 UX 更好，但属于冻结规则的解释/扩展；请 A1/架构 owner 确认口径。我的建议是「归一后检测、原文替换」，不改变四条规则的判定顺序。
-2. **是否会上共享缓存/CDN**：如果生产只做单实例直连，P2-2 可降为文档风险；如果会上 Nginx/CDN 缓存，建议把 P2-2 升为 P1，并在本轮修复。
+1. **遮蔽规则扩展 vs 输入拒绝**：P1-1 的修复需要改 A1 §6.2 的规则 2（增加分隔符归一）或增加输入校验（拒绝带分隔符的号码）。前者 UX 更好，但属于冻结规则的解释/扩展；请 A1/架构 owner 确认口径。**Z-71 已按建议的「归一后检测、原文替换」实现，未改变四条规则的顺序与语义；合并前仍建议 A1 确认这一解释。**
+2. **是否会上共享缓存/CDN**：如果生产只做单实例直连，P2-2 可降为文档风险；如果会上 Nginx/CDN 缓存，建议把 P2-2 升为 P1，并在本轮修复。**Z-72 已按保守口径对全部 `/api/**` 设 `no-store`，两种情况都覆盖。**
 3. **生产 HTTPS/Secure/HSTS 的责任人**：`application.yml:31-32` 目前明确写 `secure: false` 是演示口径；请确认部署侧会加 `Secure` 与 HSTS，否则会话可被网络嗅探。
 4. **提示注入/LLM 配额是否纳入 v2**：`PairPrompt` 直接拼接用户文本，且发布/匹配没有每用户配额；如果本轮不处理，请在已知风险里登记，至少加上发布/匹配限流与 LLM 预算告警。
 5. **IGNORED pair 的取号语义**：当前 `PairContactService` 只判参与方/可用/档位/对方授权，不把 pair.status=IGNORED 当作不可取号；这与「IGNORED 只描述这一对进展」一致，但请产品确认「忽略后对方仍可看到已公开号码」是否符合预期。
@@ -484,11 +530,12 @@ $ git grep -n 'CLAIMED' -- server/src db web/src | wc -l              # 13 (comm
 
 ## 16. 下一步与门禁判定
 
-1. **P1（阻塞）**：`ZHYYKFX-71` 修复 `MaskingPolicy` 分隔符/`+86`/带空格证件号；补 8 条单测。修复后由 F3 复跑 §7 harness + 现有 `MaskingPolicyTest`/C1 断言，在本报告 §3 写「修复 commit + 复验结论」。**在复验前，门禁 3 不应判通过。**
-2. **P2（建议）**：`ZHYYKFX-72` 处理 `updateContent` 竞态、缓存头、日志注入、过期扫描；可与 P1 分开排期。若决定不修，请把相应条目标为「已知风险」并记录理由。
-3. **P2-5 可选**：提示注入/LLM 配额、生产 `Secure`/HSTS、XFF 审计、tracking modes、安全响应头；需产品/部署确认后另行排期。
-4. **不推 main、不合并**：本分支只包含 `docs/testing/v2/security-review.md`；修复在 `ZHYYKFX-71/72` 的独立分支完成。
-5. **验收口径**：P0=0；P1 修复单 + 复验结论齐备才可判通过。当前为「报告已交付、P1 待修复/复验」。
+1. **P1（阻塞）——已闭环**：`ZHYYKFX-71` 在 `fix/v2-F3-p1-masking-normalize@08f4bb9` 修复 `MaskingPolicy` 分隔符/`+86`/带空格证件号；§7 的 8 类输入与 JSON 入口复验全部命中，`MaskingPolicyTest` 18/18。合并建议见 §18.4。
+2. **P2（建议）——已闭环**：`ZHYYKFX-72` 在 `fix/v2-F3-p2-hardening@fbd538f` 修复 P2-1..P2-4，复验通过（§4.1.1）。如需拆分合并，P2 可与 P1 分开，但两者与报告分支均无文件重叠。
+3. **P2-5 可选——部分完成**：`tracking-modes: cookie` 与最小安全响应头已完成；生产 `Secure`/HSTS、XFF 可信代理、提示注入/LLM 配额仍需部署或产品确认。
+4. **不推 main、不合并**：本报告分支只包含 `docs/testing/v2/security-review.md`；两个修复分支保持独立，由集成负责人按 §18.4 合并。
+5. **验收口径**：P0=0；P1 修复单 + 复验结论齐备。**当前判定：门禁 3 通过。**
+
 
 ---
 
@@ -505,3 +552,82 @@ $ git grep -n 'CLAIMED' -- server/src db web/src | wc -l              # 13 (comm
 | C1 遮蔽证据/单测清单 | `docs/testing/v2/C1-masking-evidence.md`（§448） |
 | 密钥可读性（不记值） | `docs/testing/v2/gate2-review/raw/g7-key-read.txt` |
 | 设计口径 | `docs/design/v2-architecture.md` §6/§9.3/§11.2/§11.3；`docs/design/v2-auth-session.md` §cookie/CSRF；`docs/api-contract-v2.md` §1.1 |
+| P1 复验 harness 原始输出 | 本文 §18.2 |
+| 修复 commit | `08f4bb9`（Z-71）、`fbd538f`（Z-72），均基于 `941fdee` |
+
+---
+
+## 18. 复验记录（2026-10-28）
+
+### 18.1 环境与全量测试
+
+**复验工作树**：从 `08f4bb9` 建独立 worktree，再应用 `git diff 941fdee fbd538f`（两个修复分支文件不重叠），等价于「基线 + Z-71 + Z-72」的合并结果；未改动报告分支与集成分支。
+
+```bash
+# 1) 独立工作树：Z-71 已包含在 08f4bb9
+git worktree add ../scratch/f3-verify 08f4bb9
+
+# 2) 叠加 Z-72（与 Z-71 文件无重叠）
+git diff 941fdee fbd538f | git apply
+
+# 3) 服务端全量测试（JDK 17.0.20.1，Maven 离线）
+export JAVA_HOME="$HOME/.jdks/jdk-17.0.20.1+1"
+cd server && ./mvnw -o test
+```
+
+**结果（原文）：**
+
+```text
+[INFO] Tests run: 242, Failures: 0, Errors: 0, Skipped: 0
+[INFO] BUILD SUCCESS
+[INFO] Total time: 39.397 s
+```
+
+关键测试类：`MaskingPolicyTest` 18/18、`LogSafeTest` 4/4、`PairScanServiceTest` 5/5、`PairScoringServiceTest` 9/9；`RecordServiceAccessTest`（新增并发 0 行 3 例）、`RecordApiValidationTest`（200/401 响应头）、`RecordMapperSqlTest`（2 条 SQL 结构断言）均通过。
+
+### 18.2 遮蔽 harness 复验输出
+
+**方法**：直接编译修复后的仓库 `MaskingPolicy.java`，用项目同版本 Jackson 2.21.4 反序列化 JSON 变体；`FULL_PHONE`/`FULL_ID` 表示把输出中的非数字剥离后是否仍包含完整号码。
+
+```text
+V1-contiguous                  FULL_PHONE=false FULL_ID=false OUT=联系 [手机号已隐藏]
+V2-fullwidth                   FULL_PHONE=false FULL_ID=false OUT=联系 [手机号已隐藏]
+V3-space-separated             FULL_PHONE=false FULL_ID=false OUT=联系 [手机号已隐藏]
+V4-newline-separated           FULL_PHONE=false FULL_ID=false OUT=联系 [手机号已隐藏]
+V5-hyphen-separated            FULL_PHONE=false FULL_ID=false OUT=联系 [手机号已隐藏]
+V6-zero-width                  FULL_PHONE=false FULL_ID=false OUT=联系 [手机号已隐藏]
+V7-plus86-prefix               FULL_PHONE=false FULL_ID=false OUT=联系 [手机号已隐藏]
+V8-unicode-escape-literals     FULL_PHONE=false FULL_ID=false OUT=联系 \u0031\u0033\u0038...
+V9-percent-encoded             FULL_PHONE=false FULL_ID=false OUT=联系 %31%33%38...
+V10-qq-lowercase               FULL_PHONE=false FULL_ID=false OUT=qq[QQ号已隐藏]
+V11-qq-uppercase               FULL_PHONE=false FULL_ID=false OUT=QQ[QQ号已隐藏]
+V12-id-with-space              FULL_PHONE=false FULL_ID=false OUT=证件 [证件号已隐藏]
+V13-phone-in-location          FULL_PHONE=false OUT=1381…
+V14-phone-in-location-tail     FULL_PHONE=false OUT=图书馆1…
+V15-tab-separated              FULL_PHONE=false FULL_ID=false OUT=联系 [手机号已隐藏]
+V16-fullwidth-space            FULL_PHONE=false FULL_ID=false OUT=联系 [手机号已隐藏]
+J1-unicode-escaped             PARSE=OK   FULL_PHONE=false FULL_ID=false OUT=联系 [手机号已隐藏]
+J2-array-wrapped               PARSE=FAIL MismatchedInputException
+J3-space-separated             PARSE=OK   FULL_PHONE=false FULL_ID=false OUT=联系 [手机号已隐藏]
+J4-newline-separated           PARSE=OK   FULL_PHONE=false FULL_ID=false OUT=联系 [手机号已隐藏]
+J5-plus86                      PARSE=OK   FULL_PHONE=false FULL_ID=false OUT=联系 [手机号已隐藏]
+```
+
+**结论**：原 V3/V4/V5/V6/V7/V12/V15/V16 与 JSON J3/J4/J5 全部从「绕过」变为「命中」；V1/V2 连续/全角口径不变；V13/V14 仍只残留 1–4 位（P3-4，不构成完整号码）。
+
+### 18.3 复验新增遗留（非阻塞，建议后续单）
+
+| # | 级别 | 发现 | 证据 | 建议 |
+|---|---|---|---|---|
+| R-1 | 建议（P3） | 分隔符集合不含 `,` `，` `:` `：` `;` `；`，这些写法仍可绕过 | `138,1234,5678`、`138:1234:5678`、`138：1234：5678`、`138，1234，5678`、`138;1234;5678` 均原样输出 | 至少把 `:` `：` `;` `；` 加入 `isDigitSeparator`；逗号要单独处理——直接加入可能把 `1,234,567` 这类千分位拼成号码，建议只在归一后长度为 11/13/15 时把逗号当分隔符，并补 `1,234,567` 反例 |
+| R-2 | 细节（P3） | QQ 号的分隔写法和手机号同源问题未扩展：`QQ 123 456` 仍原样 | harness 输出 `QQ 123 456` | 若团队把 QQ 也算敏感联系方式，把 `QQ_RE` 纳入同一分隔符归一；否则在 C1 规则里显式写明「QQ 只匹配连续数字」 |
+| R-3 | 细节（P3） | 地点字段仍只截断不打码（原 P3-4） | `maskLocation("13812345678图书馆")` → `1381…` | 截断前先过一次号码规则；不构成完整号码，不阻塞本轮 |
+
+> R-1 不影响本轮 P1 判据（任务验收的 8 类已全部闭环），但它是同一根因的剩余变体；如果团队认为逗号/冒号属于「自然写法」，可把 R-1 升为 P1 追加修复后再合并 Z-71。是否接受这个取舍由作者/架构 owner 决定。
+
+### 18.4 合并建议
+
+1. **合并顺序**：`fix/v2-F3-p1-masking-normalize@08f4bb9` 与 `fix/v2-F3-p2-hardening@fbd538f` 均基于 `941fdee`，文件无重叠，可按任意顺序合并到 v2 集成分支；建议先 P1 后 P2，便于把副作用分开观察。
+2. **合并前复核**：在目标集成分支上重跑 `server/mvnw -o test`（本轮合并工作树为 242/242）；在 F2 集成环境重跑 28 个手机号探针与关键 HTTP 用例（本机无 MySQL，未执行）。
+3. **回滚**：两个 commit 都是应用层改动，无 DB 迁移；`git revert` 即可回滚，不需要数据修复。P2-1 的 `selectStatusByIdForUpdate` 与 `selectPairScanTargets` 签名变更只影响本仓库调用点（已逐一核对）。
+4. **报告分支**：`feat/v2-F3-security-review` 只含本报告，不合并进 main；修复代码由上述两个分支独立进入集成。
