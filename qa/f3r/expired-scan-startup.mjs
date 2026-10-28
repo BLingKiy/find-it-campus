@@ -1,4 +1,6 @@
-// v2 · F3-R 项 7 补充：以「重启后端」为触发点复验 P2-4（PairScanOnceRunner）。
+// v2 · F3-R 组7 补充（任务项 7 第二口径）：以「重启后端」为触发点复验 P2-4（PairScanOnceRunner）。
+//
+// 用途：把过期扫描的另一个触发口径也测上 —— 进程启动时的 once 扫描（不是 ops 接口）。
 //
 // 为什么单独一个脚本：PairScanOnceRunner 不是无条件跑的 —— 它要 `--pair-scan-once` 这个启动参数
 // （server/src/main/java/com/findit/campus/pair/config/PairScanOnceRunner.java:38-41）。
@@ -10,8 +12,19 @@
 //   端点为 X1/X2 的 pair 行数与通知数不增；
 //   日志里没有 record scored recordId=X1|X2，而 once 汇总行确实扫到了东西（scanned>0）。
 //
-// 运行：node qa/f3r/expired-scan-startup.mjs   （需要能 taskkill 掉当前 18080 进程）
-// 输出：qa/reports/f3r-expired-scan-startup.txt
+// 前置：
+//   · 先跑过 node qa/f3r/expired-scan.mjs prepare，qa/reports/f3r-expired-fixtures.json 里有 X1/X2 的 id；
+//   · 18080 上确实有后端在跑（脚本要 taskkill 掉它再用 --pair-scan-once 重启，重启后的进程是脱离的，
+//     收尾时可自行 taskkill）；
+//   · MySQL 3306、jar 已构建（server/target/find-it-campus-0.0.1-SNAPSHOT.jar）、
+//     JDK17 的 java（JAVA_BIN，默认 C:/Project/tools/jdk17/jdk-17.0.20.1+1/bin/java.exe）；
+//   · qa/reports/server.log 存在（脚本用「字节偏移之后的新增部分」取证，日志必须是追加写的同一个文件）。
+// 运行：node qa/f3r/expired-scan-startup.mjs
+// 期望输出：留档 netstat/taskkill 命令与 PID、健康检查探测次数、once 汇总行，
+//          末行「## 结论：以「重启」为触发点同样复验通过（P2-4 的两个触发口径一致）」；
+//          落盘 qa/reports/f3r-expired-scan-startup.txt（本轮覆盖写），
+//          2026-10-28 那轮的冻结归档见 qa/reports/f3r-2026-10-28-expired-scan-startup.txt。
+// 退出码：0 = 判据全部成立；1 = 有失败项；2 = 环境不满足而中止（找不到 18080 监听进程 / 90 秒内没探活成功）。
 
 import { execFile, spawn } from 'node:child_process';
 import { readFile, stat, writeFile } from 'node:fs/promises';
