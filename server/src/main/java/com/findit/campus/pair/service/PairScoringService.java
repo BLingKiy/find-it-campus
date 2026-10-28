@@ -274,7 +274,8 @@ public class PairScoringService {
         if (unchanged(snapshot, lostHash, foundHash) && !shouldRetryDegraded(snapshot, LocalDateTime.now())) {
             metrics.skippedUnchanged();
             // 分数没变，但通知可能上次写失败了（DB 抖动）。通知是幂等的，补一次成本极低。
-            if (snapshot.getScore().compareTo(policy.getNotifyThreshold()) >= 0) {
+            if (snapshot.getScore().compareTo(
+                    policy.forEngine(snapshot.getEngine()).notifyThreshold()) >= 0) {
                 ensureNotifications(lost, found, snapshot.getId(), snapshot.getScore());
             }
             log.info("pair score skipped reason=UNCHANGED fastPath=true lostId={} foundId={} trigger={} pairId={}",
@@ -293,7 +294,8 @@ public class PairScoringService {
             LocalDateTime now = LocalDateTime.now();
             if (unchanged(existing, lostHash, foundHash) && !shouldRetryDegraded(existing, now)) {
                 metrics.skippedUnchanged();
-                if (existing.getScore().compareTo(policy.getNotifyThreshold()) >= 0) {
+                if (existing.getScore().compareTo(
+                        policy.forEngine(existing.getEngine()).notifyThreshold()) >= 0) {
                     ensureNotifications(lost, found, existing.getId(), existing.getScore());
                 }
                 log.info("pair score skipped reason=UNCHANGED fastPath=false lostId={} foundId={} trigger={} pairId={}",
@@ -325,7 +327,8 @@ public class PairScoringService {
             transactionTemplate.executeWithoutResult(status -> {
                 pairScoreMapper.upsertScore(row);
                 PairScore persisted = pairScoreMapper.selectByPair(lost.recordId(), found.recordId());
-                if (persisted != null && score.compareTo(policy.getNotifyThreshold()) >= 0) {
+                if (persisted != null && score.compareTo(
+                        policy.forEngine(effective.engine()).notifyThreshold()) >= 0) {
                     publishNotifications(lost, found, persisted.getId(), score);
                 }
             });

@@ -56,10 +56,10 @@ class MyRecordServiceTest {
                 row(3L, "丢了一张校园卡"));
         when(recordMapper.countByPublisher(any())).thenReturn(3L);
         when(recordMapper.selectMyRecords(any(), eq(0), eq(10))).thenReturn(rows);
-        when(pairFactsPort.countsOf(any(), any(), any())).thenReturn(Map.of(
+        when(pairFactsPort.countsOf(any(), any())).thenReturn(Map.of(
                 1L, new MyPairCounts(2, 2, 0, 0),
                 2L, new MyPairCounts(1, 1, 0, 0)));
-        when(pairFactsPort.cardsOf(any(), any(), any(), any())).thenReturn(Map.of(
+        when(pairFactsPort.cardsOf(any(), any())).thenReturn(Map.of(
                 1L, List.of(PairCardFixtures.direct(1L, 101L),
                         PairCardFixtures.authorizableNotPublic(1L, 102L)),
                 2L, List.of(PairCardFixtures.direct(2L, 103L))));
@@ -76,8 +76,8 @@ class MyRecordServiceTest {
         assertEquals(0, page.getList().get(2).getRelatedCount());
 
         // N+1 防线：整页 id 一次传入，计数/卡片各一次
-        verify(pairFactsPort).countsOf(eq(List.of(1L, 2L, 3L)), any(), any());
-        verify(pairFactsPort).cardsOf(eq(List.of(1L, 2L, 3L)), any(), any(), any());
+        verify(pairFactsPort).countsOf(eq(List.of(1L, 2L, 3L)), any());
+        verify(pairFactsPort).cardsOf(eq(List.of(1L, 2L, 3L)), any());
         verify(recordMapper).selectMyRecords(any(), eq(0), eq(10));
     }
 
@@ -89,8 +89,8 @@ class MyRecordServiceTest {
         PageResult<MyRecordListItemResponse> page = service.list(new MyRecordsQuery(), 1L);
 
         assertEquals(0, page.getList().size());
-        verify(pairFactsPort, never()).countsOf(any(), any(), any());
-        verify(pairFactsPort, never()).cardsOf(any(), any(), any(), any());
+        verify(pairFactsPort, never()).countsOf(any(), any());
+        verify(pairFactsPort, never()).cardsOf(any(), any());
     }
 
     private static MyRecordRow row(long id, String title) {

@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 import com.findit.campus.common.api.ErrorCode;
 import com.findit.campus.common.error.BizException;
 import com.findit.campus.pair.config.PairPolicyProperties;
+import com.findit.campus.pair.config.PairThresholds;
 import com.findit.campus.pair.domain.AccessResult;
 import com.findit.campus.pair.domain.ContactTier;
 import com.findit.campus.pair.domain.PairAccess;
@@ -66,8 +67,9 @@ public class PairContactService {
             throw BizException.of(ErrorCode.PAIR_INVALID);
         }
 
+        PairThresholds thresholds = policy.forEngine(access.pair().getEngine());
         ContactTier tier = PairAccessPolicy.tier(access.pair().getScore(),
-                policy.getContactDirectThreshold(), policy.getContactUnlockThreshold());
+                thresholds.direct(), thresholds.unlock());
         if (tier == ContactTier.LOW) {
             audit(access, AccessResult.DENIED_LOW_SCORE, meta);
             throw BizException.of(ErrorCode.CONTACT_TIER_INSUFFICIENT);

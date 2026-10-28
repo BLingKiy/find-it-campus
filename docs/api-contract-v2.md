@@ -6,6 +6,7 @@
 > 关系：v1 契约见 `docs/api-contract.md`；**本文是 v2 的唯一契约**。v1 的 8 个业务接口（另有 `GET /api/health`）在 v2 全部保留，其中 7 个的鉴权/可见性/校验有变更（见 §0.2）。v1 与本文冲突时，以本文为准。
 > 上游：`docs/design/v2-architecture.md`（数据模型、遮蔽算法、分档、LLM、三态/四态状态机）。本文只定义 HTTP 契约；实现细节回架构文档。
 > v2.1 变量：`status ∈ {PENDING, COMPLETED, CLOSED}`（`CLAIMED` 作废）；`pairStatus ∈ {NEW, CONTACTED, MATCHED, IGNORED}`；配置项 `contact_direct_threshold` / `contact_unlock_threshold` / `completed_retention_days` / `completed_visible_threshold`。
+> v2.1.1 补充（2026-10-28，ZHYYKFX-84）：上述阈值**按 pair 的 `engine` 取**——默认那套（语义引擎）+ `findit.pair.overrides.local` 覆盖；接口契约里的 `score ≥ contact_*_threshold` 语义不变，只是「阈值」随引擎不同。校准依据见 `docs/testing/v2/threshold-calibration.md`。
 
 ---
 

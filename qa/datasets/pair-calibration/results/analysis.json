@@ -1,0 +1,2091 @@
+{
+  "generatedAt": "2026-10-28T18:09:53.043Z",
+  "criteria": {
+    "posTarget": 0.8,
+    "negTarget": 0.9
+  },
+  "engines": {
+    "local": {
+      "label": "local",
+      "pairs": 20,
+      "positives": {
+        "n": 10,
+        "min": 0.2,
+        "p25": 0.5075000000000001,
+        "median": 0.625,
+        "p75": 0.6775,
+        "max": 0.73,
+        "values": [
+          0.2,
+          0.36,
+          0.49,
+          0.56,
+          0.59,
+          0.66,
+          0.67,
+          0.68,
+          0.7,
+          0.73
+        ]
+      },
+      "negatives": {
+        "n": 10,
+        "min": 0.02,
+        "p25": 0.1325,
+        "median": 0.265,
+        "p75": 0.4075,
+        "max": 0.46,
+        "values": [
+          0.02,
+          0.12,
+          0.12,
+          0.17,
+          0.18,
+          0.35,
+          0.4,
+          0.41,
+          0.43,
+          0.46
+        ]
+      },
+      "sweep": [
+        {
+          "t": 0,
+          "recall": 1,
+          "spec": 0,
+          "pass": false
+        },
+        {
+          "t": 0.01,
+          "recall": 1,
+          "spec": 0,
+          "pass": false
+        },
+        {
+          "t": 0.02,
+          "recall": 1,
+          "spec": 0,
+          "pass": false
+        },
+        {
+          "t": 0.03,
+          "recall": 1,
+          "spec": 0.1,
+          "pass": false
+        },
+        {
+          "t": 0.04,
+          "recall": 1,
+          "spec": 0.1,
+          "pass": false
+        },
+        {
+          "t": 0.05,
+          "recall": 1,
+          "spec": 0.1,
+          "pass": false
+        },
+        {
+          "t": 0.06,
+          "recall": 1,
+          "spec": 0.1,
+          "pass": false
+        },
+        {
+          "t": 0.07,
+          "recall": 1,
+          "spec": 0.1,
+          "pass": false
+        },
+        {
+          "t": 0.08,
+          "recall": 1,
+          "spec": 0.1,
+          "pass": false
+        },
+        {
+          "t": 0.09,
+          "recall": 1,
+          "spec": 0.1,
+          "pass": false
+        },
+        {
+          "t": 0.1,
+          "recall": 1,
+          "spec": 0.1,
+          "pass": false
+        },
+        {
+          "t": 0.11,
+          "recall": 1,
+          "spec": 0.1,
+          "pass": false
+        },
+        {
+          "t": 0.12,
+          "recall": 1,
+          "spec": 0.1,
+          "pass": false
+        },
+        {
+          "t": 0.13,
+          "recall": 1,
+          "spec": 0.3,
+          "pass": false
+        },
+        {
+          "t": 0.14,
+          "recall": 1,
+          "spec": 0.3,
+          "pass": false
+        },
+        {
+          "t": 0.15,
+          "recall": 1,
+          "spec": 0.3,
+          "pass": false
+        },
+        {
+          "t": 0.16,
+          "recall": 1,
+          "spec": 0.3,
+          "pass": false
+        },
+        {
+          "t": 0.17,
+          "recall": 1,
+          "spec": 0.3,
+          "pass": false
+        },
+        {
+          "t": 0.18,
+          "recall": 1,
+          "spec": 0.4,
+          "pass": false
+        },
+        {
+          "t": 0.19,
+          "recall": 1,
+          "spec": 0.5,
+          "pass": false
+        },
+        {
+          "t": 0.2,
+          "recall": 1,
+          "spec": 0.5,
+          "pass": false
+        },
+        {
+          "t": 0.21,
+          "recall": 0.9,
+          "spec": 0.5,
+          "pass": false
+        },
+        {
+          "t": 0.22,
+          "recall": 0.9,
+          "spec": 0.5,
+          "pass": false
+        },
+        {
+          "t": 0.23,
+          "recall": 0.9,
+          "spec": 0.5,
+          "pass": false
+        },
+        {
+          "t": 0.24,
+          "recall": 0.9,
+          "spec": 0.5,
+          "pass": false
+        },
+        {
+          "t": 0.25,
+          "recall": 0.9,
+          "spec": 0.5,
+          "pass": false
+        },
+        {
+          "t": 0.26,
+          "recall": 0.9,
+          "spec": 0.5,
+          "pass": false
+        },
+        {
+          "t": 0.27,
+          "recall": 0.9,
+          "spec": 0.5,
+          "pass": false
+        },
+        {
+          "t": 0.28,
+          "recall": 0.9,
+          "spec": 0.5,
+          "pass": false
+        },
+        {
+          "t": 0.29,
+          "recall": 0.9,
+          "spec": 0.5,
+          "pass": false
+        },
+        {
+          "t": 0.3,
+          "recall": 0.9,
+          "spec": 0.5,
+          "pass": false
+        },
+        {
+          "t": 0.31,
+          "recall": 0.9,
+          "spec": 0.5,
+          "pass": false
+        },
+        {
+          "t": 0.32,
+          "recall": 0.9,
+          "spec": 0.5,
+          "pass": false
+        },
+        {
+          "t": 0.33,
+          "recall": 0.9,
+          "spec": 0.5,
+          "pass": false
+        },
+        {
+          "t": 0.34,
+          "recall": 0.9,
+          "spec": 0.5,
+          "pass": false
+        },
+        {
+          "t": 0.35,
+          "recall": 0.9,
+          "spec": 0.5,
+          "pass": false
+        },
+        {
+          "t": 0.36,
+          "recall": 0.9,
+          "spec": 0.6,
+          "pass": false
+        },
+        {
+          "t": 0.37,
+          "recall": 0.8,
+          "spec": 0.6,
+          "pass": false
+        },
+        {
+          "t": 0.38,
+          "recall": 0.8,
+          "spec": 0.6,
+          "pass": false
+        },
+        {
+          "t": 0.39,
+          "recall": 0.8,
+          "spec": 0.6,
+          "pass": false
+        },
+        {
+          "t": 0.4,
+          "recall": 0.8,
+          "spec": 0.6,
+          "pass": false
+        },
+        {
+          "t": 0.41,
+          "recall": 0.8,
+          "spec": 0.7,
+          "pass": false
+        },
+        {
+          "t": 0.42,
+          "recall": 0.8,
+          "spec": 0.8,
+          "pass": false
+        },
+        {
+          "t": 0.43,
+          "recall": 0.8,
+          "spec": 0.8,
+          "pass": false
+        },
+        {
+          "t": 0.44,
+          "recall": 0.8,
+          "spec": 0.9,
+          "pass": true
+        },
+        {
+          "t": 0.45,
+          "recall": 0.8,
+          "spec": 0.9,
+          "pass": true
+        },
+        {
+          "t": 0.46,
+          "recall": 0.8,
+          "spec": 0.9,
+          "pass": true
+        },
+        {
+          "t": 0.47,
+          "recall": 0.8,
+          "spec": 1,
+          "pass": true
+        },
+        {
+          "t": 0.48,
+          "recall": 0.8,
+          "spec": 1,
+          "pass": true
+        },
+        {
+          "t": 0.49,
+          "recall": 0.8,
+          "spec": 1,
+          "pass": true
+        },
+        {
+          "t": 0.5,
+          "recall": 0.7,
+          "spec": 1,
+          "pass": false
+        },
+        {
+          "t": 0.51,
+          "recall": 0.7,
+          "spec": 1,
+          "pass": false
+        },
+        {
+          "t": 0.52,
+          "recall": 0.7,
+          "spec": 1,
+          "pass": false
+        },
+        {
+          "t": 0.53,
+          "recall": 0.7,
+          "spec": 1,
+          "pass": false
+        },
+        {
+          "t": 0.54,
+          "recall": 0.7,
+          "spec": 1,
+          "pass": false
+        },
+        {
+          "t": 0.55,
+          "recall": 0.7,
+          "spec": 1,
+          "pass": false
+        },
+        {
+          "t": 0.56,
+          "recall": 0.7,
+          "spec": 1,
+          "pass": false
+        },
+        {
+          "t": 0.57,
+          "recall": 0.6,
+          "spec": 1,
+          "pass": false
+        },
+        {
+          "t": 0.58,
+          "recall": 0.6,
+          "spec": 1,
+          "pass": false
+        },
+        {
+          "t": 0.59,
+          "recall": 0.6,
+          "spec": 1,
+          "pass": false
+        },
+        {
+          "t": 0.6,
+          "recall": 0.5,
+          "spec": 1,
+          "pass": false
+        },
+        {
+          "t": 0.61,
+          "recall": 0.5,
+          "spec": 1,
+          "pass": false
+        },
+        {
+          "t": 0.62,
+          "recall": 0.5,
+          "spec": 1,
+          "pass": false
+        },
+        {
+          "t": 0.63,
+          "recall": 0.5,
+          "spec": 1,
+          "pass": false
+        },
+        {
+          "t": 0.64,
+          "recall": 0.5,
+          "spec": 1,
+          "pass": false
+        },
+        {
+          "t": 0.65,
+          "recall": 0.5,
+          "spec": 1,
+          "pass": false
+        },
+        {
+          "t": 0.66,
+          "recall": 0.5,
+          "spec": 1,
+          "pass": false
+        },
+        {
+          "t": 0.67,
+          "recall": 0.4,
+          "spec": 1,
+          "pass": false
+        },
+        {
+          "t": 0.68,
+          "recall": 0.3,
+          "spec": 1,
+          "pass": false
+        },
+        {
+          "t": 0.69,
+          "recall": 0.2,
+          "spec": 1,
+          "pass": false
+        },
+        {
+          "t": 0.7,
+          "recall": 0.2,
+          "spec": 1,
+          "pass": false
+        },
+        {
+          "t": 0.71,
+          "recall": 0.1,
+          "spec": 1,
+          "pass": false
+        },
+        {
+          "t": 0.72,
+          "recall": 0.1,
+          "spec": 1,
+          "pass": false
+        },
+        {
+          "t": 0.73,
+          "recall": 0.1,
+          "spec": 1,
+          "pass": false
+        },
+        {
+          "t": 0.74,
+          "recall": 0,
+          "spec": 1,
+          "pass": false
+        },
+        {
+          "t": 0.75,
+          "recall": 0,
+          "spec": 1,
+          "pass": false
+        },
+        {
+          "t": 0.76,
+          "recall": 0,
+          "spec": 1,
+          "pass": false
+        },
+        {
+          "t": 0.77,
+          "recall": 0,
+          "spec": 1,
+          "pass": false
+        },
+        {
+          "t": 0.78,
+          "recall": 0,
+          "spec": 1,
+          "pass": false
+        },
+        {
+          "t": 0.79,
+          "recall": 0,
+          "spec": 1,
+          "pass": false
+        },
+        {
+          "t": 0.8,
+          "recall": 0,
+          "spec": 1,
+          "pass": false
+        },
+        {
+          "t": 0.81,
+          "recall": 0,
+          "spec": 1,
+          "pass": false
+        },
+        {
+          "t": 0.82,
+          "recall": 0,
+          "spec": 1,
+          "pass": false
+        },
+        {
+          "t": 0.83,
+          "recall": 0,
+          "spec": 1,
+          "pass": false
+        },
+        {
+          "t": 0.84,
+          "recall": 0,
+          "spec": 1,
+          "pass": false
+        },
+        {
+          "t": 0.85,
+          "recall": 0,
+          "spec": 1,
+          "pass": false
+        },
+        {
+          "t": 0.86,
+          "recall": 0,
+          "spec": 1,
+          "pass": false
+        },
+        {
+          "t": 0.87,
+          "recall": 0,
+          "spec": 1,
+          "pass": false
+        },
+        {
+          "t": 0.88,
+          "recall": 0,
+          "spec": 1,
+          "pass": false
+        },
+        {
+          "t": 0.89,
+          "recall": 0,
+          "spec": 1,
+          "pass": false
+        },
+        {
+          "t": 0.9,
+          "recall": 0,
+          "spec": 1,
+          "pass": false
+        },
+        {
+          "t": 0.91,
+          "recall": 0,
+          "spec": 1,
+          "pass": false
+        },
+        {
+          "t": 0.92,
+          "recall": 0,
+          "spec": 1,
+          "pass": false
+        },
+        {
+          "t": 0.93,
+          "recall": 0,
+          "spec": 1,
+          "pass": false
+        },
+        {
+          "t": 0.94,
+          "recall": 0,
+          "spec": 1,
+          "pass": false
+        },
+        {
+          "t": 0.95,
+          "recall": 0,
+          "spec": 1,
+          "pass": false
+        },
+        {
+          "t": 0.96,
+          "recall": 0,
+          "spec": 1,
+          "pass": false
+        },
+        {
+          "t": 0.97,
+          "recall": 0,
+          "spec": 1,
+          "pass": false
+        },
+        {
+          "t": 0.98,
+          "recall": 0,
+          "spec": 1,
+          "pass": false
+        },
+        {
+          "t": 0.99,
+          "recall": 0,
+          "spec": 1,
+          "pass": false
+        },
+        {
+          "t": 1,
+          "recall": 0,
+          "spec": 1,
+          "pass": false
+        }
+      ],
+      "passing": {
+        "min": 0.44,
+        "max": 0.49
+      },
+      "best": {
+        "t": 0.44,
+        "recall": 0.8,
+        "spec": 0.9,
+        "pass": true,
+        "score": 1
+      },
+      "raw": {
+        "label": "local",
+        "apiBase": "http://localhost:18086",
+        "startedAt": "2026-10-28T15:44:28.262Z",
+        "thresholdOverride": "unlock=0.00 / direct=0.01 / notify=0.00 / completed_visible=0.00（采集专用，未落配置）",
+        "dataset": "qa/datasets/pair-calibration/pairs.json（20 对）",
+        "pairs": [
+          {
+            "id": "P01",
+            "class": "A",
+            "expect": "MATCH",
+            "reason": "同品牌同容量同地点，外壳划痕这一细节两边一致，是同一件充电宝",
+            "lostId": 1,
+            "foundId": 2,
+            "score": 0.73,
+            "engine": "LOCAL_KEYWORD",
+            "tier": "DIRECT",
+            "degraded": true,
+            "pairState": "READY",
+            "lowConfidenceCount": 0,
+            "waitMs": 853,
+            "foundClosed": true,
+            "lostClosed": true,
+            "totalMs": 1980
+          },
+          {
+            "id": "P02",
+            "class": "A",
+            "expect": "MATCH",
+            "reason": "深蓝色折叠伞、木柄、同一地点，描述的是同一把伞",
+            "lostId": 3,
+            "foundId": 4,
+            "score": 0.7,
+            "engine": "LOCAL_KEYWORD",
+            "tier": "DIRECT",
+            "degraded": true,
+            "pairState": "READY",
+            "lowConfidenceCount": 0,
+            "waitMs": 844,
+            "foundClosed": true,
+            "lostClosed": true,
+            "totalMs": 2340
+          },
+          {
+            "id": "P03",
+            "class": "A",
+            "expect": "MATCH",
+            "reason": "同姓、同学号年级段、同学院同地点，指向同一张学生证",
+            "lostId": 5,
+            "foundId": 6,
+            "score": 0.66,
+            "engine": "LOCAL_KEYWORD",
+            "tier": "DIRECT",
+            "degraded": true,
+            "pairState": "READY",
+            "lowConfidenceCount": 0,
+            "waitMs": 426,
+            "foundClosed": true,
+            "lostClosed": true,
+            "totalMs": 1572
+          },
+          {
+            "id": "P04",
+            "class": "A",
+            "expect": "MATCH",
+            "reason": "同颜色同材质同容量同教室，杯身贴纸也一致，是同一个保温杯",
+            "lostId": 7,
+            "foundId": 8,
+            "score": 0.49,
+            "engine": "LOCAL_KEYWORD",
+            "tier": "DIRECT",
+            "degraded": true,
+            "pairState": "READY",
+            "lowConfidenceCount": 0,
+            "waitMs": 422,
+            "foundClosed": true,
+            "lostClosed": true,
+            "totalMs": 1604
+          },
+          {
+            "id": "P05",
+            "class": "A",
+            "expect": "MATCH",
+            "reason": "同色、同为右耳单只、同地点，缺失充电仓的细节互相印证",
+            "lostId": 9,
+            "foundId": 10,
+            "score": 0.67,
+            "engine": "LOCAL_KEYWORD",
+            "tier": "DIRECT",
+            "degraded": true,
+            "pairState": "READY",
+            "lowConfidenceCount": 0,
+            "waitMs": 429,
+            "foundClosed": true,
+            "lostClosed": true,
+            "totalMs": 506
+          },
+          {
+            "id": "P06",
+            "class": "B",
+            "expect": "MATCH",
+            "reason": "“移动电源 / 充电宝”是同一物的两种叫法，颜色容量品牌与地点一致",
+            "lostId": 11,
+            "foundId": 12,
+            "score": 0.2,
+            "engine": "LOCAL_KEYWORD",
+            "tier": "DIRECT",
+            "degraded": true,
+            "pairState": "READY",
+            "lowConfidenceCount": 0,
+            "waitMs": 425,
+            "foundClosed": true,
+            "lostClosed": true,
+            "totalMs": 851
+          },
+          {
+            "id": "P07",
+            "class": "B",
+            "expect": "MATCH",
+            "reason": "颜色、折叠/长柄样式与地点一致，可以判为同一把伞",
+            "lostId": 13,
+            "foundId": 14,
+            "score": 0.68,
+            "engine": "LOCAL_KEYWORD",
+            "tier": "DIRECT",
+            "degraded": true,
+            "pairState": "READY",
+            "lowConfidenceCount": 0,
+            "waitMs": 424,
+            "foundClosed": true,
+            "lostClosed": true,
+            "totalMs": 1553
+          },
+          {
+            "id": "P08",
+            "class": "B",
+            "expect": "MATCH",
+            "reason": "同地点、同含宿舍钥匙、同一个小熊挂件，可判为同一串钥匙",
+            "lostId": 15,
+            "foundId": 16,
+            "score": 0.56,
+            "engine": "LOCAL_KEYWORD",
+            "tier": "DIRECT",
+            "degraded": true,
+            "pairState": "READY",
+            "lowConfidenceCount": 0,
+            "waitMs": 1259,
+            "foundClosed": true,
+            "lostClosed": true,
+            "totalMs": 2563
+          },
+          {
+            "id": "P09",
+            "class": "B",
+            "expect": "MATCH",
+            "reason": "黑框、高度数、同地点，可判为同一副眼镜",
+            "lostId": 17,
+            "foundId": 18,
+            "score": 0.36,
+            "engine": "LOCAL_KEYWORD",
+            "tier": "DIRECT",
+            "degraded": true,
+            "pairState": "READY",
+            "lowConfidenceCount": 0,
+            "waitMs": 836,
+            "foundClosed": true,
+            "lostClosed": true,
+            "totalMs": 2622
+          },
+          {
+            "id": "P10",
+            "class": "C",
+            "expect": "MATCH",
+            "reason": "同地点、同颜色，钱包内都有校园卡，一侧信息更少但仍是同一只钱包",
+            "lostId": 19,
+            "foundId": 20,
+            "score": 0.59,
+            "engine": "LOCAL_KEYWORD",
+            "tier": "DIRECT",
+            "degraded": true,
+            "pairState": "READY",
+            "lowConfidenceCount": 0,
+            "waitMs": 422,
+            "foundClosed": true,
+            "lostClosed": true,
+            "totalMs": 876
+          },
+          {
+            "id": "P11",
+            "class": "C",
+            "expect": "NO_MATCH",
+            "reason": "同类别同地点，但宿舍门钥匙与带遥控器的电动车钥匙不是同一个物品",
+            "lostId": 21,
+            "foundId": 22,
+            "score": 0.4,
+            "engine": "LOCAL_KEYWORD",
+            "tier": "DIRECT",
+            "degraded": true,
+            "pairState": "READY",
+            "lowConfidenceCount": 0,
+            "waitMs": 421,
+            "foundClosed": true,
+            "lostClosed": true,
+            "totalMs": 854
+          },
+          {
+            "id": "P12",
+            "class": "C",
+            "expect": "NO_MATCH",
+            "reason": "同为教材同一间教室，但高等数学与大学英语是两本不同的书",
+            "lostId": 23,
+            "foundId": 24,
+            "score": 0.41,
+            "engine": "LOCAL_KEYWORD",
+            "tier": "DIRECT",
+            "degraded": true,
+            "pairState": "READY",
+            "lowConfidenceCount": 0,
+            "waitMs": 427,
+            "foundClosed": true,
+            "lostClosed": true,
+            "totalMs": 1524
+          },
+          {
+            "id": "P13",
+            "class": "C",
+            "expect": "NO_MATCH",
+            "reason": "同为黑色包、同一地点，但双肩电脑包与女士手提包不是同一件",
+            "lostId": 25,
+            "foundId": 26,
+            "score": 0.43,
+            "engine": "LOCAL_KEYWORD",
+            "tier": "DIRECT",
+            "degraded": true,
+            "pairState": "READY",
+            "lowConfidenceCount": 0,
+            "waitMs": 835,
+            "foundClosed": true,
+            "lostClosed": true,
+            "totalMs": 1934
+          },
+          {
+            "id": "P14",
+            "class": "C",
+            "expect": "NO_MATCH",
+            "reason": "同类目同地点，但蓝色 iPhone 13 与黑色华为手机是两部不同的手机",
+            "lostId": 27,
+            "foundId": 28,
+            "score": 0.46,
+            "engine": "LOCAL_KEYWORD",
+            "tier": "DIRECT",
+            "degraded": true,
+            "pairState": "READY",
+            "lowConfidenceCount": 0,
+            "waitMs": 840,
+            "foundClosed": true,
+            "lostClosed": true,
+            "totalMs": 1268
+          },
+          {
+            "id": "P15",
+            "class": "D",
+            "expect": "NO_MATCH",
+            "reason": "充电宝与蓝牙耳机是两类物品，只有颜色和地点相同",
+            "lostId": 29,
+            "foundId": 30,
+            "score": 0.17,
+            "engine": "LOCAL_KEYWORD",
+            "tier": "DIRECT",
+            "degraded": true,
+            "pairState": "READY",
+            "lowConfidenceCount": 0,
+            "waitMs": 421,
+            "foundClosed": true,
+            "lostClosed": true,
+            "totalMs": 1203
+          },
+          {
+            "id": "P16",
+            "class": "D",
+            "expect": "NO_MATCH",
+            "reason": "雨伞与保温杯是两类物品，地点也不同",
+            "lostId": 31,
+            "foundId": 32,
+            "score": 0.02,
+            "engine": "LOCAL_KEYWORD",
+            "tier": "DIRECT",
+            "degraded": true,
+            "pairState": "READY",
+            "lowConfidenceCount": 0,
+            "waitMs": 1249,
+            "foundClosed": true,
+            "lostClosed": true,
+            "totalMs": 1651
+          },
+          {
+            "id": "P17",
+            "class": "D",
+            "expect": "NO_MATCH",
+            "reason": "学生证与钥匙串是两类物品，只有地点相同",
+            "lostId": 33,
+            "foundId": 34,
+            "score": 0.12,
+            "engine": "LOCAL_KEYWORD",
+            "tier": "DIRECT",
+            "degraded": true,
+            "pairState": "READY",
+            "lowConfidenceCount": 0,
+            "waitMs": 419,
+            "foundClosed": true,
+            "lostClosed": true,
+            "totalMs": 2224
+          },
+          {
+            "id": "P18",
+            "class": "D",
+            "expect": "NO_MATCH",
+            "reason": "线性代数课本与钱包是两类物品，只有地点相同",
+            "lostId": 35,
+            "foundId": 36,
+            "score": 0.12,
+            "engine": "LOCAL_KEYWORD",
+            "tier": "DIRECT",
+            "degraded": true,
+            "pairState": "READY",
+            "lowConfidenceCount": 0,
+            "waitMs": 424,
+            "foundClosed": true,
+            "lostClosed": true,
+            "totalMs": 1889
+          },
+          {
+            "id": "P19",
+            "class": "D",
+            "expect": "NO_MATCH",
+            "reason": "白色蓝牙耳机与白色运动水壶是两类物品，只有颜色与地点相同",
+            "lostId": 37,
+            "foundId": 38,
+            "score": 0.18,
+            "engine": "LOCAL_KEYWORD",
+            "tier": "DIRECT",
+            "degraded": true,
+            "pairState": "READY",
+            "lowConfidenceCount": 0,
+            "waitMs": 422,
+            "foundClosed": true,
+            "lostClosed": true,
+            "totalMs": 1989
+          },
+          {
+            "id": "P20",
+            "class": "D",
+            "expect": "NO_MATCH",
+            "reason": "黑色双肩包与黑色雨伞是两类物品，只有颜色与地点相同",
+            "lostId": 39,
+            "foundId": 40,
+            "score": 0.35,
+            "engine": "LOCAL_KEYWORD",
+            "tier": "DIRECT",
+            "degraded": true,
+            "pairState": "READY",
+            "lowConfidenceCount": 0,
+            "waitMs": 424,
+            "foundClosed": true,
+            "lostClosed": true,
+            "totalMs": 1532
+          }
+        ],
+        "finishedAt": "2026-10-28T15:45:00.824Z",
+        "summary": {
+          "total": 20,
+          "scored": 20,
+          "errors": 0,
+          "engines": [
+            "LOCAL_KEYWORD"
+          ]
+        }
+      }
+    },
+    "deepseek": {
+      "label": "deepseek",
+      "pairs": 20,
+      "positives": {
+        "n": 10,
+        "min": 0.92,
+        "p25": 0.95,
+        "median": 0.95,
+        "p75": 0.98,
+        "max": 0.98,
+        "values": [
+          0.92,
+          0.95,
+          0.95,
+          0.95,
+          0.95,
+          0.95,
+          0.98,
+          0.98,
+          0.98,
+          0.98
+        ]
+      },
+      "negatives": {
+        "n": 10,
+        "min": 0,
+        "p25": 0.05,
+        "median": 0.05,
+        "p75": 0.07250000000000001,
+        "max": 0.15,
+        "values": [
+          0,
+          0,
+          0.05,
+          0.05,
+          0.05,
+          0.05,
+          0.05,
+          0.08,
+          0.15,
+          0.15
+        ]
+      },
+      "sweep": [
+        {
+          "t": 0,
+          "recall": 1,
+          "spec": 0,
+          "pass": false
+        },
+        {
+          "t": 0.01,
+          "recall": 1,
+          "spec": 0.2,
+          "pass": false
+        },
+        {
+          "t": 0.02,
+          "recall": 1,
+          "spec": 0.2,
+          "pass": false
+        },
+        {
+          "t": 0.03,
+          "recall": 1,
+          "spec": 0.2,
+          "pass": false
+        },
+        {
+          "t": 0.04,
+          "recall": 1,
+          "spec": 0.2,
+          "pass": false
+        },
+        {
+          "t": 0.05,
+          "recall": 1,
+          "spec": 0.2,
+          "pass": false
+        },
+        {
+          "t": 0.06,
+          "recall": 1,
+          "spec": 0.7,
+          "pass": false
+        },
+        {
+          "t": 0.07,
+          "recall": 1,
+          "spec": 0.7,
+          "pass": false
+        },
+        {
+          "t": 0.08,
+          "recall": 1,
+          "spec": 0.7,
+          "pass": false
+        },
+        {
+          "t": 0.09,
+          "recall": 1,
+          "spec": 0.8,
+          "pass": false
+        },
+        {
+          "t": 0.1,
+          "recall": 1,
+          "spec": 0.8,
+          "pass": false
+        },
+        {
+          "t": 0.11,
+          "recall": 1,
+          "spec": 0.8,
+          "pass": false
+        },
+        {
+          "t": 0.12,
+          "recall": 1,
+          "spec": 0.8,
+          "pass": false
+        },
+        {
+          "t": 0.13,
+          "recall": 1,
+          "spec": 0.8,
+          "pass": false
+        },
+        {
+          "t": 0.14,
+          "recall": 1,
+          "spec": 0.8,
+          "pass": false
+        },
+        {
+          "t": 0.15,
+          "recall": 1,
+          "spec": 0.8,
+          "pass": false
+        },
+        {
+          "t": 0.16,
+          "recall": 1,
+          "spec": 1,
+          "pass": true
+        },
+        {
+          "t": 0.17,
+          "recall": 1,
+          "spec": 1,
+          "pass": true
+        },
+        {
+          "t": 0.18,
+          "recall": 1,
+          "spec": 1,
+          "pass": true
+        },
+        {
+          "t": 0.19,
+          "recall": 1,
+          "spec": 1,
+          "pass": true
+        },
+        {
+          "t": 0.2,
+          "recall": 1,
+          "spec": 1,
+          "pass": true
+        },
+        {
+          "t": 0.21,
+          "recall": 1,
+          "spec": 1,
+          "pass": true
+        },
+        {
+          "t": 0.22,
+          "recall": 1,
+          "spec": 1,
+          "pass": true
+        },
+        {
+          "t": 0.23,
+          "recall": 1,
+          "spec": 1,
+          "pass": true
+        },
+        {
+          "t": 0.24,
+          "recall": 1,
+          "spec": 1,
+          "pass": true
+        },
+        {
+          "t": 0.25,
+          "recall": 1,
+          "spec": 1,
+          "pass": true
+        },
+        {
+          "t": 0.26,
+          "recall": 1,
+          "spec": 1,
+          "pass": true
+        },
+        {
+          "t": 0.27,
+          "recall": 1,
+          "spec": 1,
+          "pass": true
+        },
+        {
+          "t": 0.28,
+          "recall": 1,
+          "spec": 1,
+          "pass": true
+        },
+        {
+          "t": 0.29,
+          "recall": 1,
+          "spec": 1,
+          "pass": true
+        },
+        {
+          "t": 0.3,
+          "recall": 1,
+          "spec": 1,
+          "pass": true
+        },
+        {
+          "t": 0.31,
+          "recall": 1,
+          "spec": 1,
+          "pass": true
+        },
+        {
+          "t": 0.32,
+          "recall": 1,
+          "spec": 1,
+          "pass": true
+        },
+        {
+          "t": 0.33,
+          "recall": 1,
+          "spec": 1,
+          "pass": true
+        },
+        {
+          "t": 0.34,
+          "recall": 1,
+          "spec": 1,
+          "pass": true
+        },
+        {
+          "t": 0.35,
+          "recall": 1,
+          "spec": 1,
+          "pass": true
+        },
+        {
+          "t": 0.36,
+          "recall": 1,
+          "spec": 1,
+          "pass": true
+        },
+        {
+          "t": 0.37,
+          "recall": 1,
+          "spec": 1,
+          "pass": true
+        },
+        {
+          "t": 0.38,
+          "recall": 1,
+          "spec": 1,
+          "pass": true
+        },
+        {
+          "t": 0.39,
+          "recall": 1,
+          "spec": 1,
+          "pass": true
+        },
+        {
+          "t": 0.4,
+          "recall": 1,
+          "spec": 1,
+          "pass": true
+        },
+        {
+          "t": 0.41,
+          "recall": 1,
+          "spec": 1,
+          "pass": true
+        },
+        {
+          "t": 0.42,
+          "recall": 1,
+          "spec": 1,
+          "pass": true
+        },
+        {
+          "t": 0.43,
+          "recall": 1,
+          "spec": 1,
+          "pass": true
+        },
+        {
+          "t": 0.44,
+          "recall": 1,
+          "spec": 1,
+          "pass": true
+        },
+        {
+          "t": 0.45,
+          "recall": 1,
+          "spec": 1,
+          "pass": true
+        },
+        {
+          "t": 0.46,
+          "recall": 1,
+          "spec": 1,
+          "pass": true
+        },
+        {
+          "t": 0.47,
+          "recall": 1,
+          "spec": 1,
+          "pass": true
+        },
+        {
+          "t": 0.48,
+          "recall": 1,
+          "spec": 1,
+          "pass": true
+        },
+        {
+          "t": 0.49,
+          "recall": 1,
+          "spec": 1,
+          "pass": true
+        },
+        {
+          "t": 0.5,
+          "recall": 1,
+          "spec": 1,
+          "pass": true
+        },
+        {
+          "t": 0.51,
+          "recall": 1,
+          "spec": 1,
+          "pass": true
+        },
+        {
+          "t": 0.52,
+          "recall": 1,
+          "spec": 1,
+          "pass": true
+        },
+        {
+          "t": 0.53,
+          "recall": 1,
+          "spec": 1,
+          "pass": true
+        },
+        {
+          "t": 0.54,
+          "recall": 1,
+          "spec": 1,
+          "pass": true
+        },
+        {
+          "t": 0.55,
+          "recall": 1,
+          "spec": 1,
+          "pass": true
+        },
+        {
+          "t": 0.56,
+          "recall": 1,
+          "spec": 1,
+          "pass": true
+        },
+        {
+          "t": 0.57,
+          "recall": 1,
+          "spec": 1,
+          "pass": true
+        },
+        {
+          "t": 0.58,
+          "recall": 1,
+          "spec": 1,
+          "pass": true
+        },
+        {
+          "t": 0.59,
+          "recall": 1,
+          "spec": 1,
+          "pass": true
+        },
+        {
+          "t": 0.6,
+          "recall": 1,
+          "spec": 1,
+          "pass": true
+        },
+        {
+          "t": 0.61,
+          "recall": 1,
+          "spec": 1,
+          "pass": true
+        },
+        {
+          "t": 0.62,
+          "recall": 1,
+          "spec": 1,
+          "pass": true
+        },
+        {
+          "t": 0.63,
+          "recall": 1,
+          "spec": 1,
+          "pass": true
+        },
+        {
+          "t": 0.64,
+          "recall": 1,
+          "spec": 1,
+          "pass": true
+        },
+        {
+          "t": 0.65,
+          "recall": 1,
+          "spec": 1,
+          "pass": true
+        },
+        {
+          "t": 0.66,
+          "recall": 1,
+          "spec": 1,
+          "pass": true
+        },
+        {
+          "t": 0.67,
+          "recall": 1,
+          "spec": 1,
+          "pass": true
+        },
+        {
+          "t": 0.68,
+          "recall": 1,
+          "spec": 1,
+          "pass": true
+        },
+        {
+          "t": 0.69,
+          "recall": 1,
+          "spec": 1,
+          "pass": true
+        },
+        {
+          "t": 0.7,
+          "recall": 1,
+          "spec": 1,
+          "pass": true
+        },
+        {
+          "t": 0.71,
+          "recall": 1,
+          "spec": 1,
+          "pass": true
+        },
+        {
+          "t": 0.72,
+          "recall": 1,
+          "spec": 1,
+          "pass": true
+        },
+        {
+          "t": 0.73,
+          "recall": 1,
+          "spec": 1,
+          "pass": true
+        },
+        {
+          "t": 0.74,
+          "recall": 1,
+          "spec": 1,
+          "pass": true
+        },
+        {
+          "t": 0.75,
+          "recall": 1,
+          "spec": 1,
+          "pass": true
+        },
+        {
+          "t": 0.76,
+          "recall": 1,
+          "spec": 1,
+          "pass": true
+        },
+        {
+          "t": 0.77,
+          "recall": 1,
+          "spec": 1,
+          "pass": true
+        },
+        {
+          "t": 0.78,
+          "recall": 1,
+          "spec": 1,
+          "pass": true
+        },
+        {
+          "t": 0.79,
+          "recall": 1,
+          "spec": 1,
+          "pass": true
+        },
+        {
+          "t": 0.8,
+          "recall": 1,
+          "spec": 1,
+          "pass": true
+        },
+        {
+          "t": 0.81,
+          "recall": 1,
+          "spec": 1,
+          "pass": true
+        },
+        {
+          "t": 0.82,
+          "recall": 1,
+          "spec": 1,
+          "pass": true
+        },
+        {
+          "t": 0.83,
+          "recall": 1,
+          "spec": 1,
+          "pass": true
+        },
+        {
+          "t": 0.84,
+          "recall": 1,
+          "spec": 1,
+          "pass": true
+        },
+        {
+          "t": 0.85,
+          "recall": 1,
+          "spec": 1,
+          "pass": true
+        },
+        {
+          "t": 0.86,
+          "recall": 1,
+          "spec": 1,
+          "pass": true
+        },
+        {
+          "t": 0.87,
+          "recall": 1,
+          "spec": 1,
+          "pass": true
+        },
+        {
+          "t": 0.88,
+          "recall": 1,
+          "spec": 1,
+          "pass": true
+        },
+        {
+          "t": 0.89,
+          "recall": 1,
+          "spec": 1,
+          "pass": true
+        },
+        {
+          "t": 0.9,
+          "recall": 1,
+          "spec": 1,
+          "pass": true
+        },
+        {
+          "t": 0.91,
+          "recall": 1,
+          "spec": 1,
+          "pass": true
+        },
+        {
+          "t": 0.92,
+          "recall": 1,
+          "spec": 1,
+          "pass": true
+        },
+        {
+          "t": 0.93,
+          "recall": 0.9,
+          "spec": 1,
+          "pass": true
+        },
+        {
+          "t": 0.94,
+          "recall": 0.9,
+          "spec": 1,
+          "pass": true
+        },
+        {
+          "t": 0.95,
+          "recall": 0.9,
+          "spec": 1,
+          "pass": true
+        },
+        {
+          "t": 0.96,
+          "recall": 0.4,
+          "spec": 1,
+          "pass": false
+        },
+        {
+          "t": 0.97,
+          "recall": 0.4,
+          "spec": 1,
+          "pass": false
+        },
+        {
+          "t": 0.98,
+          "recall": 0.4,
+          "spec": 1,
+          "pass": false
+        },
+        {
+          "t": 0.99,
+          "recall": 0,
+          "spec": 1,
+          "pass": false
+        },
+        {
+          "t": 1,
+          "recall": 0,
+          "spec": 1,
+          "pass": false
+        }
+      ],
+      "passing": {
+        "min": 0.16,
+        "max": 0.95
+      },
+      "best": {
+        "t": 0.16,
+        "recall": 1,
+        "spec": 1,
+        "pass": true,
+        "score": 1.1111111111111112
+      },
+      "raw": {
+        "label": "deepseek",
+        "apiBase": "http://localhost:18087",
+        "startedAt": "2026-10-28T15:45:55.481Z",
+        "thresholdOverride": "unlock=0.00 / direct=0.01 / notify=0.00 / completed_visible=0.00（采集专用，未落配置）",
+        "dataset": "qa/datasets/pair-calibration/pairs.json（20 对）",
+        "pairs": [
+          {
+            "id": "P01",
+            "class": "A",
+            "expect": "MATCH",
+            "reason": "同品牌同容量同地点，外壳划痕这一细节两边一致，是同一件充电宝",
+            "lostId": 1,
+            "foundId": 2,
+            "score": 0.98,
+            "engine": "DEEPSEEK",
+            "tier": "DIRECT",
+            "degraded": false,
+            "pairState": "READY",
+            "lowConfidenceCount": 0,
+            "waitMs": 3120,
+            "foundClosed": true,
+            "lostClosed": true,
+            "totalMs": 3864
+          },
+          {
+            "id": "P02",
+            "class": "A",
+            "expect": "MATCH",
+            "reason": "深蓝色折叠伞、木柄、同一地点，描述的是同一把伞",
+            "lostId": 3,
+            "foundId": 4,
+            "score": 0.98,
+            "engine": "DEEPSEEK",
+            "tier": "DIRECT",
+            "degraded": false,
+            "pairState": "READY",
+            "lowConfidenceCount": 0,
+            "waitMs": 856,
+            "foundClosed": true,
+            "lostClosed": true,
+            "totalMs": 2409
+          },
+          {
+            "id": "P03",
+            "class": "A",
+            "expect": "MATCH",
+            "reason": "同姓、同学号年级段、同学院同地点，指向同一张学生证",
+            "lostId": 5,
+            "foundId": 6,
+            "score": 0.95,
+            "engine": "DEEPSEEK",
+            "tier": "DIRECT",
+            "degraded": false,
+            "pairState": "READY",
+            "lowConfidenceCount": 0,
+            "waitMs": 2110,
+            "foundClosed": true,
+            "lostClosed": true,
+            "totalMs": 2917
+          },
+          {
+            "id": "P04",
+            "class": "A",
+            "expect": "MATCH",
+            "reason": "同颜色同材质同容量同教室，杯身贴纸也一致，是同一个保温杯",
+            "lostId": 7,
+            "foundId": 8,
+            "score": 0.98,
+            "engine": "DEEPSEEK",
+            "tier": "DIRECT",
+            "degraded": false,
+            "pairState": "READY",
+            "lowConfidenceCount": 0,
+            "waitMs": 1696,
+            "foundClosed": true,
+            "lostClosed": true,
+            "totalMs": 2929
+          },
+          {
+            "id": "P05",
+            "class": "A",
+            "expect": "MATCH",
+            "reason": "同色、同为右耳单只、同地点，缺失充电仓的细节互相印证",
+            "lostId": 9,
+            "foundId": 10,
+            "score": 0.95,
+            "engine": "DEEPSEEK",
+            "tier": "DIRECT",
+            "degraded": false,
+            "pairState": "READY",
+            "lowConfidenceCount": 0,
+            "waitMs": 1279,
+            "foundClosed": true,
+            "lostClosed": true,
+            "totalMs": 2065
+          },
+          {
+            "id": "P06",
+            "class": "B",
+            "expect": "MATCH",
+            "reason": "“移动电源 / 充电宝”是同一物的两种叫法，颜色容量品牌与地点一致",
+            "lostId": 11,
+            "foundId": 12,
+            "score": 0.92,
+            "engine": "DEEPSEEK",
+            "tier": "DIRECT",
+            "degraded": false,
+            "pairState": "READY",
+            "lowConfidenceCount": 0,
+            "waitMs": 1258,
+            "foundClosed": true,
+            "lostClosed": true,
+            "totalMs": 2161
+          },
+          {
+            "id": "P07",
+            "class": "B",
+            "expect": "MATCH",
+            "reason": "颜色、折叠/长柄样式与地点一致，可以判为同一把伞",
+            "lostId": 13,
+            "foundId": 14,
+            "score": 0.95,
+            "engine": "DEEPSEEK",
+            "tier": "DIRECT",
+            "degraded": false,
+            "pairState": "READY",
+            "lowConfidenceCount": 0,
+            "waitMs": 1273,
+            "foundClosed": true,
+            "lostClosed": true,
+            "totalMs": 2684
+          },
+          {
+            "id": "P08",
+            "class": "B",
+            "expect": "MATCH",
+            "reason": "同地点、同含宿舍钥匙、同一个小熊挂件，可判为同一串钥匙",
+            "lostId": 15,
+            "foundId": 16,
+            "score": 0.98,
+            "engine": "DEEPSEEK",
+            "tier": "DIRECT",
+            "degraded": false,
+            "pairState": "READY",
+            "lowConfidenceCount": 0,
+            "waitMs": 1682,
+            "foundClosed": true,
+            "lostClosed": true,
+            "totalMs": 2102
+          },
+          {
+            "id": "P09",
+            "class": "B",
+            "expect": "MATCH",
+            "reason": "黑框、高度数、同地点，可判为同一副眼镜",
+            "lostId": 17,
+            "foundId": 18,
+            "score": 0.95,
+            "engine": "DEEPSEEK",
+            "tier": "DIRECT",
+            "degraded": false,
+            "pairState": "READY",
+            "lowConfidenceCount": 0,
+            "waitMs": 848,
+            "foundClosed": true,
+            "lostClosed": true,
+            "totalMs": 1896
+          },
+          {
+            "id": "P10",
+            "class": "C",
+            "expect": "MATCH",
+            "reason": "同地点、同颜色，钱包内都有校园卡，一侧信息更少但仍是同一只钱包",
+            "lostId": 19,
+            "foundId": 20,
+            "score": 0.95,
+            "engine": "DEEPSEEK",
+            "tier": "DIRECT",
+            "degraded": false,
+            "pairState": "READY",
+            "lowConfidenceCount": 0,
+            "waitMs": 1268,
+            "foundClosed": true,
+            "lostClosed": true,
+            "totalMs": 2052
+          },
+          {
+            "id": "P11",
+            "class": "C",
+            "expect": "NO_MATCH",
+            "reason": "同类别同地点，但宿舍门钥匙与带遥控器的电动车钥匙不是同一个物品",
+            "lostId": 21,
+            "foundId": 22,
+            "score": 0.15,
+            "engine": "DEEPSEEK",
+            "tier": "DIRECT",
+            "degraded": false,
+            "pairState": "READY",
+            "lowConfidenceCount": 0,
+            "waitMs": 1268,
+            "foundClosed": true,
+            "lostClosed": true,
+            "totalMs": 1715
+          },
+          {
+            "id": "P12",
+            "class": "C",
+            "expect": "NO_MATCH",
+            "reason": "同为教材同一间教室，但高等数学与大学英语是两本不同的书",
+            "lostId": 23,
+            "foundId": 24,
+            "score": 0.05,
+            "engine": "DEEPSEEK",
+            "tier": "DIRECT",
+            "degraded": false,
+            "pairState": "READY",
+            "lowConfidenceCount": 0,
+            "waitMs": 1259,
+            "foundClosed": true,
+            "lostClosed": true,
+            "totalMs": 2706
+          },
+          {
+            "id": "P13",
+            "class": "C",
+            "expect": "NO_MATCH",
+            "reason": "同为黑色包、同一地点，但双肩电脑包与女士手提包不是同一件",
+            "lostId": 25,
+            "foundId": 26,
+            "score": 0.15,
+            "engine": "DEEPSEEK",
+            "tier": "DIRECT",
+            "degraded": false,
+            "pairState": "READY",
+            "lowConfidenceCount": 0,
+            "waitMs": 1267,
+            "foundClosed": true,
+            "lostClosed": true,
+            "totalMs": 2039
+          },
+          {
+            "id": "P14",
+            "class": "C",
+            "expect": "NO_MATCH",
+            "reason": "同类目同地点，但蓝色 iPhone 13 与黑色华为手机是两部不同的手机",
+            "lostId": 27,
+            "foundId": 28,
+            "score": 0.08,
+            "engine": "DEEPSEEK",
+            "tier": "DIRECT",
+            "degraded": false,
+            "pairState": "READY",
+            "lowConfidenceCount": 0,
+            "waitMs": 1263,
+            "foundClosed": true,
+            "lostClosed": true,
+            "totalMs": 2013
+          },
+          {
+            "id": "P15",
+            "class": "D",
+            "expect": "NO_MATCH",
+            "reason": "充电宝与蓝牙耳机是两类物品，只有颜色和地点相同",
+            "lostId": 29,
+            "foundId": 30,
+            "score": 0.05,
+            "engine": "DEEPSEEK",
+            "tier": "DIRECT",
+            "degraded": false,
+            "pairState": "READY",
+            "lowConfidenceCount": 0,
+            "waitMs": 1252,
+            "foundClosed": true,
+            "lostClosed": true,
+            "totalMs": 2743
+          },
+          {
+            "id": "P16",
+            "class": "D",
+            "expect": "NO_MATCH",
+            "reason": "雨伞与保温杯是两类物品，地点也不同",
+            "lostId": 31,
+            "foundId": 32,
+            "score": 0,
+            "engine": "DEEPSEEK",
+            "tier": "AUTHORIZABLE",
+            "degraded": false,
+            "pairState": "READY",
+            "lowConfidenceCount": 0,
+            "waitMs": 1682,
+            "foundClosed": true,
+            "lostClosed": true,
+            "totalMs": 3136
+          },
+          {
+            "id": "P17",
+            "class": "D",
+            "expect": "NO_MATCH",
+            "reason": "学生证与钥匙串是两类物品，只有地点相同",
+            "lostId": 33,
+            "foundId": 34,
+            "score": 0.05,
+            "engine": "DEEPSEEK",
+            "tier": "DIRECT",
+            "degraded": false,
+            "pairState": "READY",
+            "lowConfidenceCount": 0,
+            "waitMs": 1270,
+            "foundClosed": true,
+            "lostClosed": true,
+            "totalMs": 2607
+          },
+          {
+            "id": "P18",
+            "class": "D",
+            "expect": "NO_MATCH",
+            "reason": "线性代数课本与钱包是两类物品，只有地点相同",
+            "lostId": 35,
+            "foundId": 36,
+            "score": 0,
+            "engine": "DEEPSEEK",
+            "tier": "AUTHORIZABLE",
+            "degraded": false,
+            "pairState": "READY",
+            "lowConfidenceCount": 0,
+            "waitMs": 1682,
+            "foundClosed": true,
+            "lostClosed": true,
+            "totalMs": 2809
+          },
+          {
+            "id": "P19",
+            "class": "D",
+            "expect": "NO_MATCH",
+            "reason": "白色蓝牙耳机与白色运动水壶是两类物品，只有颜色与地点相同",
+            "lostId": 37,
+            "foundId": 38,
+            "score": 0.05,
+            "engine": "DEEPSEEK",
+            "tier": "DIRECT",
+            "degraded": false,
+            "pairState": "READY",
+            "lowConfidenceCount": 0,
+            "waitMs": 850,
+            "foundClosed": true,
+            "lostClosed": true,
+            "totalMs": 1973
+          },
+          {
+            "id": "P20",
+            "class": "D",
+            "expect": "NO_MATCH",
+            "reason": "黑色双肩包与黑色雨伞是两类物品，只有颜色与地点相同",
+            "lostId": 39,
+            "foundId": 40,
+            "score": 0.05,
+            "engine": "DEEPSEEK",
+            "tier": "DIRECT",
+            "degraded": false,
+            "pairState": "READY",
+            "lowConfidenceCount": 0,
+            "waitMs": 1252,
+            "foundClosed": true,
+            "lostClosed": true,
+            "totalMs": 2352
+          }
+        ],
+        "finishedAt": "2026-10-28T15:46:44.685Z",
+        "summary": {
+          "total": 20,
+          "scored": 20,
+          "errors": 0,
+          "engines": [
+            "DEEPSEEK"
+          ]
+        }
+      }
+    }
+  }
+}
