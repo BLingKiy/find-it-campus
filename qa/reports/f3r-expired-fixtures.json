@@ -1,0 +1,64 @@
+{
+  "ids": {
+    "X1": 27,
+    "X2": 28,
+    "X3": 29,
+    "X4": 30,
+    "C1": 31,
+    "C2": 32
+  },
+  "snap": {
+    "expiredPairs": 24,
+    "expiredNotifs": 0,
+    "X1": {
+      "status": "COMPLETED",
+      "pair_state": "DEGRADED",
+      "scored_at": "2026-09-27 15:37:48.000000",
+      "completed_at": "2026-09-27 15:37:48",
+      "updated_at": "2026-09-27 15:37:48.000000"
+    },
+    "X2": {
+      "status": "COMPLETED",
+      "pair_state": "PENDING",
+      "scored_at": null,
+      "completed_at": "2026-09-27 15:37:48",
+      "updated_at": "2026-09-27 15:37:48.000000"
+    },
+    "X3": {
+      "status": "COMPLETED",
+      "pair_state": "PENDING",
+      "scored_at": null,
+      "completed_at": "2026-10-27 15:37:48",
+      "updated_at": "2026-10-27 15:37:48.000000"
+    },
+    "X4": {
+      "status": "PENDING",
+      "pair_state": "DEGRADED",
+      "scored_at": "2026-10-28 13:37:49.000000",
+      "completed_at": null,
+      "updated_at": "2026-10-28 15:37:42.000000"
+    },
+    "prePair": {
+      "id": "66",
+      "lost_id": "27",
+      "found_id": "31",
+      "score": "0.8200",
+      "engine": "LOCAL_KEYWORD",
+      "degraded_reason": null,
+      "status": "MATCHED",
+      "lost_unlocked_at": null,
+      "found_unlocked_at": null,
+      "lost_unlock_note": null,
+      "found_unlock_note": null,
+      "lost_confirmed_at": "2026-09-25 10:00:00",
+      "found_confirmed_at": "2026-09-25 10:05:00",
+      "lost_hash": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+      "found_hash": "b28d3608b72501e49ebc3acae6389c327ab33e65942eeb4784809c569666d127",
+      "updated_at": "2026-10-28 15:37:49"
+    },
+    "totalPairRows": 70,
+    "totalNotifRows": 8,
+    "logOffset": 921702
+  },
+  "createdAt": "2026-10-28T07:37:51.146Z"
+}

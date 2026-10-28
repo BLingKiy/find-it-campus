@@ -1,0 +1,13 @@
+# F3-R 项7 · prepare 阶段（造过期扫描夹具）· 2026-10-28T07:37:09.019Z
+- resetSeed() 已执行，库回到 seed 初始态（计数可复现）
+- 夹具：X1=27 X2=28 X3=29 X4=30（对照） C1=31 C2=32（对手端）
+- 已等待创建路径的异步打分落地（READY/DEGRADED），之后写入的夹具状态不会被它覆盖
+- X1/X2 置为 COMPLETED 且 completed_at = now-31d（超过保留期 30d）；pair_state 分别为 DEGRADED / PENDING
+- X3 为保留期内 COMPLETED（now-1d, PENDING）、X4 为 PENDING+DEGRADED —— 两者是「扫描确实在跑」的正对照
+- 预置 pair 行 id=66 score=0.8200 status=MATCHED lost_hash=ffffffffffff…（故意与当前内容不一致：若扫描真的重算了 X1，哈希与 updated_at 一定会变）
+- 快照已写 C:/Project/hifox-workspaces/duancece/find-it-campus/qa/reports/f3r-expired-fixtures.json
+  过期端 pair 行数=24 通知数=0；X1 pair_state=DEGRADED scored_at=2026-09-27 15:37:48.000000
+  对照 X3 pair_state=PENDING、X4 pair_state=DEGRADED
+  日志偏移：C:\Project\hifox-workspaces\duancece\find-it-campus\qa\reports\server.log 当前 921702 字节（verify 只读这之后的新增部分）
+
+下一步：带 OPS_SCAN_TOKEN 重启后端（启动扫描 + 手动扫描两条触发都要），再跑 verify。

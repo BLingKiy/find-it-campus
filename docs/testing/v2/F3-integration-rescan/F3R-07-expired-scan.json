@@ -1,0 +1,232 @@
+{
+  "ids": {
+    "X1": 27,
+    "X2": 28,
+    "X3": 29,
+    "X4": 30,
+    "C1": 31,
+    "C2": 32
+  },
+  "snap": {
+    "expiredPairs": 24,
+    "expiredNotifs": 0,
+    "X1": {
+      "status": "COMPLETED",
+      "pair_state": "DEGRADED",
+      "scored_at": "2026-09-27 15:37:48.000000",
+      "completed_at": "2026-09-27 15:37:48",
+      "updated_at": "2026-09-27 15:37:48.000000"
+    },
+    "X2": {
+      "status": "COMPLETED",
+      "pair_state": "PENDING",
+      "scored_at": null,
+      "completed_at": "2026-09-27 15:37:48",
+      "updated_at": "2026-09-27 15:37:48.000000"
+    },
+    "X3": {
+      "status": "COMPLETED",
+      "pair_state": "PENDING",
+      "scored_at": null,
+      "completed_at": "2026-10-27 15:37:48",
+      "updated_at": "2026-10-27 15:37:48.000000"
+    },
+    "X4": {
+      "status": "PENDING",
+      "pair_state": "DEGRADED",
+      "scored_at": "2026-10-28 13:37:49.000000",
+      "completed_at": null,
+      "updated_at": "2026-10-28 15:37:42.000000"
+    },
+    "prePair": {
+      "id": "66",
+      "lost_id": "27",
+      "found_id": "31",
+      "score": "0.8200",
+      "engine": "LOCAL_KEYWORD",
+      "degraded_reason": null,
+      "status": "MATCHED",
+      "lost_unlocked_at": null,
+      "found_unlocked_at": null,
+      "lost_unlock_note": null,
+      "found_unlock_note": null,
+      "lost_confirmed_at": "2026-09-25 10:00:00",
+      "found_confirmed_at": "2026-09-25 10:05:00",
+      "lost_hash": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+      "found_hash": "b28d3608b72501e49ebc3acae6389c327ab33e65942eeb4784809c569666d127",
+      "updated_at": "2026-10-28 15:37:49"
+    },
+    "totalPairRows": 70,
+    "totalNotifRows": 8,
+    "logOffset": 921702
+  },
+  "after": {
+    "X1": {
+      "status": "COMPLETED",
+      "pair_state": "DEGRADED",
+      "scored_at": "2026-09-27 15:37:48.000000",
+      "completed_at": "2026-09-27 15:37:48",
+      "updated_at": "2026-09-27 15:37:48.000000"
+    },
+    "X2": {
+      "status": "COMPLETED",
+      "pair_state": "PENDING",
+      "scored_at": null,
+      "completed_at": "2026-09-27 15:37:48",
+      "updated_at": "2026-09-27 15:37:48.000000"
+    },
+    "X3": {
+      "status": "COMPLETED",
+      "pair_state": "DEGRADED",
+      "scored_at": "2026-10-28 15:38:17.000000",
+      "completed_at": "2026-10-27 15:37:48",
+      "updated_at": "2026-10-27 15:37:48.000000"
+    },
+    "X4": {
+      "status": "PENDING",
+      "pair_state": "DEGRADED",
+      "scored_at": "2026-10-28 15:38:18.000000",
+      "completed_at": null,
+      "updated_at": "2026-10-28 15:37:42.000000"
+    },
+    "expiredPairs": 24,
+    "expiredNotifs": 0,
+    "ctrlPairs": 20,
+    "ctrlNotifs": 0,
+    "prePair": {
+      "id": "66",
+      "lost_id": "27",
+      "found_id": "31",
+      "score": "0.8200",
+      "engine": "LOCAL_KEYWORD",
+      "degraded_reason": null,
+      "status": "MATCHED",
+      "lost_unlocked_at": null,
+      "found_unlocked_at": null,
+      "lost_unlock_note": null,
+      "found_unlock_note": null,
+      "lost_confirmed_at": "2026-09-25 10:00:00",
+      "found_confirmed_at": "2026-09-25 10:05:00",
+      "lost_hash": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+      "found_hash": "b28d3608b72501e49ebc3acae6389c327ab33e65942eeb4784809c569666d127",
+      "updated_at": "2026-10-28 15:37:49"
+    },
+    "totalPairRows": 84,
+    "totalNotifRows": 8
+  },
+  "verdicts": [
+    {
+      "name": "V1 过期夹具 X1/X2 未被重算：pair_state 与 pair_scored_at 一字不变（连 markPairScoring 都没进）",
+      "pass": true,
+      "detail": [
+        "X1：pair_state DEGRADED→DEGRADED，pair_scored_at 2026-09-27 15:37:48.000000→2026-09-27 15:37:48.000000，updated_at 2026-09-27 15:37:48.000000→2026-09-27 15:37:48.000000",
+        "X2：pair_state PENDING→PENDING，pair_scored_at null→null，updated_at 2026-09-27 15:37:48.000000→2026-09-27 15:37:48.000000"
+      ]
+    },
+    {
+      "name": "V2 未新建 pair：端点为 X1/X2 的 t_pair_score 行数不增",
+      "pass": true,
+      "detail": [
+        "24 → 24（预置那一行仍为 24 行，无新增）"
+      ]
+    },
+    {
+      "name": "V3 预置 pair 行未被重算覆盖：score/status/lost_hash/updated_at 全部不变",
+      "pass": true,
+      "detail": [
+        "旧：{\"score\":\"0.8200\",\"status\":\"MATCHED\",\"hash\":\"ffffffffffffffff\",\"at\":\"2026-10-28 15:37:49\"}",
+        "新：{\"score\":\"0.8200\",\"status\":\"MATCHED\",\"hash\":\"ffffffffffffffff\",\"at\":\"2026-10-28 15:37:49\"}"
+      ]
+    },
+    {
+      "name": "V4 未发通知：端点为 X1/X2 的通知数扫描前后都为 0",
+      "pass": true,
+      "detail": [
+        "过期端通知：0 → 0",
+        "全表通知：8 → 8",
+        "对照端（X3/X4）通知：0 —— 保留期内允许新增，作为「通知通路本身还活着」的旁证"
+      ]
+    },
+    {
+      "name": "V5 日志里没有 X1/X2 的打分痕迹（没有 record scored、也没有 written）",
+      "pass": true,
+      "detail": [
+        "record scored X1=0 X2=0；pair score written X1=0 X2=0"
+      ]
+    },
+    {
+      "name": "V6 正对照成立：X3（保留期内 COMPLETED）与 X4（PENDING+DEGRADED）确实被扫到",
+      "pass": true,
+      "detail": [
+        "X3 pair_state PENDING → DEGRADED，scored_at null → 2026-10-28 15:38:17.000000",
+        "X4 pair_state DEGRADED → DEGRADED，scored_at 2026-10-28 13:37:49.000000 → 2026-10-28 15:38:18.000000",
+        "日志：record scored X3=3 行、X4=3 行",
+        "2026-10-28 15:38:03.578 INFO  [main] c.f.c.p.service.PairScoringService - [] pair record scored recordId=29 trigger=startup candidates=10 written=0 skipped=10 locked=0 state=DEGRADED degradedPairs=10",
+        "2026-10-28 15:38:03.984 INFO  [main] c.f.c.p.service.PairScoringService - [] pair record scored recordId=30 trigger=startup candidates=10 written=0 skipped=10 locked=0 state=DEGRADED degradedPairs=10"
+      ]
+    },
+    {
+      "name": "V7 SQL 层反证：修复前的 WHERE 会选中 X1/X2，修复后的不会，而对照仍在",
+      "pass": true,
+      "detail": [
+        "修复前选中：26,27,28,29,30,31,32",
+        "修复后选中：26,29,30,31,32",
+        "X1/X2 命中修复后条件：0；X3/X4 命中：2"
+      ]
+    },
+    {
+      "name": "V8 ops 返回的 expired 计数与库内过期 COMPLETED 行数一致（只计数、不改写任何列）",
+      "pass": true,
+      "detail": [
+        "ops 响应 expired=3，EV-SQL 实数=3（含 X1/X2）",
+        "扫描后 X1/X2 仍为 status=COMPLETED、completed_at=2026-09-27 15:37:48，未被任何清扫改写"
+      ]
+    }
+  ],
+  "scan1": {
+    "scanned": 5,
+    "rescored": 0,
+    "degraded": 5,
+    "skipped": 50,
+    "expired": 3,
+    "limited": false,
+    "elapsedMs": 3149,
+    "trigger": "http",
+    "counters": {
+      "llmCalls": 0,
+      "llmSuccess": 0,
+      "degraded": 14,
+      "skippedUnchanged": 86,
+      "pairsWritten": 14,
+      "enqueueRejected": 0,
+      "lockMisses": 0,
+      "degradedByReason": {
+        "EMPTY_KEY": 14
+      }
+    }
+  },
+  "scan2": {
+    "scanned": 5,
+    "rescored": 0,
+    "degraded": 5,
+    "skipped": 50,
+    "expired": 3,
+    "limited": false,
+    "elapsedMs": 2398,
+    "trigger": "http",
+    "counters": {
+      "llmCalls": 0,
+      "llmSuccess": 0,
+      "degraded": 14,
+      "skippedUnchanged": 136,
+      "pairsWritten": 14,
+      "enqueueRejected": 0,
+      "lockMisses": 0,
+      "degradedByReason": {
+        "EMPTY_KEY": 14
+      }
+    }
+  },
+  "oldTargets": "26,27,28,29,30,31,32",
+  "newTargets": "26,29,30,31,32"
+}
