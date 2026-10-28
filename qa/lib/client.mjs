@@ -1,16 +1,27 @@
 // 后端接口客户端：只做「发请求 + 记原始报文」，断言一律留在用例里。
 // 记录 lastHttp / lastBody 供失败原因里直接贴服务器原话，避免二次复现。
+//
+// v2 起支持会话 Cookie：同一个 Api 实例可以代表「匿名 / 本人 / 非本人」三种上下文。
+// Cookie 由调用方显式传入（见 qa/lib/auth.mjs），客户端不自动持久化 ——
+// 测试里同时存在多个身份，隐式全局 cookie 会让用例互相污染。
 
 export const BASE = process.env.FINDIT_API_BASE ?? 'http://localhost:18080';
 
 export class Api {
-  constructor(base = BASE) {
+  constructor(base = BASE, { cookie = '', label = 'anon' } = {}) {
     this.base = base.replace(/\/+$/, '');
+    this.cookie = cookie;
+    this.label = label;
+  }
+
+  withCookie(cookie, label = this.label) {
+    return new Api(this.base, { cookie, label });
   }
 
   async request(method, path, { body, headers } = {}) {
     const url = `${this.base}${path}`;
     const init = { method, headers: { Accept: 'application/json', ...(headers || {}) } };
+    if (this.cookie) init.headers.Cookie = this.cookie;
     if (body !== undefined) {
       init.headers['Content-Type'] = 'application/json';
       init.body = typeof body === 'string' ? body : JSON.stringify(body);
@@ -23,7 +34,16 @@ export class Api {
     } catch {
       /* 非 JSON 响应（如框架默认错误页）——保留 text 供诊断 */
     }
-    return { status: res.status, body: json, raw: text, url, method };
+    const setCookies = typeof res.headers.getSetCookie === 'function' ? res.headers.getSetCookie() : [];
+    return {
+      status: res.status,
+      body: json,
+      raw: text,
+      url,
+      method,
+      headers: res.headers,
+      setCookies,
+    };
   }
 
   get(p, o) {
@@ -66,4 +86,13 @@ export function expectCode(res, httpStatus, code, label) {
 export function fieldReasons(res) {
   const fe = res.body?.data?.fieldErrors ?? [];
   return Object.fromEntries(fe.map((f) => [f.field, f.reason]));
+}
+
+/** 从 Set-Cookie 里取 JSESSIONID=…，用于手工构造后续请求的 Cookie 头。 */
+export function sessionCookieFrom(res) {
+  for (const raw of res.setCookies ?? []) {
+    const first = raw.split(';')[0].trim();
+    if (first.startsWith('JSESSIONID=')) return first;
+  }
+  return null;
 }

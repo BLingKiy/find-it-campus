@@ -1,0 +1,189 @@
+{
+  "summary": {
+    "title": "e2e-f1-v2",
+    "startedAt": "2026-10-28T01:37:30.651Z",
+    "total": 25,
+    "passed": 25,
+    "failed": 0,
+    "knownFailures": 0,
+    "passRate": "100.0%",
+    "durationMs": 23302
+  },
+  "cases": [
+    {
+      "id": "E2E-L-01",
+      "priority": "P0",
+      "name": "匿名列表默认加载：10 条 / 共 21 条 / 3 页",
+      "status": "PASS",
+      "durationMs": 854
+    },
+    {
+      "id": "E2E-L-02",
+      "priority": "P0",
+      "name": "匿名类型筛选 FOUND：卡片全部是「招领」且 URL 同步",
+      "status": "PASS",
+      "durationMs": 573
+    },
+    {
+      "id": "E2E-L-03",
+      "priority": "P0",
+      "name": "匿名关键词「钱包」：命中 2 条且 URL 带 keyword",
+      "status": "PASS",
+      "durationMs": 502
+    },
+    {
+      "id": "E2E-L-04",
+      "priority": "P1",
+      "name": "重置筛选同时清空 URL（刷新后不重现筛选）",
+      "status": "PASS",
+      "durationMs": 873
+    },
+    {
+      "id": "E2E-L-05",
+      "priority": "P1",
+      "name": "翻到第 2 页：URL page=2 且卡片与第 1 页不重复",
+      "status": "PASS",
+      "durationMs": 970
+    },
+    {
+      "id": "E2E-A-01",
+      "priority": "P0",
+      "name": "列表三态：匿名全员遮蔽、本人行原值+「我的启事」、非本人对他人行仍遮蔽",
+      "status": "PASS",
+      "durationMs": 1421
+    },
+    {
+      "id": "E2E-A-02",
+      "priority": "P0",
+      "name": "详情三态：匿名登录引导 / 本人明文+管理动作 / 非本人遮蔽横幅",
+      "status": "PASS",
+      "durationMs": 1396
+    },
+    {
+      "id": "E2E-A-03",
+      "priority": "P0",
+      "name": "提交页三态：匿名被守卫送回登录、本人可填、非本人同样可填（发布归自己）",
+      "status": "PASS",
+      "durationMs": 996
+    },
+    {
+      "id": "E2E-D-01",
+      "priority": "P0",
+      "name": "匿名从卡片进详情：标题/分类/地点/描述与列表一致，号码不可得",
+      "status": "PASS",
+      "durationMs": 592
+    },
+    {
+      "id": "E2E-D-02",
+      "priority": "P0",
+      "name": "本人详情展示 pair 卡片（分数/档位/状态），不暴露对方号码",
+      "status": "PASS",
+      "durationMs": 410
+    },
+    {
+      "id": "E2E-D-03",
+      "priority": "P0",
+      "name": "非本人详情发起匹配：出现名次、相似度与排序说明，候选不含号码",
+      "status": "PASS",
+      "durationMs": 489
+    },
+    {
+      "id": "E2E-D-04",
+      "priority": "P0",
+      "name": "本人「标记为已完成」：记录 10 有 MATCHED pair，点击后移到已完成页签",
+      "status": "PASS",
+      "durationMs": 916
+    },
+    {
+      "id": "E2E-D-05",
+      "priority": "P0",
+      "name": "完成后可见性：公共列表 0 命中；所有者详情 404 并回我的启事",
+      "status": "PASS",
+      "durationMs": 845
+    },
+    {
+      "id": "E2E-D-06",
+      "priority": "P1",
+      "name": "DIRECT 档 pair 可取号：点击后显示对方号码（三档 UI 的直看路径）",
+      "status": "PASS",
+      "durationMs": 479
+    },
+    {
+      "id": "E2E-C-01",
+      "priority": "P0",
+      "name": "本人提交页黄金路径：填写 → 提交 → 跳详情并提示发布成功",
+      "status": "PASS",
+      "durationMs": 1108
+    },
+    {
+      "id": "E2E-C-02",
+      "priority": "P0",
+      "name": "列表能看到刚提交的记录（createdAt desc 首位）",
+      "status": "PASS",
+      "durationMs": 404
+    },
+    {
+      "id": "E2E-C-03",
+      "priority": "P1",
+      "name": "关键词检索刚提交的记录，详情可回跳",
+      "status": "PASS",
+      "durationMs": 179
+    },
+    {
+      "id": "E2E-C-04",
+      "priority": "P0",
+      "name": "全新匿名上下文直接打开该记录详情：仍走 GET /api/records/:id，且号码被遮蔽",
+      "status": "PASS",
+      "durationMs": 1076
+    },
+    {
+      "id": "E2E-E-01",
+      "priority": "P0",
+      "name": "本人提交页校验失败：空表单出现页级摘要 + 字段级错误",
+      "status": "PASS",
+      "durationMs": 503
+    },
+    {
+      "id": "E2E-E-02",
+      "priority": "P0",
+      "name": "匿名后端不可用：列表显示错误条，恢复后「重试」能拉到数据",
+      "status": "PASS",
+      "durationMs": 787
+    },
+    {
+      "id": "E2E-E-03",
+      "priority": "P1",
+      "name": "匿名空数据：显示空态而不是错误或空白页",
+      "status": "PASS",
+      "durationMs": 500
+    },
+    {
+      "id": "E2E-E-04",
+      "priority": "P1",
+      "name": "匿名详情 404：显示记录不存在空态，不给重试",
+      "status": "PASS",
+      "durationMs": 366
+    },
+    {
+      "id": "E2E-E-05",
+      "priority": "P1",
+      "name": "接口 500：错误条带 requestId，便于按 id 查日志",
+      "status": "PASS",
+      "durationMs": 429
+    },
+    {
+      "id": "E2E-E-06",
+      "priority": "P1",
+      "name": "匹配服务 503：非本人详情只降级匹配区，详情主体照常可用",
+      "status": "PASS",
+      "durationMs": 643
+    },
+    {
+      "id": "E2E-Z-01",
+      "priority": "P2",
+      "name": "全程无未捕获的前端异常",
+      "status": "PASS",
+      "durationMs": 0
+    }
+  ]
+}

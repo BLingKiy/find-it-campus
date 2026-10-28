@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-22T09:45:07.684Z",
+  "generatedAt": "2026-10-28T01:37:29.855Z",
   "params": {
     "topN": 5,
     "minScore": 0.3
@@ -32,9 +32,9 @@
           "top1": 13
         },
         "deterministic": true,
-        "tookMs": 1,
-        "clientMs": 444,
-        "matchId": 30,
+        "tookMs": 0,
+        "clientMs": 70.6,
+        "matchId": 41,
         "engine": "LOCAL_KEYWORD",
         "inputType": "FOUND"
       },
@@ -62,9 +62,9 @@
           "top1": 14
         },
         "deterministic": true,
-        "tookMs": 1,
-        "clientMs": 372.5,
-        "matchId": 32,
+        "tookMs": 5,
+        "clientMs": 19.4,
+        "matchId": 43,
         "engine": "LOCAL_KEYWORD",
         "inputType": "FOUND"
       },
@@ -92,9 +92,9 @@
           "top1": 15
         },
         "deterministic": true,
-        "tookMs": 1,
-        "clientMs": 371.4,
-        "matchId": 34,
+        "tookMs": 0,
+        "clientMs": 14,
+        "matchId": 45,
         "engine": "LOCAL_KEYWORD",
         "inputType": "FOUND"
       },
@@ -122,9 +122,9 @@
           "top1": 16
         },
         "deterministic": true,
-        "tookMs": 1,
-        "clientMs": 17.8,
-        "matchId": 36,
+        "tookMs": 0,
+        "clientMs": 14.1,
+        "matchId": 47,
         "engine": "LOCAL_KEYWORD",
         "inputType": "FOUND"
       },
@@ -152,9 +152,9 @@
           "top1": 17
         },
         "deterministic": true,
-        "tookMs": 1,
-        "clientMs": 371.7,
-        "matchId": 38,
+        "tookMs": 0,
+        "clientMs": 15.7,
+        "matchId": 49,
         "engine": "LOCAL_KEYWORD",
         "inputType": "FOUND"
       },
@@ -172,19 +172,20 @@
           "mustExclude": []
         },
         "expect": "top1 = 18",
-        "actual": "18@0.82",
+        "actual": "18@0.81 → 23@0.36",
         "verdict": {
           "pass": true,
           "reasons": [],
           "ids": [
-            18
+            18,
+            23
           ],
           "top1": 18
         },
         "deterministic": true,
         "tookMs": 0,
-        "clientMs": 18.4,
-        "matchId": 40,
+        "clientMs": 395.4,
+        "matchId": 51,
         "engine": "LOCAL_KEYWORD",
         "inputType": "FOUND"
       },
@@ -217,8 +218,8 @@
         },
         "deterministic": true,
         "tookMs": 0,
-        "clientMs": 389,
-        "matchId": 42,
+        "clientMs": 753,
+        "matchId": 53,
         "engine": "LOCAL_KEYWORD",
         "inputType": "LOST"
       },
@@ -242,8 +243,8 @@
         },
         "deterministic": true,
         "tookMs": 0,
-        "clientMs": 26.4,
-        "matchId": 44,
+        "clientMs": 11.8,
+        "matchId": 55,
         "engine": "LOCAL_KEYWORD",
         "inputType": "LOST"
       },
@@ -273,9 +274,9 @@
           "top1": 4
         },
         "deterministic": true,
-        "tookMs": 1,
-        "clientMs": 403.7,
-        "matchId": 46,
+        "tookMs": 0,
+        "clientMs": 13.7,
+        "matchId": 57,
         "engine": "LOCAL_KEYWORD",
         "inputType": null
       },
@@ -285,32 +286,36 @@
           "intent": "拾到者找钥匙（不限类型）",
           "text": "捡到一串钥匙",
           "type": null,
-          "expectTop1": 18,
+          "expectTop1": 10,
           "related": [
             6,
-            18
+            10,
+            18,
+            23
           ],
           "mustExclude": [
-            23,
+            24,
             25
           ],
-          "note": "seed 要求 23（CLAIMED）与 25（已删除）都不得出现"
+          "note": "v2：10/18/23 都是钥匙相关（10 寻物、18 招领、23 保留期内 COMPLETED）；24 CLOSED 与 25 到期 COMPLETED 不得出现"
         },
-        "expect": "top1 = 18",
-        "actual": "18@1.00 → 6@0.76",
+        "expect": "top1 = 10",
+        "actual": "10@1.00 → 18@1.00 → 23@1.00 → 6@0.76",
         "verdict": {
           "pass": true,
           "reasons": [],
           "ids": [
+            10,
             18,
+            23,
             6
           ],
-          "top1": 18
+          "top1": 10
         },
         "deterministic": true,
         "tookMs": 1,
-        "clientMs": 407.3,
-        "matchId": 48,
+        "clientMs": 999.2,
+        "matchId": 59,
         "engine": "LOCAL_KEYWORD",
         "inputType": null
       }
@@ -322,12 +327,12 @@
       "top3Hit": 10,
       "top3Rate": "100%",
       "deterministic": 10,
-      "avgMs": 0.7,
-      "p95Ms": 1,
-      "maxMs": 1,
-      "clientAvgMs": 282.2,
-      "clientP95Ms": 444,
-      "clientMaxMs": 444
+      "avgMs": 0.6,
+      "p95Ms": 5,
+      "maxMs": 5,
+      "clientAvgMs": 230.7,
+      "clientP95Ms": 999.2,
+      "clientMaxMs": 999.2
     }
   },
   "any": {
@@ -359,9 +364,9 @@
           "top1": 13
         },
         "deterministic": true,
-        "tookMs": 1,
-        "clientMs": 386.1,
-        "matchId": 50,
+        "tookMs": 0,
+        "clientMs": 13.9,
+        "matchId": 61,
         "engine": "LOCAL_KEYWORD",
         "inputType": null
       },
@@ -392,9 +397,9 @@
           "top1": 2
         },
         "deterministic": true,
-        "tookMs": 1,
-        "clientMs": 413.9,
-        "matchId": 52,
+        "tookMs": 0,
+        "clientMs": 15.6,
+        "matchId": 63,
         "engine": "LOCAL_KEYWORD",
         "inputType": null
       },
@@ -412,7 +417,7 @@
           "mustExclude": []
         },
         "expect": "top1 = 15",
-        "actual": "3@0.71 → 15@0.60",
+        "actual": "3@0.75 → 15@0.60",
         "verdict": {
           "pass": false,
           "reasons": [
@@ -426,8 +431,8 @@
         },
         "deterministic": true,
         "tookMs": 1,
-        "clientMs": 27.8,
-        "matchId": 54,
+        "clientMs": 24.2,
+        "matchId": 65,
         "engine": "LOCAL_KEYWORD",
         "inputType": null
       },
@@ -458,9 +463,9 @@
           "top1": 4
         },
         "deterministic": true,
-        "tookMs": 1,
-        "clientMs": 371.6,
-        "matchId": 56,
+        "tookMs": 0,
+        "clientMs": 395.1,
+        "matchId": 67,
         "engine": "LOCAL_KEYWORD",
         "inputType": null
       },
@@ -489,9 +494,9 @@
           "top1": 17
         },
         "deterministic": true,
-        "tookMs": 1,
-        "clientMs": 394.8,
-        "matchId": 58,
+        "tookMs": 0,
+        "clientMs": 18.5,
+        "matchId": 69,
         "engine": "LOCAL_KEYWORD",
         "inputType": null
       },
@@ -509,7 +514,7 @@
           "mustExclude": []
         },
         "expect": "top1 = 18",
-        "actual": "6@0.91 → 18@0.82",
+        "actual": "6@0.90 → 18@0.81 → 10@0.36 → 23@0.36",
         "verdict": {
           "pass": false,
           "reasons": [
@@ -517,14 +522,16 @@
           ],
           "ids": [
             6,
-            18
+            18,
+            10,
+            23
           ],
           "top1": 6
         },
         "deterministic": true,
-        "tookMs": 1,
-        "clientMs": 715.7,
-        "matchId": 60,
+        "tookMs": 0,
+        "clientMs": 397,
+        "matchId": 71,
         "engine": "LOCAL_KEYWORD",
         "inputType": null
       },
@@ -546,7 +553,7 @@
           ]
         },
         "expect": "top1 = 7",
-        "actual": "7@0.72",
+        "actual": "7@0.71",
         "verdict": {
           "pass": true,
           "reasons": [],
@@ -556,9 +563,9 @@
           "top1": 7
         },
         "deterministic": true,
-        "tookMs": 1,
-        "clientMs": 28.6,
-        "matchId": 62,
+        "tookMs": 0,
+        "clientMs": 389.3,
+        "matchId": 73,
         "engine": "LOCAL_KEYWORD",
         "inputType": null
       },
@@ -582,8 +589,8 @@
         },
         "deterministic": true,
         "tookMs": 0,
-        "clientMs": 26.1,
-        "matchId": 64,
+        "clientMs": 397.9,
+        "matchId": 75,
         "engine": "LOCAL_KEYWORD",
         "inputType": null
       },
@@ -613,9 +620,9 @@
           "top1": 4
         },
         "deterministic": true,
-        "tookMs": 1,
-        "clientMs": 29.8,
-        "matchId": 66,
+        "tookMs": 0,
+        "clientMs": 14.4,
+        "matchId": 77,
         "engine": "LOCAL_KEYWORD",
         "inputType": null
       },
@@ -625,32 +632,36 @@
           "intent": "拾到者找钥匙（不限类型）",
           "text": "捡到一串钥匙",
           "type": null,
-          "expectTop1": 18,
+          "expectTop1": 10,
           "related": [
             6,
-            18
+            10,
+            18,
+            23
           ],
           "mustExclude": [
-            23,
+            24,
             25
           ],
-          "note": "seed 要求 23（CLAIMED）与 25（已删除）都不得出现"
+          "note": "v2：10/18/23 都是钥匙相关（10 寻物、18 招领、23 保留期内 COMPLETED）；24 CLOSED 与 25 到期 COMPLETED 不得出现"
         },
-        "expect": "top1 = 18",
-        "actual": "18@1.00 → 6@0.76",
+        "expect": "top1 = 10",
+        "actual": "10@1.00 → 18@1.00 → 23@1.00 → 6@0.76",
         "verdict": {
           "pass": true,
           "reasons": [],
           "ids": [
+            10,
             18,
+            23,
             6
           ],
-          "top1": 18
+          "top1": 10
         },
         "deterministic": true,
         "tookMs": 0,
-        "clientMs": 22.3,
-        "matchId": 68,
+        "clientMs": 394.1,
+        "matchId": 79,
         "engine": "LOCAL_KEYWORD",
         "inputType": null
       }
@@ -662,12 +673,87 @@
       "top3Hit": 10,
       "top3Rate": "100%",
       "deterministic": 10,
-      "avgMs": 0.8,
+      "avgMs": 0.1,
       "p95Ms": 1,
       "maxMs": 1,
-      "clientAvgMs": 241.7,
-      "clientP95Ms": 715.7,
-      "clientMaxMs": 715.7
+      "clientAvgMs": 206,
+      "clientP95Ms": 397.9,
+      "clientMaxMs": 397.9
     }
-  }
+  },
+  "baseline": [
+    {
+      "id": "S1",
+      "top1": 13,
+      "items": [
+        13
+      ]
+    },
+    {
+      "id": "S2",
+      "top1": 14,
+      "items": [
+        14
+      ]
+    },
+    {
+      "id": "S3",
+      "top1": 15,
+      "items": [
+        15
+      ]
+    },
+    {
+      "id": "S4",
+      "top1": 16,
+      "items": [
+        16
+      ]
+    },
+    {
+      "id": "S5",
+      "top1": 17,
+      "items": [
+        17
+      ]
+    },
+    {
+      "id": "S6",
+      "top1": 18,
+      "items": [
+        18,
+        23
+      ]
+    },
+    {
+      "id": "N1",
+      "top1": 7,
+      "items": [
+        7
+      ]
+    },
+    {
+      "id": "N2",
+      "top1": null,
+      "items": []
+    },
+    {
+      "id": "N3",
+      "top1": 4,
+      "items": [
+        4,
+        16
+      ]
+    },
+    {
+      "id": "N4",
+      "top1": 10,
+      "items": [
+        10,
+        18,
+        23,
+        6
+      ]
+    }
+  ]
 }

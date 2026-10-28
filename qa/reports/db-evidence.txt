@@ -1,146 +1,320 @@
-# 4.1 真实落库取证（MySQL 直查）
+# v2 · F1 真实落库取证（MySQL 直查）
 
-- 生成时间：2026-10-22T09:45:24.455Z
-- 客户端：C:/Project/tools/mysql/mysql-8.0.29-winx64/bin/mysql.exe · 库：find_it_campus · 用户：root
-- 取证对象：E2E 走查通过 UI 创建的记录 id=42（标题「E2E 走查记录 1792662317501」）
+- 生成时间：2026-10-28T01:37:55.826Z
+- 客户端：C:/Project/tools/mysql/mysql-8.0.29-winx64/bin/mysql.exe · 库：find_it_campus
+- 取证对象：E2E 通过 UI 创建的记录 id=109（标题「E2E 走查记录 6fsrv3pe」）
 
-## ① 三张表存在，且 t_record 是「记录主表」
+## ① 七张表的行数（v2 数据面）
 
 ```sql
-SELECT table_name, table_rows FROM information_schema.tables WHERE table_schema = DATABASE() ORDER BY table_name;
+
+SELECT 't_user' AS table_name, COUNT(*) AS rows_count FROM t_user
+UNION ALL SELECT 't_category', COUNT(*) FROM t_category
+UNION ALL SELECT 't_record', COUNT(*) FROM t_record
+UNION ALL SELECT 't_match_result', COUNT(*) FROM t_match_result
+UNION ALL SELECT 't_pair_score', COUNT(*) FROM t_pair_score
+UNION ALL SELECT 't_notification', COUNT(*) FROM t_notification
+UNION ALL SELECT 't_access_log', COUNT(*) FROM t_access_log;
 ```
 ```
+t_user	3
 t_category	9
-t_match_result	70
-t_record	40
+t_record	107
+t_match_result	81
+t_pair_score	785
+t_notification	549
+t_access_log	13
 ```
 
-## ② t_record 关键列与落库相关的约束（逻辑删除列 / 时间列 / CHECK）
-
-```sql
-SELECT column_name, column_type, is_nullable FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 't_record' ORDER BY ordinal_position;
-```
-```
-id	bigint unsigned	NO
-type	varchar(8)	NO
-status	varchar(16)	NO
-title	varchar(64)	NO
-description	text	NO
-category_id	bigint unsigned	YES
-location	varchar(128)	NO
-occurred_at	datetime	NO
-contact	varchar(64)	YES
-publisher_name	varchar(32)	YES
-deleted_at	datetime	YES
-created_at	datetime	NO
-updated_at	datetime	NO
-```
-
-## ③ E2E 通过 UI 提交的记录（id=42）在 MySQL 中的整行（含 description / contact / category / 时间）
+## ② t_record 三态分布与 completed_at 不变量
 
 ```sql
-SELECT id, type, status, title, LEFT(description, 60) AS description_head, category_id, location, occurred_at, contact, publisher_name, deleted_at, created_at, updated_at FROM t_record WHERE id = 42;
+
+SELECT status, COUNT(*) AS cnt, SUM(completed_at IS NOT NULL) AS with_completed_at
+FROM t_record GROUP BY status ORDER BY status;
+```
+```
+CLOSED	7	0
+COMPLETED	6	6
+PENDING	94	0
+```
+
+## ③ E2E 通过 UI 提交的记录（id=109）在 MySQL 中的整行
+
+```sql
+
+SELECT id, type, status, title, LEFT(description, 50) AS description_head, category_id, location,
+       occurred_at, contact, publisher_name, publisher_id,
+       IFNULL(DATE_FORMAT(deleted_at, '%Y-%m-%d %H:%i:%s'), 'NULL') AS deleted_at,
+       created_at, updated_at
+FROM t_record WHERE id = 109;
 ```
 ```
 *************************** 1. row ***************************
-              id: 42
+              id: 109
             type: LOST
           status: PENDING
-           title: E2E 走查记录 1792662317501
-description_head: 这条记录由 5.1 端到端走查脚本创建（1792662317501），用于验证「提交 → 列表 → 详情」真实接口全链路
+           title: E2E 走查记录 6fsrv3pe
+description_head: 这条记录由 v2 端到端走查脚本创建（x56fh7dq），用于验证「提交 → 列表 → 详情」真实接
      category_id: 5
         location: E2E 测试地点 · 第三教学楼
      occurred_at: 2026-10-21 15:20:00
          contact: 13800001234
   publisher_name: 端测测
+    publisher_id: 1
       deleted_at: NULL
-      created_at: 2026-10-22 17:45:18
-      updated_at: 2026-10-22 17:45:18
+      created_at: 2026-10-28 09:37:48
+      updated_at: 2026-10-28 09:37:48
 ```
 
-## ④ 同一条记录的分类关联（证明 category_id 真实映射到 t_category，而不是前端硬编码文案）
-
-```sql
-SELECT r.id, r.title, r.category_id, c.code, c.name FROM t_record r LEFT JOIN t_category c ON c.id = r.category_id WHERE r.id = 42;
-```
-```
-42	E2E 走查记录 1792662317501	5	BAG	包袋
-```
-
-## ⑤ 该记录在默认列表查询条件下确实被 SQL 检索到（复现列表页即这条 SQL 的口径）
+## ④ 记录 10 的完成状态（E2E 点「标记为已完成」的真实落库）
 
 ```sql
-SELECT COUNT(*) AS hit FROM t_record WHERE deleted_at IS NULL AND status = 'PENDING' AND (title LIKE '%E2E 走查记录 1792662317501%' OR description LIKE '%E2E 走查记录 1792662317501%');
+
+SELECT id, status, completed_at, updated_at FROM t_record WHERE id = 10;
+```
+```
+10	COMPLETED	2026-10-28 09:37:45	2026-10-28 09:37:45
+```
+
+## ⑤ 该记录的分类关联（真实 category_id，不是前端硬编码文案）
+
+```sql
+
+SELECT r.id, r.title, r.category_id, c.code, c.name
+FROM t_record r LEFT JOIN t_category c ON c.id = r.category_id
+WHERE r.id = 109;
+```
+```
+109	E2E 走查记录 6fsrv3pe	5	BAG	包袋
+```
+
+## ⑥ 默认公共列表 SQL 口径（PENDING + 未删除）应能看到该记录
+
+```sql
+
+SELECT COUNT(*) AS hit FROM t_record
+WHERE deleted_at IS NULL AND status = 'PENDING'
+  AND (title LIKE '%E2E 走查记录 6fsrv3pe%' OR description LIKE '%E2E 走查记录 6fsrv3pe%');
 ```
 ```
 1
 ```
 
-## ⑥ 详情页状态流转落库（E2E 把 1 号记录从 PENDING 改成 CLAIMED）
+## ⑦ t_pair_score 唯一键与四态：无重复 (lost,found)、无「已解决」态
 
 ```sql
-SELECT id, title, status, created_at, updated_at FROM t_record WHERE id = 1;
+
+SELECT status, COUNT(*) AS cnt FROM t_pair_score GROUP BY status ORDER BY status;
+SELECT COUNT(*) AS rows_count, COUNT(DISTINCT lost_id, found_id) AS distinct_pairs FROM t_pair_score;
 ```
 ```
-1	图书馆丢了黑色钱包	CLAIMED	2026-10-20 09:10:00	2026-10-22 17:45:16
+CONTACTED	11
+IGNORED	2
+MATCHED	11
+NEW	761
+785	785
 ```
 
-## ⑦ 匹配快照落库（t_match_result 行数 + 最近一条的 impl / 输入 / 候选 JSON）
+## ⑧ t_pair_score 的确认/授权不变量（两端均确认 ⇔ MATCHED）
 
 ```sql
-SELECT COUNT(*) AS snapshots FROM t_match_result; SELECT id, impl, IFNULL(input_type,'NULL') AS input_type, top_n, min_score, cost_ms, created_at, LEFT(candidates, 120) AS candidates_head FROM t_match_result ORDER BY id DESC LIMIT 1;
+
+SELECT id, lost_id, found_id, score, status,
+       IFNULL(DATE_FORMAT(lost_confirmed_at,'%Y-%m-%d %H:%i:%s'),'NULL') AS lost_confirmed_at,
+       IFNULL(DATE_FORMAT(found_confirmed_at,'%Y-%m-%d %H:%i:%s'),'NULL') AS found_confirmed_at
+FROM t_pair_score WHERE status IN ('MATCHED','IGNORED') ORDER BY id;
+```
+```
+11	6	23	0.9300	IGNORED	NULL	NULL
+12	10	23	0.9500	MATCHED	2026-10-24 09:34:13	2026-10-24 09:34:13
+14	25	13	0.9000	MATCHED	2026-09-26 09:34:13	2026-09-26 09:34:13
+385	70	71	0.9600	MATCHED	2026-10-28 09:35:29	2026-10-28 09:35:29
+542	84	83	0.9600	MATCHED	2026-10-26 10:00:00	2026-10-26 10:01:00
+585	86	87	0.9600	MATCHED	2026-10-28 09:36:15	2026-10-28 09:36:15
+611	91	90	0.9600	MATCHED	2026-10-28 09:36:23	2026-10-28 09:36:23
+614	92	90	0.9400	MATCHED	2026-10-28 09:36:24	2026-10-28 09:36:24
+699	96	97	0.9500	MATCHED	2026-10-26 10:00:00	2026-10-26 10:05:00
+720	98	99	0.8000	MATCHED	2026-10-26 10:00:00	2026-10-26 10:05:00
+762	102	103	0.9500	MATCHED	2026-10-26 10:00:00	2026-10-26 10:05:00
+770	105	104	0.9500	MATCHED	2026-10-26 10:00:00	2026-10-26 10:01:00
+773	106	104	0.9300	IGNORED	NULL	NULL
+```
+
+## ⑨ 匹配快照落库（t_match_result）与候选脱敏
+
+```sql
+
+SELECT COUNT(*) AS snapshots FROM t_match_result;
+SELECT id, impl, IFNULL(input_type,'NULL') AS input_type, top_n, min_score, cost_ms, created_at,
+       LEFT(candidates, 160) AS candidates_head
+FROM t_match_result ORDER BY id DESC LIMIT 1;
 ```
 ```
 *************************** 1. row ***************************
-snapshots: 70
+snapshots: 81
 *************************** 1. row ***************************
-             id: 70
+             id: 81
            impl: LOCAL_KEYWORD
      input_type: FOUND
           top_n: 5
       min_score: 0.3000
         cost_ms: 0
-     created_at: 2026-10-22 17:45:16
-candidates_head: [{"score": 0.57, "reason": "关键词命中：钱包、现金、银行卡、书馆；分类词表命中：钱包卡证", "recordId": 13}]
+     created_at: 2026-10-28 09:37:44
+candidates_head: [{"score": 0.57, "reason": "关键词命中:钱包、现金、银行卡、书馆；分类词表命中:钱包卡证", "recordId": 13}]
 ```
 
-## ⑧ 逻辑删除列的证据（种子里的 25 号：deleted_at 非空，读接口不可见）
-
-```sql
-SELECT id, title, status, deleted_at FROM t_record WHERE deleted_at IS NOT NULL ORDER BY id LIMIT 5;
-```
-```
-25	这条已删除（验证 deleted_at 过滤）	PENDING	2026-10-21 08:00:00
-27	QA 测试记录 1792662284377-wjhy	PENDING	2026-10-22 17:44:54
-28	QA 测试记录 1792662284443-750i	PENDING	2026-10-22 17:44:54
-29	QA 测试记录 1792662284514-gsc8	PENDING	2026-10-22 17:44:55
-30	QA 测试记录 1792662284550-xqfa	PENDING	2026-10-22 17:44:55
-```
-
-## ⑨ 全库状态分布（解释为什么默认列表是 21 条：24 条 − CLAIMED 1 − CLOSED 1 − 逻辑删除 1）
+## ⑩ 联系方式查看审计（append-only；无 contact/note 列）
 
 ```sql
-SELECT status, COUNT(*) AS cnt, SUM(deleted_at IS NOT NULL) AS deleted FROM t_record GROUP BY status ORDER BY status;
+
+SELECT id, pair_id, viewer_id, viewer_side, target_side, score, result, request_id, created_at
+FROM t_access_log ORDER BY id DESC LIMIT 10;
 ```
 ```
-CLAIMED	2	0
-CLOSED	2	1
-PENDING	36	15
+*************************** 1. row ***************************
+         id: 13
+    pair_id: 1
+  viewer_id: 1
+viewer_side: LOST
+target_side: FOUND
+      score: 0.9600
+     result: GRANTED
+ request_id: c06dc2d400f14f01
+ created_at: 2026-10-28 09:37:47
+*************************** 2. row ***************************
+         id: 12
+    pair_id: 742
+  viewer_id: 1
+viewer_side: LOST
+target_side: FOUND
+      score: 0.9600
+     result: DENIED_PAIR_INVALID
+ request_id: 7546b56a33c04588
+ created_at: 2026-10-28 09:36:53
+*************************** 3. row ***************************
+         id: 11
+    pair_id: 343
+  viewer_id: 1
+viewer_side: LOST
+target_side: FOUND
+      score: 0.7499
+     result: DENIED_LOW_SCORE
+ request_id: e9728cdf541f4570
+ created_at: 2026-10-28 09:35:20
+*************************** 4. row ***************************
+         id: 10
+    pair_id: 322
+  viewer_id: 1
+viewer_side: LOST
+target_side: FOUND
+      score: 0.7500
+     result: DENIED_NOT_PUBLIC
+ request_id: daff19e248834c0f
+ created_at: 2026-10-28 09:35:15
+*************************** 5. row ***************************
+         id: 9
+    pair_id: 301
+  viewer_id: 1
+viewer_side: LOST
+target_side: FOUND
+      score: 0.9000
+     result: GRANTED
+ request_id: ea73e3b395784644
+ created_at: 2026-10-28 09:35:10
+*************************** 6. row ***************************
+         id: 8
+    pair_id: 280
+  viewer_id: 1
+viewer_side: LOST
+target_side: FOUND
+      score: 0.4200
+     result: DENIED_LOW_SCORE
+ request_id: 26c8b42730914e90
+ created_at: 2026-10-28 09:35:05
+*************************** 7. row ***************************
+         id: 7
+    pair_id: 259
+  viewer_id: 1
+viewer_side: LOST
+target_side: FOUND
+      score: 0.8600
+     result: DENIED_NOT_PUBLIC
+ request_id: 41af034dd0fe4e3b
+ created_at: 2026-10-28 09:35:01
+*************************** 8. row ***************************
+         id: 6
+    pair_id: 259
+  viewer_id: 1
+viewer_side: LOST
+target_side: FOUND
+      score: 0.8600
+     result: GRANTED
+ request_id: 14ad567d3b6d4300
+ created_at: 2026-10-28 09:35:00
+*************************** 9. row ***************************
+         id: 5
+    pair_id: 259
+  viewer_id: 1
+viewer_side: LOST
+target_side: FOUND
+      score: 0.8600
+     result: DENIED_NOT_PUBLIC
+ request_id: 7607672c3b064292
+ created_at: 2026-10-28 09:35:00
+*************************** 10. row ***************************
+         id: 4
+    pair_id: 236
+  viewer_id: 2
+viewer_side: FOUND
+target_side: LOST
+      score: 0.9600
+     result: GRANTED
+ request_id: 5e12ef2254b34d27
+ created_at: 2026-10-28 09:34:56
+```
+
+## ⑪ t_user 不存手机号；通知正文不含号码
+
+```sql
+
+SELECT column_name FROM information_schema.columns
+WHERE table_schema = DATABASE() AND table_name = 't_user' ORDER BY ordinal_position;
+SELECT COUNT(*) AS notifications_with_phone FROM t_notification WHERE title REGEXP '1[3-9][0-9]{9}' OR body REGEXP '1[3-9][0-9]{9}';
+```
+```
+id
+student_no
+password_hash
+display_name
+is_active
+created_at
+updated_at
+0
 ```
 
 ## 判定
 
 | 检查项 | 结果 | 证据 |
 |---|---|---|
-| 记录存在于 t_record（不是 sessionStorage） | 通过 | 42	E2E 走查记录 1792662317501	PENDING	5	13800001234	端测测	NULL |
-| 标题与 UI 提交内容一致 | 通过 | DB=E2E 走查记录 1792662317501 / UI=E2E 走查记录 1792662317501 |
-| 状态为 PENDING（列表默认口径可见） | 通过 | status=PENDING |
-| 分类真实写入 category_id | 通过 | category_id=5 |
-| 联系方式 / 联系人落库 | 通过 | contact=13800001234 publisher=端测测 |
+| E2E 记录存在于 t_record（不是 sessionStorage） | 通过 | 109	E2E 走查记录 6fsrv3pe	PENDING	5	13800001234	端测测	1	NULL |
+| 标题与 UI 提交内容一致 | 通过 | DB=E2E 走查记录 6fsrv3pe / UI=E2E 走查记录 6fsrv3pe |
+| 状态为 PENDING（发布初始态，系统未自动置位） | 通过 | status=PENDING |
+| 分类真实写入 category_id=5 | 通过 | category_id=5 |
+| 联系方式 / 联系人 / 发布者落库 | 通过 | contact=13800001234 publisher=端测测 publisher_id=1 |
 | 未被逻辑删除 | 通过 | deleted_at=NULL |
-| 描述按 UTF-8 完整落库（长度与提交一致） | 通过 | CHAR_LENGTH=71 |
-| 详情页状态流转已落库（1 号 = CLAIMED） | 通过 | status=CLAIMED |
-| 匹配快照有行（>0） | 通过 | t_match_result rows=70 |
-| 快照 impl 为 LOCAL_KEYWORD（本期实现口径） | 通过 | impl=LOCAL_KEYWORD |
+| 描述按 UTF-8 完整落库（长度 > 0） | 通过 | CHAR_LENGTH=65 |
+| E2E 标记完成已落库（10 号 COMPLETED + completed_at 非空） | 通过 | COMPLETED\|2026-10-28 09:37:45 |
+| 数据库恰好 7 张表 | 通过 | t_access_log,t_category,t_match_result,t_notification,t_pair_score,t_record,t_user |
+| 公共列表（PENDING + 未删除）总数为 21 | 通过 | PENDING=21 |
+| E2E 记录在公共列表 SQL 口径内 | 通过 | hit=1 |
+| 匹配快照有行且 impl=LOCAL_KEYWORD | 通过 | snapshots=81 impl=LOCAL_KEYWORD |
+| 快照候选 JSON 未出现手机号（输入本身含号码的除外） | 通过 | hits=0 |
+| DIRECT 档取号写入 GRANTED 审计（pair 1） | 通过 | GRANTED=1 |
+| t_access_log 无 contact/note 列（审计不复制敏感值） | 通过 | id,pair_id,viewer_id,viewer_side,target_side,score,result,request_id,ip,user_agent,created_at |
+| t_pair_score 行数 = 唯一 (lost,found) 对数 | 通过 | rows=785 distinct=785 |
+| pair 状态只有 NEW/CONTACTED/MATCHED/IGNORED（无已解决） | 通过 | CONTACTED,IGNORED,MATCHED,NEW |
+| t_record 的 status/completed_at 双向绑定 | 通过 | violations=0 |
+| t_user 无 phone/mobile/contact 列 | 通过 | id,student_no,password_hash,display_name,is_active,created_at,updated_at |
 
-**结论**：通过 —— 10/10 项检查符合预期。数据来自 MySQL 直查，不采信接口自述。
+**结论**：通过 —— 19/19 项检查符合预期。数据来自 MySQL 直查，不采信接口自述。

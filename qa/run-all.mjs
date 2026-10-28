@@ -1,4 +1,4 @@
-// 5.1 全量回归入口：一条命令跑完接口 / 匹配评估 / 前端走查 / 落库取证 / 跨页一致性。
+// v2 · F1 全量回归入口：一条命令跑完接口 / 匹配评估 / 前端走查 / 落库取证 / 跨页一致性。
 //
 // 前置（不由本脚本启动，避免把「测试」和「怎么起服务」混在一起）：
 //   1) MySQL 8 + db/schema.sql + db/seed.sql 的库（脚本会自己重置一次，结束再重置一次）
@@ -75,9 +75,12 @@ const stage = (name, script, { required = true } = {}) =>
     });
   });
 
+// PAIR-07 / TERM-06 的 EV-LOG 需要后端日志：默认找 reports/server.log，可用 FINDIT_SERVER_LOG 覆盖
+process.env.FINDIT_SERVER_LOG ??= resolve(here, 'reports', 'server.log');
+
 const results = [];
 
-out(`# 5.1 全量回归 · ${new Date().toISOString()}`);
+out(`# v2 · F1 全量回归 · ${new Date().toISOString()}`);
 out(`- 后端：${API}`);
 out(`- 前端：${WEB}`);
 out(`- MySQL 客户端：${MYSQL}`);
@@ -115,8 +118,17 @@ for (const r of results) {
   const verdict = r.code === 'skipped' ? '跳过（前端未起）' : r.code === 0 ? '通过' : '有失败（见上文明细）';
   out(`| ${r.name} | ${r.code} | ${verdict} |`);
 }
-out('\n说明：DEF-01 / DEF-02 已修复，接口与 E2E 两处 knownDefect 豁免标记均已移除，全组按原断言判定；');
-out('      「有失败」即为新回归，缺陷清单见 docs/testing/5.1-defects.md。');
+
+for (const [label, file] of [['接口', 'api-f1-v2.json'], ['E2E', 'e2e-f1-v2.json'], ['一致性', 'consistency-5.1.json']]) {
+  try {
+    const payload = JSON.parse(readFileSync(resolve(here, 'reports', file), 'utf8'));
+    out(`\n- ${label}：${payload.summary.total} 条，通过 ${payload.summary.passed}，失败 ${payload.summary.failed}`);
+  } catch {
+    /* 报告缺失时由阶段退出码兜底 */
+  }
+}
+out('\n说明：本入口对应 docs/testing/v2/F1-regression-assets.md；接口用例 111 条（原 64 + 新增 47），全部按 v2 契约断言；');
+out('      「有失败」即为新回归，先看 reports/api-f1-v2.txt 与 reports/e2e-f1-v2.txt 的失败原因。');
 
 const logPath = resolve(here, 'reports', 'run-all-output.txt');
 await writeFile(logPath, log.join('\n') + '\n', 'utf8');
