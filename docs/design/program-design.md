@@ -3,7 +3,7 @@
 | 项 | 内容 |
 |---|---|
 | 文档版本 | **v2.0**（取代 v1.0；v1 描述的「三张表 / 九个接口 / 无登录」形态已随 v2 阶段作废，见 §10.5 版本与废弃说明） |
-| 对应代码基线 | `feat/v2-F2-integration @ 941fdee`（含 B1 数据层、B2/B3 认证、C1/C2 遮蔽、D1/D2 配对与通知、E1/E1b/E2 三档与档位 UI、F1 回归资产、F2 集成回归）。另有三个**尚未合入任何集成分支**的只读参考：F3 安全评审报告 `feat/v2-F3-security-review @ a64639e`、P1 遮蔽归一修复 `fix/v2-F3-p1-masking-normalize @ 08f4bb9`、P2 加固 `fix/v2-F3-p2-hardening @ fbd538f`。本文 §5.6（遮蔽归一）、§5.1（响应头）、§5.8（状态条件更新）、§6.9（过期扫描）按这两个修复分支的**最终行为**撰写，并就地标注「待合入」，合入前请勿据此认为 `941fdee` 已包含该行为。 |
+| 对应代码基线 | `feat/v2-integration @ 64693ec`（含 B1 数据层、B2/B3 认证、C1/C2 遮蔽、D1/D2 配对与通知、E1/E1b/E2 三档与档位 UI、F1 回归资产、F2 集成回归，以及 10-28 合入的 F3 三项：安全评审报告 `feat/v2-F3-security-review @ a64639e`、P1 遮蔽归一修复 `fix/v2-F3-p1-masking-normalize @ 08f4bb9`、P2 加固 `fix/v2-F3-p2-hardening @ fbd538f`）。本文 §5.6（遮蔽归一）、§5.1（响应头）、§5.8（状态条件更新）、§6.9（过期扫描）写的就是该基线上的行为，并就地标注「已合入 `feat/v2-integration @ 64693ec`」，可直接按本文逐条核对代码。 |
 | 适用仓库 | https://github.com/BLingKiy/find-it-campus |
 | 编写日期 | 2026-10-28 |
 | 编写 | 文通通（文档 Agent），内容取自各阶段交付物与仓库实际代码 |
@@ -212,7 +212,7 @@ v2 有四种身份，判定只看服务端会话，不看前端传的字段（�
 | 2026-10-27 | 阈值是否散落硬编码 | 集中一处：`contact_direct_threshold=0.90`、`contact_unlock_threshold=0.75`、`completed_visible_threshold=0.90`、`completed_retention_days=30`、`notify_threshold=0.75`，同一配置类 `PairPolicyProperties` 读取并在启动期 fail-fast 校验关系约束 | `application.yml` 的 `findit.pair` 段；§5.7 |
 | 2026-10-27 | 手机号是否做短信验证、是否入 `t_user` | 只做格式校验、不做短信验证、`t_user` 不存手机号列；不自动下架 | `db/schema.sql` 表 1、`RecordCreateRequest` 的 `@Pattern`；§9.1 已知限制 |
 | 2026-10-27 | LLM 密钥放置 | 只走环境变量 `DEEPSEEK_API_KEY`；配置文件里**刻意没有 api-key 键**；代码/配置/日志/证据/文档零明文，证据只记 `model` / `latency_ms` / `tokens` | `LlmProperties`、`DeepSeekPairScorer`；§6.8（密钥纪律）、§9.2（限制） |
-| 2026-10-28 | F3 安全评审后的 P1/P2 处置 | P0=0；P1（分隔符/国际前缀归一，堵手机号与证件号绕过）与 P2（状态竞态条件更新、`Cache-Control: no-store` + `Vary: Cookie`、会话只允许 Cookie 承载、日志格式化、过期 COMPLETED 不再进扫描目标）各立分支，**尚未合入任何集成分支** | `fix/v2-F3-p1-masking-normalize @ 08f4bb9`、`fix/v2-F3-p2-hardening @ fbd538f`；本文 §5.1、§5.6、§5.8、§6.9 |
+| 2026-10-28 | F3 安全评审后的 P1/P2 处置 | P0=0；P1（分隔符/国际前缀归一，堵手机号与证件号绕过）与 P2（状态竞态条件更新、`Cache-Control: no-store` + `Vary: Cookie`、会话只允许 Cookie 承载、日志格式化、过期 COMPLETED 不再进扫描目标）各立分支，**当日已合入 `feat/v2-integration @ 64693ec`** | `fix/v2-F3-p1-masking-normalize @ 08f4bb9`、`fix/v2-F3-p2-hardening @ fbd538f`；本文 §5.1、§5.6、§5.8、§6.9 |
 
 ### 2.5 v2 新增验收判据
 
@@ -626,11 +626,11 @@ notification → 只写自己的表，被 pair 上下文调用     category ✗�
 | 会话属性 | `HttpOnly` + `SameSite=Lax` + `Path=/` + 30 分钟无活动失效 + `tracking-modes: cookie`（禁 `;jsessionid=` URL 重写）；`secure=false`（本地 http，生产在 HTTPS 前置代理后改 true） |
 | 遮蔽 | 服务端单点 `MaskingPolicy`，列表/详情/`/api/match`/`/my`/通知五个出口共用；前端不得自行「还原」或拼接号码。规则见 §5.6 |
 | 联系方式出口 | **对方号码只从 `GET /api/pairs/{id}/contact` 返回**。列表、详情、`/api/match`、通知、pair 卡片都不带对方号码；本人的 `contact` 仍在本人可见的详情与 `/my` 中原样返回 |
-| 缓存头（按 `941fdee` 实现） | 只有 `GET /api/pairs/{id}/contact` 显式设 `Cache-Control: no-store`（每次查看都写审计，不能被缓存）。其余 `/api/**` 当前**未设置**缓存头；P2-2（`fbd538f`，待合入）为全部 `/api/**` 统一加 `Cache-Control: no-store` + `Vary: Cookie` 与四条最小安全头（`X-Content-Type-Options: nosniff`、`X-Frame-Options: DENY`、`Referrer-Policy: no-referrer`、`Content-Security-Policy: default-src 'none'; frame-ancestors 'none'`）。详见 §5.1.1 |
+| 缓存头 | 全部 `/api/**` 统一 `Cache-Control: no-store` + `Vary: Cookie`，另加四条最小安全头（`X-Content-Type-Options: nosniff`、`X-Frame-Options: DENY`、`Referrer-Policy: no-referrer`、`Content-Security-Policy: default-src 'none'; frame-ancestors 'none'`），由 `ApiResponseHeadersFilter` 一道施加（401 短路同样覆盖）。`GET /api/pairs/{id}/contact` 因每次查看都写审计，另在控制器里显式设了 `no-store`。**已合入 `feat/v2-integration @ 64693ec`**（原 P2-2）。详见 §5.1.1 |
 
 #### 5.1.1 一处已登记的文档—实现偏差（缓存头）
 
-`docs/api-contract-v2.md` §4.7 写着分类字典可缓存（`Cache-Control: private, max-age=300`），但 `941fdee` 的实现里没有任何地方设置这个头（全仓库只有 `PairController` 设了 `no-store`）。这条**不是实现漏写**：P2-2 的结论恰好相反——所有 `/api/**` 一律 `no-store`，理由是响应体随 Cookie 变化，`GET /api/records` 与详情的明文/遮蔽视图、`/my`、通知都是个性化内容，一旦前置加了 CDN 或反代缓存，200 会按 URL 回给另一个用户，直接绕过鉴权与 404 门槛。
+`docs/api-contract-v2.md` §4.7 写着分类字典可缓存（`Cache-Control: private, max-age=300`），但代码里没有任何地方设置这个头——`feat/v2-integration @ 64693ec` 上全部 `/api/**` 一律 `Cache-Control: no-store`。这条**不是实现漏写**：P2-2 的结论恰好相反——所有 `/api/**` 一律 `no-store`，理由是响应体随 Cookie 变化，`GET /api/records` 与详情的明文/遮蔽视图、`/my`、通知都是个性化内容，一旦前置加了 CDN 或反代缓存，200 会按 URL 回给另一个用户，直接绕过鉴权与 404 门槛。
 
 按「以实现为准、改文档不改代码」处理：**契约 §4.7 那句作废**，v2 交付口径为「`/api/**` 全部 `no-store`，公共列表也不缓存」。现阶段没有 CDN，收益为零，这是有意的保守取舍；将来真要缓存公共列表，应当新增一份明确的「匿名公共响应」白名单，而不是从「漏设头」里省出来。
 
@@ -941,13 +941,13 @@ candidates = [{"score":0.78,"reason":"关键词命中:[手机号已隐藏]qq[QQ�
 3 号楼 201                  → 3 号楼 201             （不命中）
 ```
 
-#### 一处必须说明的边界（P1，`08f4bb9` **待合入**）
+#### 一处必须说明的边界（P1，`08f4bb9`，已合入 `feat/v2-integration @ 64693ec`）
 
-上面两条断言式匹配都要求**数字连续**。用户写号码的真实形态是 `138 1234 5678`、`138-1234-5678`、`+8613812345678`——在 `941fdee` 上这三种写法**都不会被打码**（实测：`电话 138 1234 5678` 原样返回）。加一个空格就能绕过隐私分档，F3 评为 P1。
+上面两条断言式匹配都要求**数字连续**。用户写号码的真实形态是 `138 1234 5678`、`138-1234-5678`、`+8613812345678`——合入前的 `941fdee` 上这三种写法**都不会被打码**（实测：`电话 138 1234 5678` 原样返回）。加一个空格就能绕过隐私分档，F3 评为 P1。
 
-修复分支 `fix/v2-F3-p1-masking-normalize @ 08f4bb9` 在 `maskDescription` 前加了一步「分隔符归一检测」：把空格（含全角空格、零宽字符）、制表、换行、`- . / \` 与括号视为数字间分隔符，扫描「数字 + 分隔符」的最长片段，归一后**整段**恰好是 11 位手机号（含 `+86` / `86` / `0086` 前缀）或 18 位证件号（含尾位 `X`）时，替换原文中对应的整段；整段不是单个号码时，再按原文左右非数字边界补找独立成号的手机号。刻意不放宽裸 5–9 位数字与日期时间的口径，N1/N2/N3 反例保持原样。**这是规则 1/2 的输入规范化，不是第五条规则**——归一只用于确定「替换区间」，不改写整条文案的标点。
+修复提交 `08f4bb9`（`fix/v2-F3-p1-masking-normalize`）在 `maskDescription` 前加了一步「分隔符归一检测」：把空格（含全角空格、零宽字符）、制表、换行、`- . / \` 与括号视为数字间分隔符，扫描「数字 + 分隔符」的最长片段，归一后**整段**恰好是 11 位手机号（含 `+86` / `86` / `0086` 前缀）或 18 位证件号（含尾位 `X`）时，替换原文中对应的整段；整段不是单个号码时，再按原文左右非数字边界补找独立成号的手机号。刻意不放宽裸 5–9 位数字与日期时间的口径，N1/N2/N3 反例保持原样。**这是规则 1/2 的输入规范化，不是第五条规则**——归一只用于确定「替换区间」，不改写整条文案的标点。
 
-本节把它写进设计文档，是因为读者拿文档去核对 `941fdee` 的代码时会以为文档写错了。以分支合并后的行为为准，合入点由人类在门禁 3 判定。
+该提交已于 2026-10-28 合入 `feat/v2-integration @ 64693ec`，本文基线即该 commit，因此上面三种写法在本版代码里会走到替换分支，而不是原样返回。
 
 #### 地点与称呼
 
@@ -999,7 +999,7 @@ PENDING ──(已有有效 MATCHED pair，本人标记)──► COMPLETED ─�
 
 系统任务（配对、通知、扫描、到期清扫）**没有**写 `status` / `completed_at` 的代码路径；到期也不改写 `status`，它是**读时窗口**（`completed_at + completed_retention_days > now`，用「大于」而不是「大于等于」，到期那一刻即不可见，避免「最后一秒」的时钟偏差让同一请求在两个实例上出现两种结果）。
 
-**终态与编辑的竞态（P2-1，`fbd538f` 待合入）**：`PUT /api/records/{id}` 的 UPDATE 带 `AND status = 'PENDING'`，与 `PATCH …/status` 并发时只可能有一方改到终态；影响 0 行时用 `SELECT … FOR UPDATE` 回读一次，据回读结果区分 `20001`（不存在/已删）与 `20003`（并发下已是终态）。**这里是全项目唯一使用 `SELECT … FOR UPDATE` 的地方**——它挡的是「已完成的记录被后到的 PUT 覆盖正文」，属于终态不可回退的硬不变量；pair 进展不在这个级别，所以那边只用条件 UPDATE（见下）。`941fdee` 上的行为是「先读后写、无行锁」，两个请求都返回 200 而后者覆盖前者。
+**终态与编辑的竞态（P2-1，`fbd538f`，已合入 `feat/v2-integration @ 64693ec`）**：`PUT /api/records/{id}` 的 UPDATE 带 `AND status = 'PENDING'`，与 `PATCH …/status` 并发时只可能有一方改到终态；影响 0 行时用 `SELECT … FOR UPDATE` 回读一次，据回读结果区分 `20001`（不存在/已删）与 `20003`（并发下已是终态）。**这里是全项目唯一使用 `SELECT … FOR UPDATE` 的地方**——它挡的是「已完成的记录被后到的 PUT 覆盖正文」，属于终态不可回退的硬不变量；pair 进展不在这个级别，所以那边只用条件 UPDATE（见下）。合入前的 `941fdee` 上是「先读后写、无行锁」，两个请求都返回 200 而后者覆盖前者。
 
 
 #### pair 四态
@@ -1275,7 +1275,7 @@ public MatchEngine keywordMatchEngine(@Lazy CategoryMapper categoryMapper) {
 - **三个触发口**：定时（`scheduled`）、`POST /api/ops/pair-scan`（`http`，需 `OPS_SCAN_TOKEN`）、启动参数 `java -jar app.jar --pair-scan-once`（`startup`，跑一次然后正常启动）。第三个存在的理由是：演示/排障时不想为了跑一次扫描去配 token、找 cookie、发 POST，而输出落在启动日志里方便取证。
 - **到期只计数，不改写**：`countExpiredCompleted` 统计 `completed_at <= cutoff` 的 `COMPLETED`，`status` 一列不动。可见性由读时谓词保证（§5.8），所以**漏跑一轮不会导致数据泄露**，只会让 `expired` 数字晚一步出现。
 - 扫描同样守 §6.6 的禁止清单：不写 `t_record.status/completed_at/deleted_at/updated_at`，不写 `t_pair_score.status/confirmed_at`，不关闭任何记录。
-- **P2-4（待合入）**：`selectPairScanTargets` 的目标条件从「非 `CLOSED`」收紧为「`PENDING` 或保留期内的 `COMPLETED`」，过期记录即便停在 `DEGRADED` 也不再花 LLM 额度——它已不可见、不再召回，重算只会产生指向 404 的 pair 和通知；`scoreRecord` 侧用 `RecordVisibilityPolicy.isMatchable` 再兜一层，跳过原因记 `EXPIRED` 且不算失败。
+- **P2-4（`fbd538f`，已合入 `feat/v2-integration @ 64693ec`）**：`selectPairScanTargets` 的目标条件从「非 `CLOSED`」收紧为「`PENDING` 或保留期内的 `COMPLETED`」，过期记录即便停在 `DEGRADED` 也不再花 LLM 额度——它已不可见、不再召回，重算只会产生指向 404 的 pair 和通知；`scoreRecord` 侧用 `RecordVisibilityPolicy.isMatchable` 再兜一层，跳过原因记 `EXPIRED` 且不算失败。
 
 ### 6.10 为什么配对链路降级、`/api/match` 不降级
 
@@ -1389,9 +1389,10 @@ UI:「已降级 智能匹配暂不可用，已用关键词匹配。分数仅供�
 | 10-28 00:59 | v2 · 集成 | `feat/v2-integration` 五次 merge | D1/D2/E1/E1b/E2 五个分支合入，与 C1/C2/B2/B3 同链 |
 | 10-28 08:22 | 门禁 2 第 7 组补测 | `ec670be` | 真实 DeepSeek 9 行调用（`latency_ms` 457–1459、tokens 非空），第 7 组由「不可判定」改判 PASS |
 | 10-28 09:39 | v2 · F1 回归资产改造 | `db8b3dc` | 登录三态夹具 + v2 断言 + 47 条新增用例 |
-| 10-28 10:29 | v2 · F2 集成回归 | `feat/v2-F2-integration` @`941fdee` | 接口 111/111、E2E 25/25、一致性 9/9、落库 19/19，0 fail；**本文的代码基线** |
-| 10-28 10:55 / 11:19 | v2 · F3 P1/P2 修复分支 | `08f4bb9`、`fbd538f` | 遮蔽归一 / 状态竞态 + 缓存头 + 日志注入 + 过期扫描；**均未合入任何集成分支**（§2.4 末行） |
+| 10-28 10:29 | v2 · F2 集成回归 | `feat/v2-F2-integration` @`941fdee` | 接口 111/111、E2E 25/25、一致性 9/9、落库 19/19，0 fail |
+| 10-28 10:55 / 11:19 | v2 · F3 P1/P2 修复分支 | `08f4bb9`、`fbd538f` | 遮蔽归一 / 状态竞态 + 缓存头 + 日志注入 + 过期扫描 |
 | 10-28 12:15 | v2 · F3 复验与门禁 3 材料 | `feat/v2-F3-security-review` @`a64639e` | P0=0；P1/P2 各自复验通过；门禁 3 交人类判定 |
+| 10-28 14:11（+08:00，06:11Z） | v2 · F3 三项合入集成分支 | `feat/v2-integration @ 64693ec` | `23c0c52` 合 `08f4bb9`、`0803d28` 合 `fbd538f`、`64693ec` 合 `a64639e`，`git merge-base --is-ancestor` 三条均 YES；**本文的代码基线** |
 
 关键路径是 `1.2 契约 → 2.1 骨架 → 3.1 接口 → 3.2 引擎 → 4.1 页面 → 5.1 测试 → 6.1 文档`。3.1 与 3.2 串行（3.2 要按 3.1 的接口签名实现），4.1 与 4.2 串行（4.2 要按 4.1 的 DOM 结构加样式），其余可并行。阶段 7（Windows 可部署）在 6 之后单开：部署文档要以稳定下来的构建产物为准，先出包（7.1）再写文档并同步设计稿（7.2），最后在干净目录验收（7.3）。
 
@@ -1486,13 +1487,13 @@ v2 的关键路径同样**先收数据与身份，再动算法与界面**：`B1 
 - **处置**：`confirmOwned` 的 `SET` 子句把 `status = CASE …` **放在两个 `confirmed_at` 之后**——MySQL 的 `SET` 从左到右求值，`CASE` 能看到刚写入的确认时间与行内另一端的当前值，于是并发各确认一端也能收敛到 `MATCHED`；`COALESCE` 保证重复确认不刷新第一次的时间（幂等）。
 - **证据**：`PairScoreMapper.xml#confirmOwned` 及其注释；`PairActionServiceTest`。
 
-#### P-14 遮蔽被格式变体绕过（F3 P1，修复分支待合入）
+#### P-14 遮蔽被格式变体绕过（F3 P1，`08f4bb9` 已合入 `feat/v2-integration @ 64693ec`）
 
 - **现象**：`139-0000-1111`、`139 0000 1111`、`+8613900001111`、全角 `１３９…` 这类写法绕过 `MOBILE_RE`，明文号码进了响应体与 `t_match_result` 快照。
 - **定位**：打码器按「字面相邻的数字」匹配，而手机号/证件号的**可读写法本来就带分隔符与前缀**。这是规则缺口，不是正则写错——补正则只会漏下一种分隔符。
 - **处置**：`08f4bb9` 在四条正则之前加 `maskSeparatedContactNumbers`：把空格（含全角空格与零宽字符）、制表、换行、`- . / \` 与括号视为数字间分隔符，扫描「数字 + 分隔符」的最长片段，**归一后整段恰好**是 11 位手机号（含 `+86` / `86` / `0086` 前缀）或 18 位证件号（含尾位 `X`）时，替换原文中对应的整段；片段整体不是单个号码时，再按原文左右非数字边界补找独立成号的手机号，覆盖「单号12345 138 1234 5678」这种把号码粘在其它数字后面的写法。裸 5–9 位数字、日期、时间、房间号**不命中**（N1/N2/N3 反例保持原样），归一只用于「检测与替换区间」，**不做整体 NFKC**——那会把「１０：３０」这类正常文本改写成用户认不出的形状。
-- **状态**：分支 `fix/v2-F3-p1-masking-normalize @ 08f4bb9`，**尚未合入任何集成分支**；规则的最终表述与顺序理由以 §5.6 为准，本节只记发现与处置过程，合入点由人类在门禁 3 判定。
-- **证据**：`MaskingPolicyTest` 18/18（含 8 组 P1 回归 + 随机分隔符 fuzz + 出口层详情/列表断言）、服务端全量 228/228（见该提交说明；228 是 `941fdee` 220 + 本分支新增 8，两个修复分支合并后为 242，见 §8.3.1）。
+- **状态**：`fix/v2-F3-p1-masking-normalize @ 08f4bb9`，已于 2026-10-28 合入 `feat/v2-integration @ 64693ec`（合并提交 `23c0c52`）；规则的最终表述与顺序理由以 §5.6 为准，本节只记发现与处置过程。
+- **证据**：`MaskingPolicyTest` 18/18（含 8 组 P1 回归 + 随机分隔符 fuzz + 出口层详情/列表断言）、服务端全量 228/228（见该提交说明；228 是 `941fdee` 220 + 本分支新增 8，三条合入后为 242，见 §8.3.1）。
 
 #### P-15 「有效」谓词在三处 SQL 里各写了一遍
 
@@ -1531,17 +1532,17 @@ v2 的关键路径同样**先收数据与身份，再动算法与界面**：`B1 
 >
 > 两条修复均基于当时的 `main` 基线 `d38f868` 提交，并各自附有修复前/修复后同路径实测（见 `ZHYYKFX-35` / `ZHYYKFX-36` 任务评论）。`main` 已包含 `baf9e44`，两处修复均在文档所指的代码基线内。
 
-#### v2 登记（代码基线 `941fdee`，来源 F3 安全复核 `a64639e` 与本文逐字段核对）
+#### v2 登记（代码基线 `64693ec`，来源 F3 安全复核 `a64639e` 与本文逐字段核对）
 
 F3 的缺陷编号（P1-1 / P2-1…P2-5）沿用 `docs/testing/v2/security-review.md`，本文不另起一套——两套编号并存会让读者分不清「同一个问题报了两次」。级别含义与 v1 的 P2/P3 相同：**P1 阻塞门禁，P2 建议修，P3 记录在案**。
 
 | 编号 | 级别 | 位置 | 现象 | 状态（写文档时的真实情况） |
 |---|---|---|---|---|
-| P1-1 | P1 | `MaskingPolicy.maskDescription` | 号码带空格/横线/`+86` 前缀时不打码：`电话 138 1234 5678` 原样返回，等于用空格绕过隐私分档 | **已修复并已复验**（`ZHYYKFX-71` → `fix/v2-F3-p1-masking-normalize` @ `08f4bb9`，`MaskingPolicyTest` 10 → 18 条 + 200 轮分隔符 fuzz）。**该分支未合入任何集成分支**，`941fdee` 上跑仍是旧行为 → §5.6 已注明「待合入」 |
-| P2-1 | P2 | `RecordMapper.xml#updateContent` | UPDATE 的 WHERE 只有 `id + deleted_at`，PUT 与 PATCH 并发时可以把已 `CLOSED`/`COMPLETED` 的终态记录正文改掉 | **已修复**（`ZHYYKFX-72` → `fix/v2-F3-p2-hardening` @ `fbd538f`，加 `AND status='PENDING'`，0 行回读区分 20001/20003）；**同样待合入** → §5.8 已注明 |
-| P2-2 | P2 | 详情 / `/my` / 通知 / `/api/match` 四个控制器 | 个性化 GET 响应没有 `Cache-Control`，只有 `PairController` 设了 `no-store`。本地单实例不构成现网可利用，上共享缓存后可能把 A 的明文视图给 B，绕过 COMPLETED 详情的 404 门槛 | **已修复**（`fbd538f` 新增 `ApiResponseHeadersFilter`：`/api/**` 统一 `no-store` + `Vary: Cookie`，401 短路同样覆盖）；**待合入** → §5.1.1 已注明 |
-| P2-3 | P2 | `AuthService` / `LoginAttemptTracker` / `GlobalExceptionHandler` | 客户端可控值（学号、查询参数）未净化就进日志，可伪造日志行 | **已修复**（`fbd538f` 新增 `LogSafe`：CR/LF/TAB → `_`，限长 128）；待合入 |
-| P2-4 | P2 | `RecordMapper.xml#selectPairScanTargets` | 已过保留期的 `COMPLETED` 仍是扫描目标，会被重新打分并可能新建 pair/通知，与「到期不召回」不一致 | **已修复**（`fbd538f` 加 `completed_at > #{cutoff}`，`scoreRecord` 再用 `RecordVisibilityPolicy.isMatchable` 兜一层）；待合入 → §6.9 已注明 |
+| P1-1 | P1 | `MaskingPolicy.maskDescription` | 号码带空格/横线/`+86` 前缀时不打码：`电话 138 1234 5678` 原样返回，等于用空格绕过隐私分档 | **已修复并已复验**（`ZHYYKFX-71` → `fix/v2-F3-p1-masking-normalize` @ `08f4bb9`，`MaskingPolicyTest` 10 → 18 条 + 200 轮分隔符 fuzz），**已合入 `feat/v2-integration @ 64693ec`** → §5.6 |
+| P2-1 | P2 | `RecordMapper.xml#updateContent` | UPDATE 的 WHERE 只有 `id + deleted_at`，PUT 与 PATCH 并发时可以把已 `CLOSED`/`COMPLETED` 的终态记录正文改掉 | **已修复**（`ZHYYKFX-72` → `fix/v2-F3-p2-hardening` @ `fbd538f`，加 `AND status='PENDING'`，0 行回读区分 20001/20003）；**已合入 `feat/v2-integration @ 64693ec`** → §5.8 |
+| P2-2 | P2 | 详情 / `/my` / 通知 / `/api/match` 四个控制器 | 个性化 GET 响应没有 `Cache-Control`，只有 `PairController` 设了 `no-store`。本地单实例不构成现网可利用，上共享缓存后可能把 A 的明文视图给 B，绕过 COMPLETED 详情的 404 门槛 | **已修复**（`fbd538f` 新增 `ApiResponseHeadersFilter`：`/api/**` 统一 `no-store` + `Vary: Cookie`，401 短路同样覆盖）；**已合入 `feat/v2-integration @ 64693ec`** → §5.1.1 |
+| P2-3 | P2 | `AuthService` / `LoginAttemptTracker` / `GlobalExceptionHandler` | 客户端可控值（学号、查询参数）未净化就进日志，可伪造日志行 | **已修复**（`fbd538f` 新增 `LogSafe`：CR/LF/TAB → `_`，限长 128）；**已合入 `feat/v2-integration @ 64693ec`** |
+| P2-4 | P2 | `RecordMapper.xml#selectPairScanTargets` | 已过保留期的 `COMPLETED` 仍是扫描目标，会被重新打分并可能新建 pair/通知，与「到期不召回」不一致 | **已修复**（`fbd538f` 加 `completed_at > #{cutoff}`，`scoreRecord` 再用 `RecordVisibilityPolicy.isMatchable` 兜一层）；**已合入 `feat/v2-integration @ 64693ec`** → §6.9 |
 | P2-5 | P2（可选） | `application.yml` / 部署侧 | 生产 Cookie `Secure`+HSTS、`X-Forwarded-For` 可信代理、提示注入与每用户 LLM 配额 | **未修**：三项分别属部署决策与产品决策，本轮只落了 `tracking-modes: cookie` 与最小安全响应头。写进 §10 已知限制 |
 
 本文核对时另发现 5 条观察项。它们都不是缺陷（行为符合拍板口径），但都会在下游误导人，因此逐条登记：
@@ -1579,9 +1580,9 @@ F3 的缺陷编号（P1-1 / P2-1…P2-5）沿用 `docs/testing/v2/security-revie
 
 **v2 缺陷的处置口径（2026-10-28）**
 
-F3 的 P1-1 与 P2-1…P2-4 都已「修复 + 复验通过」，但**两个修复分支都没有合入任何集成分支**：`fix/v2-F3-p1-masking-normalize @ 08f4bb9` 与 `fix/v2-F3-p2-hardening @ fbd538f` 都是 `941fdee` 的独立子节点，与报告分支文件不重叠。这就产生一个文档必须回答的问题：**本文写哪一份行为？**
+F3 的 P1-1 与 P2-1…P2-4 都已「修复 + 复验通过」，修复提交 `fix/v2-F3-p1-masking-normalize @ 08f4bb9` 与 `fix/v2-F3-p2-hardening @ fbd538f` 于 2026-10-28 合入 `feat/v2-integration`（合并提交 `23c0c52`、`0803d28`，集成分支 HEAD 为 `64693ec`），`git merge-base --is-ancestor` 三条均验证为 YES。**本文的代码基线因此就是 `64693ec`**：§5.1.1（缓存头）、§5.6（分隔符归一）、§5.8（PUT 状态条件）、§6.9（到期扫描）写的行为与基线代码逐条一致，读者不再需要「按最终行为读、再去比对另一条分支」。
 
-写法是「以最终行为为准 + 显式标注待合入」，四处都做了标记：§5.1.1（缓存头）、§5.6（分隔符归一）、§5.8（PUT 状态条件）、§6.9（到期扫描）。理由很直接：这五条的修复方向已被人类验收（门禁 3 判通过），文档若照 `941fdee` 写「号码带空格不打码」，合入之后就是文档错；若照修复分支写而不标注，读者拿 `941fdee` 逐条核对会以为本文写错了。**标注「待合入」是让读者能自己判断手上的代码到底该是什么行为**，合并点由人类在门禁 3 之后判定，本文不代做决定。
+先修复后合入期间，本文曾按「以最终行为为准 + 就地标注」处理，避免读者拿 `941fdee` 核对时误判为文档写错；合入之后标注统一改成「已合入 `feat/v2-integration @ 64693ec`」，不再保留「合入点待人类判定」的说法。门禁 3 的判定本身没有变化（P0=0、唯一 P1 修复并复验），本轮只改了合并状态的表述。
 
 未修项的影响：
 
@@ -1664,10 +1665,10 @@ v2 另有四个**不进 `run-all.mjs`** 的专用脚本，因为它们对环境�
 | D1 之后 | **155** | 幂等 + 降级 |
 | E1 之后 | **201** | 三档取号与授权 |
 | E1b 之后 | **220** | pair 列表 |
-| `941fdee`（本文代码基线） | **220** | F1/F2 只加 `qa/` 脚本与证据，服务端单测**未新增**（与 E1b 持平，本文 2026-10-28 复跑确认） |
-| F3 合并工作树（`941fdee` + `08f4bb9` + `fbd538f`） | **242 / 242** | P1 分隔符归一（`MaskingPolicyTest` 10 → 18）+ P2 四项加固 |
+| `941fdee`（F2 集成分支，F3 合入前） | **220** | F1/F2 只加 `qa/` 脚本与证据，服务端单测**未新增**（与 E1b 持平，本文 2026-10-28 复跑确认） |
+| `64693ec`（本文代码基线，F3 三项合入后） | **242 / 242** | P1 分隔符归一（`MaskingPolicyTest` 10 → 18）+ P2 四项加固（`LogSafe` / `ApiResponseHeadersFilter` / 状态条件更新 / 过期扫描） |
 
-数字来源：`docs/testing/v2/B2-auth-evidence.md:298`、`C1-masking-evidence.md:440`、`D1-idempotency.md:14`、`E1-contact-unlock.md:15`、`E1b-record-pairs.md:15`；末行的 242/242 出自 F3 复验报告 `docs/testing/v2/security-review.md` §12/§18，**该文件在报告分支 `a64639e` 上**，本分支不含它。**注意**：242/242 是**两个修复分支合并后的工作树**的数，`941fdee` 单跑拿不到——这正是 §5.6 / §5.8 / §6.9 标「待合入」的原因。
+数字来源：`docs/testing/v2/B2-auth-evidence.md:298`、`C1-masking-evidence.md:440`、`D1-idempotency.md:14`、`E1-contact-unlock.md:15`、`E1b-record-pairs.md:15`；末行的 242/242 出自 F3 复验报告 `docs/testing/v2/security-review.md` §12/§18，该文件随 `a64639e` 一并合入 `feat/v2-integration`，在本文基线 `64693ec` 上可直接读到。**注意**：242/242 是三条合入后的数，单跑 `941fdee` 只有 220——这两个数各自对应一个提交点，不要混用。
 
 **v1 结论（REG-01 复跑：2026-10-22T09:44:43Z 接口、09:45:08Z 走查；被测树 `feat/5.1-integration` @`d21fe78`，报告提交 `d2d7d36`）—— 保留原样，已被上表取代**
 
@@ -1723,7 +1724,7 @@ v2 另有四个**不进 `run-all.mjs`** 的专用脚本，因为它们对环境�
 | 安全渗透（注入 / 越权 / XSS） | v1 口径：不属于 5.1 | **v2 已由 F3 覆盖**（`security-review.md`，P0=0）；v1 那行「项目本身无权限体系」已作废——v2 有登录与服务端守卫 |
 | 兼容性矩阵 | 只实测 Edge 155（F2 §11 同） | Firefox / Safari / 移动真机未验证；`SameSite=Lax` 与 `datetime-local` 的跨浏览器差异未测 |
 | 3.2 external 实现 | 人类口径：本期不落地 | 不评估外部效果，不因此判 3.2 不通过 |
-| 并发写入与竞态 | v2 只做了 pair 侧 20 并发（门禁 2 G1：稳态 P99 221ms，全部 < 500ms）与 PUT/PATCH 竞态单测 | 重复提交产生两条记录是契约已知行为；**PUT 终态竞态的修复（P2-1）尚未合入**，`941fdee` 上仍是先读后写 |
+| 并发写入与竞态 | v2 只做了 pair 侧 20 并发（门禁 2 G1：稳态 P99 221ms，全部 < 500ms）与 PUT/PATCH 竞态单测 | 重复提交产生两条记录是契约已知行为；PUT 终态竞态的修复（P2-1）已合入 `feat/v2-integration @ 64693ec`，合入前的 `941fdee` 上是先读后写 |
 | 保留期边界（第 29 / 30 天） | 只测了「保留期内」与「构造过期」两端 | 精确到天的切换未压测，过期是读时窗口判定，不依赖任务时刻（§5.8） |
 | 通知/审计表长跑 | 无清理任务（OBS-08） | 演示量级无感，生产需归档 |
 | 可访问性（a11y）与 Lighthouse 性能 | 本期未排 | 遮蔽后屏幕阅读器读出的是「[手机号已隐藏]」字面，未验证朗读体验 |
@@ -1740,7 +1741,7 @@ v2 另有四个**不进 `run-all.mjs`** 的专用脚本，因为它们对环境�
 5. **身份与隐私（v2）**：写需登录、读匿名可走遮蔽这条边界成立——111 条接口与 25 条走查全绿，五个出口的输出层遮蔽逐条实测，28 处响应体探测 + 通知正文正则 0 命中，真实密钥形状全库扫描 0 命中。
 6. **配对分档（v2）**：三档（DIRECT / AUTHORIZABLE / LOW）与授权、撤回、审计四件套行为与 §5.7 一致，且 `PairCard` 永不含 `contact` 原文（SQL 侧只取布尔，`PairFactsCardsSqlTest` 固定）；取号失败一律先落审计，写不进就不出号。
 7. **降级（v2）**：LLM 不可用时 pair 链路用本地关键词分顶替并留痕（`engine` + `degraded_reason`），发布接口不因模型慢而变慢（三次发布 0.054–0.167s）；`/api/match` 刻意不降级，503/30002 直说不可用（§6.10）。
-8. **质量门禁（v2）**：F2 集成回归五阶段退出码 0；F3 安全复核 P0=0、唯一 P1 已修复并复验。**但两个修复分支未合入任何集成分支**（§7.5），本文相应位置标注「待合入」，合并点由人类判定。
+8. **质量门禁（v2）**：F2 集成回归五阶段退出码 0；F3 安全复核 P0=0、唯一 P1 已修复并复验；三项已于 2026-10-28 合入 `feat/v2-integration @ 64693ec`（§7.5），本文基线即该 commit。
 
 **放行判断**：v1 阶段 6 已收口，代码已合入 `main`（合入点 `d38f868`，2026-10-26T01:14Z 人类批准 fast-forward），两处 P2 也已修复并合入（`ZHYYKFX-35` @`0278575` → `821423e`；`ZHYYKFX-36` @`1dfccbb` → `a7abde6`）。v2 侧：F2 接口/E2E/一致性/落库全绿、F3 P0=0 且 P1/P2 修复+复验齐备，门禁 2、门禁 3 均已判通过；`origin/main` 仍是 v1 的 `21784f6`，**v2 代码是否合入 `main` 属门禁 3 之后的人类决定**，本文不做合并、不做放行。后续复跑命令：`node qa/run-all.mjs`（回归清单 `docs/testing/5.1-regression-checklist.md`）与 `cd server && mvn -o test`。
 
@@ -1763,7 +1764,7 @@ v2 另有四个**不进 `run-all.mjs`** 的专用脚本，因为它们对环境�
 
 | 限制 | 事实 | 影响 |
 |---|---|---|
-| 修复分支尚未合入 | P1 遮蔽归一 `08f4bb9`、P2 加固 `fbd538f` 都是 `941fdee` 的独立子节点，未进任何集成分支 | `941fdee` 上跑：带空格/横线/`+86` 的号码**不会**被打码、PUT 与 PATCH 存在终态竞态、个性化 GET 无 `Cache-Control`、过期 COMPLETED 仍进扫描目标。§5.1/§5.6/§5.8/§6.9 已就地标注「待合入」 |
+| 修复项只在合入点之后生效 | P1 遮蔽归一 `08f4bb9`、P2 加固 `fbd538f` 已合入 `feat/v2-integration @ 64693ec`；更早的 `941fdee` 上仍没有这些行为 | 若手上的代码停在 `941fdee`：带空格/横线/`+86` 的号码**不会**被打码、PUT 与 PATCH 存在终态竞态、个性化 GET 无 `Cache-Control`、过期 COMPLETED 仍进扫描目标。核对本文 §5.1/§5.6/§5.8/§6.9 之前，先 `git merge-base --is-ancestor 08f4bb9 HEAD && git merge-base --is-ancestor fbd538f HEAD` 确认基线 |
 | 分隔符集合之外的绕过 | F3 复验遗留 R-1：`138,1234,5678`、`138：1234：5678`（逗号/冒号/分号，含全角）即使合入 `08f4bb9` 仍不打码 | 归一集合刻意只收「数字之间会出现的分隔」，不收标点——收了会把「3 号楼,201」这类正常描述切开。建议另开小修，本文不美化成「已全覆盖」 |
 | 地点字段只截断不打码 | `maskLocation` 按码点截 8 位再删精确定位片段；号码写在地点开头/末尾时残留 1–4 位（F3 V13/V14，P3-4） | 残留片段不构成完整号码，但看起来可疑。截断前先过号码规则是更好的做法，本期未改 |
 | `contact` 明文落库 | `t_record.contact` 是明文列（2026-10-27 人类拍板：只在输出层遮蔽） | 能读库的人看得到号码，靠部署侧 DB 账号与卷加密兜底；好处是本人回显不需要反解、不引入密钥管理 |
@@ -1818,10 +1819,10 @@ v2 另有四个**不进 `run-all.mjs`** 的专用脚本，因为它们对环境�
 |---|---|---|
 | B.1–B.12 | v1 `34c5dd1`（2026-10-22） | 3 表 / 9 接口时代的逐条比对，**保留原样不改写**（含附录 A 的 v1→v2 编号对照表） |
 | **B.13** | **v2 `941fdee`（2026-10-28）** | **14 处抽查**，前 10 处即验收要求的「抽查 10 处」：7 表 82 列、19 条路径与动词、23 个错误码、四条遮蔽正则的顺序、5 个阈值、`compareTo` 分档、详情按身份装配、`PairCard` 不含号码——每条给 `file:line` |
-| B.14 | v2 | 4 处偏差（C-11 缓存头、C-12 `allowedStatuses=["CLOSED"]`、C-13 三处注释漂移、C-14 F2 报告一行过期结论）+ 四处「待合入」差异的逐条对照 |
+| B.14 | v2 | 4 处偏差（C-11 缓存头、C-12 `allowedStatuses=["CLOSED"]`、C-13 三处注释漂移、C-14 F2 报告一行过期结论）+ 四处 F3 修复（已合入 `64693ec`）的逐条对照 |
 | B.15 | v2 | 复核命令（含 `cd server && mvn -o test`） |
 
-自查的判定口径：**以代码与 `db/schema.sql` 为准**。文档与基线文档冲突时，若代码站在基线一侧，说明代码；若代码已偏离基线，说明代码并在自查里登记偏离项，同时不改代码。**唯一例外**是本文对两个未合入修复分支的处理：那四处按「合入后的最终行为」写并就地标注「待合入」，理由写在 §7.5，读者按标注去核对相应分支即可。
+自查的判定口径：**以代码与 `db/schema.sql` 为准**。文档与基线文档冲突时，若代码站在基线一侧，说明代码；若代码已偏离基线，说明代码并在自查里登记偏离项，同时不改代码。F3 修复合入前，本文对那四处曾按「合入后的最终行为」写并就地标注，作为这条口径的唯一例外；两条修复分支已于 2026-10-28 合入 `feat/v2-integration @ 64693ec`，本文基线同步升到该 commit，例外随之解除——现在写的就是基线行为，理由见 §7.5。
 
 ### 10.3 导出与复现
 
@@ -1837,7 +1838,7 @@ node build-docx.mjs  # 输出 docs/design/program-design.docx
 
 脚本做的事：把本文与附录 A/B 按标题层级转成 Word 结构（标题样式、表格、代码块、图片按页宽缩放），A4 纵向、页脚带页码。生成物可直接作为课程附件提交；如需 PDF，用 Word 打开后「另存为 PDF」即可——本项目不引入额外的 PDF 工具链。
 
-导出环境：Node 22.23.3 + docx 9.13.0。可复核的输出（同一台机器、`941fdee` 基线、v2 三源文件合入后重导）：**1008 个块 / 内嵌 7 张图 / 约 766 KB**，`word/document.xml` 里没有红色的缺图占位符。上一次在 Microsoft Word 16 里读到的页数是 **67 页**，那是 v1 版（5 张图、603 块）的实测值，**不能当作本次 v2 导出的页数** —— 本交付环境没有 Word，页数请用打开文件后 `ComputeStatistics(2)` 复核，或按「块数 / 每页约 15 块」粗估。
+导出环境：Node 22.23.3 + docx 9.13.0。可复核的输出（同一台机器、`64693ec` 基线、v2 三源文件合入后重导）：**1008 个块 / 内嵌 7 张图 / 约 766 KB**，`word/document.xml` 里没有红色的缺图占位符。上一次在 Microsoft Word 16 里读到的页数是 **67 页**，那是 v1 版（5 张图、603 块）的实测值，**不能当作本次 v2 导出的页数** —— 本交付环境没有 Word，页数请用打开文件后 `ComputeStatistics(2)` 复核，或按「块数 / 每页约 15 块」粗估。
 
 **图**：`docs/design/diagrams/*.mmd` 是源，`*.png` / `*.svg` 是导出物（已提交，通常不需要重新生成）。共 7 张同源同工具：`architecture-container`、`architecture-modules`、`deploy-windows`、`er`、`match-sequence`，以及 v2 新增的 `login-sequence`（§5.4.1）与 `pair-sequence`（§6.8）。
 
@@ -1861,7 +1862,7 @@ npx @mermaid-js/mermaid-cli -i er.mmd -o er.png -b white -s 2 -p puppeteer.json
 | 接口字段/路径变化 | 先改 `docs/api-contract.md`，再改 DTO/DDL/TS 类型，最后同步本文 §5 与 `api-list.md`，三处同一 commit |
 | 表结构变化 | 改 `db/schema.sql` + 提交说明附 ALTER，同步本文 §4 与 `er.mmd`，重新导出图 |
 | 缺陷修复 | 更新 §7.4 状态与 §8.3 数字，去掉用例的 `knownDefect` 标记，不改历史结论 |
-| 修复分支合入 | §5.1 / §5.6 / §5.8 / §6.9 / §9.2 的「待合入」标注改成合入点 SHA，同一次改动里清干净，别留半标注 |
+| 修复分支合入 | 已按此执行：F3 的 `08f4bb9` / `fbd538f` / `a64639e` 合入 `feat/v2-integration @ 64693ec` 后，§5.1 / §5.6 / §5.8 / §6.9 / §9.2 的标注在同一次改动里全部改成合入点 SHA。后续再有修复合入，照此办理，不留半标注 |
 | 遮蔽或分档规则变化 | 只改 `MaskingPolicy` / `PairAccessPolicy`，再同步 §5.6 / §5.7 与本文引用的实测样例；出现「列表一套、详情一套」就是漏口 |
 | 软件版本发布 | 更新本文首页的「对应代码基线」commit，旧版本文档标记废弃但保留 |
 
@@ -1870,7 +1871,7 @@ npx @mermaid-js/mermaid-cli -i er.mmd -o er.png -b white -s 2 -p puppeteer.json
 | 版本 | 日期 | 代码基线 | 状态 |
 |---|---|---|---|
 | v1.0 | 2026-10-22 | `feat/5.1-integration @ d21fe78` → 合入 `main @ d38f868` | **已取代**。三张表 / 九个接口 / **无登录**、写接口对任何访客开放、`CLAIMED` 状态、列表即匹配。这些形态在 v2 全部不成立，v1 文本不再维护 |
-| v2.0（本文） | 2026-10-28 | `feat/v2-F2-integration @ 941fdee`（另含三个未合入的只读参考分支） | 现行 |
+| v2.0（本文） | 2026-10-28 | `feat/v2-integration @ 64693ec`（含 F3 评审报告与 P1/P2 修复） | 现行 |
 
 v1 → v2 的口径变化，逐条给「现在是什么」而不是「以前为什么错」：
 

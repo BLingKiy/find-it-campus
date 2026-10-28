@@ -2,7 +2,7 @@
 
 > 对象：`docs/design/program-design.md` + `docs/design/api-list.md`
 > v1 基线：`34c5dd1`（工作分支 `hifox-agent/wen-tong-tong/ZHYYKFX-11`），执行 2026-10-22，逐条读源码比对，不以其他文档为证据
-> **v2 基线：`feat/v2-F2-integration @ 941fdee`，执行 2026-10-28（B.13）**；v2 的两个未合入修复分支（`08f4bb9` / `fbd538f`）在 B.14 单列，不与 `941fdee` 的行为混写
+> **v2 抽查基线：`941fdee`（2026-10-28 执行，B.13）**；F3 的两项修复（`08f4bb9` / `fbd538f`）已于 2026-10-28 合入 `feat/v2-integration @ 64693ec`，它们带来的四处行为变化在 B.14 单列并与现行基线对齐
 > 判定口径：**以代码与 `db/schema.sql` 为准**。文档与 1.2 基线文档冲突时，若代码在基线一侧则说明代码；若代码已偏离基线，则说明代码并在此登记偏离项，同时不改代码。
 
 ## B.0 结论
@@ -45,7 +45,7 @@
 | 响应字段 | 抽样 40 处一致（含 `isMine` / `recordStatus` / `detailAccess` / `PairCard` 全字段） | B.13.7、B.13.12 |
 | 枚举域 | 记录三态、`pair_state` 四值、pair 四态、通知三值，DDL CHECK 与文档同值 | B.13.4 |
 | **v2 需要说明的偏差** | **4 处**（C-11 ~ C-14，见 B.14） | B.14 |
-| 与实现不符却未标注的描述 | 0 处（正文对未合入分支已就地标「待合入」） | B.14 |
+| 与实现不符却未标注的描述 | 0 处（F3 四项修复的表述与合入点 `feat/v2-integration @ 64693ec` 一致，见 B.14） | B.14 |
 
 ---
 
@@ -392,25 +392,25 @@ grep -n "port\|engine\|pool-size\|timeout-ms" server/src/main/resources/applicat
 
 **抽样口径说明**：请求字段与响应字段的「30 处 / 40 处」是把 8 个请求 DTO 与 9 个响应 DTO 的字段声明逐行抄出来比对文档表的合计（`auth/web/dto/LoginRequest.java`、`record/web/dto/{RecordQuery,RecordCreateRequest,MyRecordsQuery,StatusUpdateRequest,PairCard}.java`、`pair/web/dto/{PairActionRequest,ContactUnlockRequest,ContactView,ContactUnlockResponse,PairActionResponse,PairScanResult}.java`、`notification/web/dto/*.java`、`match/web/dto/*.java`），不是估算。
 
-## B.14 v2 的偏差登记（4 处）与未合入分支的影响
+## B.14 v2 的偏差登记（4 处）与 F3 修复的合入点
 
 | # | 偏差 | 文档处理 | 判定 |
 |---|---|---|---|
-| C-11 | `docs/api-contract-v2.md` §4.7 写分类字典可缓存（`private, max-age=300`），`941fdee` 的实现**没有任何地方设这个头**（只有 `PairController` 设 `no-store`） | §5.1.1 按实现写，并说明加固分支的结论恰好相反（全部 `/api/**` → `no-store`）；契约那句作废 | 属基线文档与实现漂移，不改代码 |
+| C-11 | `docs/api-contract-v2.md` §4.7 写分类字典可缓存（`private, max-age=300`），代码里**没有任何地方设这个头**——`64693ec` 上 `/api/**` 一律 `no-store` | §5.1.1 按实现写，并说明 P2-2 的结论恰好相反（全部 `/api/**` → `no-store`）；契约那句作废 | 属基线文档与实现漂移，不改代码 |
 | C-12 | seed 里 13 号记录的所有者，详情 `allowedStatuses` 是 `["CLOSED"]` 而不是 `["COMPLETED","CLOSED"]` | §5.4.3 就地解释：`countValidMatched` 要求两端都未过期，13 号唯一的 `MATCHED`（pair 14）另一端 25 号已过 30 天保留期 | **不是缺陷**，是「有效」谓词的口径；文档按实现写 |
 | C-13 | 三处过期注释/javadoc：`application.yml:110` 说池子是 10（实际 `:49` = 30）、`PairScoringRequested` 的触发来源列表、`MatchCandidatePoolPort` 仍写候选池是 `PENDING`（C1 起为 `MATCHABLE`） | 本文按**配置与代码的真实值**写（§6.7「worker 2 · 池 30」、§6.6 触发来源、§6.2 与 §6.1 `MATCHABLE`）；注释本身不改（不是本文的交付物） | 文档以代码为准，注释漂移在 §7.4 OBS-05/06/07 登记 |
 | C-14 | `docs/testing/v2/F2-integration-report.md` §6「残余风险」称「只遮蔽 `contact` 字段，description 手写手机号会原样展示」 | 与 `RecordDetailResponse.java:118` 不符（非所有者 description 会打码，明文只在本人分支）；本文 §5.6 按实现写 | **不改他人报告**，在 §7.4 OBS-09 登记，供门禁 3 知悉 |
 
-**未合入分支造成的「文档写最终行为」差异**（本文明确标注「待合入」的四处，逐条对应）：
+**F3 修复带来的行为差异**（四项均已合入 `feat/v2-integration @ 64693ec`，逐条对应）：
 
-| 行为 | `941fdee` 现状 | 合入后 | 本文标注位置 | 修复分支 |
+| 行为 | `941fdee`（合入前） | `64693ec`（本文基线） | 本文标注位置 | 修复提交 |
 |---|---|---|---|---|
 | 号码带空格/横线/`+86` 时打码 | **不打码**（F3 P1-1，V3/V4/V5/V6/V7/V15/V16/J3 全部绕过） | 分隔符归一后整段替换 | §5.6「一处必须说明的边界」 | `08f4bb9` |
 | `PUT /api/records/{id}` 的终态竞态 | 先读后写，无行锁 | UPDATE 带 `AND status='PENDING'`，0 行回读区分 20001/20003 | §5.8 | `fbd538f` |
 | 个性化 GET 的 `Cache-Control` / `Vary` | 只有取号接口有 `no-store` | `/api/**` 统一 `no-store` + `Vary: Cookie` + 四条最小安全头 | §5.1 / §5.1.1 | `fbd538f` |
 | 过期 `COMPLETED` 进不进扫描目标 | 进（只排除 `CLOSED`） | `PENDING OR (COMPLETED AND completed_at > cutoff)`，`scoreRecord` 再用 `isMatchable` 兜 | §6.9 | `fbd538f` |
 
-一句提醒：拿本文去核对 `941fdee` 的代码时，**这四条会「对不上」是预期内的**，不是文档写错；核对合入后的树时才对得上。
+一句提醒：拿本文去核对 `941fdee` 的代码时，**这四条会「对不上」是预期内的**，因为那棵树早于合入点；核对 `64693ec` 及以上才对得上。合入验证：`git merge-base --is-ancestor 08f4bb9 64693ec && git merge-base --is-ancestor fbd538f 64693ec`。
 
 ## B.15 v2 复核命令
 

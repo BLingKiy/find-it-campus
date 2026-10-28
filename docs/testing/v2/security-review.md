@@ -7,7 +7,7 @@
 > 审查方式：静态代码审查 + 仓库 `MaskingPolicy` 纯函数 harness + 项目同版本 Jackson（2.21.4）反序列化 harness + 重新构建 jar 解包 + Git 历史扫描。
 > 复验：2026-10-28，基于 `941fdee` + `08f4bb9`（Z-71）+ `fbd538f`（Z-72）合并后的独立工作树；服务端全量 **242/242** 通过。详见 §18。
 > 未执行：本机 MySQL（3306）未运行，因此没有启动后端做 HTTP 级复验。会话/Cookie/缓存头等结论按代码与配置判定；动态复核项已标注「建议本地验证」。
-> 修复单：P1 `ZHYYKFX-71`（磐石石）→ `fix/v2-F3-p1-masking-normalize@08f4bb9`；P2 `ZHYYKFX-72`（磐石石）→ `fix/v2-F3-p2-hardening@fbd538f`。均基于 `941fdee`，尚未合并进集成分支。
+> 修复单：P1 `ZHYYKFX-71`（磐石石）→ `fix/v2-F3-p1-masking-normalize@08f4bb9`；P2 `ZHYYKFX-72`（磐石石）→ `fix/v2-F3-p2-hardening@fbd538f`。均基于 `941fdee`，已合入 `feat/v2-integration @ 64693ec`（合并提交 `23c0c52` / `0803d28`，本报告 `a64639e` 同批合入为 `64693ec`）。
 
 ---
 

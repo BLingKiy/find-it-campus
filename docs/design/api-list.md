@@ -125,7 +125,7 @@ Base path `/api`，无版本段；所有响应统一为 `{code, message, data, r
 - 不改 `status`（状态走 A.2.5）。
 - 认证：所有者。非所有者可见时 `403 / 10007`，不可见时 `404 / 20001`。
 - `COMPLETED` / `CLOSED` → `409` + `20003`。
-- **并发口径**：`941fdee` 是「先读 status 再 UPDATE」；加固分支 `fbd538f`（**待合入**）给 UPDATE 加了 `AND status='PENDING'`，0 行时用 `SELECT … FOR UPDATE` 回读区分 `20001`（已删/不存在）与 `20003`（并发被改成终态）。见正文 §5.8。
+- **并发口径**：`feat/v2-integration @ 64693ec` 给 UPDATE 加了 `AND status='PENDING'`，0 行时用 `SELECT … FOR UPDATE` 回读区分 `20001`（已删/不存在）与 `20003`（并发被改成终态）；更早的 `941fdee` 是「先读 status 再 UPDATE」。见正文 §5.8。
 - 错误：`10001`、`10006`、`10007`、`20001`、`20003`、`40001`、`40002`。
 
 ### A.2.5 `PATCH /api/records/{id}/status`
@@ -247,7 +247,7 @@ Base path `/api`，无版本段；所有响应统一为 `{code, message, data, r
 |---|---|
 | 认证 | 两端任一；非参与方 `403 / 10007` |
 | `id` 形状 | path 参数按 **String** 接（`PairController.java:59`），超 `bigint` 范围、非数字、`0`、`-1` 全部 `404 / 20004`，**不 500**（实测 18 次调用，门禁 2 §6.3） |
-| 响应头 | `Cache-Control: no-store`（本接口 v1 起就有；其余个性化 GET 的响应头在加固分支 `fbd538f`，**待合入**） |
+| 响应头 | `Cache-Control: no-store` + `Vary: Cookie`（本接口 v1 起就有 `no-store`；其余 `/api/**` 由 `ApiResponseHeadersFilter` 统一施加，已合入 `feat/v2-integration @ 64693ec`） |
 | 审计 | **每次调用先写 `t_access_log` 再决定出号**，写失败即 500 且不出号（fail-closed）。审计记「谁、哪一端、看哪一端、当时分数、结果」，**不记号码本身** |
 
 **三档行为**（`PairAccessPolicy.tier`，阈值来自 `findit.pair.*`）：
