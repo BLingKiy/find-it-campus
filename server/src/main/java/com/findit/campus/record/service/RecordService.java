@@ -203,7 +203,9 @@ public class RecordService {
         record.setPublisherName(request.getPublisherName());
 
         if (recordMapper.updateContent(record) == 0) {
-            throw BizException.of(ErrorCode.RECORD_NOT_FOUND);
+            // 上面的 PENDING 检查是快照；PATCH 可能在本事务读取之后、UPDATE 之前提交了终态。
+            // 条件更新（WHERE status='PENDING'）保证终态不被改写，这里只负责把 0 行翻译成正确错误码。
+            throw updateContentConflict(id);
         }
         log.info("修改记录 id={} publisherId={}", id, viewerId);
         // 契约 §4.4：提交后触发该记录相关 pair 重算；不清空已有 pair 的 status/授权/附言/confirmed_at
@@ -214,6 +216,25 @@ public class RecordService {
                 pairFactsPort.countValidMatched(id, cutoff),
                 pairFactsPort.countLowConfidence(id, pairPolicy.getContactUnlockThreshold(), cutoff),
                 pairCards(id, cutoff));
+    }
+
+    /**
+     * {@code updateContent} 影响 0 行时区分「不存在」与「并发终态」（P2-1）。
+     *
+     * <p>回读必须走锁定读：REPEATABLE READ 的普通 SELECT 会返回本事务起点的旧 PENDING，
+     * 把并发关闭误报成未知冲突。0 行 + 回读仍 PENDING 只可能是回读与更新之间又被删除/改写的极端交错，
+     * 统一按并发冲突 20003 返回，让客户端刷新后重试，而不是猜测成功。
+     */
+    private BizException updateContentConflict(long id) {
+        String currentStatus = recordMapper.selectStatusByIdForUpdate(id);
+        if (currentStatus == null) {
+            return BizException.of(ErrorCode.RECORD_NOT_FOUND);
+        }
+        if (!RecordStatus.PENDING.name().equals(currentStatus)) {
+            return BizException.of(ErrorCode.RECORD_OPERATION_NOT_ALLOWED,
+                    "已" + currentStatus + "的记录不可再修改内容");
+        }
+        return BizException.of(ErrorCode.RECORD_OPERATION_NOT_ALLOWED, "记录已被并发修改，请刷新后重试");
     }
 
     /**

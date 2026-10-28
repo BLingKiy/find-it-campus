@@ -1,6 +1,7 @@
 package com.findit.campus.common.masking;
 
 import java.text.Normalizer;
+import java.util.Arrays;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -105,10 +106,26 @@ public final class MaskingPolicy {
     }
 
     /**
-     * 描述/标题打码（A1 §6.2）：按固定顺序跑四条正则。
+     * 描述/标题打码（A1 §6.2）：先做“分隔符归一”检测，再按固定顺序跑四条正则。
      *
      * <p>标题额外套用同一函数是<b>防御性追加</b>（§6.2 末条）：标题也是自由文本，
      * 用户完全可能把手机号写进标题；不属于四条硬判据，但不做就是漏口。
+     *
+     * <p>为什么多一遍“分隔符归一”：规则 1/2 的原始正则要求数字连续，但用户写号码是
+     * {@code 138 1234 5678}、{@code 138-1234-5678}、{@code +86 138…} 这种自然形态。
+     * 只按原文匹配等于把“写法”当成“是否打码”的开关 —— 加一个空格就能绕过隐私分档
+     * （F3 ZHYYKFX-60 P1-1）。这里把空格（含全角空格/零宽字符）、制表、换行、{@code - . / \}
+     * 与括号视为数字间分隔符，归一后若整段恰好是 11 位手机号（含 {@code +86 / 86 / 0086}
+     * 前缀）或 18 位证件号，则替换<b>原文中对应的整段</b>（含前缀与分隔符）。
+     *
+     * <p>边界刻意收窄，避免过度打码：
+     * <ul>
+     *   <li>只处理“整段归一后恰好命中”的数字串；整段不是单个号码时，再按<b>原文左右边界</b>
+     *       找独立成号的 11 位手机号（左右都不是数字）—— 与 {@link #MOBILE_RE} 的边界语义一致，
+     *       避免“单号12345 138 1234 5678”这类把号码粘在其它数字后面绕过。</li>
+     *   <li>裸 5–9 位数字、日期、时间、房间号不命中，N1/N2/N3 反例保持原样。</li>
+     *   <li>归一只用于“检测与替换区间”，不改写整条文案的标点（不做整体 NFKC）。</li>
+     * </ul>
      *
      * @param raw 原始文本；{@code null} 原样返回（可选字段）
      */
@@ -117,11 +134,208 @@ public final class MaskingPolicy {
             return null;
         }
         String s = normalizeDigitsAndColon(raw);
+        s = maskSeparatedContactNumbers(s);
         s = ID_RE.matcher(s).replaceAll(Matcher.quoteReplacement(ID_REPLACEMENT));
         s = MOBILE_RE.matcher(s).replaceAll(Matcher.quoteReplacement(MOBILE_REPLACEMENT));
         s = QQ_RE.matcher(s).replaceAll(QQ_REPLACEMENT);
         s = RELATIVE_TIME_RE.matcher(s).replaceAll(Matcher.quoteReplacement(TIME_REPLACEMENT));
         return s;
+    }
+
+    /**
+     * 分隔符归一后的联系方式检测 —— 规则 1/2 的<b>输入规范化</b>，不是第五条规则。
+     *
+     * <p>扫描“数字 + 分隔符”组成的最长片段：片段内的数字按原顺序归一成连续串，
+     * 只有归一结果<b>整段</b>命中 18 位证件号 / 11 位手机号（含国际前缀）时才替换，
+     * 未命中的片段按原文保留。这样“打不打码”由号码本身决定，而不是由用户怎么敲空格决定。
+     */
+    private static String maskSeparatedContactNumbers(String s) {
+        int length = s.length();
+        StringBuilder out = new StringBuilder(length);
+        int i = 0;
+        while (i < length) {
+            char first = s.charAt(i);
+            boolean plus = isPlusSign(first);
+            if (!isAsciiDigit(first) && !(plus && hasDigitAfterSeparators(s, i + 1))) {
+                out.append(first);
+                i++;
+                continue;
+            }
+
+            int[] digitPositions = new int[16];
+            int digitCount = 0;
+            int cursor = plus ? i + 1 : i;
+            int runEnd = -1;
+            while (cursor < length) {
+                char c = s.charAt(cursor);
+                if (isAsciiDigit(c)) {
+                    if (digitCount == digitPositions.length) {
+                        digitPositions = Arrays.copyOf(digitPositions, digitCount * 2);
+                    }
+                    digitPositions[digitCount++] = cursor;
+                    runEnd = cursor + 1;
+                    cursor++;
+                } else if (isDigitSeparator(c)) {
+                    cursor++;
+                } else {
+                    break;
+                }
+            }
+            if (runEnd < 0) {
+                // 形如“+ 号”但后面没有数字：按普通字符输出。
+                out.append(first);
+                i++;
+                continue;
+            }
+
+            String replacement = null;
+            int replaceEnd = runEnd;
+            if (digitCount == 18) {
+                // 证件号：18 位，允许中间被分隔符拆开（1101 0119 9001 0112 34）。
+                replacement = ID_REPLACEMENT;
+            } else if (digitCount == 17 && runEnd < length && isIdTail(s.charAt(runEnd))) {
+                // 证件号尾位 X，且 X 与最后一位数字相邻。
+                replacement = ID_REPLACEMENT;
+                replaceEnd = runEnd + 1;
+            } else if (digitCount == 11 && isMobileAt(s, digitPositions, 0)) {
+                replacement = MOBILE_REPLACEMENT;
+            } else if (digitCount == 13
+                    && digitsMatch(s, digitPositions, 0, "86")
+                    && isMobileAt(s, digitPositions, 2)) {
+                // +86 / 86 前缀：整段（含国家码）一起替换，否则号码本体仍可从响应里读出。
+                replacement = MOBILE_REPLACEMENT;
+            } else if (digitCount == 15
+                    && digitsMatch(s, digitPositions, 0, "0086")
+                    && isMobileAt(s, digitPositions, 4)) {
+                replacement = MOBILE_REPLACEMENT;
+            }
+
+            if (replacement == null) {
+                out.append(maskMobilesInsideRun(s, i, runEnd, digitPositions, digitCount));
+            } else {
+                out.append(replacement);
+            }
+            i = replaceEnd;
+        }
+        return out.toString();
+    }
+
+    /**
+     * 片段整体不是单个号码时（例如“单号12345 138 1234 5678”被空格连成一段），
+     * 按原文左右边界继续找“独立成号”的手机号：11 位数字左右都不是数字，才算一个完整号码。
+     *
+     * <p>为什么不一上来就做子串匹配：那会把 {@code 2026-10-21 13:30} 这类正常文本打碎。
+     * 先整段判断（绝大多数场景只有号码本身），失败后才用与 {@link #MOBILE_RE} 相同的
+     * “左右非数字”口径补漏，能挡住“号码前面粘一个数字”的绕过，又不扩大短号打码面。
+     */
+    private static String maskMobilesInsideRun(String s, int runStart, int runEnd,
+                                               int[] digitPositions, int digitCount) {
+        int length = s.length();
+        StringBuilder chunk = null;
+        int emitted = runStart;
+        int p = 0;
+        while (p + 11 <= digitCount) {
+            int mobileStart = digitPositions[p];
+            int mobileEnd = digitPositions[p + 10] + 1;
+            int prefixStart = -1;
+            if (p == 4 && digitsMatch(s, digitPositions, 0, "0086")) {
+                prefixStart = runStart;
+            } else if (p == 2 && digitsMatch(s, digitPositions, 0, "86")) {
+                prefixStart = runStart;
+            }
+            int effectiveStart = prefixStart >= 0 ? prefixStart : mobileStart;
+            boolean leftBoundary = effectiveStart == 0 || !isAsciiDigit(s.charAt(effectiveStart - 1));
+            boolean rightBoundary = mobileEnd >= length || !isAsciiDigit(s.charAt(mobileEnd));
+            if (leftBoundary && rightBoundary && isMobileAt(s, digitPositions, p)) {
+                if (chunk == null) {
+                    chunk = new StringBuilder(runEnd - runStart);
+                }
+                chunk.append(s, emitted, effectiveStart).append(MOBILE_REPLACEMENT);
+                emitted = mobileEnd;
+                p += 11;
+            } else {
+                p++;
+            }
+        }
+        if (chunk == null) {
+            return s.substring(runStart, runEnd);
+        }
+        chunk.append(s, emitted, runEnd);
+        return chunk.toString();
+    }
+
+    private static boolean isAsciiDigit(char c) {
+        return c >= '0' && c <= '9';
+    }
+
+    private static boolean isPlusSign(char c) {
+        return c == '+' || c == '＋';
+    }
+
+    private static boolean isIdTail(char c) {
+        return c == 'X' || c == 'x';
+    }
+
+    /**
+     * 数字之间可忽略的分隔符：空白（含全角空格、NBSP、{@code \t\n\r}）、零宽字符、常见连写符号与括号。
+     *
+     * <p>刻意<b>不</b>包含逗号：{@code 1,234,567} 这类千分位/枚举不能被拼成一个号码。
+     */
+    private static boolean isDigitSeparator(char c) {
+        if (c == ' ' || Character.isWhitespace(c) || Character.isSpaceChar(c)) {
+            return true;
+        }
+        switch (c) {
+            case '-':
+            case '.':
+            case '/':
+            case '\\':
+            case '(':
+            case ')':
+            case '[':
+            case ']':
+            case '_':
+            case '\u200B': // ZERO WIDTH SPACE
+            case '\u200C': // ZERO WIDTH NON-JOINER
+            case '\u200D': // ZERO WIDTH JOINER
+            case '\uFEFF': // ZERO WIDTH NO-BREAK SPACE / BOM
+            case '\u2060': // WORD JOINER
+            case '－': // 全角连字符
+            case '．': // 全角句点
+            case '／': // 全角斜杠
+            case '＼': // 全角反斜杠
+            case '（':
+            case '）':
+            case '［':
+            case '］':
+                return true;
+            default:
+                return false;
+        }
+    }
+
+    private static boolean hasDigitAfterSeparators(String s, int from) {
+        int i = from;
+        while (i < s.length() && isDigitSeparator(s.charAt(i))) {
+            i++;
+        }
+        return i < s.length() && isAsciiDigit(s.charAt(i));
+    }
+
+    /** 只有“1[3-9]”开头这一步需要看内容；其余 9 位由扫描循环保证一定是 ASCII 数字。 */
+    private static boolean isMobileAt(String s, int[] digitPositions, int start) {
+        char first = s.charAt(digitPositions[start]);
+        char second = s.charAt(digitPositions[start + 1]);
+        return first == '1' && second >= '3' && second <= '9';
+    }
+
+    private static boolean digitsMatch(String s, int[] digitPositions, int start, String expected) {
+        for (int k = 0; k < expected.length(); k++) {
+            if (s.charAt(digitPositions[start + k]) != expected.charAt(k)) {
+                return false;
+            }
+        }
+        return true;
     }
 
     /**

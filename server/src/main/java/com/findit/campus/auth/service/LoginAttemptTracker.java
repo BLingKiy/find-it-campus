@@ -10,6 +10,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
+import com.findit.campus.common.log.LogSafe;
+
 /**
  * 登录失败计数：按 {@code studentNo + 客户端 IP} 在 15 分钟窗口内累计，达 5 次只打一条 WARN。
  *
@@ -63,7 +65,7 @@ public class LoginAttemptTracker {
         });
         if (window.count() == FAILURE_THRESHOLD) {
             log.warn("登录连续失败达到阈值（仅记录，不锁定账号）: key={} count={} windowMinutes={}",
-                    key, window.count(), WINDOW.toMinutes());
+                    LogSafe.sanitize(key), window.count(), WINDOW.toMinutes());
         }
         return window.count();
     }

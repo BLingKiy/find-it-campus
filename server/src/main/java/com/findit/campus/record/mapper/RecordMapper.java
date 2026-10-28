@@ -51,10 +51,20 @@ public interface RecordMapper {
     /** 详情（含分类名与所有权/终态所需列）；已逻辑删除的返回 {@code null}。 */
     Record selectById(@Param("id") long id);
 
+    /**
+     * 并发冲突后的状态回读（P2-1）：{@code SELECT ... FOR UPDATE}，读最新已提交行。
+     *
+     * <p>为什么不用 {@link #selectById}：后者是普通一致性读，MySQL REPEATABLE READ 下沿用事务
+     * 起点的快照，可能仍返回 PENDING，导致"已被并发 PATCH 关闭"被误判成未知冲突。
+     *
+     * @return 当前 status；记录不存在或已逻辑删除时为 {@code null}
+     */
+    String selectStatusByIdForUpdate(@Param("id") long id);
+
     /** 新增；自增主键回填到 {@link Record#getId()}。status 固定 PENDING，completed_at 不写（默认 NULL）。 */
     int insert(Record record);
 
-    /** 改内容（不含 status）；返回影响行数，0 = 不存在/已删。 */
+    /** 改内容（不含 status）；返回影响行数，0 = 不存在/已删/已被并发改成终态。 */
     int updateContent(Record record);
 
     /**
@@ -124,14 +134,18 @@ public interface RecordMapper {
     int markPairScored(@Param("id") long id, @Param("state") String state, @Param("at") LocalDateTime at);
 
     /**
-     * 每日扫描的记录候选（架构 §5.4 ①）：
-     * {@code pair_state IN ('PENDING','SCORING')} 且从未打分或停在 SCORING 超过 stale 窗口；
-     * 或 {@code pair_state='DEGRADED'}（降级行等 key 恢复后重算）。
+     * 每日扫描的记录候选（架构 §5.4 ①）：{@code PENDING} 或保留期内的 {@code COMPLETED}，
+     * 且 {@code pair_state IN ('PENDING','SCORING')} 停在超过 stale 窗口，或 {@code pair_state='DEGRADED'}。
      *
-     * <p>排除 {@code CLOSED} 与已删除：不召回的东西没必要花 LLM 额度。
-     * 排序把"从未打分的"排在最前，保证积压不会因为一批老记录反复失败而饿死新记录。
+     * <p>排除 {@code CLOSED}、已删除与<b>过期 {@code COMPLETED}</b>（P2-4）：它们不召回，
+     * 重算只会花 LLM 额度并产生指向 404 的 pair/通知。保留期口径与
+     * {@code RecordVisibilityPolicy#isMatchable} 一致。
+     *
+     * @param staleBefore     卡在 SCORING 的过期下界（= now - staleMinutes）
+     * @param completedCutoff 保留期下界（= now - retentionDays）
      */
     List<Long> selectPairScanTargets(@Param("staleBefore") LocalDateTime staleBefore,
+                                     @Param("completedCutoff") LocalDateTime completedCutoff,
                                      @Param("limit") int limit);
 
     /**

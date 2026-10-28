@@ -91,7 +91,10 @@ public class PairScanService {
         try {
             LocalDateTime now = LocalDateTime.now();
             LocalDateTime staleBefore = now.minusMinutes(scoreProperties.getStaleMinutes());
-            List<Long> targets = recordMapper.selectPairScanTargets(staleBefore, scoreProperties.getScanLimit());
+            LocalDateTime completedCutoff = policy.completedCutoff(now);
+            // 扫描口径与召回一致：过期 COMPLETED 不再成为目标（P2-4），即便它停在 DEGRADED。
+            List<Long> targets = recordMapper.selectPairScanTargets(
+                    staleBefore, completedCutoff, scoreProperties.getScanLimit());
 
             int scanned = 0;
             int rescored = 0;
@@ -119,7 +122,7 @@ public class PairScanService {
             }
 
             // 到期统计：只计数，不改写（可见性由读时谓词保证，漏跑一轮也不会泄露）
-            long expired = recordMapper.countExpiredCompleted(policy.completedCutoff(now));
+            long expired = recordMapper.countExpiredCompleted(completedCutoff);
             long elapsedMs = (System.nanoTime() - startedAt) / 1_000_000L;
             log.info("pair scan done trigger={} scanned={} rescored={} degraded={} skipped={} expired={} limited={} elapsedMs={} counters={}",
                     trigger, scanned, rescored, degraded, skipped, expired, limited, elapsedMs,

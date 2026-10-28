@@ -184,6 +184,19 @@
         WHERE r.id = #{id} AND r.deleted_at IS NULL
     </select>
 
+    <!--
+      并发冲突后的状态回读（P2-1）：必须是锁定读「当前读」。
+      普通 SELECT 在 REPEATABLE READ 下沿用事务起点的快照，可能仍读到 PENDING，
+      从而把"已被并发 PATCH 关闭"误报成"未知冲突"。FOR UPDATE 读最新已提交行，
+      同时给 service 一个稳定判据：null=不存在/已删除，其它=当前真实 status。
+    -->
+    <select id="selectStatusByIdForUpdate" resultType="string">
+        SELECT status
+        FROM t_record
+        WHERE id = #{id} AND deleted_at IS NULL
+        FOR UPDATE
+    </select>
+
     <insert id="insert" useGeneratedKeys="true" keyProperty="id" keyColumn="id">
         INSERT INTO t_record
             (type, status, title, description, category_id, location, occurred_at, contact,
@@ -196,6 +209,10 @@
     <!--
       改内容：不碰 status / completed_at（契约 §4.4）。updated_at 由本人写路径显式 NOW()；
       pair_state 回到 PENDING 触发重算，但**不清空**已有 pair 的 status/授权/附言/confirmed_at。
+
+      并发边界（P2-1）：WHERE 必须带 status='PENDING'。PUT 在事务里先读到的 PENDING 只是快照，
+      PATCH 可能在本句执行前已把记录改成 COMPLETED/CLOSED；条件更新让终态记录影响 0 行，
+      由 service 回读后返回 20003/20001，避免"已关闭/已完成的记录又被改了正文和联系方式"。
     -->
     <update id="updateContent">
         UPDATE t_record
@@ -209,7 +226,7 @@
             publisher_name  = #{publisherName},
             pair_state      = 'PENDING',
             updated_at      = NOW()
-        WHERE id = #{id} AND deleted_at IS NULL
+        WHERE id = #{id} AND deleted_at IS NULL AND status = 'PENDING'
     </update>
 
     <!-- 同一条 UPDATE 写 status + completed_at + updated_at（契约 §4.5，避免中途崩溃的脏行） -->
@@ -297,14 +314,18 @@
 
     <!--
       扫描目标：未打分的 PENDING、卡死在 SCORING 的残留、以及 DEGRADED（key 恢复后重算）。
-      CLOSED / 已删除不扫：它们不召回，花 LLM 额度没有产出。
+
+      召回口径与 matchablePredicate 一致（P2-4）：PENDING 恒扫；COMPLETED 只在保留期内扫；
+      CLOSED 与已删除不扫。过期 COMPLETED 即便 pair_state=DEGRADED 也不该再花 LLM 额度 ——
+      它已不可见、不再召回，重算只会产生指向 404 的 pair/通知。
       ORDER BY 把 pair_scored_at IS NULL 排最前（0 在前），确保新记录不会被老积压饿死。
     -->
     <select id="selectPairScanTargets" resultType="long">
         SELECT r.id
         FROM t_record r
         WHERE r.deleted_at IS NULL
-          AND r.status &lt;&gt; 'CLOSED'
+          AND (r.status = 'PENDING'
+               OR (r.status = 'COMPLETED' AND r.completed_at &gt; #{completedCutoff}))
           AND ( (r.pair_state IN ('PENDING', 'SCORING')
                  AND (r.pair_scored_at IS NULL OR r.pair_scored_at &lt; #{staleBefore}))
                 OR r.pair_state = 'DEGRADED' )

@@ -2,6 +2,7 @@ package com.findit.campus.auth.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -9,13 +10,19 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 import java.time.Clock;
+import java.util.stream.Collectors;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.slf4j.LoggerFactory;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.read.ListAppender;
 
 import com.findit.campus.auth.domain.SessionUser;
 import com.findit.campus.auth.domain.User;
@@ -147,7 +154,38 @@ class AuthServiceTest {
         assertThat(loginAttempts.failureCount(STUDENT_NO, CLIENT_IP)).isZero();
     }
 
+    @Test
+    @DisplayName("P2-3 学号夹带 CR/LF：失败日志仍是一行，不能伪造后续审计行")
+    void studentNoNewlinesCannotForgeLogLines() {
+        when(userMapper.selectByStudentNo(anyString())).thenReturn(null);
+        LoginRequest request = new LoginRequest();
+        request.setStudentNo("demo01\r\n2026-10-28 00:00:00 INFO 登录成功 userId=1");
+        request.setPassword("whatever");
+
+        String logged = captureAuthServiceWarn(() ->
+                assertUniformFailure(() -> authService.login(request, loginRequest())));
+
+        assertThat(logged).contains("studentNo=demo01");
+        assertThat(logged).doesNotContain("\r").doesNotContain("\n");
+    }
+
     // ------------------------------------------------------------------
+
+    /** 捕获 AuthService 本次调用产生的 WARN 文本；用完必须 detach，避免污染其它用例。 */
+    private static String captureAuthServiceWarn(Runnable call) {
+        Logger logger = (Logger) LoggerFactory.getLogger(AuthService.class);
+        ListAppender<ILoggingEvent> appender = new ListAppender<>();
+        appender.start();
+        logger.addAppender(appender);
+        try {
+            call.run();
+        } finally {
+            logger.detachAppender(appender);
+        }
+        return appender.list.stream()
+                .map(ILoggingEvent::getFormattedMessage)
+                .collect(Collectors.joining("|"));
+    }
 
     private static void assertUniformFailure(Runnable call) {
         assertThatThrownBy(call::run)
