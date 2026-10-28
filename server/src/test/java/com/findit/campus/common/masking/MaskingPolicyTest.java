@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Random;
 import java.util.regex.Pattern;
 
 import org.junit.jupiter.api.DisplayName;
@@ -138,6 +139,112 @@ class MaskingPolicyTest {
     @DisplayName("英文大小写不敏感：qq 456789 也命中（(?i) 生效，保留原关键词大小写）")
     void qqKeywordIsCaseInsensitive() {
         assertEquals("qq[QQ号已隐藏]", MaskingPolicy.maskDescription("qq 456789"));
+    }
+
+    @Test
+    @DisplayName("P1-1 回归 1–6：空格/换行/制表/短横/零宽/全角空格拆开的手机号仍打码")
+    void separatedMobilesAreMasked() {
+        assertEquals("联系 [手机号已隐藏]", MaskingPolicy.maskDescription("联系 138 1234 5678"));
+        assertEquals("联系 [手机号已隐藏]", MaskingPolicy.maskDescription("联系 138\n1234\n5678"));
+        assertEquals("联系 [手机号已隐藏]", MaskingPolicy.maskDescription("联系 138\t1234\t5678"));
+        assertEquals("联系 [手机号已隐藏]", MaskingPolicy.maskDescription("联系 138-1234-5678"));
+        assertEquals("联系 [手机号已隐藏]", MaskingPolicy.maskDescription("联系 138\u200B12345678"));
+        assertEquals("联系 [手机号已隐藏]", MaskingPolicy.maskDescription("联系 138\u30001234\u30005678"));
+        assertEquals("联系 [手机号已隐藏]", MaskingPolicy.maskDescription("联系 138.1234.5678"));
+        assertEquals("([手机号已隐藏])", MaskingPolicy.maskDescription("(138 1234 5678)"));
+        assertEquals("联系 [手机号已隐藏]",
+                MaskingPolicy.maskDescription("联系 １３８　１２３４　５６７８"));
+    }
+
+    @Test
+    @DisplayName("P1-1 回归 7：+86 / 86 / 0086 前缀整段替换，不留下完整号码")
+    void internationalPrefixIsMaskedWithTheNumber() {
+        assertEquals("[手机号已隐藏]", MaskingPolicy.maskDescription("+8613812345678"));
+        assertEquals("[手机号已隐藏]", MaskingPolicy.maskDescription("+86 138 1234 5678"));
+        assertEquals("[手机号已隐藏]", MaskingPolicy.maskDescription("+86-138-1234-5678"));
+        assertEquals("[手机号已隐藏]", MaskingPolicy.maskDescription("8613812345678"));
+        assertEquals("[手机号已隐藏]", MaskingPolicy.maskDescription("0086 138 1234 5678"));
+        assertEquals("[手机号已隐藏]", MaskingPolicy.maskDescription("0086-138-1234-5678"));
+        assertEquals("电话:[手机号已隐藏]。",
+                MaskingPolicy.maskDescription("电话：+86 (138) 1234-5678。"));
+    }
+
+    @Test
+    @DisplayName("P1-1 回归 8：带分隔符/尾位 X 的证件号同样打码")
+    void separatedIdCardsAreMasked() {
+        assertEquals("[证件号已隐藏]", MaskingPolicy.maskDescription("1101 0119 9001 0112 34"));
+        assertEquals("[证件号已隐藏]", MaskingPolicy.maskDescription("1101-0119-9001-0112-34"));
+        assertEquals("[证件号已隐藏]", MaskingPolicy.maskDescription("1101．0119．9001．0112．34"));
+        assertEquals("证件 [证件号已隐藏]", MaskingPolicy.maskDescription("证件 11010119900101123X"));
+    }
+
+    @Test
+    @DisplayName("归一化不扩大打码面：≤10 位数字、日期时间、房间号仍原样")
+    void normalizationKeepsNegativeCasesIntact() {
+        assertEquals("房间 201 电话 138 1234 567",
+                MaskingPolicy.maskDescription("房间 201 电话 138 1234 567"));
+        assertEquals("编号 12345678 与 123456789",
+                MaskingPolicy.maskDescription("编号 12345678 与 123456789"));
+        assertEquals("2026-10-21 13:30 在操场",
+                MaskingPolicy.maskDescription("2026-10-21 13:30 在操场"));
+        assertEquals("3 号楼 201 教室", MaskingPolicy.maskDescription("3 号楼 201 教室"));
+        assertEquals("时间 1.30 集合", MaskingPolicy.maskDescription("时间 1.30 集合"));
+    }
+
+    @Test
+    @DisplayName("连续数字口径不变：11 位遮蔽、12 位不截取、18 位按证件号")
+    void continuousNumberSemanticsUnchanged() {
+        assertEquals("[手机号已隐藏]", MaskingPolicy.maskDescription("13812345678"));
+        assertEquals("138123456789", MaskingPolicy.maskDescription("138123456789"));
+        assertEquals("[证件号已隐藏]", MaskingPolicy.maskDescription("110101199001011234"));
+    }
+
+    @Test
+    @DisplayName("粘在其它数字后的分隔手机号：只遮号码本体，不吞前面的数字")
+    void mobileGluedAfterAnotherNumberIsStillMasked() {
+        assertEquals("单号12345 [手机号已隐藏]",
+                MaskingPolicy.maskDescription("单号12345 138 1234 5678"));
+        assertEquals("单号12345678 [手机号已隐藏]",
+                MaskingPolicy.maskDescription("单号12345678 138 1234 5678"));
+        assertEquals("[手机号已隐藏] 90", MaskingPolicy.maskDescription("13812345678 90"));
+        assertEquals("[手机号已隐藏] 90", MaskingPolicy.maskDescription("8613812345678 90"));
+    }
+
+
+    @Test
+    @DisplayName("出口回归：非所有者详情/列表对分隔手机号同样不会原样输出")
+    void separatedNumbersAreMaskedAtResponseLayer() {
+        Record record = sampleRecord();
+        record.setTitle("手机 138 1234 5678");
+        record.setDescription("联系 138-1234-5678");
+        RecordDetailResponse detail = RecordDetailResponse.from(record);
+        assertEquals("手机 [手机号已隐藏]", detail.getTitle());
+        assertEquals("联系 [手机号已隐藏]", detail.getDescription());
+
+        RecordSummary summary = summary();
+        summary.setTitle("手机 138 1234 5678");
+        RecordListItemResponse list = RecordListItemResponse.from(summary, null);
+        assertEquals("手机 [手机号已隐藏]", list.getTitle());
+    }
+
+    @Test
+    @DisplayName("随机分隔符 fuzz：任意分隔符组合都不能漏出手机号/证件号")
+    void randomSeparatorFuzz() {
+        String[] separators = {" ", "\t", "\n", "-", ".", "/", "\\", "_",
+                "\u3000", "\u200B", "\u200C", "\u200D", "\uFEFF"};
+        Random random = new Random(20261028L);
+        for (int i = 0; i < 200; i++) {
+            String mobile = "138" + separators[random.nextInt(separators.length)]
+                    + "1234" + separators[random.nextInt(separators.length)] + "5678";
+            String id = "1101" + separators[random.nextInt(separators.length)]
+                    + "0119" + separators[random.nextInt(separators.length)]
+                    + "9001" + separators[random.nextInt(separators.length)]
+                    + "0112" + separators[random.nextInt(separators.length)] + "34";
+            String maskedMobile = MaskingPolicy.maskDescription("联系" + mobile);
+            assertEquals("联系[手机号已隐藏]", maskedMobile);
+            String maskedId = MaskingPolicy.maskDescription("证件" + id);
+            assertEquals("证件[证件号已隐藏]", maskedId);
+        }
     }
 
     private static Record sampleRecord() {
