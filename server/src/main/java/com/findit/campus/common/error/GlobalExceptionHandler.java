@@ -34,6 +34,7 @@ import com.fasterxml.jackson.databind.JsonMappingException;
 import com.findit.campus.common.api.ApiResponse;
 import com.findit.campus.common.api.ErrorCode;
 import com.findit.campus.common.api.RequestContext;
+import com.findit.campus.common.log.LogSafe;
 
 /**
  * 全局异常处理：唯一失败出口（controller 里不允许 catch 之后自己决定错误码，见 §6）。
@@ -139,7 +140,8 @@ public class GlobalExceptionHandler {
         String field = ex.getName() == null ? "id" : ex.getName();
         List<com.findit.campus.common.api.FieldError> fieldErrors =
                 List.of(new com.findit.campus.common.api.FieldError(field, "必须为数字"));
-        log.warn("[{}] 参数类型不符: field={} value={}", RequestContext.requestId(), field, ex.getValue());
+        log.warn("[{}] 参数类型不符: field={} value={}", RequestContext.requestId(), field,
+                LogSafe.sanitize(String.valueOf(ex.getValue())));
         return fail(ErrorCode.VALIDATION_FAILED, Map.of("fieldErrors", fieldErrors));
     }
 
@@ -159,7 +161,8 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiResponse<Map<String, Object>>> handleNotReadable(HttpMessageNotReadableException ex) {
         com.findit.campus.common.api.FieldError fieldError = notReadableFieldError(ex);
         log.warn("[{}] 请求体不可解析: field={} cause={} detail={}", RequestContext.requestId(),
-                fieldError.field(), ex.getMostSpecificCause().getClass().getSimpleName(), ex.getMessage());
+                fieldError.field(), ex.getMostSpecificCause().getClass().getSimpleName(),
+                LogSafe.sanitize(ex.getMessage(), 512));
         return fail(ErrorCode.VALIDATION_FAILED, Map.of("fieldErrors", List.of(fieldError)));
     }
 
@@ -180,14 +183,16 @@ public class GlobalExceptionHandler {
     /** 出口 2a：路径不存在 → 10003。依赖 {@code spring.mvc.throw-exception-if-no-handler-found=true}。 */
     @ExceptionHandler(NoHandlerFoundException.class)
     public ResponseEntity<ApiResponse<Map<String, Object>>> handleNoHandler(NoHandlerFoundException ex) {
-        log.info("[{}] 请求路径不存在: {}", RequestContext.requestId(), ex.getRequestURL());
+        log.info("[{}] 请求路径不存在: {}", RequestContext.requestId(),
+                LogSafe.sanitize(ex.getRequestURL()));
         return fail(ErrorCode.RESOURCE_NOT_FOUND, null);
     }
 
     /** 出口 2b：资源不存在（Boot 3.2+ 静态资源路径的等价出口）→ 10003。 */
     @ExceptionHandler(NoResourceFoundException.class)
     public ResponseEntity<ApiResponse<Map<String, Object>>> handleNoResource(NoResourceFoundException ex) {
-        log.info("[{}] 请求资源不存在: {}", RequestContext.requestId(), ex.getResourcePath());
+        log.info("[{}] 请求资源不存在: {}", RequestContext.requestId(),
+                LogSafe.sanitize(ex.getResourcePath()));
         return fail(ErrorCode.RESOURCE_NOT_FOUND, null);
     }
 

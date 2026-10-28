@@ -34,6 +34,7 @@ import com.findit.campus.record.domain.Record;
 import com.findit.campus.record.domain.RecordStatus;
 import com.findit.campus.record.domain.RecordType;
 import com.findit.campus.record.mapper.RecordMapper;
+import com.findit.campus.record.service.RecordVisibilityPolicy;
 
 /**
  * 写入 {@code t_pair_score} 的<b>唯一</b>位置（发布 / 编辑 / 兜底扫描 / 手动重试共用）。
@@ -111,9 +112,14 @@ public class PairScoringService {
         if (record == null) {
             return RecordScoreOutcome.skipped(recordId, "NOT_FOUND");
         }
-        if (record.getStatus() == RecordStatus.CLOSED) {
-            // CLOSED 不召回、其 pair 读时失效；不为它花 LLM 额度
-            return RecordScoreOutcome.skipped(recordId, "CLOSED");
+        LocalDateTime now = LocalDateTime.now();
+        // 召回口径的单点判据（契约 §4.8 / P2-4）：CLOSED 恒不可；COMPLETED 仅保留期内可。
+        // 扫描 SQL 已经排除过期 COMPLETED，这里再兜一层是因为 publish/update/manual 也走本方法，
+        // 而且记录可能在本轮扫描开始后才过期。过期记录不能再产生 pair/通知（详情按规则 404）。
+        if (!RecordVisibilityPolicy.isMatchable(record.getStatus(), record.getCompletedAt(),
+                policy.getCompletedRetentionDays(), now)) {
+            return RecordScoreOutcome.skipped(recordId,
+                    record.getStatus() == RecordStatus.CLOSED ? "CLOSED" : "EXPIRED");
         }
         PairSide source = PairRecallService.toSide(record);
         recordMapper.markPairScoring(recordId);
@@ -389,7 +395,8 @@ public class PairScoringService {
         }
 
         public boolean failed() {
-            return error != null && !"NOT_FOUND".equals(error) && !"CLOSED".equals(error);
+            return error != null && !"NOT_FOUND".equals(error) && !"CLOSED".equals(error)
+                    && !"EXPIRED".equals(error);
         }
 
         public Map<String, Object> toLogMap() {

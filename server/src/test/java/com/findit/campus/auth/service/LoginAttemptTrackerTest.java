@@ -7,9 +7,16 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
+import java.util.List;
+import java.util.stream.Collectors;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.slf4j.LoggerFactory;
+
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.read.ListAppender;
 
 /**
  * 登录失败计数（契约 §4.9：同一 studentNo+IP 15 分钟内 5 次只记录、不锁定）。
@@ -85,6 +92,33 @@ class LoginAttemptTrackerTest {
         }
 
         assertThat(tracker.trackedKeys()).isLessThanOrEqualTo(LoginAttemptTracker.MAX_TRACKED_KEYS);
+    }
+
+    @Test
+    @DisplayName("P2-3 阈值日志里的 key 经过消毒：学号夹带换行不会伪造日志行")
+    void thresholdLogSanitizesKey() {
+        MutableClock clock = new MutableClock(Instant.parse("2026-10-27T00:00:00Z"));
+        LoginAttemptTracker tracker = new LoginAttemptTracker(clock);
+        String hostileStudentNo = "demo\r\n2026-10-27 00:00:00 INFO 审计通过";
+
+        Logger logger = (Logger) LoggerFactory.getLogger(LoginAttemptTracker.class);
+        ListAppender<ILoggingEvent> appender = new ListAppender<>();
+        appender.start();
+        logger.addAppender(appender);
+        try {
+            for (int i = 1; i <= LoginAttemptTracker.FAILURE_THRESHOLD; i++) {
+                tracker.recordFailure(hostileStudentNo, IP);
+            }
+        } finally {
+            logger.detachAppender(appender);
+        }
+
+        List<String> messages = appender.list.stream()
+                .map(ILoggingEvent::getFormattedMessage)
+                .toList();
+        String joined = messages.stream().collect(Collectors.joining("|"));
+        assertThat(joined).contains("key=demo__2026-10-27");
+        assertThat(joined).doesNotContain("\r").doesNotContain("\n");
     }
 
     /** 可推进的时钟：只实现 {@link Clock} 的必需方法，测试里不引入第三方时间库。 */

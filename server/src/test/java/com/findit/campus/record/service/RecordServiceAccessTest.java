@@ -21,6 +21,7 @@ import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.springframework.context.ApplicationEventPublisher;
 
 import com.findit.campus.auth.domain.SessionUser;
 import com.findit.campus.category.service.CategoryService;
@@ -54,6 +55,7 @@ class RecordServiceAccessTest {
     private RecordMapper recordMapper;
     private CategoryService categoryService;
     private PairFactsPort pairFactsPort;
+    private ApplicationEventPublisher eventPublisher;
     private RecordService recordService;
 
     @BeforeEach
@@ -61,8 +63,9 @@ class RecordServiceAccessTest {
         recordMapper = mock(RecordMapper.class);
         categoryService = mock(CategoryService.class);
         pairFactsPort = mock(PairFactsPort.class);
+        eventPublisher = mock(ApplicationEventPublisher.class);
         recordService = new RecordService(recordMapper, categoryService, pairFactsPort,
-                new PairPolicyProperties(), event -> { });
+                new PairPolicyProperties(), eventPublisher);
     }
 
     @Test
@@ -76,6 +79,52 @@ class RecordServiceAccessTest {
         assertEquals(ErrorCode.FORBIDDEN, ex.errorCode());
         assertEquals(403, ex.errorCode().httpStatus().value());
         verify(recordMapper, never()).updateContent(any());
+    }
+
+    @Test
+    @DisplayName("P2-1 并发：读到的 PENDING 在 UPDATE 前被 PATCH 关成 CLOSED → 0 行 + 20003，且不触发重算")
+    void updateRacingWithTerminalPatchReturns20003() {
+        when(recordMapper.selectById(RECORD_ID)).thenReturn(record(RecordStatus.PENDING, OWNER, null));
+        when(recordMapper.updateContent(any())).thenReturn(0);
+        // 锁定读看到并发 PATCH 已提交的终态（普通 SELECT 在 RR 下可能仍是旧 PENDING）
+        when(recordMapper.selectStatusByIdForUpdate(RECORD_ID)).thenReturn("CLOSED");
+
+        BizException ex = assertThrows(BizException.class,
+                () -> recordService.update(RECORD_ID, updateRequest(), OWNER));
+
+        assertEquals(ErrorCode.RECORD_OPERATION_NOT_ALLOWED, ex.errorCode());
+        assertEquals(409, ex.errorCode().httpStatus().value());
+        assertTrue(ex.getMessage().contains("CLOSED"), "文案应指出当前终态，便于排障");
+        verify(eventPublisher, never()).publishEvent(any(Object.class));
+    }
+
+    @Test
+    @DisplayName("P2-1 并发：UPDATE 0 行且回读不到记录（已删除）→ 20001，不是 20003")
+    void updateZeroRowsAndRecordGoneReturns20001() {
+        when(recordMapper.selectById(RECORD_ID)).thenReturn(record(RecordStatus.PENDING, OWNER, null));
+        when(recordMapper.updateContent(any())).thenReturn(0);
+        when(recordMapper.selectStatusByIdForUpdate(RECORD_ID)).thenReturn(null);
+
+        BizException ex = assertThrows(BizException.class,
+                () -> recordService.update(RECORD_ID, updateRequest(), OWNER));
+
+        assertEquals(ErrorCode.RECORD_NOT_FOUND, ex.errorCode());
+        verify(eventPublisher, never()).publishEvent(any(Object.class));
+    }
+
+    @Test
+    @DisplayName("P2-1 正常路径：条件更新命中 1 行 → 200 + 触发重算（条件不改变原行为）")
+    void updateSuccessStillPublishesScoringEvent() {
+        Record pending = record(RecordStatus.PENDING, OWNER, null);
+        when(recordMapper.selectById(RECORD_ID)).thenReturn(pending, pending);
+        when(recordMapper.updateContent(any())).thenReturn(1);
+        when(pairFactsPort.cardsOf(any(), any(), any(), any())).thenReturn(Map.of());
+
+        RecordDetailResponse response = recordService.update(RECORD_ID, updateRequest(), OWNER);
+
+        assertEquals(RECORD_ID, response.getId());
+        verify(recordMapper).updateContent(any());
+        verify(eventPublisher).publishEvent(any(Object.class));
     }
 
     @Test
@@ -298,6 +347,19 @@ class RecordServiceAccessTest {
     private static StatusUpdateRequest statusRequest(String status) {
         StatusUpdateRequest request = new StatusUpdateRequest();
         request.setStatus(status);
+        return request;
+    }
+
+    private static RecordCreateRequest updateRequest() {
+        RecordCreateRequest request = new RecordCreateRequest();
+        request.setType("LOST");
+        request.setTitle("丢了一个背包");
+        request.setDescription("昨天下午在图书馆丢的");
+        request.setCategoryId(3L);
+        request.setLocation("图书馆三楼");
+        request.setOccurredAt("2026-10-20 15:00:00");
+        request.setContact("13812345678");
+        request.setPublisherName("李同学");
         return request;
     }
 
