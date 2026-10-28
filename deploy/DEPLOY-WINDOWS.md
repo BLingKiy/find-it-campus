@@ -1,6 +1,6 @@
 # find-it-campus · Windows 部署说明
 
-> 适用版本：`0.0.1-SNAPSHOT`（部署包布局版本 7.1，文档版本 7.4）
+> 适用版本：`0.0.1-SNAPSHOT`（部署包布局版本 7.4，文档版本 7.4）
 > 本文所有命令、参数名、端口、路径与包内 `scripts/*.ps1`、`nginx/conf/nginx.conf` 逐字对应；
 > 示例输出取自 2026-10-26 的真实运行（见 §12 自检记录）。脚本改动后本文必须同步，否则按缺陷处理。
 > 全文的脚本命令都带 `powershell -NoProfile -ExecutionPolicy Bypass -File`，可以直接照抄；原因见 §2.1。
@@ -423,6 +423,15 @@ MySQL    OK 127.0.0.1:3306 / MySQL 8.0.29             -     -
 | `$env:FINDIT_DB_USER` / `$env:FINDIT_DB_PASSWORD` | `-DbUser` / 密码 | 后端唯一读取的账号密码来源 |
 | `$env:FINDIT_MATCH_ENGINE` | `-Engine` | 后端据此装配引擎 |
 | `$env:FINDIT_EMBED_BASE_URL` / `$env:FINDIT_EMBED_API_KEY` | 空串 | 仅 `external` 引擎需要手工填写 |
+| `$env:DEEPSEEK_API_KEY` | 未询问，可留空 | 可选。留空/未设置 → 后端自动降级 `LOCAL_KEYWORD`（`degraded_reason=EMPTY_KEY`），登录、发布、召回与本地打分不受影响；设置后新发布走 `DEEPSEEK`。模板只放注释占位符，不写真实值 |
+
+### 8.5 DeepSeek 密钥与降级（v2）
+
+- `install.ps1` **不询问** DeepSeek 密钥；`config\deploy.env.example` 只保留一行注释占位符（等号两侧带空格，密钥扫描器不会误报）。
+- 不设置 `DEEPSEEK_API_KEY`：后端使用 `LOCAL_KEYWORD` 引擎，`t_pair_score.engine='LOCAL_KEYWORD'`、`degraded_reason='EMPTY_KEY'`，`latency_ms` / token 列为 NULL；前端显示降级提示。登录、发布、pair 召回与出分都可用。
+- 需要真实 LLM：在启动 `scripts\start.ps1` 的同一个 shell 里设置 `DEEPSEEK_API_KEY`，或在生成的 `config\deploy.env.ps1` 末尾加 `$env:DEEPSEEK_API_KEY = '...'`（该文件不进 zip、已被 gitignore 忽略），然后重启服务。
+- 真实调用成功后新写入的 pair 为 `engine='DEEPSEEK'`；证据只记 `model` / `latency_ms` / `prompt_tokens` / `completion_tokens`，不记录密钥、完整 prompt 或手机号。
+- 密钥只走环境变量；仓库、部署包、日志、文档里不得出现明文。
 
 ## 9 常见故障
 
@@ -510,7 +519,7 @@ mysqldump -h 127.0.0.1 -P 3306 -u root -p --databases find_it_campus --single-tr
 | 认证与权限 | **v2 起：写接口要求登录**（服务端 session） | 读接口（列表/详情/分类）保持匿名可读；发布/编辑/改状态/匹配/我的启事/通知/pair 需登录。会话存在 JVM 内存里，**重启后端 = 所有会话失效**（见 §11.1）。本文档描述的 v1 安装包不包含登录页与会话，升级到 v2 后按 §11.1 的口径理解 |
 | Nginx 版本 | 官方 Windows 构建 1.30.6 | 单进程单 worker（`worker_processes 1`），面向演示与单机小规模，不是 Linux 生产形态 |
 
-`engine=external` 时，`install.ps1` 只写 `FINDIT_MATCH_ENGINE=external`，**不会**询问 embedding 地址与密钥；必须在启动前手工编辑 `config\deploy.env.ps1` 填 `FINDIT_EMBED_BASE_URL`、`FINDIT_EMBED_API_KEY`，否则匹配接口返回失败（503 / `code=30002`）。本期交付只验证了 `local` 引擎。
+`engine=external` 时，`install.ps1` 只写 `FINDIT_MATCH_ENGINE=external`，**不会**询问 embedding 地址与密钥；必须在启动前手工编辑 `config\deploy.env.ps1` 填 `FINDIT_EMBED_BASE_URL`、`FINDIT_EMBED_API_KEY`，否则匹配接口返回失败（503 / `code=30002`）。本期 v2 交付验证了 `LOCAL_KEYWORD`（无密钥降级）与 `DEEPSEEK`（真实密钥）两条路径；embedding 引擎仍未验证。
 
 ### 11.1 登录与会话（v2 B2 起）
 
