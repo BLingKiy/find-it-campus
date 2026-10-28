@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>A3 · 0.60 仅显示条数</title>
+  <link rel="stylesheet" href="../../../web/src/styles/tokens.css" />
+  <link rel="stylesheet" href="../../../web/src/styles/base.css" />
+  <link rel="stylesheet" href="../../../web/src/styles/components.css" />
+  <link rel="stylesheet" href="mockup.css" />
+</head>
+<body class="board">
+  <header class="board__head">
+    <div>
+      <p class="board__kicker">A3 · v2 UI Baseline · Match / Low</p>
+      <h1 class="board__title">0.60 · 低于门槛：只给条数，不展示对方任何字段</h1>
+    </div>
+    <p class="board__meta">界面稿 06 / 场景：失主补充描述前后，系统找到 1 条 60% 的候选。这一档没有卡片、没有联系方式、没有授权入口。</p>
+  </header>
+
+  <div class="board__grid">
+    <div class="app-frame">
+      <div class="app-frame__bar" aria-hidden="true">
+        <span class="app-frame__dot"></span><span class="app-frame__dot"></span><span class="app-frame__dot"></span>
+        <span class="app-frame__url">find-it-campus / records/13</span>
+      </div>
+      <div class="app-shell">
+        <header class="app-header">
+          <div class="app-header__inner">
+            <span class="app-header__brand"><span class="app-header__logo" aria-hidden="true">FI</span><span class="app-header__brand-text">校园失物招领</span></span>
+            <nav class="app-header__nav" aria-label="主导航">
+              <a class="app-header__link is-active" href="#" aria-current="page">启事列表</a>
+              <a class="app-header__link" href="#">我的启事</a>
+              <a class="app-header__link nav-dot" href="#">通知<span class="nav-dot__badge">3</span></a>
+              <a class="app-header__link app-header__link--cta" href="#">发布启事</a>
+              <span class="app-header__user"><span class="app-header__avatar" aria-hidden="true">陈</span>陈同学</span>
+            </nav>
+          </div>
+        </header>
+
+        <main class="app-main">
+          <div class="container">
+            <a class="back-link" href="#">← 返回我的启事</a>
+
+            <div class="page-head">
+              <div>
+                <div class="record-kicker">
+                  <span class="badge badge--lost badge--dot">寻物</span>
+                  <span class="badge badge--pending badge--dot">进行中</span>
+                  <span class="mono">#13</span>
+                  <span class="mono">发布于 10 月 20 日 15:12</span>
+                </div>
+                <h1 class="page-head__title">启事详情</h1>
+                <p class="page-head__desc">黑色钱包（图书馆三楼）· 你是这条启事的发布者</p>
+              </div>
+              <div class="page-head__actions">
+                <button class="btn btn--ghost" type="button">关闭启事</button>
+              </div>
+            </div>
+
+            <section class="panel" aria-labelledby="match-title">
+              <header class="panel__head">
+                <div>
+                  <h2 id="match-title" class="panel__title">可能相关的启事</h2>
+                  <p class="panel__desc">共 1 条 · 置信度 60%，低于 75% 的展示门槛 · 每条配对相互独立</p>
+                </div>
+                <button class="btn btn--ghost" type="button">重新分析</button>
+              </header>
+
+              <div class="tier-rail" aria-label="置信度档位：当前 60%，属于低档">
+                <div class="tier-rail__cell is-active" data-tier="low">
+                  <span class="tier-rail__class">仅显示条数 <span class="tier-rail__now">当前 60%</span></span>
+                  <span class="tier-rail__range">&lt; 75%</span>
+                </div>
+                <div class="tier-rail__cell" data-tier="mid">
+                  <span class="tier-rail__class">可授权查看</span>
+                  <span class="tier-rail__range">75% – 89%</span>
+                </div>
+                <div class="tier-rail__cell" data-tier="high">
+                  <span class="tier-rail__class">高置信度 · 直接可见</span>
+                  <span class="tier-rail__range">≥ 90%</span>
+                </div>
+              </div>
+
+              <div class="count-only" role="group" aria-labelledby="count-only-title">
+                <div class="count-only__number" aria-hidden="true">1<small>条</small></div>
+                <div>
+                  <p id="count-only-title" class="count-only__title">1 条可能相关，置信度不足，暂不展示详情</p>
+                  <p class="count-only__desc">这条候选的置信度是 60%，低于 75% 的展示门槛。为避免误认，标题、地点、时间和联系方式都不会显示，也不提供授权入口。补充更具体的颜色、地点或时间后重新分析，可能提升置信度。</p>
+                  <div class="row-wrap" style="margin-top: var(--sp-3);">
+                    <button class="btn btn--ghost btn--sm" type="button">补充描述</button>
+                    <a class="btn btn--subtle btn--sm" href="#">重新分析一次</a>
+                  </div>
+                </div>
+              </div>
+
+              <div class="divider" style="margin: var(--sp-4) 0;"></div>
+
+              <div class="row-wrap" style="align-items: flex-start; gap: var(--sp-4);">
+                <div style="flex: 1 1 240px;">
+                  <h3 class="section__title" style="font-size: var(--fs-sm);">为什么看不到？</h3>
+                  <ul class="tiny muted" style="margin-top: var(--sp-2); display: flex; flex-direction: column; gap: var(--sp-1); list-style: disc; padding-left: var(--sp-4);">
+                    <li>低于 75% 的候选只用于计数，不进入「可查看」列表。</li>
+                    <li>接口不会返回这一档的对方标题、地点、联系方式；不是用样式遮住。</li>
+                    <li>补充描述后重新分析，分数可能变化；达标后这条会自动落到对应档位。</li>
+                  </ul>
+                </div>
+                <div style="flex: 1 1 240px;">
+                  <h3 class="section__title" style="font-size: var(--fs-sm);">这一档仍然能做什么？</h3>
+                  <ul class="tiny muted" style="margin-top: var(--sp-2); display: flex; flex-direction: column; gap: var(--sp-1); list-style: disc; padding-left: var(--sp-4);">
+                    <li>编辑自己的启事，补充可辨识的特征。</li>
+                    <li>重新分析；已达标的高/中档配对不受影响。</li>
+                    <li>关闭启事（只由你本人操作，系统不会自动关闭）。</li>
+                  </ul>
+                </div>
+              </div>
+            </section>
+          </div>
+        </main>
+
+        <footer class="app-footer">
+          <div class="app-footer__inner"><span>find-it-campus · 校园失物招领</span><span>匿名可读 · 写操作需登录</span></div>
+        </footer>
+      </div>
+    </div>
+
+    <aside class="notes" aria-label="设计说明">
+      <p class="notes__title">这一稿要说明什么 <span class="notes__tag">06 / 06</span></p>
+      <ol class="notes__list">
+        <li class="notes__item"><b>只给条数</b>60% &lt; 75%：页面只出现「1 条」，不出现对方标题、地点、时间、联系方式，连占位卡都不给。</li>
+        <li class="notes__item"><b>不是样式隐藏</b>低档数据由接口直接不返回；DOM 里没有可被查看源码或读屏读出的对方字段。这是安全边界，不是视觉选择。</li>
+        <li class="notes__item"><b>没有授权入口</b>这一档没有开关、没有「公开我的联系方式」；授权只在 75%–89% 的中档出现。</li>
+        <li class="notes__item"><b>给出下一步</b>低置信度不是死胡同：补充描述、重新分析都有入口，且不影响已存在的高/中档配对。</li>
+      </ol>
+      <div class="notes__rule"></div>
+      <p class="notes__foot">口径：阈值 75% / 90% 由服务端配置下发；前端只渲染服务端给的档位，不自行判定「60% 应该显示什么」。</p>
+    </aside>
+  </div>
+</body>
+</html>
