@@ -157,6 +157,43 @@ class MaskingPolicyTest {
     }
 
     @Test
+    @DisplayName("F3-R 残留：逗号/冒号/分号（含全角、顿号）拆开的手机号同样打码")
+    void punctuationSeparatedMobilesAreMasked() {
+        assertEquals("联系 [手机号已隐藏]", MaskingPolicy.maskDescription("联系 138,1234,5678"));
+        assertEquals("联系 [手机号已隐藏]", MaskingPolicy.maskDescription("联系 138:1234:5678"));
+        assertEquals("联系 [手机号已隐藏]", MaskingPolicy.maskDescription("联系 138;1234:5678"));
+        assertEquals("联系 [手机号已隐藏]", MaskingPolicy.maskDescription("联系 138;1234;5678"));
+        assertEquals("联系 [手机号已隐藏]", MaskingPolicy.maskDescription("联系 138，1234，5678"));
+        assertEquals("联系 [手机号已隐藏]", MaskingPolicy.maskDescription("联系 138：1234：5678"));
+        assertEquals("联系 [手机号已隐藏]", MaskingPolicy.maskDescription("联系 138；1234；5678"));
+        assertEquals("联系 [手机号已隐藏]", MaskingPolicy.maskDescription("联系 138、1234、5678"));
+        // 全角数字 + 全角标点：先归一数字再按分隔符拼段
+        assertEquals("联系 [手机号已隐藏]",
+                MaskingPolicy.maskDescription("联系 １３８，１２３４，５６７８"));
+        // 混用标点与空格
+        assertEquals("联系 [手机号已隐藏]", MaskingPolicy.maskDescription("联系 138, 1234；5678"));
+        // 国际前缀 + 标点
+        assertEquals("[手机号已隐藏]", MaskingPolicy.maskDescription("+86,138,1234,5678"));
+        // 证件号同样适用
+        assertEquals("证件 [证件号已隐藏]", MaskingPolicy.maskDescription("证件 1101,0119,9001,0112,34"));
+        assertEquals("[证件号已隐藏]", MaskingPolicy.maskDescription("11010119900101123X"));
+    }
+
+    @Test
+    @DisplayName("标点分隔不扩大打码面：千分位、枚举、时间、长数字段保持原样")
+    void punctuationSeparatorsDoNotOverMask() {
+        assertEquals("金额 1,234,567 元", MaskingPolicy.maskDescription("金额 1,234,567 元"));
+        assertEquals("金额 1,234,567,890 元", MaskingPolicy.maskDescription("金额 1,234,567,890 元"));
+        assertEquals("第 1,2,3 项", MaskingPolicy.maskDescription("第 1,2,3 项"));
+        assertEquals("步骤 1;2;3", MaskingPolicy.maskDescription("步骤 1;2;3"));
+        assertEquals("时间 13:30 集合", MaskingPolicy.maskDescription("时间 13:30 集合"));
+        assertEquals("比分 3:2", MaskingPolicy.maskDescription("比分 3:2"));
+        // 与既有「13812345678 90 → [手机号已隐藏] 90」同一口径：完整 11 位后另起的数字不并入号码。
+        assertEquals("[手机号已隐藏],9", MaskingPolicy.maskDescription("138,1234,5678,9"));
+        assertEquals("138123456789", MaskingPolicy.maskDescription("138123456789"));
+    }
+
+    @Test
     @DisplayName("P1-1 回归 7：+86 / 86 / 0086 前缀整段替换，不留下完整号码")
     void internationalPrefixIsMaskedWithTheNumber() {
         assertEquals("[手机号已隐藏]", MaskingPolicy.maskDescription("+8613812345678"));
@@ -228,10 +265,27 @@ class MaskingPolicyTest {
     }
 
     @Test
+    @DisplayName("出口回归：标点分隔（F3-R 残留）在非所有者详情/列表出口同样打码")
+    void punctuationSeparatedNumbersAreMaskedAtResponseLayer() {
+        Record record = sampleRecord();
+        record.setTitle("手机 138,1234,5678");
+        record.setDescription("联系 138：1234：5678");
+        RecordDetailResponse detail = RecordDetailResponse.from(record);
+        assertEquals("手机 [手机号已隐藏]", detail.getTitle());
+        assertEquals("联系 [手机号已隐藏]", detail.getDescription());
+
+        RecordSummary summary = summary();
+        summary.setTitle("手机 138;1234;5678");
+        RecordListItemResponse list = RecordListItemResponse.from(summary, null);
+        assertEquals("手机 [手机号已隐藏]", list.getTitle());
+    }
+
+    @Test
     @DisplayName("随机分隔符 fuzz：任意分隔符组合都不能漏出手机号/证件号")
     void randomSeparatorFuzz() {
         String[] separators = {" ", "\t", "\n", "-", ".", "/", "\\", "_",
-                "\u3000", "\u200B", "\u200C", "\u200D", "\uFEFF"};
+                "\u3000", "\u200B", "\u200C", "\u200D", "\uFEFF",
+                ",", ":", ";", "，", "：", "；", "、"};
         Random random = new Random(20261028L);
         for (int i = 0; i < 200; i++) {
             String mobile = "138" + separators[random.nextInt(separators.length)]
