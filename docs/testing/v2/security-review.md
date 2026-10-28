@@ -436,6 +436,7 @@ pair 侧：
 - 没有针对逗号/冒号分隔符的回归用例（见 §18.3 R-1）。
 
 **未执行：** 本次 F3 复验跑了服务端全量单测，但没有启动后端做 HTTP 级重扫；动态项建议在 F2 集成环境复验。
+→ 后续已在 F3-R 集成复扫补做（`test/v2-F3-integration-rescan`，基线 `64693ec`）：见 §18.3 回填表与 `F3-integration-rescan.md`。
 
 ---
 
@@ -625,9 +626,24 @@ J5-plus86                      PARSE=OK   FULL_PHONE=false FULL_ID=false OUT=联
 
 > R-1 不影响本轮 P1 判据（任务验收的 8 类已全部闭环），但它是同一根因的剩余变体；如果团队认为逗号/冒号属于「自然写法」，可把 R-1 升为 P1 追加修复后再合并 Z-71。是否接受这个取舍由作者/架构 owner 决定。
 
+**F3-R 集成复扫（2026-10-28，`test/v2-F3-integration-rescan`，基线 `64693ec`）对 §18.3 的回填**：本轮把静态结论打到真实 HTTP 出口上重测，逐项输出见 `docs/testing/v2/F3-integration-rescan.md` 与 `docs/testing/v2/F3-integration-rescan/`。
+
+| # | 静态口径（本节原判定） | F3-R 实测（HTTP + MySQL 真实环境） | 变化 |
+|---|---|---|---|
+| R-1 | `138,1234,5678` / `138:1234:5678` / `138;1234;5678` 纯函数层原样输出 | 三例在 HTTP 出口**全部仍可整段读出**：匿名详情、非所有者详情、`t_match_result` 快照、取号附言四处 rawKeep=1（`F3R-03-p1-bypass.txt` 第 620–637 行） | 无变化，仍是遗留；按任务口径只测现状、未改规则，是否升 P1 交人类在门禁 3 裁决 |
+| §18.2 八类绕过 | 静态 harness 16 输入变「命中」 | 8 类 × 8 个 HTTP 出口组 = **128 条断言全 PASS**，privacy 方向（匿名/非所有者/通知/match 对端/落库）exact 与 rawKeep 双 0；无过遮蔽对照 5/5 符合预期 | 静态结论在动态层成立 |
+| P2-2 缓存头 | 按代码/配置判定，MockMvc 断言 | 原始 `curl -i` 20 条用例 FAIL=0，200/401/403/404 均带 `Cache-Control: no-store` + `Vary: Cookie`；401 短路也带头；`/api/pairs/{id}/contact` 未回退 | 动态层成立；新增 1 条非阻塞观察：该端点 `Cache-Control` 重复出现两次（拦截器 + controller 各设一次，语义相同），未改业务代码 |
+| P2-3 日志注入 | 单测覆盖 | 9 条通路 × 各自独立假时间戳，HTTP 打到真实日志文件：**判据 A 全为 0 行、判据 B 独立行 0**；LogSafe 四档替换与 `...[324chars]` 截断逐条可见；并做了拦截层归因（J1/J1b 实为绑定层剥空白挡住，J1c 为 `@Pattern` 白名单挡住） | 动态层成立；分层归因补强了原结论 |
+| P2-1 状态竞态 | service 层 mock，真实并发交错「建议在集成环境补一次」 | 11/11 PASS：终态 PUT 一律 409/20003 且 16 列指纹逐字不变；SQL 反证「无条件 `ROW_COUNT()=1`、有条件 `=0`」；**真并发已补**——InnoDB 行锁编排使 PUT 阻塞 2648 ms 后仍被拒 + 20 轮裸并发分布（11×PUT200 / 9×PUT409，0 不一致轮次） | 「建议补做一次」已执行 |
+| P2-4 过期扫描 | SQL WHERE 结构测试 | 两个触发口径（`--pair-scan-once` 启动扫描 4/4、`POST /api/ops/pair-scan` 8/8）：过期 COMPLETED 的 `pair_state/pair_scored_at/updated_at` 一字未动、pair 24→24、通知 0→0、预置 pair 的 hash 与时间戳不变；正对照 X3/X4 确实被扫到（pair 0→20）；`expired=3` 与 EV-SQL 实数一致 | 动态层成立 |
+| §18.4 第 2 条「未执行」 | 本机无 MySQL，28 探针与关键 HTTP 用例未执行 | **已执行**：28 探针 0 命中；五阶段 `qa/run-all.mjs` 退出码全 0（接口 111/111、E2E 25/25、一致性 9/9、落库取证 19/19、match P1 10/10 + P2 6/10 与 F2 持平、0 新增失败） | 该条遗留关闭 |
+
+**仍未闭环（如实记录，不写成通过）**：本机没有真实 `DEEPSEEK_API_KEY`，只测到「无密钥降级」态（扫描日志逐条 `degradedReason=EMPTY_KEY`、`counters.llmCalls=0`、`engine=LOCAL_KEYWORD`）。「有 key 时过期记录同样不重算」这句缺实测支撑，需要持密钥环境复跑一次。
+
 ### 18.4 合并建议
 
 1. **合并顺序**：`fix/v2-F3-p1-masking-normalize@08f4bb9` 与 `fix/v2-F3-p2-hardening@fbd538f` 均基于 `941fdee`，文件无重叠，可按任意顺序合并到 v2 集成分支；建议先 P1 后 P2，便于把副作用分开观察。
 2. **合并前复核**：在目标集成分支上重跑 `server/mvnw -o test`（本轮合并工作树为 242/242）；在 F2 集成环境重跑 28 个手机号探针与关键 HTTP 用例（本机无 MySQL，未执行）。
+   → **该项已于 F3-R 执行**（`test/v2-F3-integration-rescan`，基线 `64693ec`，真实 MySQL + 重打包 jar）：28 探针 0 命中、五阶段退出码全 0、P1/P2 四项修复逐项打到 HTTP 出口与 EV-SQL，读数见 §18.3 回填表与 `F3-integration-rescan.md`。
 3. **回滚**：两个 commit 都是应用层改动，无 DB 迁移；`git revert` 即可回滚，不需要数据修复。P2-1 的 `selectStatusByIdForUpdate` 与 `selectPairScanTargets` 签名变更只影响本仓库调用点（已逐一核对）。
 4. **报告分支**：`feat/v2-F3-security-review` 只含本报告，不合并进 main；修复代码由上述两个分支独立进入集成。

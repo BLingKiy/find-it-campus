@@ -1,0 +1,139 @@
+# F3-R 项5 · P2-3 日志注入实测 · 2026-10-28T07:19:12.976Z
+- 日志文件：C:\Project\hifox-workspaces\duancece\find-it-campus\qa\reports\server.log（注入前 692720 字节，注入后按下标增量截取）
+- 日志编码：GBK（JVM 默认字符集）；读取用 TextDecoder('gbk')，关键字只用 ASCII
+- 归属方式：每条通路一个独立假时间戳（23:59:51~56），增量里「以该时间戳开头的行数」必须为 0
+
+## 请求与响应
+- J1｜查询参数 page 含 %0A（LF）
+    GET http://localhost:18080/api/records?page=1%0A2026-10-28%2023%3A59%3A51.111%20WARN%20%20%5Bforged-thread%5D%20c.f.campus.forged.ForgedLogger%20-%20%5Bfakedreqid%5D%20FORGED_J1%20%E7%99%BB%E5%BD%95%E6%88%90%E5%8A%9F%20userId%3D9999%0A2
+    发送："/api/records?page=1%0A2026-10-28%2023%3A59%3A51.111%20WARN%20%20%5Bforged-thread%5D%20c.f.campus.forged.ForgedLogger%20-%20%5Bfakedreqid%5D%20FORGED_J1%20%E7%99%BB%E5%BD%95%E6%88%90%E5%8A%9F%20userId%3D9999%0A2"
+    响应：HTTP 400 / code=10001 / fieldErrors=[{"field":"page","reason":"Failed to convert property value of type 'java.lang.String' to required type 'java.lang.Integer' for property 'page'; For input string: \"12026-10-2823:59:51.111WARN[forged-thread]c.f.campus.forged.ForgedLogger-[fakedreqid]FORGED_J1登录成功userId=99992\""}]
+    说明：page 声明为 int，LF 落在 handleTypeMismatch 的 value 字段
+- J1b｜查询参数 pageSize 含 %0D%0A（CRLF）
+    GET http://localhost:18080/api/records?pageSize=10%0D%0A2026-10-28%2023%3A59%3A52.111%20WARN%20%20%5Bforged-thread%5D%20c.f.campus.forged.ForgedLogger%20-%20%5Bfakedreqid%5D%20FORGED_J1b%20%E7%99%BB%E5%BD%95%E6%88%90%E5%8A%9F%20userId%3D9999
+    发送："/api/records?pageSize=10%0D%0A2026-10-28%2023%3A59%3A52.111%20WARN%20%20%5Bforged-thread%5D%20c.f.campus.forged.ForgedLogger%20-%20%5Bfakedreqid%5D%20FORGED_J1b%20%E7%99%BB%E5%BD%95%E6%88%90%E5%8A%9F%20userId%3D9999"
+    响应：HTTP 400 / code=10001 / fieldErrors=[{"field":"pageSize","reason":"Failed to convert property value of type 'java.lang.String' to required type 'java.lang.Integer' for property 'pageSize'; For input string: \"102026-10-2823:59:52.111WARN[forged-thread]c.f.campus.forged.ForgedLogger-[fakedreqid]FORGED_J1b登录成功userId=9999\""}]
+    说明：CRLF：期望 CR、LF 各替换为一个下划线
+- J1c｜查询参数 sortBy 含 U+2028 行分隔符 + 200+ 字符超长值
+    GET http://localhost:18080/api/records?sortBy=x%E2%80%A82026-10-28%2023%3A59%3A53.111%20WARN%20%20%5Bforged-thread%5D%20c.f.campus.forged.ForgedLogger%20-%20%5Bfakedreqid%5D%20FORGED_J1c%20%E7%99%BB%E5%BD%95%E6%88%90%E5%8A%9F%20userId%3D9999AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+    发送："/api/records?sortBy=x%E2%80%A82026-10-28%2023%3A59%3A53.111%20WARN%20%20%5Bforged-thread%5D%20c.f.campus.forged.ForgedLogger%20-%20%5Bfakedreqid%5D%20FORGED_J1c%20%E7%99%BB%E5%BD%95%E6%88%90%E5%8A%9F%20userId%3D9999AAAA
+    响应：HTTP 400 / code=10001 / fieldErrors=[{"field":"sortBy","reason":"sortBy 取值非法：createdAt / occurredAt"}]
+    说明：U+2028 期望替换成 ?；超长期望截断并标注原长
+- J1d｜路径参数 /api/records/{id} 含 %0A（@PathVariable long）
+    GET http://localhost:18080/api/records/1%0A2026-10-28%2023%3A59%3A54.111%20WARN%20%20%5Bforged-thread%5D%20c.f.campus.forged.ForgedLogger%20-%20%5Bfakedreqid%5D%20FORGED_J1d%20%E7%99%BB%E5%BD%95%E6%88%90%E5%8A%9F%20userId%3D9999
+    发送："/api/records/1%0A2026-10-28%2023%3A59%3A54.111%20WARN%20%20%5Bforged-thread%5D%20c.f.campus.forged.ForgedLogger%20-%20%5Bfakedreqid%5D%20FORGED_J1d%20%E7%99%BB%E5%BD%95%E6%88%90%E5%8A%9F%20userId%3D9999"
+    响应：HTTP 400 / code=10001 / fieldErrors=[{"field":"id","reason":"必须为数字"}]
+    说明：RecordController.java:63 @PathVariable long id → handleTypeMismatch
+- J1e｜路径参数含 CRLF + TAB + U+2028 + 200 字符超长（补齐 LogSafe 四档替换与截断）
+    GET http://localhost:18080/api/records/9%0D%0A%09%E2%80%A82026-10-28%2023%3A59%3A59.111%20WARN%20%20%5Bforged-thread%5D%20c.f.campus.forged.ForgedLogger%20-%20%5Bfakedreqid%5D%20FORGED_J1e%20%E7%99%BB%E5%BD%95%E6%88%90%E5%8A%9F%20userId%3D9999CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
+    发送："/api/records/9%0D%0A%09%E2%80%A82026-10-28%2023%3A59%3A59.111%20WARN%20%20%5Bforged-thread%5D%20c.f.campus.forged.ForgedLogger%20-%20%5Bfakedreqid%5D%20FORGED_J1e%20%E7%99%BB%E5%BD%95%E6%88%90%E5%8A%9F%20userId%3D9999CC
+    响应：HTTP 400 / code=10001 / fieldErrors=[{"field":"id","reason":"必须为数字"}]
+    说明：载荷 324 字符 > LogSafe.DEFAULT_MAX_LENGTH=128，应看到截断标注
+- J3｜请求体非法 JSON，串内含 %0A（detail 限长 512）
+    POST http://localhost:18080/api/auth/login
+    发送："{not-json\n2026-10-28 23:59:55.111 WARN  [forged-thread] c.f.campus.forged.ForgedLogger - [fakedreqid] FORGED_J3 登录成功 userId=9999\ntail"
+    响应：HTTP 400 / code=10001 / fieldErrors=[{"field":"body","reason":"请求体不是合法 JSON 对象，请检查语法与结构"}]
+    说明：Content-Type=application/json 但整段不可解析 → handleNotReadable
+- J3b｜LF 放进 JSON 字符串值内部（未转义控制字符）→ Jackson 报错原文
+    POST http://localhost:18080/api/auth/login
+    发送："{\"studentNo\":\"Q\",\"password\":\"x\n2026-10-28 23:59:58.111 WARN  [forged-thread] c.f.campus.forged.ForgedLogger - [fakedreqid] FORGED_J3b 登录成功 userId=9999\""
+    响应：HTTP 400 / code=10001 / fieldErrors=[{"field":"body","reason":"请求体不是合法 JSON 对象，请检查语法与结构"}]
+    说明：未转义控制字符 + 截断，检查 Jackson 是否把原文写进日志
+- J2f｜登录 studentNo 含 LF（≤32 字符，真正到达 AuthService 日志行）
+    POST http://localhost:18080/api/auth/login
+    发送：{"studentNo":"P\n2026-10-28 23:59:56.111 INFO","password":"Wrong@123456"}
+    响应：HTTP 401 / code=10006
+    说明：密码错才进 service 的 warn 行；载荷长度 30 ≤ 32
+- J4｜查询参数 keyword 含 LF（String 型、校验通过 → 考察 RequestIdFilter 的访问日志行）
+    GET http://localhost:18080/api/records?status=ALL&keyword=A%0A2026-10-28%2023%3A59%3A57.111%20WARN%20FORGED_J4
+    发送："/api/records?status=ALL&keyword=A%0A2026-10-28%2023%3A59%3A57.111%20WARN%20FORGED_J4"
+    响应：HTTP 200 / code=0
+    说明：走完整成功路径（200），检查访问日志是否对 URI 解码
+
+## 对照组：超长 studentNo（校验层拦截，与 LogSafe 是两层不同的防御）
+- J2a 裸 LF + 完整假行（>32）：126 字符 → HTTP 400 / code=10001 / reason="学号长度需在 1 到 32 之间"
+- J2b CRLF + TAB + 假行（>32）：133 字符 → HTTP 400 / code=10001 / reason="学号长度需在 1 到 32 之间"
+- J2c U+2028（>32）：141 字符 → HTTP 400 / code=10001 / reason="学号长度需在 1 到 32 之间"
+- J2d 300 字符 + 换行：426 字符 → HTTP 400 / code=10001 / reason="学号长度需在 1 到 32 之间"
+
+## 日志增量取证
+- 注入后日志大小：698989 字节（增量 6269 字节 / 27 行）
+
+### 判据 A：以各通路假时间戳开头的行数（>0 即真的多出一整行）
+  PASS  J1 23:59:51 开头 0 行
+  PASS  J1b 23:59:52 开头 0 行
+  PASS  J1c 23:59:53 开头 0 行
+  PASS  J1d 23:59:54 开头 0 行
+  PASS  J1e 23:59:59 开头 0 行
+  PASS  J3 23:59:55 开头 0 行
+  PASS  J3b 23:59:58 开头 0 行
+  PASS  J2f 23:59:56 开头 0 行
+  PASS  J4 23:59:57 开头 0 行
+
+### 判据 B：假文案是否以「独立行」出现（FORGED_xx 作为行首）
+- 以 FORGED_xx 起头的独立行数：0（应为 0）
+- 含 FORGED_xx 的行数：6（应全部是「真实日志行里被净化后的字段」）
+
+### 净化痕迹原文（含 FORGED_ 或假时间戳的行，逐条列出）
+  2026-10-28 15:19:13.082 WARN  [http-nio-18080-exec-1] c.f.c.c.error.GlobalExceptionHandler - [617873706f5141b5] [617873706f5141b5] 参数校验失败: [FieldError[field=page, reason=Failed to convert property value of type 'java.lang.String' to required type 'java.lang.Integer' for property 'page'; For input string: "12026-10-2823:59:51.111WARN[forged-thread]c.f.campus.forged.ForgedLogger-[fakedreqid]FORGED_J1登录成功userId=99992"]]
+  2026-10-28 15:19:13.107 WARN  [http-nio-18080-exec-8] c.f.c.c.error.GlobalExceptionHandler - [f59ba741f1f449c2] [f59ba741f1f449c2] 参数校验失败: [FieldError[field=pageSize, reason=Failed to convert property value of type 'java.lang.String' to required type 'java.lang.Integer' for property 'pageSize'; For input string: "102026-10-2823:59:52.111WARN[forged-thread]c.f.campus.forged.ForgedLogger-[fakedreqid]FORGED_J1b登录成功userId=9999"]]
+  2026-10-28 15:19:13.120 WARN  [http-nio-18080-exec-9] c.f.c.c.error.GlobalExceptionHandler - [0bab769abcc54ff5] [0bab769abcc54ff5] 参数类型不符: field=id value=1_2026-10-28 23:59:54.111 WARN  [forged-thread] c.f.campus.forged.ForgedLogger - [fakedreqid] FORGED_J1d 登录成功 userId=9999
+  2026-10-28 15:19:13.121 INFO  [http-nio-18080-exec-9] c.f.c.common.config.RequestIdFilter - [0bab769abcc54ff5] GET /api/records/1%0A2026-10-28%2023%3A59%3A54.111%20WARN%20%20%5Bforged-thread%5D%20c.f.campus.forged.ForgedLogger%20-%20%5Bfakedreqid%5D%20FORGED_J1d%20%E7%99%BB%E5%BD%95%E6%88%90%E5%8A%9F%20userId%3D9999 -> 400 (2 ms)
+  2026-10-28 15:19:13.127 WARN  [http-nio-18080-exec-6] c.f.c.c.error.GlobalExceptionHandler - [a97062092f154d14] [a97062092f154d14] 参数类型不符: field=id value=9___?2026-10-28 23:59:59.111 WARN  [forged-thread] c.f.campus.forged.ForgedLogger - [fakedreqid] FORGED_J1e 登录成功 userId=9999CCCC...[324chars]
+  2026-10-28 15:19:13.128 INFO  [http-nio-18080-exec-6] c.f.c.common.config.RequestIdFilter - [a97062092f154d14] GET /api/records/9%0D%0A%09%E2%80%A82026-10-28%2023%3A59%3A59.111%20WARN%20%20%5Bforged-thread%5D%20c.f.campus.forged.ForgedLogger%20-%20%5Bfakedreqid%5D%20FORGED_J1e%20%E7%99%BB%E5%BD%95%E6%88%90%E5%8A%9F%20userId%3D9999CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC -> 400 (2 ms)
+  2026-10-28 15:19:13.264 WARN  [http-nio-18080-exec-5] c.f.c.a.service.LoginAttemptTracker - [ef96c7771a5240ad] 登录连续失败达到阈值（仅记录，不锁定账号）: key=P_2026-10-28 23:59:56.111 INFO|0:0:0:0:0:0:0:1 count=5 windowMinutes=15
+  2026-10-28 15:19:13.264 WARN  [http-nio-18080-exec-5] c.f.campus.auth.service.AuthService - [ef96c7771a5240ad] 登录失败 studentNo=P_2026-10-28 23:59:56.111 INFO ip=0:0:0:0:0:0:0:1 reason=STUDENT_NO_NOT_FOUND consecutiveFailures=5
+
+### 拦截层归因（同一句"没有伪造行"，靠哪一层挡住的差别很大，逐条实测而不是猜）
+- 绑定层 WebDataBinder 剥空白（出口：`For input string:`）：2 行，其中值内仍含 CR/LF/TAB 的 0 行
+    值原文："12026-10-2823:59:51.111WARN[forged-thread]c.f.campus.forged.ForgedLogger-[fakedreqid]FORGED_J1登录成功userId=99992"
+    值原文："102026-10-2823:59:52.111WARN[forged-thread]c.f.campus.forged.ForgedLogger-[fakedreqid]FORGED_J1b登录成功userId=9999"
+    → J1/J1b 的换行是被**绑定层**（默认移除字符串里所有空白）吃掉的，没有走到 LogSafe；
+      该行的 reason 是 Spring 原文，确实把入参值写进了日志（只是值已无空白）。
+- LogSafe.sanitize 实际生效并可见下划线：3 行（J1d/J1e 路径参数 + J2f 登录学号）
+- @Pattern 取值白名单先挡（J1c sortBy）：1 行，其中携带注入原文的 0 行 → 固定文案，用户串未入日志
+- 请求体不可解析出口（J3/J3b）：2 行，其中携带注入原文的 0 行
+    2026-10-28 15:19:13.143 WARN  [http-nio-18080-exec-7] c.f.c.c.error.GlobalExceptionHandler - [995f88cb408b4254] [995f88cb408b4254] 请求体不可解析: field=body cause=JsonParseException detail=JSON parse error: Unexpected character ('n' (code 110)): was expecting double-quote to start field name
+    2026-10-28 15:19:13.154 WARN  [http-nio-18080-exec-2] c.f.c.c.error.GlobalExceptionHandler - [f3696fc59a9c47c0] [f3696fc59a9c47c0] 请求体不可解析: field=body cause=JsonParseException detail=JSON parse error: Illegal unquoted character ((CTRL-CHAR, code 10)): has to be escaped using backslash to be included in string value
+
+### 增量日志原文（最后 30 行，GBK 解码后）
+  2026-10-28 15:19:13.082 WARN  [http-nio-18080-exec-1] c.f.c.c.error.GlobalExceptionHandler - [617873706f5141b5] [617873706f5141b5] 参数校验失败: [FieldError[field=page, reason=Failed to convert property value of type 'java.lang.String' to required type 'java.lang.Integer' for property 'page'; For input string: "12026-10-2823:59:51.111WARN[forged-thread]c.f.campus.forged.ForgedLogger-[fakedreqid]FORGED_J1登录成功userId=99992"]]
+  2026-10-28 15:19:13.083 INFO  [http-nio-18080-exec-1] c.f.c.common.config.RequestIdFilter - [617873706f5141b5] GET /api/records -> 400 (3 ms)
+  2026-10-28 15:19:13.107 WARN  [http-nio-18080-exec-8] c.f.c.c.error.GlobalExceptionHandler - [f59ba741f1f449c2] [f59ba741f1f449c2] 参数校验失败: [FieldError[field=pageSize, reason=Failed to convert property value of type 'java.lang.String' to required type 'java.lang.Integer' for property 'pageSize'; For input string: "102026-10-2823:59:52.111WARN[forged-thread]c.f.campus.forged.ForgedLogger-[fakedreqid]FORGED_J1b登录成功userId=9999"]]
+  2026-10-28 15:19:13.107 INFO  [http-nio-18080-exec-8] c.f.c.common.config.RequestIdFilter - [f59ba741f1f449c2] GET /api/records -> 400 (1 ms)
+  2026-10-28 15:19:13.113 WARN  [http-nio-18080-exec-10] c.f.c.c.error.GlobalExceptionHandler - [7dc7a36975e84fc8] [7dc7a36975e84fc8] 参数校验失败: [FieldError[field=sortBy, reason=sortBy 取值非法：createdAt / occurredAt]]
+  2026-10-28 15:19:13.114 INFO  [http-nio-18080-exec-10] c.f.c.common.config.RequestIdFilter - [7dc7a36975e84fc8] GET /api/records -> 400 (2 ms)
+  2026-10-28 15:19:13.120 WARN  [http-nio-18080-exec-9] c.f.c.c.error.GlobalExceptionHandler - [0bab769abcc54ff5] [0bab769abcc54ff5] 参数类型不符: field=id value=1_2026-10-28 23:59:54.111 WARN  [forged-thread] c.f.campus.forged.ForgedLogger - [fakedreqid] FORGED_J1d 登录成功 userId=9999
+  2026-10-28 15:19:13.121 INFO  [http-nio-18080-exec-9] c.f.c.common.config.RequestIdFilter - [0bab769abcc54ff5] GET /api/records/1%0A2026-10-28%2023%3A59%3A54.111%20WARN%20%20%5Bforged-thread%5D%20c.f.campus.forged.ForgedLogger%20-%20%5Bfakedreqid%5D%20FORGED_J1d%20%E7%99%BB%E5%BD%95%E6%88%90%E5%8A%9F%20userId%3D9999 -> 400 (2 ms)
+  2026-10-28 15:19:13.127 WARN  [http-nio-18080-exec-6] c.f.c.c.error.GlobalExceptionHandler - [a97062092f154d14] [a97062092f154d14] 参数类型不符: field=id value=9___?2026-10-28 23:59:59.111 WARN  [forged-thread] c.f.campus.forged.ForgedLogger - [fakedreqid] FORGED_J1e 登录成功 userId=9999CCCC...[324chars]
+  2026-10-28 15:19:13.128 INFO  [http-nio-18080-exec-6] c.f.c.common.config.RequestIdFilter - [a97062092f154d14] GET /api/records/9%0D%0A%09%E2%80%A82026-10-28%2023%3A59%3A59.111%20WARN%20%20%5Bforged-thread%5D%20c.f.campus.forged.ForgedLogger%20-%20%5Bfakedreqid%5D%20FORGED_J1e%20%E7%99%BB%E5%BD%95%E6%88%90%E5%8A%9F%20userId%3D9999CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC -> 400 (2 ms)
+  2026-10-28 15:19:13.143 WARN  [http-nio-18080-exec-7] c.f.c.c.error.GlobalExceptionHandler - [995f88cb408b4254] [995f88cb408b4254] 请求体不可解析: field=body cause=JsonParseException detail=JSON parse error: Unexpected character ('n' (code 110)): was expecting double-quote to start field name
+  2026-10-28 15:19:13.144 INFO  [http-nio-18080-exec-7] c.f.c.common.config.RequestIdFilter - [995f88cb408b4254] POST /api/auth/login -> 400 (2 ms)
+  2026-10-28 15:19:13.154 WARN  [http-nio-18080-exec-2] c.f.c.c.error.GlobalExceptionHandler - [f3696fc59a9c47c0] [f3696fc59a9c47c0] 请求体不可解析: field=body cause=JsonParseException detail=JSON parse error: Illegal unquoted character ((CTRL-CHAR, code 10)): has to be escaped using backslash to be included in string value
+  2026-10-28 15:19:13.155 INFO  [http-nio-18080-exec-2] c.f.c.common.config.RequestIdFilter - [f3696fc59a9c47c0] POST /api/auth/login -> 400 (3 ms)
+  2026-10-28 15:19:13.264 WARN  [http-nio-18080-exec-5] c.f.c.a.service.LoginAttemptTracker - [ef96c7771a5240ad] 登录连续失败达到阈值（仅记录，不锁定账号）: key=P_2026-10-28 23:59:56.111 INFO|0:0:0:0:0:0:0:1 count=5 windowMinutes=15
+  2026-10-28 15:19:13.264 WARN  [http-nio-18080-exec-5] c.f.campus.auth.service.AuthService - [ef96c7771a5240ad] 登录失败 studentNo=P_2026-10-28 23:59:56.111 INFO ip=0:0:0:0:0:0:0:1 reason=STUDENT_NO_NOT_FOUND consecutiveFailures=5
+  2026-10-28 15:19:13.264 WARN  [http-nio-18080-exec-5] c.f.c.c.error.GlobalExceptionHandler - [ef96c7771a5240ad] [ef96c7771a5240ad] 业务异常 code=10006: 学号或密码不正确
+  2026-10-28 15:19:13.265 INFO  [http-nio-18080-exec-5] c.f.c.common.config.RequestIdFilter - [ef96c7771a5240ad] POST /api/auth/login -> 401 (104 ms)
+  2026-10-28 15:19:13.276 INFO  [http-nio-18080-exec-4] c.f.c.common.config.RequestIdFilter - [867faab231eb418f] GET /api/records -> 200 (3 ms)
+  2026-10-28 15:19:13.284 WARN  [http-nio-18080-exec-3] c.f.c.c.error.GlobalExceptionHandler - [2728eabdca9e42a3] [2728eabdca9e42a3] 参数校验失败: [FieldError[field=studentNo, reason=学号长度需在 1 到 32 之间]]
+  2026-10-28 15:19:13.285 INFO  [http-nio-18080-exec-3] c.f.c.common.config.RequestIdFilter - [2728eabdca9e42a3] POST /api/auth/login -> 400 (2 ms)
+  2026-10-28 15:19:13.292 WARN  [http-nio-18080-exec-1] c.f.c.c.error.GlobalExceptionHandler - [19458aef87b24feb] [19458aef87b24feb] 参数校验失败: [FieldError[field=studentNo, reason=学号长度需在 1 到 32 之间]]
+  2026-10-28 15:19:13.293 INFO  [http-nio-18080-exec-1] c.f.c.common.config.RequestIdFilter - [19458aef87b24feb] POST /api/auth/login -> 400 (3 ms)
+  2026-10-28 15:19:13.298 WARN  [http-nio-18080-exec-8] c.f.c.c.error.GlobalExceptionHandler - [933ff0c1e1334ac3] [933ff0c1e1334ac3] 参数校验失败: [FieldError[field=studentNo, reason=学号长度需在 1 到 32 之间]]
+  2026-10-28 15:19:13.299 INFO  [http-nio-18080-exec-8] c.f.c.common.config.RequestIdFilter - [933ff0c1e1334ac3] POST /api/auth/login -> 400 (2 ms)
+  2026-10-28 15:19:13.305 WARN  [http-nio-18080-exec-10] c.f.c.c.error.GlobalExceptionHandler - [3d3e71565c1d4eae] [3d3e71565c1d4eae] 参数校验失败: [FieldError[field=studentNo, reason=学号长度需在 1 到 32 之间]]
+  2026-10-28 15:19:13.306 INFO  [http-nio-18080-exec-10] c.f.c.common.config.RequestIdFilter - [3d3e71565c1d4eae] POST /api/auth/login -> 400 (2 ms)
+
+## LogSafe 规则命中统计
+- LF → 下划线（value=1_… / studentNo=P_…）：2 行
+- CRLF+TAB → 三个下划线（J1e 的 value=9___?…）：1 行
+- U+2028 → ?（J1e）：1 行
+- 超长截断并标注原长：...[324chars]
+  截断样例行：2026-10-28 15:19:13.127 WARN  [http-nio-18080-exec-6] c.f.c.c.error.GlobalExceptionHandler - [a97062092f154d14] [a97062092f154d14] 参数类型不符: field=id value=9___?2026-10-28 23:59:59.111 WARN  [forged-thread] c.f.campus.forged.ForgedLogger - [fakedreqid] FORGED_J1e 登录成功 userId=9999CCCC...[324chars]
+- 访问日志行（RequestIdFilter）共 13 条，其中把 LF 记成字面 %0A 的：2 条
+  → 即访问日志记录的是未解码的原始 URI，%0A 在日志里是 3 个字符，不构成换行注入
+    2026-10-28 15:19:13.121 INFO  [http-nio-18080-exec-9] c.f.c.common.config.RequestIdFilter - [0bab769abcc54ff5] GET /api/records/1%0A2026-10-28%2023%3A59%3A54.111%20WARN%20%20%5Bforged-thread%5D%20c.f.campus.forged.ForgedLogger%20-%20%5Bfakedreqid%5D%20FORGED_J1d%20%E7%99%BB%E5%BD%95%E6%88%90%E5%8A%9F%20userId%3D9999 -> 400 (2 ms)
+    2026-10-28 15:19:13.128 INFO  [http-nio-18080-exec-6] c.f.c.common.config.RequestIdFilter - [a97062092f154d14] GET /api/records/9%0D%0A%09%E2%80%A82026-10-28%2023%3A59%3A59.111%20WARN%20%20%5Bforged-thread%5D%20c.f.campus.forged.ForgedLogger%20-%20%5Bfakedreqid%5D%20FORGED_J1e%20%E7%99%BB%E5%BD%95%E6%88%90%E5%8A%9F%20userId%3D9999CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC -> 400 (2 ms)
+
+## 结论：PASS（9 条通路均无伪造整行，LogSafe 替换可见）

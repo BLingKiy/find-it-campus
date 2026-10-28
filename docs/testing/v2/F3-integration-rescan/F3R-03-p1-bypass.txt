@@ -1,0 +1,637 @@
+# F3-R 项3 · P1 八类绕过输入的 HTTP 出口实测 · 2026-10-28T06:54:22.268Z
+- A 侧号码归一=13812345678 / B 侧号码归一=13923456789；证件号 A=110101199001011234 B=110202199002021234
+- 两侧演示账号 contact 固定 13800000001 / 13800000002，与绕过串不同值，避免「本人可见自己 contact」混入判定
+- 判据：privacy 方向（匿名/非所有者/通知/match 对端/落库）exact 与 rawKeep 双 0；self 方向（本人自有内容）只判「不得出现对端号」
+
+### B1 空格拆｜A 写入="138 1234 5678"｜B 写入="139 2345 6789"｜lostId=27 foundId=28 pairId=34
+  PASS  出口1 匿名列表 GET /api/records?status=ALL  [privacy]
+         GET http://localhost:18080/api/records?status=ALL&pageSize=50&page=1 → HTTP 200 ｜ title 遮蔽视角
+         - A(demo01) 138␣1234␣5678: exact=0 rawKeep=0
+         - B(demo02) 139␣2345␣6789: exact=0 rawKeep=0
+  PASS  出口2 匿名详情 GET /api/records/{lostId}  [privacy]
+         GET http://localhost:18080/api/records/27 → HTTP 200 ｜ title+description 遮蔽视角
+         - A(demo01) 138␣1234␣5678: exact=0 rawKeep=0
+         - B(demo02) 139␣2345␣6789: exact=0 rawKeep=0
+  PASS  出口2 匿名详情 GET /api/records/{foundId}  [privacy]
+         GET http://localhost:18080/api/records/28 → HTTP 200 ｜ title+description 遮蔽视角
+         - A(demo01) 138␣1234␣5678: exact=0 rawKeep=0
+         - B(demo02) 139␣2345␣6789: exact=0 rawKeep=0
+  PASS  出口3 非所有者详情 GET /api/records/{lostId}  [privacy]
+         GET http://localhost:18080/api/records/27 → HTTP 200 ｜ demo02 读 demo01 记录
+         - A(demo01) 138␣1234␣5678: exact=0 rawKeep=0
+         - B(demo02) 139␣2345␣6789: exact=0 rawKeep=0
+  PASS  出口3 非所有者详情 GET /api/records/{foundId}  [privacy]
+         GET http://localhost:18080/api/records/28 → HTTP 200 ｜ demo01 读 demo02 记录
+         - A(demo01) 138␣1234␣5678: exact=0 rawKeep=0
+         - B(demo02) 139␣2345␣6789: exact=0 rawKeep=0
+  PASS  出口4 GET /api/my/records(demo01 本人集合)  [self]
+         GET http://localhost:18080/api/my/records?pageSize=50 → HTTP 200 ｜ own title 原文允许；pairs[].counterpartTitle 必须遮蔽
+         ! A(demo01) 138␣1234␣5678: exact=0 rawKeep=1 样本="F3RB1L 拾到物品 请联系 138 1234 5678"
+         - B(demo02) 139␣2345␣6789: exact=0 rawKeep=0
+         本人自有内容原文回显=是（契约 §4.2/§4.12 设计内）
+  PASS  出口4 GET /api/my/records(demo02 本人集合)  [self]
+         GET http://localhost:18080/api/my/records?pageSize=50 → HTTP 200 ｜ own title 原文允许；pairs[].counterpartTitle 必须遮蔽
+         ! B(demo02) 139␣2345␣6789: exact=0 rawKeep=1 样本="F3RB1F 拾到物品 请联系 139 2345 6789"
+         - A(demo01) 138␣1234␣5678: exact=0 rawKeep=0
+         本人自有内容原文回显=是（契约 §4.2/§4.12 设计内）
+  PASS  出口5 通知 /api/notifications(demo01)  [privacy]
+         GET http://localhost:18080/api/notifications?page=1&pageSize=50 → HTTP 200 ｜ title+body
+         - A(demo01) 138␣1234␣5678: exact=0 rawKeep=0
+         - B(demo02) 139␣2345␣6789: exact=0 rawKeep=0
+  PASS  出口5 通知 /api/notifications(demo02)  [privacy]
+         GET http://localhost:18080/api/notifications?page=1&pageSize=50 → HTTP 200 ｜ title+body
+         - A(demo01) 138␣1234␣5678: exact=0 rawKeep=0
+         - B(demo02) 139␣2345␣6789: exact=0 rawKeep=0
+  PASS  出口6 match 项 POST /api/match(demo01 视角)  [self]
+         POST http://localhost:18080/api/match → HTTP 200 ｜ items.title/reason；自己发的 FOUND 不存在于此视角
+         ! A(demo01) 138␣1234␣5678: exact=0 rawKeep=1 样本="F3RB1L 拾到物品 请联系 138 1234 5678"
+         - B(demo02) 139␣2345␣6789: exact=0 rawKeep=0
+         本人自有内容原文回显=是（契约 §4.2/§4.12 设计内）
+  PASS  出口6 match 项 POST /api/match(demo02 视角)  [self]
+         POST http://localhost:18080/api/match → HTTP 200 ｜ items.title/reason
+         ! B(demo02) 139␣2345␣6789: exact=0 rawKeep=1 样本="F3RB1F 拾到物品 请联系 139 2345 6789"
+         - A(demo01) 138␣1234␣5678: exact=0 rawKeep=0
+         本人自有内容原文回显=是（契约 §4.2/§4.12 设计内）
+  PASS  出口7 pair 卡片 owner 详情 pairs[](A)  [self]
+         GET http://localhost:18080/api/records/27 → HTTP 200 ｜ counterpartTitle/otherNote 必须遮蔽；own title 原文允许
+         ! A(demo01) 138␣1234␣5678: exact=0 rawKeep=1 样本="F3RB1L 拾到物品 请联系 138 1234 5678"
+         - B(demo02) 139␣2345␣6789: exact=0 rawKeep=0
+         本人自有内容原文回显=是（契约 §4.2/§4.12 设计内）
+  PASS  出口7 pair 卡片 owner 详情 pairs[](B)  [self]
+         GET http://localhost:18080/api/records/28 → HTTP 200 ｜ counterpartTitle/myNote 必须遮蔽；own title 原文允许
+         ! B(demo02) 139␣2345␣6789: exact=0 rawKeep=1 样本="F3RB1F 拾到物品 请联系 139 2345 6789"
+         - A(demo01) 138␣1234␣5678: exact=0 rawKeep=0
+         本人自有内容原文回显=是（契约 §4.2/§4.12 设计内）
+  PASS  出口7 pair 卡片 unlock 响应 note  [privacy]
+         POST http://localhost:18080/api/pairs/34/contact-unlock → HTTP 200 / POST http://localhost:18080/api/pairs/34/contact-unlock → HTTP 200 ｜ ContactUnlockResponse.note
+         - A(demo01) 138␣1234␣5678: exact=0 rawKeep=0
+         - B(demo02) 139␣2345␣6789: exact=0 rawKeep=0
+  PASS  出口8 t_match_result 快照  [privacy]
+         SQL SELECT CONCAT(input_text, ' || ', candidates) FROM t_match_result WHERE input_text LIKE '%F3RB1%' ORDER BY id DESC LIMIT 2; ｜ input_text + candidates 写入前脱敏
+         - A(demo01) 138␣1234␣5678: exact=0 rawKeep=0
+         - B(demo02) 139␣2345␣6789: exact=0 rawKeep=0
+  PASS  出口8 t_pair_score 附言落库  [privacy]
+         SQL SELECT CONCAT(IFNULL(lost_unlock_note,'∅'), ' || ', IFNULL(found_unlock_note,'∅')) FROM t_pair_score WHERE id=34; ｜ A 侧附言:我的号码 [手机号已隐藏]，随时打给我 || B 侧附言:我的号码 [手机号已隐藏]，随时打给我
+         - A(demo01) 138␣1234␣5678: exact=0 rawKeep=0
+         - B(demo02) 139␣2345␣6789: exact=0 rawKeep=0
+  落库原文（t_record.title/description，明文存储是 C1 口径）："F3RB1L 拾到物品 请联系 138 1234 5678 ~ F3RB1L F3-R 出口实测。正文描述里的联系方式写作 138 1234 5678，请据此联系我。\nF3RB1F 拾到物品 请联系 139 2345 6789 ~ F3RB1F F3-R 出口实测。正文描述里的联系方式写作 139 2345 6789，请据此联系我。"
+  → PASS（越权/对端/落库方向 0 完整号码）
+
+### B2 换行拆｜A 写入="138\n1234\n5678"｜B 写入="139\n2345\n6789"｜lostId=27 foundId=28 pairId=34
+  PASS  出口1 匿名列表 GET /api/records?status=ALL  [privacy]
+         GET http://localhost:18080/api/records?status=ALL&pageSize=50&page=1 → HTTP 200 ｜ title 遮蔽视角
+         - A(demo01) 138␣1234␣5678: exact=0 rawKeep=0
+         - B(demo02) 139␣2345␣6789: exact=0 rawKeep=0
+  PASS  出口2 匿名详情 GET /api/records/{lostId}  [privacy]
+         GET http://localhost:18080/api/records/27 → HTTP 200 ｜ title+description 遮蔽视角
+         - A(demo01) 138␣1234␣5678: exact=0 rawKeep=0
+         - B(demo02) 139␣2345␣6789: exact=0 rawKeep=0
+  PASS  出口2 匿名详情 GET /api/records/{foundId}  [privacy]
+         GET http://localhost:18080/api/records/28 → HTTP 200 ｜ title+description 遮蔽视角
+         - A(demo01) 138␣1234␣5678: exact=0 rawKeep=0
+         - B(demo02) 139␣2345␣6789: exact=0 rawKeep=0
+  PASS  出口3 非所有者详情 GET /api/records/{lostId}  [privacy]
+         GET http://localhost:18080/api/records/27 → HTTP 200 ｜ demo02 读 demo01 记录
+         - A(demo01) 138␣1234␣5678: exact=0 rawKeep=0
+         - B(demo02) 139␣2345␣6789: exact=0 rawKeep=0
+  PASS  出口3 非所有者详情 GET /api/records/{foundId}  [privacy]
+         GET http://localhost:18080/api/records/28 → HTTP 200 ｜ demo01 读 demo02 记录
+         - A(demo01) 138␣1234␣5678: exact=0 rawKeep=0
+         - B(demo02) 139␣2345␣6789: exact=0 rawKeep=0
+  PASS  出口4 GET /api/my/records(demo01 本人集合)  [self]
+         GET http://localhost:18080/api/my/records?pageSize=50 → HTTP 200 ｜ own title 原文允许；pairs[].counterpartTitle 必须遮蔽
+         ! A(demo01) 138␣1234␣5678: exact=0 rawKeep=1
+         - B(demo02) 139␣2345␣6789: exact=0 rawKeep=0
+         本人自有内容原文回显=是（契约 §4.2/§4.12 设计内）
+  PASS  出口4 GET /api/my/records(demo02 本人集合)  [self]
+         GET http://localhost:18080/api/my/records?pageSize=50 → HTTP 200 ｜ own title 原文允许；pairs[].counterpartTitle 必须遮蔽
+         ! B(demo02) 139␣2345␣6789: exact=0 rawKeep=1
+         - A(demo01) 138␣1234␣5678: exact=0 rawKeep=0
+         本人自有内容原文回显=是（契约 §4.2/§4.12 设计内）
+  PASS  出口5 通知 /api/notifications(demo01)  [privacy]
+         GET http://localhost:18080/api/notifications?page=1&pageSize=50 → HTTP 200 ｜ title+body
+         - A(demo01) 138␣1234␣5678: exact=0 rawKeep=0
+         - B(demo02) 139␣2345␣6789: exact=0 rawKeep=0
+  PASS  出口5 通知 /api/notifications(demo02)  [privacy]
+         GET http://localhost:18080/api/notifications?page=1&pageSize=50 → HTTP 200 ｜ title+body
+         - A(demo01) 138␣1234␣5678: exact=0 rawKeep=0
+         - B(demo02) 139␣2345␣6789: exact=0 rawKeep=0
+  PASS  出口6 match 项 POST /api/match(demo01 视角)  [self]
+         POST http://localhost:18080/api/match → HTTP 200 ｜ items.title/reason；自己发的 FOUND 不存在于此视角
+         ! A(demo01) 138␣1234␣5678: exact=0 rawKeep=1
+         - B(demo02) 139␣2345␣6789: exact=0 rawKeep=0
+         本人自有内容原文回显=是（契约 §4.2/§4.12 设计内）
+  PASS  出口6 match 项 POST /api/match(demo02 视角)  [self]
+         POST http://localhost:18080/api/match → HTTP 200 ｜ items.title/reason
+         ! B(demo02) 139␣2345␣6789: exact=0 rawKeep=1
+         - A(demo01) 138␣1234␣5678: exact=0 rawKeep=0
+         本人自有内容原文回显=是（契约 §4.2/§4.12 设计内）
+  PASS  出口7 pair 卡片 owner 详情 pairs[](A)  [self]
+         GET http://localhost:18080/api/records/27 → HTTP 200 ｜ counterpartTitle/otherNote 必须遮蔽；own title 原文允许
+         ! A(demo01) 138␣1234␣5678: exact=0 rawKeep=1
+         - B(demo02) 139␣2345␣6789: exact=0 rawKeep=0
+         本人自有内容原文回显=是（契约 §4.2/§4.12 设计内）
+  PASS  出口7 pair 卡片 owner 详情 pairs[](B)  [self]
+         GET http://localhost:18080/api/records/28 → HTTP 200 ｜ counterpartTitle/myNote 必须遮蔽；own title 原文允许
+         ! B(demo02) 139␣2345␣6789: exact=0 rawKeep=1
+         - A(demo01) 138␣1234␣5678: exact=0 rawKeep=0
+         本人自有内容原文回显=是（契约 §4.2/§4.12 设计内）
+  PASS  出口7 pair 卡片 unlock 响应 note  [privacy]
+         POST http://localhost:18080/api/pairs/34/contact-unlock → HTTP 200 / POST http://localhost:18080/api/pairs/34/contact-unlock → HTTP 200 ｜ ContactUnlockResponse.note
+         - A(demo01) 138␣1234␣5678: exact=0 rawKeep=0
+         - B(demo02) 139␣2345␣6789: exact=0 rawKeep=0
+  PASS  出口8 t_match_result 快照  [privacy]
+         SQL SELECT CONCAT(input_text, ' || ', candidates) FROM t_match_result WHERE input_text LIKE '%F3RB2%' ORDER BY id DESC LIMIT 2; ｜ input_text + candidates 写入前脱敏
+         - A(demo01) 138␣1234␣5678: exact=0 rawKeep=0
+         - B(demo02) 139␣2345␣6789: exact=0 rawKeep=0
+  PASS  出口8 t_pair_score 附言落库  [privacy]
+         SQL SELECT CONCAT(IFNULL(lost_unlock_note,'∅'), ' || ', IFNULL(found_unlock_note,'∅')) FROM t_pair_score WHERE id=34; ｜ A 侧附言:我的号码 [手机号已隐藏]，随时打给我 || B 侧附言:我的号码 [手机号已隐藏]，随时打给我
+         - A(demo01) 138␣1234␣5678: exact=0 rawKeep=0
+         - B(demo02) 139␣2345␣6789: exact=0 rawKeep=0
+  落库原文（t_record.title/description，明文存储是 C1 口径）："F3RB2L 拾到物品 请联系 138\\n1234\\n5678 ~ F3RB2L F3-R 出口实测。正文描述里的联系方式写作 138\\n1234\\n5678，请据此联系我。\nF3RB2F 拾到物品 请联系 139\\n2345\\n6789 ~ F3RB2F F3-R 出口实测。正文描述里的联系方式写作 139\\n2345\\n6789，请据此联系我。"
+  → PASS（越权/对端/落库方向 0 完整号码）
+
+### B3 制表符拆｜A 写入="138\t1234\t5678"｜B 写入="139\t2345\t6789"｜lostId=27 foundId=28 pairId=34
+  PASS  出口1 匿名列表 GET /api/records?status=ALL  [privacy]
+         GET http://localhost:18080/api/records?status=ALL&pageSize=50&page=1 → HTTP 200 ｜ title 遮蔽视角
+         - A(demo01) 138␣1234␣5678: exact=0 rawKeep=0
+         - B(demo02) 139␣2345␣6789: exact=0 rawKeep=0
+  PASS  出口2 匿名详情 GET /api/records/{lostId}  [privacy]
+         GET http://localhost:18080/api/records/27 → HTTP 200 ｜ title+description 遮蔽视角
+         - A(demo01) 138␣1234␣5678: exact=0 rawKeep=0
+         - B(demo02) 139␣2345␣6789: exact=0 rawKeep=0
+  PASS  出口2 匿名详情 GET /api/records/{foundId}  [privacy]
+         GET http://localhost:18080/api/records/28 → HTTP 200 ｜ title+description 遮蔽视角
+         - A(demo01) 138␣1234␣5678: exact=0 rawKeep=0
+         - B(demo02) 139␣2345␣6789: exact=0 rawKeep=0
+  PASS  出口3 非所有者详情 GET /api/records/{lostId}  [privacy]
+         GET http://localhost:18080/api/records/27 → HTTP 200 ｜ demo02 读 demo01 记录
+         - A(demo01) 138␣1234␣5678: exact=0 rawKeep=0
+         - B(demo02) 139␣2345␣6789: exact=0 rawKeep=0
+  PASS  出口3 非所有者详情 GET /api/records/{foundId}  [privacy]
+         GET http://localhost:18080/api/records/28 → HTTP 200 ｜ demo01 读 demo02 记录
+         - A(demo01) 138␣1234␣5678: exact=0 rawKeep=0
+         - B(demo02) 139␣2345␣6789: exact=0 rawKeep=0
+  PASS  出口4 GET /api/my/records(demo01 本人集合)  [self]
+         GET http://localhost:18080/api/my/records?pageSize=50 → HTTP 200 ｜ own title 原文允许；pairs[].counterpartTitle 必须遮蔽
+         ! A(demo01) 138␣1234␣5678: exact=0 rawKeep=1 样本="F3RB3L 拾到物品 请联系 138\t1234\t5678"
+         - B(demo02) 139␣2345␣6789: exact=0 rawKeep=0
+         本人自有内容原文回显=是（契约 §4.2/§4.12 设计内）
+  PASS  出口4 GET /api/my/records(demo02 本人集合)  [self]
+         GET http://localhost:18080/api/my/records?pageSize=50 → HTTP 200 ｜ own title 原文允许；pairs[].counterpartTitle 必须遮蔽
+         ! B(demo02) 139␣2345␣6789: exact=0 rawKeep=1 样本="F3RB3F 拾到物品 请联系 139\t2345\t6789"
+         - A(demo01) 138␣1234␣5678: exact=0 rawKeep=0
+         本人自有内容原文回显=是（契约 §4.2/§4.12 设计内）
+  PASS  出口5 通知 /api/notifications(demo01)  [privacy]
+         GET http://localhost:18080/api/notifications?page=1&pageSize=50 → HTTP 200 ｜ title+body
+         - A(demo01) 138␣1234␣5678: exact=0 rawKeep=0
+         - B(demo02) 139␣2345␣6789: exact=0 rawKeep=0
+  PASS  出口5 通知 /api/notifications(demo02)  [privacy]
+         GET http://localhost:18080/api/notifications?page=1&pageSize=50 → HTTP 200 ｜ title+body
+         - A(demo01) 138␣1234␣5678: exact=0 rawKeep=0
+         - B(demo02) 139␣2345␣6789: exact=0 rawKeep=0
+  PASS  出口6 match 项 POST /api/match(demo01 视角)  [self]
+         POST http://localhost:18080/api/match → HTTP 200 ｜ items.title/reason；自己发的 FOUND 不存在于此视角
+         ! A(demo01) 138␣1234␣5678: exact=0 rawKeep=1 样本="F3RB3L 拾到物品 请联系 138\t1234\t5678"
+         - B(demo02) 139␣2345␣6789: exact=0 rawKeep=0
+         本人自有内容原文回显=是（契约 §4.2/§4.12 设计内）
+  PASS  出口6 match 项 POST /api/match(demo02 视角)  [self]
+         POST http://localhost:18080/api/match → HTTP 200 ｜ items.title/reason
+         ! B(demo02) 139␣2345␣6789: exact=0 rawKeep=1 样本="F3RB3F 拾到物品 请联系 139\t2345\t6789"
+         - A(demo01) 138␣1234␣5678: exact=0 rawKeep=0
+         本人自有内容原文回显=是（契约 §4.2/§4.12 设计内）
+  PASS  出口7 pair 卡片 owner 详情 pairs[](A)  [self]
+         GET http://localhost:18080/api/records/27 → HTTP 200 ｜ counterpartTitle/otherNote 必须遮蔽；own title 原文允许
+         ! A(demo01) 138␣1234␣5678: exact=0 rawKeep=1 样本="F3RB3L 拾到物品 请联系 138\t1234\t5678"
+         - B(demo02) 139␣2345␣6789: exact=0 rawKeep=0
+         本人自有内容原文回显=是（契约 §4.2/§4.12 设计内）
+  PASS  出口7 pair 卡片 owner 详情 pairs[](B)  [self]
+         GET http://localhost:18080/api/records/28 → HTTP 200 ｜ counterpartTitle/myNote 必须遮蔽；own title 原文允许
+         ! B(demo02) 139␣2345␣6789: exact=0 rawKeep=1 样本="F3RB3F 拾到物品 请联系 139\t2345\t6789"
+         - A(demo01) 138␣1234␣5678: exact=0 rawKeep=0
+         本人自有内容原文回显=是（契约 §4.2/§4.12 设计内）
+  PASS  出口7 pair 卡片 unlock 响应 note  [privacy]
+         POST http://localhost:18080/api/pairs/34/contact-unlock → HTTP 200 / POST http://localhost:18080/api/pairs/34/contact-unlock → HTTP 200 ｜ ContactUnlockResponse.note
+         - A(demo01) 138␣1234␣5678: exact=0 rawKeep=0
+         - B(demo02) 139␣2345␣6789: exact=0 rawKeep=0
+  PASS  出口8 t_match_result 快照  [privacy]
+         SQL SELECT CONCAT(input_text, ' || ', candidates) FROM t_match_result WHERE input_text LIKE '%F3RB3%' ORDER BY id DESC LIMIT 2; ｜ input_text + candidates 写入前脱敏
+         - A(demo01) 138␣1234␣5678: exact=0 rawKeep=0
+         - B(demo02) 139␣2345␣6789: exact=0 rawKeep=0
+  PASS  出口8 t_pair_score 附言落库  [privacy]
+         SQL SELECT CONCAT(IFNULL(lost_unlock_note,'∅'), ' || ', IFNULL(found_unlock_note,'∅')) FROM t_pair_score WHERE id=34; ｜ A 侧附言:我的号码 [手机号已隐藏]，随时打给我 || B 侧附言:我的号码 [手机号已隐藏]，随时打给我
+         - A(demo01) 138␣1234␣5678: exact=0 rawKeep=0
+         - B(demo02) 139␣2345␣6789: exact=0 rawKeep=0
+  落库原文（t_record.title/description，明文存储是 C1 口径）："F3RB3L 拾到物品 请联系 138\\t1234\\t5678 ~ F3RB3L F3-R 出口实测。正文描述里的联系方式写作 138\\t1234\\t5678，请据此联系我。\nF3RB3F 拾到物品 请联系 139\\t2345\\t6789 ~ F3RB3F F3-R 出口实测。正文描述里的联系方式写作 139\\t2345\\t6789，请据此联系我。"
+  → PASS（越权/对端/落库方向 0 完整号码）
+
+### B4 连字符拆｜A 写入="138-1234-5678"｜B 写入="139-2345-6789"｜lostId=27 foundId=28 pairId=34
+  PASS  出口1 匿名列表 GET /api/records?status=ALL  [privacy]
+         GET http://localhost:18080/api/records?status=ALL&pageSize=50&page=1 → HTTP 200 ｜ title 遮蔽视角
+         - A(demo01) 138-1234-5678: exact=0 rawKeep=0
+         - B(demo02) 139-2345-6789: exact=0 rawKeep=0
+  PASS  出口2 匿名详情 GET /api/records/{lostId}  [privacy]
+         GET http://localhost:18080/api/records/27 → HTTP 200 ｜ title+description 遮蔽视角
+         - A(demo01) 138-1234-5678: exact=0 rawKeep=0
+         - B(demo02) 139-2345-6789: exact=0 rawKeep=0
+  PASS  出口2 匿名详情 GET /api/records/{foundId}  [privacy]
+         GET http://localhost:18080/api/records/28 → HTTP 200 ｜ title+description 遮蔽视角
+         - A(demo01) 138-1234-5678: exact=0 rawKeep=0
+         - B(demo02) 139-2345-6789: exact=0 rawKeep=0
+  PASS  出口3 非所有者详情 GET /api/records/{lostId}  [privacy]
+         GET http://localhost:18080/api/records/27 → HTTP 200 ｜ demo02 读 demo01 记录
+         - A(demo01) 138-1234-5678: exact=0 rawKeep=0
+         - B(demo02) 139-2345-6789: exact=0 rawKeep=0
+  PASS  出口3 非所有者详情 GET /api/records/{foundId}  [privacy]
+         GET http://localhost:18080/api/records/28 → HTTP 200 ｜ demo01 读 demo02 记录
+         - A(demo01) 138-1234-5678: exact=0 rawKeep=0
+         - B(demo02) 139-2345-6789: exact=0 rawKeep=0
+  PASS  出口4 GET /api/my/records(demo01 本人集合)  [self]
+         GET http://localhost:18080/api/my/records?pageSize=50 → HTTP 200 ｜ own title 原文允许；pairs[].counterpartTitle 必须遮蔽
+         ! A(demo01) 138-1234-5678: exact=0 rawKeep=1 样本="F3RB4L 拾到物品 请联系 138-1234-5678"
+         - B(demo02) 139-2345-6789: exact=0 rawKeep=0
+         本人自有内容原文回显=是（契约 §4.2/§4.12 设计内）
+  PASS  出口4 GET /api/my/records(demo02 本人集合)  [self]
+         GET http://localhost:18080/api/my/records?pageSize=50 → HTTP 200 ｜ own title 原文允许；pairs[].counterpartTitle 必须遮蔽
+         ! B(demo02) 139-2345-6789: exact=0 rawKeep=1 样本="F3RB4F 拾到物品 请联系 139-2345-6789"
+         - A(demo01) 138-1234-5678: exact=0 rawKeep=0
+         本人自有内容原文回显=是（契约 §4.2/§4.12 设计内）
+  PASS  出口5 通知 /api/notifications(demo01)  [privacy]
+         GET http://localhost:18080/api/notifications?page=1&pageSize=50 → HTTP 200 ｜ title+body
+         - A(demo01) 138-1234-5678: exact=0 rawKeep=0
+         - B(demo02) 139-2345-6789: exact=0 rawKeep=0
+  PASS  出口5 通知 /api/notifications(demo02)  [privacy]
+         GET http://localhost:18080/api/notifications?page=1&pageSize=50 → HTTP 200 ｜ title+body
+         - A(demo01) 138-1234-5678: exact=0 rawKeep=0
+         - B(demo02) 139-2345-6789: exact=0 rawKeep=0
+  PASS  出口6 match 项 POST /api/match(demo01 视角)  [self]
+         POST http://localhost:18080/api/match → HTTP 200 ｜ items.title/reason；自己发的 FOUND 不存在于此视角
+         ! A(demo01) 138-1234-5678: exact=0 rawKeep=1 样本="F3RB4L 拾到物品 请联系 138-1234-5678"
+         - B(demo02) 139-2345-6789: exact=0 rawKeep=0
+         本人自有内容原文回显=是（契约 §4.2/§4.12 设计内）
+  PASS  出口6 match 项 POST /api/match(demo02 视角)  [self]
+         POST http://localhost:18080/api/match → HTTP 200 ｜ items.title/reason
+         ! B(demo02) 139-2345-6789: exact=0 rawKeep=1 样本="F3RB4F 拾到物品 请联系 139-2345-6789"
+         - A(demo01) 138-1234-5678: exact=0 rawKeep=0
+         本人自有内容原文回显=是（契约 §4.2/§4.12 设计内）
+  PASS  出口7 pair 卡片 owner 详情 pairs[](A)  [self]
+         GET http://localhost:18080/api/records/27 → HTTP 200 ｜ counterpartTitle/otherNote 必须遮蔽；own title 原文允许
+         ! A(demo01) 138-1234-5678: exact=0 rawKeep=1 样本="F3RB4L 拾到物品 请联系 138-1234-5678"
+         - B(demo02) 139-2345-6789: exact=0 rawKeep=0
+         本人自有内容原文回显=是（契约 §4.2/§4.12 设计内）
+  PASS  出口7 pair 卡片 owner 详情 pairs[](B)  [self]
+         GET http://localhost:18080/api/records/28 → HTTP 200 ｜ counterpartTitle/myNote 必须遮蔽；own title 原文允许
+         ! B(demo02) 139-2345-6789: exact=0 rawKeep=1 样本="F3RB4F 拾到物品 请联系 139-2345-6789"
+         - A(demo01) 138-1234-5678: exact=0 rawKeep=0
+         本人自有内容原文回显=是（契约 §4.2/§4.12 设计内）
+  PASS  出口7 pair 卡片 unlock 响应 note  [privacy]
+         POST http://localhost:18080/api/pairs/34/contact-unlock → HTTP 200 / POST http://localhost:18080/api/pairs/34/contact-unlock → HTTP 200 ｜ ContactUnlockResponse.note
+         - A(demo01) 138-1234-5678: exact=0 rawKeep=0
+         - B(demo02) 139-2345-6789: exact=0 rawKeep=0
+  PASS  出口8 t_match_result 快照  [privacy]
+         SQL SELECT CONCAT(input_text, ' || ', candidates) FROM t_match_result WHERE input_text LIKE '%F3RB4%' ORDER BY id DESC LIMIT 2; ｜ input_text + candidates 写入前脱敏
+         - A(demo01) 138-1234-5678: exact=0 rawKeep=0
+         - B(demo02) 139-2345-6789: exact=0 rawKeep=0
+  PASS  出口8 t_pair_score 附言落库  [privacy]
+         SQL SELECT CONCAT(IFNULL(lost_unlock_note,'∅'), ' || ', IFNULL(found_unlock_note,'∅')) FROM t_pair_score WHERE id=34; ｜ A 侧附言:我的号码 [手机号已隐藏]，随时打给我 || B 侧附言:我的号码 [手机号已隐藏]，随时打给我
+         - A(demo01) 138-1234-5678: exact=0 rawKeep=0
+         - B(demo02) 139-2345-6789: exact=0 rawKeep=0
+  落库原文（t_record.title/description，明文存储是 C1 口径）："F3RB4L 拾到物品 请联系 138-1234-5678 ~ F3RB4L F3-R 出口实测。正文描述里的联系方式写作 138-1234-5678，请据此联系我。\nF3RB4F 拾到物品 请联系 139-2345-6789 ~ F3RB4F F3-R 出口实测。正文描述里的联系方式写作 139-2345-6789，请据此联系我。"
+  → PASS（越权/对端/落库方向 0 完整号码）
+
+### B5 零宽字符拆｜A 写入="1​38​1234​5678"｜B 写入="1​39​2345​6789"｜lostId=27 foundId=28 pairId=34
+  PASS  出口1 匿名列表 GET /api/records?status=ALL  [privacy]
+         GET http://localhost:18080/api/records?status=ALL&pageSize=50&page=1 → HTTP 200 ｜ title 遮蔽视角
+         - A(demo01) 1​38​1234​5678: exact=0 rawKeep=0
+         - B(demo02) 1​39​2345​6789: exact=0 rawKeep=0
+  PASS  出口2 匿名详情 GET /api/records/{lostId}  [privacy]
+         GET http://localhost:18080/api/records/27 → HTTP 200 ｜ title+description 遮蔽视角
+         - A(demo01) 1​38​1234​5678: exact=0 rawKeep=0
+         - B(demo02) 1​39​2345​6789: exact=0 rawKeep=0
+  PASS  出口2 匿名详情 GET /api/records/{foundId}  [privacy]
+         GET http://localhost:18080/api/records/28 → HTTP 200 ｜ title+description 遮蔽视角
+         - A(demo01) 1​38​1234​5678: exact=0 rawKeep=0
+         - B(demo02) 1​39​2345​6789: exact=0 rawKeep=0
+  PASS  出口3 非所有者详情 GET /api/records/{lostId}  [privacy]
+         GET http://localhost:18080/api/records/27 → HTTP 200 ｜ demo02 读 demo01 记录
+         - A(demo01) 1​38​1234​5678: exact=0 rawKeep=0
+         - B(demo02) 1​39​2345​6789: exact=0 rawKeep=0
+  PASS  出口3 非所有者详情 GET /api/records/{foundId}  [privacy]
+         GET http://localhost:18080/api/records/28 → HTTP 200 ｜ demo01 读 demo02 记录
+         - A(demo01) 1​38​1234​5678: exact=0 rawKeep=0
+         - B(demo02) 1​39​2345​6789: exact=0 rawKeep=0
+  PASS  出口4 GET /api/my/records(demo01 本人集合)  [self]
+         GET http://localhost:18080/api/my/records?pageSize=50 → HTTP 200 ｜ own title 原文允许；pairs[].counterpartTitle 必须遮蔽
+         ! A(demo01) 1​38​1234​5678: exact=0 rawKeep=1 样本="F3RB5L 拾到物品 请联系 1​38​1234​5678"
+         - B(demo02) 1​39​2345​6789: exact=0 rawKeep=0
+         本人自有内容原文回显=是（契约 §4.2/§4.12 设计内）
+  PASS  出口4 GET /api/my/records(demo02 本人集合)  [self]
+         GET http://localhost:18080/api/my/records?pageSize=50 → HTTP 200 ｜ own title 原文允许；pairs[].counterpartTitle 必须遮蔽
+         ! B(demo02) 1​39​2345​6789: exact=0 rawKeep=1 样本="F3RB5F 拾到物品 请联系 1​39​2345​6789"
+         - A(demo01) 1​38​1234​5678: exact=0 rawKeep=0
+         本人自有内容原文回显=是（契约 §4.2/§4.12 设计内）
+  PASS  出口5 通知 /api/notifications(demo01)  [privacy]
+         GET http://localhost:18080/api/notifications?page=1&pageSize=50 → HTTP 200 ｜ title+body
+         - A(demo01) 1​38​1234​5678: exact=0 rawKeep=0
+         - B(demo02) 1​39​2345​6789: exact=0 rawKeep=0
+  PASS  出口5 通知 /api/notifications(demo02)  [privacy]
+         GET http://localhost:18080/api/notifications?page=1&pageSize=50 → HTTP 200 ｜ title+body
+         - A(demo01) 1​38​1234​5678: exact=0 rawKeep=0
+         - B(demo02) 1​39​2345​6789: exact=0 rawKeep=0
+  PASS  出口6 match 项 POST /api/match(demo01 视角)  [self]
+         POST http://localhost:18080/api/match → HTTP 200 ｜ items.title/reason；自己发的 FOUND 不存在于此视角
+         ! A(demo01) 1​38​1234​5678: exact=0 rawKeep=1 样本="F3RB5L 拾到物品 请联系 1​38​1234​5678"
+         - B(demo02) 1​39​2345​6789: exact=0 rawKeep=0
+         本人自有内容原文回显=是（契约 §4.2/§4.12 设计内）
+  PASS  出口6 match 项 POST /api/match(demo02 视角)  [self]
+         POST http://localhost:18080/api/match → HTTP 200 ｜ items.title/reason
+         ! B(demo02) 1​39​2345​6789: exact=0 rawKeep=1 样本="F3RB5F 拾到物品 请联系 1​39​2345​6789"
+         - A(demo01) 1​38​1234​5678: exact=0 rawKeep=0
+         本人自有内容原文回显=是（契约 §4.2/§4.12 设计内）
+  PASS  出口7 pair 卡片 owner 详情 pairs[](A)  [self]
+         GET http://localhost:18080/api/records/27 → HTTP 200 ｜ counterpartTitle/otherNote 必须遮蔽；own title 原文允许
+         ! A(demo01) 1​38​1234​5678: exact=0 rawKeep=1 样本="F3RB5L 拾到物品 请联系 1​38​1234​5678"
+         - B(demo02) 1​39​2345​6789: exact=0 rawKeep=0
+         本人自有内容原文回显=是（契约 §4.2/§4.12 设计内）
+  PASS  出口7 pair 卡片 owner 详情 pairs[](B)  [self]
+         GET http://localhost:18080/api/records/28 → HTTP 200 ｜ counterpartTitle/myNote 必须遮蔽；own title 原文允许
+         ! B(demo02) 1​39​2345​6789: exact=0 rawKeep=1 样本="F3RB5F 拾到物品 请联系 1​39​2345​6789"
+         - A(demo01) 1​38​1234​5678: exact=0 rawKeep=0
+         本人自有内容原文回显=是（契约 §4.2/§4.12 设计内）
+  PASS  出口7 pair 卡片 unlock 响应 note  [privacy]
+         POST http://localhost:18080/api/pairs/34/contact-unlock → HTTP 200 / POST http://localhost:18080/api/pairs/34/contact-unlock → HTTP 200 ｜ ContactUnlockResponse.note
+         - A(demo01) 1​38​1234​5678: exact=0 rawKeep=0
+         - B(demo02) 1​39​2345​6789: exact=0 rawKeep=0
+  PASS  出口8 t_match_result 快照  [privacy]
+         SQL SELECT CONCAT(input_text, ' || ', candidates) FROM t_match_result WHERE input_text LIKE '%F3RB5%' ORDER BY id DESC LIMIT 2; ｜ input_text + candidates 写入前脱敏
+         - A(demo01) 1​38​1234​5678: exact=0 rawKeep=0
+         - B(demo02) 1​39​2345​6789: exact=0 rawKeep=0
+  PASS  出口8 t_pair_score 附言落库  [privacy]
+         SQL SELECT CONCAT(IFNULL(lost_unlock_note,'∅'), ' || ', IFNULL(found_unlock_note,'∅')) FROM t_pair_score WHERE id=34; ｜ A 侧附言:我的号码 [手机号已隐藏]，随时打给我 || B 侧附言:我的号码 [手机号已隐藏]，随时打给我
+         - A(demo01) 1​38​1234​5678: exact=0 rawKeep=0
+         - B(demo02) 1​39​2345​6789: exact=0 rawKeep=0
+  落库原文（t_record.title/description，明文存储是 C1 口径）："F3RB5L 拾到物品 请联系 1​38​1234​5678 ~ F3RB5L F3-R 出口实测。正文描述里的联系方式写作 1​38​1234​5678，请据此联系我。\nF3RB5F 拾到物品 请联系 1​39​2345​6789 ~ F3RB5F F3-R 出口实测。正文描述里的联系方式写作 1​39​2345​6789，请据此联系我。"
+  → PASS（越权/对端/落库方向 0 完整号码）
+
+### B6 全角空格拆｜A 写入="138　1234　5678"｜B 写入="139　2345　6789"｜lostId=27 foundId=28 pairId=34
+  PASS  出口1 匿名列表 GET /api/records?status=ALL  [privacy]
+         GET http://localhost:18080/api/records?status=ALL&pageSize=50&page=1 → HTTP 200 ｜ title 遮蔽视角
+         - A(demo01) 138␣1234␣5678: exact=0 rawKeep=0
+         - B(demo02) 139␣2345␣6789: exact=0 rawKeep=0
+  PASS  出口2 匿名详情 GET /api/records/{lostId}  [privacy]
+         GET http://localhost:18080/api/records/27 → HTTP 200 ｜ title+description 遮蔽视角
+         - A(demo01) 138␣1234␣5678: exact=0 rawKeep=0
+         - B(demo02) 139␣2345␣6789: exact=0 rawKeep=0
+  PASS  出口2 匿名详情 GET /api/records/{foundId}  [privacy]
+         GET http://localhost:18080/api/records/28 → HTTP 200 ｜ title+description 遮蔽视角
+         - A(demo01) 138␣1234␣5678: exact=0 rawKeep=0
+         - B(demo02) 139␣2345␣6789: exact=0 rawKeep=0
+  PASS  出口3 非所有者详情 GET /api/records/{lostId}  [privacy]
+         GET http://localhost:18080/api/records/27 → HTTP 200 ｜ demo02 读 demo01 记录
+         - A(demo01) 138␣1234␣5678: exact=0 rawKeep=0
+         - B(demo02) 139␣2345␣6789: exact=0 rawKeep=0
+  PASS  出口3 非所有者详情 GET /api/records/{foundId}  [privacy]
+         GET http://localhost:18080/api/records/28 → HTTP 200 ｜ demo01 读 demo02 记录
+         - A(demo01) 138␣1234␣5678: exact=0 rawKeep=0
+         - B(demo02) 139␣2345␣6789: exact=0 rawKeep=0
+  PASS  出口4 GET /api/my/records(demo01 本人集合)  [self]
+         GET http://localhost:18080/api/my/records?pageSize=50 → HTTP 200 ｜ own title 原文允许；pairs[].counterpartTitle 必须遮蔽
+         ! A(demo01) 138␣1234␣5678: exact=0 rawKeep=1 样本="F3RB6L 拾到物品 请联系 138　1234　5678"
+         - B(demo02) 139␣2345␣6789: exact=0 rawKeep=0
+         本人自有内容原文回显=是（契约 §4.2/§4.12 设计内）
+  PASS  出口4 GET /api/my/records(demo02 本人集合)  [self]
+         GET http://localhost:18080/api/my/records?pageSize=50 → HTTP 200 ｜ own title 原文允许；pairs[].counterpartTitle 必须遮蔽
+         ! B(demo02) 139␣2345␣6789: exact=0 rawKeep=1 样本="F3RB6F 拾到物品 请联系 139　2345　6789"
+         - A(demo01) 138␣1234␣5678: exact=0 rawKeep=0
+         本人自有内容原文回显=是（契约 §4.2/§4.12 设计内）
+  PASS  出口5 通知 /api/notifications(demo01)  [privacy]
+         GET http://localhost:18080/api/notifications?page=1&pageSize=50 → HTTP 200 ｜ title+body
+         - A(demo01) 138␣1234␣5678: exact=0 rawKeep=0
+         - B(demo02) 139␣2345␣6789: exact=0 rawKeep=0
+  PASS  出口5 通知 /api/notifications(demo02)  [privacy]
+         GET http://localhost:18080/api/notifications?page=1&pageSize=50 → HTTP 200 ｜ title+body
+         - A(demo01) 138␣1234␣5678: exact=0 rawKeep=0
+         - B(demo02) 139␣2345␣6789: exact=0 rawKeep=0
+  PASS  出口6 match 项 POST /api/match(demo01 视角)  [self]
+         POST http://localhost:18080/api/match → HTTP 200 ｜ items.title/reason；自己发的 FOUND 不存在于此视角
+         ! A(demo01) 138␣1234␣5678: exact=0 rawKeep=1 样本="F3RB6L 拾到物品 请联系 138　1234　5678"
+         - B(demo02) 139␣2345␣6789: exact=0 rawKeep=0
+         本人自有内容原文回显=是（契约 §4.2/§4.12 设计内）
+  PASS  出口6 match 项 POST /api/match(demo02 视角)  [self]
+         POST http://localhost:18080/api/match → HTTP 200 ｜ items.title/reason
+         ! B(demo02) 139␣2345␣6789: exact=0 rawKeep=1 样本="F3RB6F 拾到物品 请联系 139　2345　6789"
+         - A(demo01) 138␣1234␣5678: exact=0 rawKeep=0
+         本人自有内容原文回显=是（契约 §4.2/§4.12 设计内）
+  PASS  出口7 pair 卡片 owner 详情 pairs[](A)  [self]
+         GET http://localhost:18080/api/records/27 → HTTP 200 ｜ counterpartTitle/otherNote 必须遮蔽；own title 原文允许
+         ! A(demo01) 138␣1234␣5678: exact=0 rawKeep=1 样本="F3RB6L 拾到物品 请联系 138　1234　5678"
+         - B(demo02) 139␣2345␣6789: exact=0 rawKeep=0
+         本人自有内容原文回显=是（契约 §4.2/§4.12 设计内）
+  PASS  出口7 pair 卡片 owner 详情 pairs[](B)  [self]
+         GET http://localhost:18080/api/records/28 → HTTP 200 ｜ counterpartTitle/myNote 必须遮蔽；own title 原文允许
+         ! B(demo02) 139␣2345␣6789: exact=0 rawKeep=1 样本="F3RB6F 拾到物品 请联系 139　2345　6789"
+         - A(demo01) 138␣1234␣5678: exact=0 rawKeep=0
+         本人自有内容原文回显=是（契约 §4.2/§4.12 设计内）
+  PASS  出口7 pair 卡片 unlock 响应 note  [privacy]
+         POST http://localhost:18080/api/pairs/34/contact-unlock → HTTP 200 / POST http://localhost:18080/api/pairs/34/contact-unlock → HTTP 200 ｜ ContactUnlockResponse.note
+         - A(demo01) 138␣1234␣5678: exact=0 rawKeep=0
+         - B(demo02) 139␣2345␣6789: exact=0 rawKeep=0
+  PASS  出口8 t_match_result 快照  [privacy]
+         SQL SELECT CONCAT(input_text, ' || ', candidates) FROM t_match_result WHERE input_text LIKE '%F3RB6%' ORDER BY id DESC LIMIT 2; ｜ input_text + candidates 写入前脱敏
+         - A(demo01) 138␣1234␣5678: exact=0 rawKeep=0
+         - B(demo02) 139␣2345␣6789: exact=0 rawKeep=0
+  PASS  出口8 t_pair_score 附言落库  [privacy]
+         SQL SELECT CONCAT(IFNULL(lost_unlock_note,'∅'), ' || ', IFNULL(found_unlock_note,'∅')) FROM t_pair_score WHERE id=34; ｜ A 侧附言:我的号码 [手机号已隐藏]，随时打给我 || B 侧附言:我的号码 [手机号已隐藏]，随时打给我
+         - A(demo01) 138␣1234␣5678: exact=0 rawKeep=0
+         - B(demo02) 139␣2345␣6789: exact=0 rawKeep=0
+  落库原文（t_record.title/description，明文存储是 C1 口径）："F3RB6L 拾到物品 请联系 138　1234　5678 ~ F3RB6L F3-R 出口实测。正文描述里的联系方式写作 138　1234　5678，请据此联系我。\nF3RB6F 拾到物品 请联系 139　2345　6789 ~ F3RB6F F3-R 出口实测。正文描述里的联系方式写作 139　2345　6789，请据此联系我。"
+  → PASS（越权/对端/落库方向 0 完整号码）
+
+### B7 国际前缀｜A 写入="+8613812345678"｜B 写入="+8613923456789"｜lostId=27 foundId=28 pairId=34
+  PASS  出口1 匿名列表 GET /api/records?status=ALL  [privacy]
+         GET http://localhost:18080/api/records?status=ALL&pageSize=50&page=1 → HTTP 200 ｜ title 遮蔽视角
+         - A(demo01) +8613812345678: exact=0 rawKeep=0
+         - B(demo02) +8613923456789: exact=0 rawKeep=0
+  PASS  出口2 匿名详情 GET /api/records/{lostId}  [privacy]
+         GET http://localhost:18080/api/records/27 → HTTP 200 ｜ title+description 遮蔽视角
+         - A(demo01) +8613812345678: exact=0 rawKeep=0
+         - B(demo02) +8613923456789: exact=0 rawKeep=0
+  PASS  出口2 匿名详情 GET /api/records/{foundId}  [privacy]
+         GET http://localhost:18080/api/records/28 → HTTP 200 ｜ title+description 遮蔽视角
+         - A(demo01) +8613812345678: exact=0 rawKeep=0
+         - B(demo02) +8613923456789: exact=0 rawKeep=0
+  PASS  出口3 非所有者详情 GET /api/records/{lostId}  [privacy]
+         GET http://localhost:18080/api/records/27 → HTTP 200 ｜ demo02 读 demo01 记录
+         - A(demo01) +8613812345678: exact=0 rawKeep=0
+         - B(demo02) +8613923456789: exact=0 rawKeep=0
+  PASS  出口3 非所有者详情 GET /api/records/{foundId}  [privacy]
+         GET http://localhost:18080/api/records/28 → HTTP 200 ｜ demo01 读 demo02 记录
+         - A(demo01) +8613812345678: exact=0 rawKeep=0
+         - B(demo02) +8613923456789: exact=0 rawKeep=0
+  PASS  出口4 GET /api/my/records(demo01 本人集合)  [self]
+         GET http://localhost:18080/api/my/records?pageSize=50 → HTTP 200 ｜ own title 原文允许；pairs[].counterpartTitle 必须遮蔽
+         ! A(demo01) +8613812345678: exact=1 rawKeep=1 样本="F3RB7L 拾到物品 请联系 +8613812345678"
+         - B(demo02) +8613923456789: exact=0 rawKeep=0
+         本人自有内容原文回显=是（契约 §4.2/§4.12 设计内）
+  PASS  出口4 GET /api/my/records(demo02 本人集合)  [self]
+         GET http://localhost:18080/api/my/records?pageSize=50 → HTTP 200 ｜ own title 原文允许；pairs[].counterpartTitle 必须遮蔽
+         ! B(demo02) +8613923456789: exact=1 rawKeep=1 样本="F3RB7F 拾到物品 请联系 +8613923456789"
+         - A(demo01) +8613812345678: exact=0 rawKeep=0
+         本人自有内容原文回显=是（契约 §4.2/§4.12 设计内）
+  PASS  出口5 通知 /api/notifications(demo01)  [privacy]
+         GET http://localhost:18080/api/notifications?page=1&pageSize=50 → HTTP 200 ｜ title+body
+         - A(demo01) +8613812345678: exact=0 rawKeep=0
+         - B(demo02) +8613923456789: exact=0 rawKeep=0
+  PASS  出口5 通知 /api/notifications(demo02)  [privacy]
+         GET http://localhost:18080/api/notifications?page=1&pageSize=50 → HTTP 200 ｜ title+body
+         - A(demo01) +8613812345678: exact=0 rawKeep=0
+         - B(demo02) +8613923456789: exact=0 rawKeep=0
+  PASS  出口6 match 项 POST /api/match(demo01 视角)  [self]
+         POST http://localhost:18080/api/match → HTTP 200 ｜ items.title/reason；自己发的 FOUND 不存在于此视角
+         ! A(demo01) +8613812345678: exact=1 rawKeep=1 样本="F3RB7L 拾到物品 请联系 +8613812345678"
+         - B(demo02) +8613923456789: exact=0 rawKeep=0
+         本人自有内容原文回显=是（契约 §4.2/§4.12 设计内）
+  PASS  出口6 match 项 POST /api/match(demo02 视角)  [self]
+         POST http://localhost:18080/api/match → HTTP 200 ｜ items.title/reason
+         ! B(demo02) +8613923456789: exact=1 rawKeep=1 样本="F3RB7F 拾到物品 请联系 +8613923456789"
+         - A(demo01) +8613812345678: exact=0 rawKeep=0
+         本人自有内容原文回显=是（契约 §4.2/§4.12 设计内）
+  PASS  出口7 pair 卡片 owner 详情 pairs[](A)  [self]
+         GET http://localhost:18080/api/records/27 → HTTP 200 ｜ counterpartTitle/otherNote 必须遮蔽；own title 原文允许
+         ! A(demo01) +8613812345678: exact=2 rawKeep=1 样本="F3RB7L 拾到物品 请联系 +8613812345678"
+         - B(demo02) +8613923456789: exact=0 rawKeep=0
+         本人自有内容原文回显=是（契约 §4.2/§4.12 设计内）
+  PASS  出口7 pair 卡片 owner 详情 pairs[](B)  [self]
+         GET http://localhost:18080/api/records/28 → HTTP 200 ｜ counterpartTitle/myNote 必须遮蔽；own title 原文允许
+         ! B(demo02) +8613923456789: exact=2 rawKeep=1 样本="F3RB7F 拾到物品 请联系 +8613923456789"
+         - A(demo01) +8613812345678: exact=0 rawKeep=0
+         本人自有内容原文回显=是（契约 §4.2/§4.12 设计内）
+  PASS  出口7 pair 卡片 unlock 响应 note  [privacy]
+         POST http://localhost:18080/api/pairs/34/contact-unlock → HTTP 200 / POST http://localhost:18080/api/pairs/34/contact-unlock → HTTP 200 ｜ ContactUnlockResponse.note
+         - A(demo01) +8613812345678: exact=0 rawKeep=0
+         - B(demo02) +8613923456789: exact=0 rawKeep=0
+  PASS  出口8 t_match_result 快照  [privacy]
+         SQL SELECT CONCAT(input_text, ' || ', candidates) FROM t_match_result WHERE input_text LIKE '%F3RB7%' ORDER BY id DESC LIMIT 2; ｜ input_text + candidates 写入前脱敏
+         - A(demo01) +8613812345678: exact=0 rawKeep=0
+         - B(demo02) +8613923456789: exact=0 rawKeep=0
+  PASS  出口8 t_pair_score 附言落库  [privacy]
+         SQL SELECT CONCAT(IFNULL(lost_unlock_note,'∅'), ' || ', IFNULL(found_unlock_note,'∅')) FROM t_pair_score WHERE id=34; ｜ A 侧附言:我的号码 [手机号已隐藏]，随时打给我 || B 侧附言:我的号码 [手机号已隐藏]，随时打给我
+         - A(demo01) +8613812345678: exact=0 rawKeep=0
+         - B(demo02) +8613923456789: exact=0 rawKeep=0
+  落库原文（t_record.title/description，明文存储是 C1 口径）："F3RB7L 拾到物品 请联系 +8613812345678 ~ F3RB7L F3-R 出口实测。正文描述里的联系方式写作 +8613812345678，请据此联系我。\nF3RB7F 拾到物品 请联系 +8613923456789 ~ F3RB7F F3-R 出口实测。正文描述里的联系方式写作 +8613923456789，请据此联系我。"
+  → PASS（越权/对端/落库方向 0 完整号码）
+
+### B8 证件号分段｜A 写入="1101 0119 9001 0112 34"｜B 写入="1102 0219 9002 0212 34"｜lostId=27 foundId=28 pairId=34
+  PASS  出口1 匿名列表 GET /api/records?status=ALL  [privacy]
+         GET http://localhost:18080/api/records?status=ALL&pageSize=50&page=1 → HTTP 200 ｜ title 遮蔽视角
+         - A(demo01) 1101␣0119␣9001␣0112␣34: exact=0 rawKeep=0
+         - B(demo02) 1102␣0219␣9002␣0212␣34: exact=0 rawKeep=0
+  PASS  出口2 匿名详情 GET /api/records/{lostId}  [privacy]
+         GET http://localhost:18080/api/records/27 → HTTP 200 ｜ title+description 遮蔽视角
+         - A(demo01) 1101␣0119␣9001␣0112␣34: exact=0 rawKeep=0
+         - B(demo02) 1102␣0219␣9002␣0212␣34: exact=0 rawKeep=0
+  PASS  出口2 匿名详情 GET /api/records/{foundId}  [privacy]
+         GET http://localhost:18080/api/records/28 → HTTP 200 ｜ title+description 遮蔽视角
+         - A(demo01) 1101␣0119␣9001␣0112␣34: exact=0 rawKeep=0
+         - B(demo02) 1102␣0219␣9002␣0212␣34: exact=0 rawKeep=0
+  PASS  出口3 非所有者详情 GET /api/records/{lostId}  [privacy]
+         GET http://localhost:18080/api/records/27 → HTTP 200 ｜ demo02 读 demo01 记录
+         - A(demo01) 1101␣0119␣9001␣0112␣34: exact=0 rawKeep=0
+         - B(demo02) 1102␣0219␣9002␣0212␣34: exact=0 rawKeep=0
+  PASS  出口3 非所有者详情 GET /api/records/{foundId}  [privacy]
+         GET http://localhost:18080/api/records/28 → HTTP 200 ｜ demo01 读 demo02 记录
+         - A(demo01) 1101␣0119␣9001␣0112␣34: exact=0 rawKeep=0
+         - B(demo02) 1102␣0219␣9002␣0212␣34: exact=0 rawKeep=0
+  PASS  出口4 GET /api/my/records(demo01 本人集合)  [self]
+         GET http://localhost:18080/api/my/records?pageSize=50 → HTTP 200 ｜ own title 原文允许；pairs[].counterpartTitle 必须遮蔽
+         ! A(demo01) 1101␣0119␣9001␣0112␣34: exact=0 rawKeep=1 样本="F3RB8L 拾到物品 请联系 1101 0119 9001 0112 34"
+         - B(demo02) 1102␣0219␣9002␣0212␣34: exact=0 rawKeep=0
+         本人自有内容原文回显=是（契约 §4.2/§4.12 设计内）
+  PASS  出口4 GET /api/my/records(demo02 本人集合)  [self]
+         GET http://localhost:18080/api/my/records?pageSize=50 → HTTP 200 ｜ own title 原文允许；pairs[].counterpartTitle 必须遮蔽
+         ! B(demo02) 1102␣0219␣9002␣0212␣34: exact=0 rawKeep=1 样本="F3RB8F 拾到物品 请联系 1102 0219 9002 0212 34"
+         - A(demo01) 1101␣0119␣9001␣0112␣34: exact=0 rawKeep=0
+         本人自有内容原文回显=是（契约 §4.2/§4.12 设计内）
+  PASS  出口5 通知 /api/notifications(demo01)  [privacy]
+         GET http://localhost:18080/api/notifications?page=1&pageSize=50 → HTTP 200 ｜ title+body
+         - A(demo01) 1101␣0119␣9001␣0112␣34: exact=0 rawKeep=0
+         - B(demo02) 1102␣0219␣9002␣0212␣34: exact=0 rawKeep=0
+  PASS  出口5 通知 /api/notifications(demo02)  [privacy]
+         GET http://localhost:18080/api/notifications?page=1&pageSize=50 → HTTP 200 ｜ title+body
+         - A(demo01) 1101␣0119␣9001␣0112␣34: exact=0 rawKeep=0
+         - B(demo02) 1102␣0219␣9002␣0212␣34: exact=0 rawKeep=0
+  PASS  出口6 match 项 POST /api/match(demo01 视角)  [self]
+         POST http://localhost:18080/api/match → HTTP 200 ｜ items.title/reason；自己发的 FOUND 不存在于此视角
+         ! A(demo01) 1101␣0119␣9001␣0112␣34: exact=0 rawKeep=1 样本="F3RB8L 拾到物品 请联系 1101 0119 9001 0112 34"
+         - B(demo02) 1102␣0219␣9002␣0212␣34: exact=0 rawKeep=0
+         本人自有内容原文回显=是（契约 §4.2/§4.12 设计内）
+  PASS  出口6 match 项 POST /api/match(demo02 视角)  [self]
+         POST http://localhost:18080/api/match → HTTP 200 ｜ items.title/reason
+         ! B(demo02) 1102␣0219␣9002␣0212␣34: exact=0 rawKeep=1 样本="F3RB8F 拾到物品 请联系 1102 0219 9002 0212 34"
+         - A(demo01) 1101␣0119␣9001␣0112␣34: exact=0 rawKeep=0
+         本人自有内容原文回显=是（契约 §4.2/§4.12 设计内）
+  PASS  出口7 pair 卡片 owner 详情 pairs[](A)  [self]
+         GET http://localhost:18080/api/records/27 → HTTP 200 ｜ counterpartTitle/otherNote 必须遮蔽；own title 原文允许
+         ! A(demo01) 1101␣0119␣9001␣0112␣34: exact=0 rawKeep=1 样本="F3RB8L 拾到物品 请联系 1101 0119 9001 0112 34"
+         - B(demo02) 1102␣0219␣9002␣0212␣34: exact=0 rawKeep=0
+         本人自有内容原文回显=是（契约 §4.2/§4.12 设计内）
+  PASS  出口7 pair 卡片 owner 详情 pairs[](B)  [self]
+         GET http://localhost:18080/api/records/28 → HTTP 200 ｜ counterpartTitle/myNote 必须遮蔽；own title 原文允许
+         ! B(demo02) 1102␣0219␣9002␣0212␣34: exact=0 rawKeep=1 样本="F3RB8F 拾到物品 请联系 1102 0219 9002 0212 34"
+         - A(demo01) 1101␣0119␣9001␣0112␣34: exact=0 rawKeep=0
+         本人自有内容原文回显=是（契约 §4.2/§4.12 设计内）
+  PASS  出口7 pair 卡片 unlock 响应 note  [privacy]
+         POST http://localhost:18080/api/pairs/34/contact-unlock → HTTP 200 / POST http://localhost:18080/api/pairs/34/contact-unlock → HTTP 200 ｜ ContactUnlockResponse.note
+         - A(demo01) 1101␣0119␣9001␣0112␣34: exact=0 rawKeep=0
+         - B(demo02) 1102␣0219␣9002␣0212␣34: exact=0 rawKeep=0
+  PASS  出口8 t_match_result 快照  [privacy]
+         SQL SELECT CONCAT(input_text, ' || ', candidates) FROM t_match_result WHERE input_text LIKE '%F3RB8%' ORDER BY id DESC LIMIT 2; ｜ input_text + candidates 写入前脱敏
+         - A(demo01) 1101␣0119␣9001␣0112␣34: exact=0 rawKeep=0
+         - B(demo02) 1102␣0219␣9002␣0212␣34: exact=0 rawKeep=0
+  PASS  出口8 t_pair_score 附言落库  [privacy]
+         SQL SELECT CONCAT(IFNULL(lost_unlock_note,'∅'), ' || ', IFNULL(found_unlock_note,'∅')) FROM t_pair_score WHERE id=34; ｜ A 侧附言:我的号码 [证件号已隐藏]，随时打给我 || B 侧附言:我的号码 [证件号已隐藏]，随时打给我
+         - A(demo01) 1101␣0119␣9001␣0112␣34: exact=0 rawKeep=0
+         - B(demo02) 1102␣0219␣9002␣0212␣34: exact=0 rawKeep=0
+  落库原文（t_record.title/description，明文存储是 C1 口径）："F3RB8L 拾到物品 请联系 1101 0119 9001 0112 34 ~ F3RB8L F3-R 出口实测。正文描述里的联系方式写作 1101 0119 9001 0112 34，请据此联系我。\nF3RB8F 拾到物品 请联系 1102 0219 9002 0212 34 ~ F3RB8F F3-R 出口实测。正文描述里的联系方式写作 1102 0219 9002 0212 34，请据此联系我。"
+  → PASS（越权/对端/落库方向 0 完整号码）
+
+## 对照组（11 位连续/全角必须遮蔽；裸 5–9 位、楼栋房间号、日期不得误伤）
+  PASS  C1 连续 11 位｜写入="13812345678"
+         匿名详情 title="F3RCC1 拾到物品 请联系 [手机号已隐藏]"
+         匿名详情 description="F3RCC1 F3-R 出口实测。正文描述里的联系方式写作 [手机号已隐藏]，请据此联系我。"
+         遮蔽标记=true｜exact=0 rawKeep=0｜原文逐字保留=false
+  PASS  C2 全角 11 位｜写入="１３８１２３４５６７８"
+         匿名详情 title="F3RCC2 拾到物品 请联系 [手机号已隐藏]"
+         匿名详情 description="F3RCC2 F3-R 出口实测。正文描述里的联系方式写作 [手机号已隐藏]，请据此联系我。"
+         遮蔽标记=true｜exact=0 rawKeep=0｜原文逐字保留=false
+  PASS  C3 裸 8 位学号｜写入="学号 20230101"
+         匿名详情 title="F3RCC3 拾到物品 请联系 学号 20230101"
+         匿名详情 description="F3RCC3 F3-R 出口实测。正文描述里的联系方式写作 学号 20230101，请据此联系我。"
+         遮蔽标记=false｜exact=0 rawKeep=1｜原文逐字保留=true
+  PASS  C4 楼栋房间号｜写入="3 号楼 201 房间"
+         匿名详情 title="F3RCC4 拾到物品 请联系 3 号楼 201 房间"
+         匿名详情 description="F3RCC4 F3-R 出口实测。正文描述里的联系方式写作 3 号楼 201 房间，请据此联系我。"
+         遮蔽标记=false｜exact=0 rawKeep=1｜原文逐字保留=true
+  PASS  C5 日期时间｜写入="2026-10-21 13:30"
+         匿名详情 title="F3RCC5 拾到物品 请联系 2026-10-21 13:30"
+         匿名详情 description="F3RCC5 F3-R 出口实测。正文描述里的联系方式写作 2026-10-21 13:30，请据此联系我。"
+         遮蔽标记=false｜exact=0 rawKeep=1｜原文逐字保留=true
+
+## R-1（逗号/冒号/分号）现状实测 —— 只记录命中与否，不改规则、不加正则
+  HIT（现状仍可整段读出）  R1a 逗号拆｜写入="138,1234,5678"｜lostId=27 foundId=28 pairId=34
+         匿名详情 description="F3RR1aL F3-R 出口实测。正文描述里的联系方式写作 138,1234,5678，请据此联系我。" exact=0 rawKeep=1
+         非所有者详情 exact=0 rawKeep=1｜match items exact=0 rawKeep=0｜快照 exact=0 rawKeep=1
+         附言落库="号码 138,1234,5678" exact=0 rawKeep=1
+  HIT（现状仍可整段读出）  R1b 冒号拆｜写入="138:1234:5678"｜lostId=27 foundId=28 pairId=34
+         匿名详情 description="F3RR1bL F3-R 出口实测。正文描述里的联系方式写作 138:1234:5678，请据此联系我。" exact=0 rawKeep=1
+         非所有者详情 exact=0 rawKeep=1｜match items exact=0 rawKeep=0｜快照 exact=0 rawKeep=1
+         附言落库="号码 138:1234:5678" exact=0 rawKeep=1
+  HIT（现状仍可整段读出）  R1c 分号拆｜写入="138;1234;5678"｜lostId=27 foundId=28 pairId=34
+         匿名详情 description="F3RR1cL F3-R 出口实测。正文描述里的联系方式写作 138;1234;5678，请据此联系我。" exact=0 rawKeep=1
+         非所有者详情 exact=0 rawKeep=1｜match items exact=0 rawKeep=0｜快照 exact=0 rawKeep=1
+         附言落库="号码 138;1234;5678" exact=0 rawKeep=1
+
+## 汇总
+- 八类绕过：8/8 越权/对端/落库方向 0 可读
+- 对照组：5/5 符合预期
+- R-1 现状：R1a逗号拆=HIT ｜ R1b冒号拆=HIT ｜ R1c分号拆=HIT（不改规则；是否升 P1 追加修复由人类在门禁 3 裁决）

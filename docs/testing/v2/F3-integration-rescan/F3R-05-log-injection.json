@@ -1,0 +1,237 @@
+{
+  "generatedAt": "2026-10-28T07:19:14.532Z",
+  "probes": [
+    {
+      "id": "J1",
+      "sec": "51",
+      "desc": "查询参数 page 含 %0A（LF）",
+      "request": "GET http://localhost:18080/api/records?page=1%0A2026-10-28%2023%3A59%3A51.111%20WARN%20%20%5Bforged-thread%5D%20c.f.campus.forged.ForgedLogger%20-%20%5Bfakedreqid%5D%20FORGED_J1%20%E7%99%BB%E5%BD%95%E6%88%90%E5%8A%9F%20userId%3D9999%0A2",
+      "sent": "\"/api/records?page=1%0A2026-10-28%2023%3A59%3A51.111%20WARN%20%20%5Bforged-thread%5D%20c.f.campus.forged.ForgedLogger%20-%20%5Bfakedreqid%5D%20FORGED_J1%20%E7%99%BB%E5%BD%95%E6%88%90%E5%8A%9F%20userId%3D9999%0A2\"",
+      "http": 400,
+      "code": 10001,
+      "fieldErrors": [
+        {
+          "field": "page",
+          "reason": "Failed to convert property value of type 'java.lang.String' to required type 'java.lang.Integer' for property 'page'; For input string: \"12026-10-2823:59:51.111WARN[forged-thread]c.f.campus.forged.ForgedLogger-[fakedreqid]FORGED_J1登录成功userId=99992\""
+        }
+      ],
+      "note": "page 声明为 int，LF 落在 handleTypeMismatch 的 value 字段"
+    },
+    {
+      "id": "J1b",
+      "sec": "52",
+      "desc": "查询参数 pageSize 含 %0D%0A（CRLF）",
+      "request": "GET http://localhost:18080/api/records?pageSize=10%0D%0A2026-10-28%2023%3A59%3A52.111%20WARN%20%20%5Bforged-thread%5D%20c.f.campus.forged.ForgedLogger%20-%20%5Bfakedreqid%5D%20FORGED_J1b%20%E7%99%BB%E5%BD%95%E6%88%90%E5%8A%9F%20userId%3D9999",
+      "sent": "\"/api/records?pageSize=10%0D%0A2026-10-28%2023%3A59%3A52.111%20WARN%20%20%5Bforged-thread%5D%20c.f.campus.forged.ForgedLogger%20-%20%5Bfakedreqid%5D%20FORGED_J1b%20%E7%99%BB%E5%BD%95%E6%88%90%E5%8A%9F%20userId%3D9999\"",
+      "http": 400,
+      "code": 10001,
+      "fieldErrors": [
+        {
+          "field": "pageSize",
+          "reason": "Failed to convert property value of type 'java.lang.String' to required type 'java.lang.Integer' for property 'pageSize'; For input string: \"102026-10-2823:59:52.111WARN[forged-thread]c.f.campus.forged.ForgedLogger-[fakedreqid]FORGED_J1b登录成功userId=9999\""
+        }
+      ],
+      "note": "CRLF：期望 CR、LF 各替换为一个下划线"
+    },
+    {
+      "id": "J1c",
+      "sec": "53",
+      "desc": "查询参数 sortBy 含 U+2028 行分隔符 + 200+ 字符超长值",
+      "request": "GET http://localhost:18080/api/records?sortBy=x%E2%80%A82026-10-28%2023%3A59%3A53.111%20WARN%20%20%5Bforged-thread%5D%20c.f.campus.forged.ForgedLogger%20-%20%5Bfakedreqid%5D%20FORGED_J1c%20%E7%99%BB%E5%BD%95%E6%88%90%E5%8A%9F%20userId%3D9999AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+      "sent": "\"/api/records?sortBy=x%E2%80%A82026-10-28%2023%3A59%3A53.111%20WARN%20%20%5Bforged-thread%5D%20c.f.campus.forged.ForgedLogger%20-%20%5Bfakedreqid%5D%20FORGED_J1c%20%E7%99%BB%E5%BD%95%E6%88%90%E5%8A%9F%20userId%3D9999AAAA",
+      "http": 400,
+      "code": 10001,
+      "fieldErrors": [
+        {
+          "field": "sortBy",
+          "reason": "sortBy 取值非法：createdAt / occurredAt"
+        }
+      ],
+      "note": "U+2028 期望替换成 ?；超长期望截断并标注原长"
+    },
+    {
+      "id": "J1d",
+      "sec": "54",
+      "desc": "路径参数 /api/records/{id} 含 %0A（@PathVariable long）",
+      "request": "GET http://localhost:18080/api/records/1%0A2026-10-28%2023%3A59%3A54.111%20WARN%20%20%5Bforged-thread%5D%20c.f.campus.forged.ForgedLogger%20-%20%5Bfakedreqid%5D%20FORGED_J1d%20%E7%99%BB%E5%BD%95%E6%88%90%E5%8A%9F%20userId%3D9999",
+      "sent": "\"/api/records/1%0A2026-10-28%2023%3A59%3A54.111%20WARN%20%20%5Bforged-thread%5D%20c.f.campus.forged.ForgedLogger%20-%20%5Bfakedreqid%5D%20FORGED_J1d%20%E7%99%BB%E5%BD%95%E6%88%90%E5%8A%9F%20userId%3D9999\"",
+      "http": 400,
+      "code": 10001,
+      "fieldErrors": [
+        {
+          "field": "id",
+          "reason": "必须为数字"
+        }
+      ],
+      "note": "RecordController.java:63 @PathVariable long id → handleTypeMismatch"
+    },
+    {
+      "id": "J1e",
+      "sec": "59",
+      "desc": "路径参数含 CRLF + TAB + U+2028 + 200 字符超长（补齐 LogSafe 四档替换与截断）",
+      "request": "GET http://localhost:18080/api/records/9%0D%0A%09%E2%80%A82026-10-28%2023%3A59%3A59.111%20WARN%20%20%5Bforged-thread%5D%20c.f.campus.forged.ForgedLogger%20-%20%5Bfakedreqid%5D%20FORGED_J1e%20%E7%99%BB%E5%BD%95%E6%88%90%E5%8A%9F%20userId%3D9999CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC",
+      "sent": "\"/api/records/9%0D%0A%09%E2%80%A82026-10-28%2023%3A59%3A59.111%20WARN%20%20%5Bforged-thread%5D%20c.f.campus.forged.ForgedLogger%20-%20%5Bfakedreqid%5D%20FORGED_J1e%20%E7%99%BB%E5%BD%95%E6%88%90%E5%8A%9F%20userId%3D9999CC",
+      "http": 400,
+      "code": 10001,
+      "fieldErrors": [
+        {
+          "field": "id",
+          "reason": "必须为数字"
+        }
+      ],
+      "note": "载荷 324 字符 > LogSafe.DEFAULT_MAX_LENGTH=128，应看到截断标注"
+    },
+    {
+      "id": "J3",
+      "sec": "55",
+      "desc": "请求体非法 JSON，串内含 %0A（detail 限长 512）",
+      "request": "POST http://localhost:18080/api/auth/login",
+      "sent": "\"{not-json\\n2026-10-28 23:59:55.111 WARN  [forged-thread] c.f.campus.forged.ForgedLogger - [fakedreqid] FORGED_J3 登录成功 userId=9999\\ntail\"",
+      "http": 400,
+      "code": 10001,
+      "fieldErrors": [
+        {
+          "field": "body",
+          "reason": "请求体不是合法 JSON 对象，请检查语法与结构"
+        }
+      ],
+      "note": "Content-Type=application/json 但整段不可解析 → handleNotReadable"
+    },
+    {
+      "id": "J3b",
+      "sec": "58",
+      "desc": "LF 放进 JSON 字符串值内部（未转义控制字符）→ Jackson 报错原文",
+      "request": "POST http://localhost:18080/api/auth/login",
+      "sent": "\"{\\\"studentNo\\\":\\\"Q\\\",\\\"password\\\":\\\"x\\n2026-10-28 23:59:58.111 WARN  [forged-thread] c.f.campus.forged.ForgedLogger - [fakedreqid] FORGED_J3b 登录成功 userId=9999\\\"\"",
+      "http": 400,
+      "code": 10001,
+      "fieldErrors": [
+        {
+          "field": "body",
+          "reason": "请求体不是合法 JSON 对象，请检查语法与结构"
+        }
+      ],
+      "note": "未转义控制字符 + 截断，检查 Jackson 是否把原文写进日志"
+    },
+    {
+      "id": "J2f",
+      "sec": "56",
+      "desc": "登录 studentNo 含 LF（≤32 字符，真正到达 AuthService 日志行）",
+      "request": "POST http://localhost:18080/api/auth/login",
+      "sent": "{\"studentNo\":\"P\\n2026-10-28 23:59:56.111 INFO\",\"password\":\"Wrong@123456\"}",
+      "http": 401,
+      "code": 10006,
+      "fieldErrors": null,
+      "note": "密码错才进 service 的 warn 行；载荷长度 30 ≤ 32"
+    },
+    {
+      "id": "J4",
+      "sec": "57",
+      "desc": "查询参数 keyword 含 LF（String 型、校验通过 → 考察 RequestIdFilter 的访问日志行）",
+      "request": "GET http://localhost:18080/api/records?status=ALL&keyword=A%0A2026-10-28%2023%3A59%3A57.111%20WARN%20FORGED_J4",
+      "sent": "\"/api/records?status=ALL&keyword=A%0A2026-10-28%2023%3A59%3A57.111%20WARN%20FORGED_J4\"",
+      "http": 200,
+      "code": 0,
+      "fieldErrors": null,
+      "note": "走完整成功路径（200），检查访问日志是否对 URI 解码"
+    }
+  ],
+  "longResults": [
+    {
+      "name": "J2a 裸 LF + 完整假行（>32）",
+      "chars": 126,
+      "http": 400,
+      "code": 10001,
+      "reason": "学号长度需在 1 到 32 之间"
+    },
+    {
+      "name": "J2b CRLF + TAB + 假行（>32）",
+      "chars": 133,
+      "http": 400,
+      "code": 10001,
+      "reason": "学号长度需在 1 到 32 之间"
+    },
+    {
+      "name": "J2c U+2028（>32）",
+      "chars": 141,
+      "http": 400,
+      "code": 10001,
+      "reason": "学号长度需在 1 到 32 之间"
+    },
+    {
+      "name": "J2d 300 字符 + 换行",
+      "chars": 426,
+      "http": 400,
+      "code": 10001,
+      "reason": "学号长度需在 1 到 32 之间"
+    }
+  ],
+  "verdictA": [
+    {
+      "id": "J1",
+      "sec": "51",
+      "count": 0,
+      "lines": []
+    },
+    {
+      "id": "J1b",
+      "sec": "52",
+      "count": 0,
+      "lines": []
+    },
+    {
+      "id": "J1c",
+      "sec": "53",
+      "count": 0,
+      "lines": []
+    },
+    {
+      "id": "J1d",
+      "sec": "54",
+      "count": 0,
+      "lines": []
+    },
+    {
+      "id": "J1e",
+      "sec": "59",
+      "count": 0,
+      "lines": []
+    },
+    {
+      "id": "J3",
+      "sec": "55",
+      "count": 0,
+      "lines": []
+    },
+    {
+      "id": "J3b",
+      "sec": "58",
+      "count": 0,
+      "lines": []
+    },
+    {
+      "id": "J2f",
+      "sec": "56",
+      "count": 0,
+      "lines": []
+    },
+    {
+      "id": "J4",
+      "sec": "57",
+      "count": 0,
+      "lines": []
+    }
+  ],
+  "standaloneForged": 0,
+  "forgedAnywhere": 6,
+  "traces": {
+    "lfToUnderscore": 2,
+    "crlfTabToUnderscore": 1,
+    "u2028ToQuestion": 1,
+    "truncatedWithLen": [
+      "...[324chars]\r"
+    ],
+    "truncatedSample": "2026-10-28 15:19:13.127 WARN  [http-nio-18080-exec-6] c.f.c.c.error.GlobalExceptionHandler - [a97062092f154d14] [a97062092f154d14] 参数类型不符: field=id value=9___?2026-10-28 23:59:59.111 WARN  [forged-thread] c.f.campus.forged.ForgedLogger - [fakedreqid] FORGED_J1e 登录成功 userId=9999CCCC...[324chars]"
+  },
+  "verdict": "PASS（9 条通路均无伪造整行，LogSafe 替换可见）"
+}

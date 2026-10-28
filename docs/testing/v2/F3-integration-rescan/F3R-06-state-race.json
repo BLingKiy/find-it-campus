@@ -1,0 +1,107 @@
+{
+  "generatedAt": "2026-10-28T07:24:06.679Z",
+  "results": [
+    {
+      "name": "C1 对照组：PENDING 记录 PUT 必须仍然成功并写入（否则下面的 PASS 没有意义）",
+      "pass": true,
+      "detail": [
+        "HTTP 200 / code=0",
+        "库内 title=\"QA F3R-C1 已被 PUT 改写\" updated_at=2026-10-28 15:23:33.000000"
+      ]
+    },
+    {
+      "name": "C2 所有者 PUT COMPLETED 记录：期望 HTTP 409 + code 20003 且全行零写入",
+      "pass": true,
+      "detail": [
+        "HTTP 409 / code=20003 / message=\"记录当前状态不可执行该操作\"",
+        "响应：HTTP 409 / code=20003 / message=\"记录当前状态不可执行该操作\" / requestId=afa1a97f31fd4c06",
+        "指纹逐字符相同（167 字符，含 updated_at=2026-10-20 12:00:00.000000 未前进）",
+        "pair_state 未被重置：PENDING"
+      ]
+    },
+    {
+      "name": "C3 所有者 PUT CLOSED 记录：期望 HTTP 409 + code 20003 且全行零写入",
+      "pass": true,
+      "detail": [
+        "HTTP 409 / code=20003 / message=\"记录当前状态不可执行该操作\"",
+        "响应：HTTP 409 / code=20003 / message=\"记录当前状态不可执行该操作\" / requestId=77f544443e8146ec",
+        "指纹逐字符相同（139 字符，含 updated_at=2026-10-20 12:00:00.000000 未前进）",
+        "pair_state 未被重置：PENDING"
+      ]
+    },
+    {
+      "name": "C4 所有者 PUT 已软删记录：期望 404 + 20001 且零写入",
+      "pass": true,
+      "detail": [
+        "DELETE：HTTP 200 / code=0",
+        "PUT：HTTP 404 / code=20001 / message=\"记录不存在或已删除\" / requestId=68db72b4d4d24c43",
+        "指纹相同（deleted_at 未被改写）"
+      ]
+    },
+    {
+      "name": "C5 COMPLETED → CLOSED 的 PATCH：期望 409 + 20002（非法流转）且零写入",
+      "pass": true,
+      "detail": [
+        "PATCH：HTTP 409 / code=20002 / message=\"状态流转非法\" / requestId=7b9bb89c73e94ccb",
+        "指纹相同"
+      ]
+    },
+    {
+      "name": "C6 CLOSED → COMPLETED 的 PATCH：期望 409 + 20002 且零写入",
+      "pass": true,
+      "detail": [
+        "PATCH：HTTP 409 / code=20002 / message=\"状态流转非法\" / requestId=8c741dd5c5bb4034",
+        "指纹相同"
+      ]
+    },
+    {
+      "name": "C7 匿名 401 / 非所有者 404|403，且都不得返回 20003；终态行零写入",
+      "pass": true,
+      "detail": [
+        "匿名 PUT：HTTP 401 / code=10006 / message=\"请先登录\" / requestId=e038d14af61a4561",
+        "非本人(demo02) PUT：HTTP 404 / code=20001 / message=\"记录不存在或已删除\" / requestId=5e1dd3ea38804571 → 是否泄漏终态(20003)=false",
+        "指纹相同"
+      ]
+    },
+    {
+      "name": "S1 带 status=PENDING 条件：0 行；去掉条件：1 行且真的改写（证明挡住写入的是条件本身）",
+      "pass": true,
+      "detail": [
+        "guarded ROW_COUNT()=0，行仍为 \"QA F3R-S 条件更新对照\"（status=CLOSED）",
+        "unguarded ROW_COUNT()=1，行变为 \"UNGUARDED-WRITE\"，updated_at 由 2026-10-20 12:00:00 前进到 2026-10-28 15:23:40.000000"
+      ]
+    },
+    {
+      "name": "R1 锁编排：PUT 应因条件更新返回 409/20003，正文零写入，且 PUT 确实被行锁阻塞过",
+      "pass": true,
+      "detail": [
+        "PUT：HTTP 409 / code=20003 / message=\"记录当前状态不可执行该操作\" / requestId=7cf1a8257e9240bb / 耗时 2648 ms（>1200 ms 才说明真在等行锁）",
+        "A 会话：err=无 耗时 3403 ms",
+        "C 会话：err=无 耗时 3237 ms",
+        "终态行：status=CLOSED title=\"QA F3R-R1 锁编排竞态原正文\" updated_at=2026-10-28 15:23:42.000000 pair_state=SCORING"
+      ]
+    },
+    {
+      "name": "R2 控制组：同编排但无并发终态提交，PUT 应等锁后 200 成功（排除「阻塞导致失败」的解释）",
+      "pass": true,
+      "detail": [
+        "PUT：HTTP 200 / code=0 / message=\"已更新\" / requestId=9ca41a03134f42ff / 耗时 3201 ms",
+        "行：title=\"QA F3R-R2 PUT 等锁后应写入\" status=PENDING updated_at=2026-10-28 15:23:46.000000"
+      ]
+    },
+    {
+      "name": "B1 裸并发 20 轮：终态记录未出现「PUT 被拒却仍写入正文」",
+      "pass": true,
+      "detail": [
+        "终态行被后写签名次数=0",
+        "无「拒绝但已写入」「成功但流转失败」的不一致轮次",
+        "诚实说明：两条请求确实在服务端同时在飞（同一 tick 发出），但「PUT 的快照读发生在 PATCH 提交之前」这一点对裸并发不可外部观测，重叠窗口是否命中只能由上面的分布推断；可复现的窗口证明在 R1 锁编排那一条。"
+      ]
+    }
+  ],
+  "dist": {
+    "PUT=200/0 × PATCH=200/0": 11,
+    "PUT=409/20003 × PATCH=200/0": 9
+  },
+  "raceWriteDetected": 0
+}

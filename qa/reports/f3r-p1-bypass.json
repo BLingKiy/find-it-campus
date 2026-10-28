@@ -1,0 +1,3398 @@
+{
+  "results": [
+    {
+      "case": "B1",
+      "label": "空格拆",
+      "kind": "phone",
+      "injectedA": "\"138 1234 5678\"",
+      "injectedB": "\"139 2345 6789\"",
+      "lostId": 27,
+      "foundId": 28,
+      "pairId": 34,
+      "exits": [
+        {
+          "exit": "出口1 匿名列表 GET /api/records?status=ALL",
+          "direction": "privacy",
+          "source": "GET http://localhost:18080/api/records?status=ALL&pageSize=50&page=1 → HTTP 200",
+          "note": "title 遮蔽视角",
+          "leaks": 0,
+          "leaksOther": 0,
+          "selfVisible": false,
+          "checks": [
+            {
+              "token": "A(demo01) 138␣1234␣5678",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            },
+            {
+              "token": "B(demo02) 139␣2345␣6789",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            }
+          ]
+        },
+        {
+          "exit": "出口2 匿名详情 GET /api/records/{lostId}",
+          "direction": "privacy",
+          "source": "GET http://localhost:18080/api/records/27 → HTTP 200",
+          "note": "title+description 遮蔽视角",
+          "leaks": 0,
+          "leaksOther": 0,
+          "selfVisible": false,
+          "checks": [
+            {
+              "token": "A(demo01) 138␣1234␣5678",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            },
+            {
+              "token": "B(demo02) 139␣2345␣6789",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            }
+          ]
+        },
+        {
+          "exit": "出口2 匿名详情 GET /api/records/{foundId}",
+          "direction": "privacy",
+          "source": "GET http://localhost:18080/api/records/28 → HTTP 200",
+          "note": "title+description 遮蔽视角",
+          "leaks": 0,
+          "leaksOther": 0,
+          "selfVisible": false,
+          "checks": [
+            {
+              "token": "A(demo01) 138␣1234␣5678",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            },
+            {
+              "token": "B(demo02) 139␣2345␣6789",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            }
+          ]
+        },
+        {
+          "exit": "出口3 非所有者详情 GET /api/records/{lostId}",
+          "direction": "privacy",
+          "source": "GET http://localhost:18080/api/records/27 → HTTP 200",
+          "note": "demo02 读 demo01 记录",
+          "leaks": 0,
+          "leaksOther": 0,
+          "selfVisible": false,
+          "checks": [
+            {
+              "token": "A(demo01) 138␣1234␣5678",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            },
+            {
+              "token": "B(demo02) 139␣2345␣6789",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            }
+          ]
+        },
+        {
+          "exit": "出口3 非所有者详情 GET /api/records/{foundId}",
+          "direction": "privacy",
+          "source": "GET http://localhost:18080/api/records/28 → HTTP 200",
+          "note": "demo01 读 demo02 记录",
+          "leaks": 0,
+          "leaksOther": 0,
+          "selfVisible": false,
+          "checks": [
+            {
+              "token": "A(demo01) 138␣1234␣5678",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            },
+            {
+              "token": "B(demo02) 139␣2345␣6789",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            }
+          ]
+        },
+        {
+          "exit": "出口4 GET /api/my/records(demo01 本人集合)",
+          "direction": "self",
+          "source": "GET http://localhost:18080/api/my/records?pageSize=50 → HTTP 200",
+          "note": "own title 原文允许；pairs[].counterpartTitle 必须遮蔽",
+          "leaks": 0,
+          "leaksOther": 0,
+          "selfVisible": true,
+          "checks": [
+            {
+              "token": "A(demo01) 138␣1234␣5678",
+              "exact": 0,
+              "rawKeep": 1,
+              "sample": [
+                "F3RB1L 拾到物品 请联系 138 1234 5678"
+              ]
+            },
+            {
+              "token": "B(demo02) 139␣2345␣6789",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            }
+          ]
+        },
+        {
+          "exit": "出口4 GET /api/my/records(demo02 本人集合)",
+          "direction": "self",
+          "source": "GET http://localhost:18080/api/my/records?pageSize=50 → HTTP 200",
+          "note": "own title 原文允许；pairs[].counterpartTitle 必须遮蔽",
+          "leaks": 0,
+          "leaksOther": 0,
+          "selfVisible": true,
+          "checks": [
+            {
+              "token": "B(demo02) 139␣2345␣6789",
+              "exact": 0,
+              "rawKeep": 1,
+              "sample": [
+                "F3RB1F 拾到物品 请联系 139 2345 6789"
+              ]
+            },
+            {
+              "token": "A(demo01) 138␣1234␣5678",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            }
+          ]
+        },
+        {
+          "exit": "出口5 通知 /api/notifications(demo01)",
+          "direction": "privacy",
+          "source": "GET http://localhost:18080/api/notifications?page=1&pageSize=50 → HTTP 200",
+          "note": "title+body",
+          "leaks": 0,
+          "leaksOther": 0,
+          "selfVisible": false,
+          "checks": [
+            {
+              "token": "A(demo01) 138␣1234␣5678",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            },
+            {
+              "token": "B(demo02) 139␣2345␣6789",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            }
+          ]
+        },
+        {
+          "exit": "出口5 通知 /api/notifications(demo02)",
+          "direction": "privacy",
+          "source": "GET http://localhost:18080/api/notifications?page=1&pageSize=50 → HTTP 200",
+          "note": "title+body",
+          "leaks": 0,
+          "leaksOther": 0,
+          "selfVisible": false,
+          "checks": [
+            {
+              "token": "A(demo01) 138␣1234␣5678",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            },
+            {
+              "token": "B(demo02) 139␣2345␣6789",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            }
+          ]
+        },
+        {
+          "exit": "出口6 match 项 POST /api/match(demo01 视角)",
+          "direction": "self",
+          "source": "POST http://localhost:18080/api/match → HTTP 200",
+          "note": "items.title/reason；自己发的 FOUND 不存在于此视角",
+          "leaks": 0,
+          "leaksOther": 0,
+          "selfVisible": true,
+          "checks": [
+            {
+              "token": "A(demo01) 138␣1234␣5678",
+              "exact": 0,
+              "rawKeep": 1,
+              "sample": [
+                "F3RB1L 拾到物品 请联系 138 1234 5678"
+              ]
+            },
+            {
+              "token": "B(demo02) 139␣2345␣6789",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            }
+          ]
+        },
+        {
+          "exit": "出口6 match 项 POST /api/match(demo02 视角)",
+          "direction": "self",
+          "source": "POST http://localhost:18080/api/match → HTTP 200",
+          "note": "items.title/reason",
+          "leaks": 0,
+          "leaksOther": 0,
+          "selfVisible": true,
+          "checks": [
+            {
+              "token": "B(demo02) 139␣2345␣6789",
+              "exact": 0,
+              "rawKeep": 1,
+              "sample": [
+                "F3RB1F 拾到物品 请联系 139 2345 6789"
+              ]
+            },
+            {
+              "token": "A(demo01) 138␣1234␣5678",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            }
+          ]
+        },
+        {
+          "exit": "出口7 pair 卡片 owner 详情 pairs[](A)",
+          "direction": "self",
+          "source": "GET http://localhost:18080/api/records/27 → HTTP 200",
+          "note": "counterpartTitle/otherNote 必须遮蔽；own title 原文允许",
+          "leaks": 0,
+          "leaksOther": 0,
+          "selfVisible": true,
+          "checks": [
+            {
+              "token": "A(demo01) 138␣1234␣5678",
+              "exact": 0,
+              "rawKeep": 1,
+              "sample": [
+                "F3RB1L 拾到物品 请联系 138 1234 5678",
+                "F3RB1L F3-R 出口实测。正文描述里的联系方式写作 138 1234 5678，请据此联系我。"
+              ]
+            },
+            {
+              "token": "B(demo02) 139␣2345␣6789",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            }
+          ]
+        },
+        {
+          "exit": "出口7 pair 卡片 owner 详情 pairs[](B)",
+          "direction": "self",
+          "source": "GET http://localhost:18080/api/records/28 → HTTP 200",
+          "note": "counterpartTitle/myNote 必须遮蔽；own title 原文允许",
+          "leaks": 0,
+          "leaksOther": 0,
+          "selfVisible": true,
+          "checks": [
+            {
+              "token": "B(demo02) 139␣2345␣6789",
+              "exact": 0,
+              "rawKeep": 1,
+              "sample": [
+                "F3RB1F 拾到物品 请联系 139 2345 6789",
+                "F3RB1F F3-R 出口实测。正文描述里的联系方式写作 139 2345 6789，请据此联系我。"
+              ]
+            },
+            {
+              "token": "A(demo01) 138␣1234␣5678",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            }
+          ]
+        },
+        {
+          "exit": "出口7 pair 卡片 unlock 响应 note",
+          "direction": "privacy",
+          "source": "POST http://localhost:18080/api/pairs/34/contact-unlock → HTTP 200 / POST http://localhost:18080/api/pairs/34/contact-unlock → HTTP 200",
+          "note": "ContactUnlockResponse.note",
+          "leaks": 0,
+          "leaksOther": 0,
+          "selfVisible": false,
+          "checks": [
+            {
+              "token": "A(demo01) 138␣1234␣5678",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            },
+            {
+              "token": "B(demo02) 139␣2345␣6789",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            }
+          ]
+        },
+        {
+          "exit": "出口8 t_match_result 快照",
+          "direction": "privacy",
+          "source": "SQL SELECT CONCAT(input_text, ' || ', candidates) FROM t_match_result WHERE input_text LIKE '%F3RB1%' ORDER BY id DESC LIMIT 2;",
+          "note": "input_text + candidates 写入前脱敏",
+          "leaks": 0,
+          "leaksOther": 0,
+          "selfVisible": false,
+          "checks": [
+            {
+              "token": "A(demo01) 138␣1234␣5678",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            },
+            {
+              "token": "B(demo02) 139␣2345␣6789",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            }
+          ]
+        },
+        {
+          "exit": "出口8 t_pair_score 附言落库",
+          "direction": "privacy",
+          "source": "SQL SELECT CONCAT(IFNULL(lost_unlock_note,'∅'), ' || ', IFNULL(found_unlock_note,'∅')) FROM t_pair_score WHERE id=34;",
+          "note": "A 侧附言:我的号码 [手机号已隐藏]，随时打给我 || B 侧附言:我的号码 [手机号已隐藏]，随时打给我",
+          "leaks": 0,
+          "leaksOther": 0,
+          "selfVisible": false,
+          "checks": [
+            {
+              "token": "A(demo01) 138␣1234␣5678",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            },
+            {
+              "token": "B(demo02) 139␣2345␣6789",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            }
+          ]
+        }
+      ],
+      "dbRawStored": "F3RB1L 拾到物品 请联系 138 1234 5678 ~ F3RB1L F3-R 出口实测。正文描述里的联系方式写作 138 1234 5678，请据此联系我。\nF3RB1F 拾到物品 请联系 139 2345 6789 ~ F3RB1F F3-R 出口实测。正文描述里的联系方式写作 139 2345 6789，请据此联系我。",
+      "totalLeak": 0,
+      "verdict": "PASS（越权/对端/落库方向 0 完整号码）"
+    },
+    {
+      "case": "B2",
+      "label": "换行拆",
+      "kind": "phone",
+      "injectedA": "\"138\\n1234\\n5678\"",
+      "injectedB": "\"139\\n2345\\n6789\"",
+      "lostId": 27,
+      "foundId": 28,
+      "pairId": 34,
+      "exits": [
+        {
+          "exit": "出口1 匿名列表 GET /api/records?status=ALL",
+          "direction": "privacy",
+          "source": "GET http://localhost:18080/api/records?status=ALL&pageSize=50&page=1 → HTTP 200",
+          "note": "title 遮蔽视角",
+          "leaks": 0,
+          "leaksOther": 0,
+          "selfVisible": false,
+          "checks": [
+            {
+              "token": "A(demo01) 138␣1234␣5678",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            },
+            {
+              "token": "B(demo02) 139␣2345␣6789",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            }
+          ]
+        },
+        {
+          "exit": "出口2 匿名详情 GET /api/records/{lostId}",
+          "direction": "privacy",
+          "source": "GET http://localhost:18080/api/records/27 → HTTP 200",
+          "note": "title+description 遮蔽视角",
+          "leaks": 0,
+          "leaksOther": 0,
+          "selfVisible": false,
+          "checks": [
+            {
+              "token": "A(demo01) 138␣1234␣5678",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            },
+            {
+              "token": "B(demo02) 139␣2345␣6789",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            }
+          ]
+        },
+        {
+          "exit": "出口2 匿名详情 GET /api/records/{foundId}",
+          "direction": "privacy",
+          "source": "GET http://localhost:18080/api/records/28 → HTTP 200",
+          "note": "title+description 遮蔽视角",
+          "leaks": 0,
+          "leaksOther": 0,
+          "selfVisible": false,
+          "checks": [
+            {
+              "token": "A(demo01) 138␣1234␣5678",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            },
+            {
+              "token": "B(demo02) 139␣2345␣6789",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            }
+          ]
+        },
+        {
+          "exit": "出口3 非所有者详情 GET /api/records/{lostId}",
+          "direction": "privacy",
+          "source": "GET http://localhost:18080/api/records/27 → HTTP 200",
+          "note": "demo02 读 demo01 记录",
+          "leaks": 0,
+          "leaksOther": 0,
+          "selfVisible": false,
+          "checks": [
+            {
+              "token": "A(demo01) 138␣1234␣5678",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            },
+            {
+              "token": "B(demo02) 139␣2345␣6789",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            }
+          ]
+        },
+        {
+          "exit": "出口3 非所有者详情 GET /api/records/{foundId}",
+          "direction": "privacy",
+          "source": "GET http://localhost:18080/api/records/28 → HTTP 200",
+          "note": "demo01 读 demo02 记录",
+          "leaks": 0,
+          "leaksOther": 0,
+          "selfVisible": false,
+          "checks": [
+            {
+              "token": "A(demo01) 138␣1234␣5678",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            },
+            {
+              "token": "B(demo02) 139␣2345␣6789",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            }
+          ]
+        },
+        {
+          "exit": "出口4 GET /api/my/records(demo01 本人集合)",
+          "direction": "self",
+          "source": "GET http://localhost:18080/api/my/records?pageSize=50 → HTTP 200",
+          "note": "own title 原文允许；pairs[].counterpartTitle 必须遮蔽",
+          "leaks": 0,
+          "leaksOther": 0,
+          "selfVisible": true,
+          "checks": [
+            {
+              "token": "A(demo01) 138␣1234␣5678",
+              "exact": 0,
+              "rawKeep": 1,
+              "sample": []
+            },
+            {
+              "token": "B(demo02) 139␣2345␣6789",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            }
+          ]
+        },
+        {
+          "exit": "出口4 GET /api/my/records(demo02 本人集合)",
+          "direction": "self",
+          "source": "GET http://localhost:18080/api/my/records?pageSize=50 → HTTP 200",
+          "note": "own title 原文允许；pairs[].counterpartTitle 必须遮蔽",
+          "leaks": 0,
+          "leaksOther": 0,
+          "selfVisible": true,
+          "checks": [
+            {
+              "token": "B(demo02) 139␣2345␣6789",
+              "exact": 0,
+              "rawKeep": 1,
+              "sample": []
+            },
+            {
+              "token": "A(demo01) 138␣1234␣5678",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            }
+          ]
+        },
+        {
+          "exit": "出口5 通知 /api/notifications(demo01)",
+          "direction": "privacy",
+          "source": "GET http://localhost:18080/api/notifications?page=1&pageSize=50 → HTTP 200",
+          "note": "title+body",
+          "leaks": 0,
+          "leaksOther": 0,
+          "selfVisible": false,
+          "checks": [
+            {
+              "token": "A(demo01) 138␣1234␣5678",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            },
+            {
+              "token": "B(demo02) 139␣2345␣6789",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            }
+          ]
+        },
+        {
+          "exit": "出口5 通知 /api/notifications(demo02)",
+          "direction": "privacy",
+          "source": "GET http://localhost:18080/api/notifications?page=1&pageSize=50 → HTTP 200",
+          "note": "title+body",
+          "leaks": 0,
+          "leaksOther": 0,
+          "selfVisible": false,
+          "checks": [
+            {
+              "token": "A(demo01) 138␣1234␣5678",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            },
+            {
+              "token": "B(demo02) 139␣2345␣6789",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            }
+          ]
+        },
+        {
+          "exit": "出口6 match 项 POST /api/match(demo01 视角)",
+          "direction": "self",
+          "source": "POST http://localhost:18080/api/match → HTTP 200",
+          "note": "items.title/reason；自己发的 FOUND 不存在于此视角",
+          "leaks": 0,
+          "leaksOther": 0,
+          "selfVisible": true,
+          "checks": [
+            {
+              "token": "A(demo01) 138␣1234␣5678",
+              "exact": 0,
+              "rawKeep": 1,
+              "sample": []
+            },
+            {
+              "token": "B(demo02) 139␣2345␣6789",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            }
+          ]
+        },
+        {
+          "exit": "出口6 match 项 POST /api/match(demo02 视角)",
+          "direction": "self",
+          "source": "POST http://localhost:18080/api/match → HTTP 200",
+          "note": "items.title/reason",
+          "leaks": 0,
+          "leaksOther": 0,
+          "selfVisible": true,
+          "checks": [
+            {
+              "token": "B(demo02) 139␣2345␣6789",
+              "exact": 0,
+              "rawKeep": 1,
+              "sample": []
+            },
+            {
+              "token": "A(demo01) 138␣1234␣5678",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            }
+          ]
+        },
+        {
+          "exit": "出口7 pair 卡片 owner 详情 pairs[](A)",
+          "direction": "self",
+          "source": "GET http://localhost:18080/api/records/27 → HTTP 200",
+          "note": "counterpartTitle/otherNote 必须遮蔽；own title 原文允许",
+          "leaks": 0,
+          "leaksOther": 0,
+          "selfVisible": true,
+          "checks": [
+            {
+              "token": "A(demo01) 138␣1234␣5678",
+              "exact": 0,
+              "rawKeep": 1,
+              "sample": []
+            },
+            {
+              "token": "B(demo02) 139␣2345␣6789",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            }
+          ]
+        },
+        {
+          "exit": "出口7 pair 卡片 owner 详情 pairs[](B)",
+          "direction": "self",
+          "source": "GET http://localhost:18080/api/records/28 → HTTP 200",
+          "note": "counterpartTitle/myNote 必须遮蔽；own title 原文允许",
+          "leaks": 0,
+          "leaksOther": 0,
+          "selfVisible": true,
+          "checks": [
+            {
+              "token": "B(demo02) 139␣2345␣6789",
+              "exact": 0,
+              "rawKeep": 1,
+              "sample": []
+            },
+            {
+              "token": "A(demo01) 138␣1234␣5678",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            }
+          ]
+        },
+        {
+          "exit": "出口7 pair 卡片 unlock 响应 note",
+          "direction": "privacy",
+          "source": "POST http://localhost:18080/api/pairs/34/contact-unlock → HTTP 200 / POST http://localhost:18080/api/pairs/34/contact-unlock → HTTP 200",
+          "note": "ContactUnlockResponse.note",
+          "leaks": 0,
+          "leaksOther": 0,
+          "selfVisible": false,
+          "checks": [
+            {
+              "token": "A(demo01) 138␣1234␣5678",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            },
+            {
+              "token": "B(demo02) 139␣2345␣6789",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            }
+          ]
+        },
+        {
+          "exit": "出口8 t_match_result 快照",
+          "direction": "privacy",
+          "source": "SQL SELECT CONCAT(input_text, ' || ', candidates) FROM t_match_result WHERE input_text LIKE '%F3RB2%' ORDER BY id DESC LIMIT 2;",
+          "note": "input_text + candidates 写入前脱敏",
+          "leaks": 0,
+          "leaksOther": 0,
+          "selfVisible": false,
+          "checks": [
+            {
+              "token": "A(demo01) 138␣1234␣5678",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            },
+            {
+              "token": "B(demo02) 139␣2345␣6789",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            }
+          ]
+        },
+        {
+          "exit": "出口8 t_pair_score 附言落库",
+          "direction": "privacy",
+          "source": "SQL SELECT CONCAT(IFNULL(lost_unlock_note,'∅'), ' || ', IFNULL(found_unlock_note,'∅')) FROM t_pair_score WHERE id=34;",
+          "note": "A 侧附言:我的号码 [手机号已隐藏]，随时打给我 || B 侧附言:我的号码 [手机号已隐藏]，随时打给我",
+          "leaks": 0,
+          "leaksOther": 0,
+          "selfVisible": false,
+          "checks": [
+            {
+              "token": "A(demo01) 138␣1234␣5678",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            },
+            {
+              "token": "B(demo02) 139␣2345␣6789",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            }
+          ]
+        }
+      ],
+      "dbRawStored": "F3RB2L 拾到物品 请联系 138\\n1234\\n5678 ~ F3RB2L F3-R 出口实测。正文描述里的联系方式写作 138\\n1234\\n5678，请据此联系我。\nF3RB2F 拾到物品 请联系 139\\n2345\\n6789 ~ F3RB2F F3-R 出口实测。正文描述里的联系方式写作 139\\n2345\\n6789，请据此联系我。",
+      "totalLeak": 0,
+      "verdict": "PASS（越权/对端/落库方向 0 完整号码）"
+    },
+    {
+      "case": "B3",
+      "label": "制表符拆",
+      "kind": "phone",
+      "injectedA": "\"138\\t1234\\t5678\"",
+      "injectedB": "\"139\\t2345\\t6789\"",
+      "lostId": 27,
+      "foundId": 28,
+      "pairId": 34,
+      "exits": [
+        {
+          "exit": "出口1 匿名列表 GET /api/records?status=ALL",
+          "direction": "privacy",
+          "source": "GET http://localhost:18080/api/records?status=ALL&pageSize=50&page=1 → HTTP 200",
+          "note": "title 遮蔽视角",
+          "leaks": 0,
+          "leaksOther": 0,
+          "selfVisible": false,
+          "checks": [
+            {
+              "token": "A(demo01) 138␣1234␣5678",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            },
+            {
+              "token": "B(demo02) 139␣2345␣6789",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            }
+          ]
+        },
+        {
+          "exit": "出口2 匿名详情 GET /api/records/{lostId}",
+          "direction": "privacy",
+          "source": "GET http://localhost:18080/api/records/27 → HTTP 200",
+          "note": "title+description 遮蔽视角",
+          "leaks": 0,
+          "leaksOther": 0,
+          "selfVisible": false,
+          "checks": [
+            {
+              "token": "A(demo01) 138␣1234␣5678",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            },
+            {
+              "token": "B(demo02) 139␣2345␣6789",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            }
+          ]
+        },
+        {
+          "exit": "出口2 匿名详情 GET /api/records/{foundId}",
+          "direction": "privacy",
+          "source": "GET http://localhost:18080/api/records/28 → HTTP 200",
+          "note": "title+description 遮蔽视角",
+          "leaks": 0,
+          "leaksOther": 0,
+          "selfVisible": false,
+          "checks": [
+            {
+              "token": "A(demo01) 138␣1234␣5678",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            },
+            {
+              "token": "B(demo02) 139␣2345␣6789",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            }
+          ]
+        },
+        {
+          "exit": "出口3 非所有者详情 GET /api/records/{lostId}",
+          "direction": "privacy",
+          "source": "GET http://localhost:18080/api/records/27 → HTTP 200",
+          "note": "demo02 读 demo01 记录",
+          "leaks": 0,
+          "leaksOther": 0,
+          "selfVisible": false,
+          "checks": [
+            {
+              "token": "A(demo01) 138␣1234␣5678",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            },
+            {
+              "token": "B(demo02) 139␣2345␣6789",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            }
+          ]
+        },
+        {
+          "exit": "出口3 非所有者详情 GET /api/records/{foundId}",
+          "direction": "privacy",
+          "source": "GET http://localhost:18080/api/records/28 → HTTP 200",
+          "note": "demo01 读 demo02 记录",
+          "leaks": 0,
+          "leaksOther": 0,
+          "selfVisible": false,
+          "checks": [
+            {
+              "token": "A(demo01) 138␣1234␣5678",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            },
+            {
+              "token": "B(demo02) 139␣2345␣6789",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            }
+          ]
+        },
+        {
+          "exit": "出口4 GET /api/my/records(demo01 本人集合)",
+          "direction": "self",
+          "source": "GET http://localhost:18080/api/my/records?pageSize=50 → HTTP 200",
+          "note": "own title 原文允许；pairs[].counterpartTitle 必须遮蔽",
+          "leaks": 0,
+          "leaksOther": 0,
+          "selfVisible": true,
+          "checks": [
+            {
+              "token": "A(demo01) 138␣1234␣5678",
+              "exact": 0,
+              "rawKeep": 1,
+              "sample": [
+                "F3RB3L 拾到物品 请联系 138\t1234\t5678"
+              ]
+            },
+            {
+              "token": "B(demo02) 139␣2345␣6789",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            }
+          ]
+        },
+        {
+          "exit": "出口4 GET /api/my/records(demo02 本人集合)",
+          "direction": "self",
+          "source": "GET http://localhost:18080/api/my/records?pageSize=50 → HTTP 200",
+          "note": "own title 原文允许；pairs[].counterpartTitle 必须遮蔽",
+          "leaks": 0,
+          "leaksOther": 0,
+          "selfVisible": true,
+          "checks": [
+            {
+              "token": "B(demo02) 139␣2345␣6789",
+              "exact": 0,
+              "rawKeep": 1,
+              "sample": [
+                "F3RB3F 拾到物品 请联系 139\t2345\t6789"
+              ]
+            },
+            {
+              "token": "A(demo01) 138␣1234␣5678",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            }
+          ]
+        },
+        {
+          "exit": "出口5 通知 /api/notifications(demo01)",
+          "direction": "privacy",
+          "source": "GET http://localhost:18080/api/notifications?page=1&pageSize=50 → HTTP 200",
+          "note": "title+body",
+          "leaks": 0,
+          "leaksOther": 0,
+          "selfVisible": false,
+          "checks": [
+            {
+              "token": "A(demo01) 138␣1234␣5678",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            },
+            {
+              "token": "B(demo02) 139␣2345␣6789",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            }
+          ]
+        },
+        {
+          "exit": "出口5 通知 /api/notifications(demo02)",
+          "direction": "privacy",
+          "source": "GET http://localhost:18080/api/notifications?page=1&pageSize=50 → HTTP 200",
+          "note": "title+body",
+          "leaks": 0,
+          "leaksOther": 0,
+          "selfVisible": false,
+          "checks": [
+            {
+              "token": "A(demo01) 138␣1234␣5678",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            },
+            {
+              "token": "B(demo02) 139␣2345␣6789",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            }
+          ]
+        },
+        {
+          "exit": "出口6 match 项 POST /api/match(demo01 视角)",
+          "direction": "self",
+          "source": "POST http://localhost:18080/api/match → HTTP 200",
+          "note": "items.title/reason；自己发的 FOUND 不存在于此视角",
+          "leaks": 0,
+          "leaksOther": 0,
+          "selfVisible": true,
+          "checks": [
+            {
+              "token": "A(demo01) 138␣1234␣5678",
+              "exact": 0,
+              "rawKeep": 1,
+              "sample": [
+                "F3RB3L 拾到物品 请联系 138\t1234\t5678"
+              ]
+            },
+            {
+              "token": "B(demo02) 139␣2345␣6789",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            }
+          ]
+        },
+        {
+          "exit": "出口6 match 项 POST /api/match(demo02 视角)",
+          "direction": "self",
+          "source": "POST http://localhost:18080/api/match → HTTP 200",
+          "note": "items.title/reason",
+          "leaks": 0,
+          "leaksOther": 0,
+          "selfVisible": true,
+          "checks": [
+            {
+              "token": "B(demo02) 139␣2345␣6789",
+              "exact": 0,
+              "rawKeep": 1,
+              "sample": [
+                "F3RB3F 拾到物品 请联系 139\t2345\t6789"
+              ]
+            },
+            {
+              "token": "A(demo01) 138␣1234␣5678",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            }
+          ]
+        },
+        {
+          "exit": "出口7 pair 卡片 owner 详情 pairs[](A)",
+          "direction": "self",
+          "source": "GET http://localhost:18080/api/records/27 → HTTP 200",
+          "note": "counterpartTitle/otherNote 必须遮蔽；own title 原文允许",
+          "leaks": 0,
+          "leaksOther": 0,
+          "selfVisible": true,
+          "checks": [
+            {
+              "token": "A(demo01) 138␣1234␣5678",
+              "exact": 0,
+              "rawKeep": 1,
+              "sample": [
+                "F3RB3L 拾到物品 请联系 138\t1234\t5678",
+                "F3RB3L F3-R 出口实测。正文描述里的联系方式写作 138\t1234\t5678，请据此联系我。"
+              ]
+            },
+            {
+              "token": "B(demo02) 139␣2345␣6789",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            }
+          ]
+        },
+        {
+          "exit": "出口7 pair 卡片 owner 详情 pairs[](B)",
+          "direction": "self",
+          "source": "GET http://localhost:18080/api/records/28 → HTTP 200",
+          "note": "counterpartTitle/myNote 必须遮蔽；own title 原文允许",
+          "leaks": 0,
+          "leaksOther": 0,
+          "selfVisible": true,
+          "checks": [
+            {
+              "token": "B(demo02) 139␣2345␣6789",
+              "exact": 0,
+              "rawKeep": 1,
+              "sample": [
+                "F3RB3F 拾到物品 请联系 139\t2345\t6789",
+                "F3RB3F F3-R 出口实测。正文描述里的联系方式写作 139\t2345\t6789，请据此联系我。"
+              ]
+            },
+            {
+              "token": "A(demo01) 138␣1234␣5678",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            }
+          ]
+        },
+        {
+          "exit": "出口7 pair 卡片 unlock 响应 note",
+          "direction": "privacy",
+          "source": "POST http://localhost:18080/api/pairs/34/contact-unlock → HTTP 200 / POST http://localhost:18080/api/pairs/34/contact-unlock → HTTP 200",
+          "note": "ContactUnlockResponse.note",
+          "leaks": 0,
+          "leaksOther": 0,
+          "selfVisible": false,
+          "checks": [
+            {
+              "token": "A(demo01) 138␣1234␣5678",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            },
+            {
+              "token": "B(demo02) 139␣2345␣6789",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            }
+          ]
+        },
+        {
+          "exit": "出口8 t_match_result 快照",
+          "direction": "privacy",
+          "source": "SQL SELECT CONCAT(input_text, ' || ', candidates) FROM t_match_result WHERE input_text LIKE '%F3RB3%' ORDER BY id DESC LIMIT 2;",
+          "note": "input_text + candidates 写入前脱敏",
+          "leaks": 0,
+          "leaksOther": 0,
+          "selfVisible": false,
+          "checks": [
+            {
+              "token": "A(demo01) 138␣1234␣5678",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            },
+            {
+              "token": "B(demo02) 139␣2345␣6789",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            }
+          ]
+        },
+        {
+          "exit": "出口8 t_pair_score 附言落库",
+          "direction": "privacy",
+          "source": "SQL SELECT CONCAT(IFNULL(lost_unlock_note,'∅'), ' || ', IFNULL(found_unlock_note,'∅')) FROM t_pair_score WHERE id=34;",
+          "note": "A 侧附言:我的号码 [手机号已隐藏]，随时打给我 || B 侧附言:我的号码 [手机号已隐藏]，随时打给我",
+          "leaks": 0,
+          "leaksOther": 0,
+          "selfVisible": false,
+          "checks": [
+            {
+              "token": "A(demo01) 138␣1234␣5678",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            },
+            {
+              "token": "B(demo02) 139␣2345␣6789",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            }
+          ]
+        }
+      ],
+      "dbRawStored": "F3RB3L 拾到物品 请联系 138\\t1234\\t5678 ~ F3RB3L F3-R 出口实测。正文描述里的联系方式写作 138\\t1234\\t5678，请据此联系我。\nF3RB3F 拾到物品 请联系 139\\t2345\\t6789 ~ F3RB3F F3-R 出口实测。正文描述里的联系方式写作 139\\t2345\\t6789，请据此联系我。",
+      "totalLeak": 0,
+      "verdict": "PASS（越权/对端/落库方向 0 完整号码）"
+    },
+    {
+      "case": "B4",
+      "label": "连字符拆",
+      "kind": "phone",
+      "injectedA": "\"138-1234-5678\"",
+      "injectedB": "\"139-2345-6789\"",
+      "lostId": 27,
+      "foundId": 28,
+      "pairId": 34,
+      "exits": [
+        {
+          "exit": "出口1 匿名列表 GET /api/records?status=ALL",
+          "direction": "privacy",
+          "source": "GET http://localhost:18080/api/records?status=ALL&pageSize=50&page=1 → HTTP 200",
+          "note": "title 遮蔽视角",
+          "leaks": 0,
+          "leaksOther": 0,
+          "selfVisible": false,
+          "checks": [
+            {
+              "token": "A(demo01) 138-1234-5678",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            },
+            {
+              "token": "B(demo02) 139-2345-6789",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            }
+          ]
+        },
+        {
+          "exit": "出口2 匿名详情 GET /api/records/{lostId}",
+          "direction": "privacy",
+          "source": "GET http://localhost:18080/api/records/27 → HTTP 200",
+          "note": "title+description 遮蔽视角",
+          "leaks": 0,
+          "leaksOther": 0,
+          "selfVisible": false,
+          "checks": [
+            {
+              "token": "A(demo01) 138-1234-5678",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            },
+            {
+              "token": "B(demo02) 139-2345-6789",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            }
+          ]
+        },
+        {
+          "exit": "出口2 匿名详情 GET /api/records/{foundId}",
+          "direction": "privacy",
+          "source": "GET http://localhost:18080/api/records/28 → HTTP 200",
+          "note": "title+description 遮蔽视角",
+          "leaks": 0,
+          "leaksOther": 0,
+          "selfVisible": false,
+          "checks": [
+            {
+              "token": "A(demo01) 138-1234-5678",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            },
+            {
+              "token": "B(demo02) 139-2345-6789",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            }
+          ]
+        },
+        {
+          "exit": "出口3 非所有者详情 GET /api/records/{lostId}",
+          "direction": "privacy",
+          "source": "GET http://localhost:18080/api/records/27 → HTTP 200",
+          "note": "demo02 读 demo01 记录",
+          "leaks": 0,
+          "leaksOther": 0,
+          "selfVisible": false,
+          "checks": [
+            {
+              "token": "A(demo01) 138-1234-5678",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            },
+            {
+              "token": "B(demo02) 139-2345-6789",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            }
+          ]
+        },
+        {
+          "exit": "出口3 非所有者详情 GET /api/records/{foundId}",
+          "direction": "privacy",
+          "source": "GET http://localhost:18080/api/records/28 → HTTP 200",
+          "note": "demo01 读 demo02 记录",
+          "leaks": 0,
+          "leaksOther": 0,
+          "selfVisible": false,
+          "checks": [
+            {
+              "token": "A(demo01) 138-1234-5678",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            },
+            {
+              "token": "B(demo02) 139-2345-6789",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            }
+          ]
+        },
+        {
+          "exit": "出口4 GET /api/my/records(demo01 本人集合)",
+          "direction": "self",
+          "source": "GET http://localhost:18080/api/my/records?pageSize=50 → HTTP 200",
+          "note": "own title 原文允许；pairs[].counterpartTitle 必须遮蔽",
+          "leaks": 0,
+          "leaksOther": 0,
+          "selfVisible": true,
+          "checks": [
+            {
+              "token": "A(demo01) 138-1234-5678",
+              "exact": 0,
+              "rawKeep": 1,
+              "sample": [
+                "F3RB4L 拾到物品 请联系 138-1234-5678"
+              ]
+            },
+            {
+              "token": "B(demo02) 139-2345-6789",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            }
+          ]
+        },
+        {
+          "exit": "出口4 GET /api/my/records(demo02 本人集合)",
+          "direction": "self",
+          "source": "GET http://localhost:18080/api/my/records?pageSize=50 → HTTP 200",
+          "note": "own title 原文允许；pairs[].counterpartTitle 必须遮蔽",
+          "leaks": 0,
+          "leaksOther": 0,
+          "selfVisible": true,
+          "checks": [
+            {
+              "token": "B(demo02) 139-2345-6789",
+              "exact": 0,
+              "rawKeep": 1,
+              "sample": [
+                "F3RB4F 拾到物品 请联系 139-2345-6789"
+              ]
+            },
+            {
+              "token": "A(demo01) 138-1234-5678",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            }
+          ]
+        },
+        {
+          "exit": "出口5 通知 /api/notifications(demo01)",
+          "direction": "privacy",
+          "source": "GET http://localhost:18080/api/notifications?page=1&pageSize=50 → HTTP 200",
+          "note": "title+body",
+          "leaks": 0,
+          "leaksOther": 0,
+          "selfVisible": false,
+          "checks": [
+            {
+              "token": "A(demo01) 138-1234-5678",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            },
+            {
+              "token": "B(demo02) 139-2345-6789",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            }
+          ]
+        },
+        {
+          "exit": "出口5 通知 /api/notifications(demo02)",
+          "direction": "privacy",
+          "source": "GET http://localhost:18080/api/notifications?page=1&pageSize=50 → HTTP 200",
+          "note": "title+body",
+          "leaks": 0,
+          "leaksOther": 0,
+          "selfVisible": false,
+          "checks": [
+            {
+              "token": "A(demo01) 138-1234-5678",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            },
+            {
+              "token": "B(demo02) 139-2345-6789",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            }
+          ]
+        },
+        {
+          "exit": "出口6 match 项 POST /api/match(demo01 视角)",
+          "direction": "self",
+          "source": "POST http://localhost:18080/api/match → HTTP 200",
+          "note": "items.title/reason；自己发的 FOUND 不存在于此视角",
+          "leaks": 0,
+          "leaksOther": 0,
+          "selfVisible": true,
+          "checks": [
+            {
+              "token": "A(demo01) 138-1234-5678",
+              "exact": 0,
+              "rawKeep": 1,
+              "sample": [
+                "F3RB4L 拾到物品 请联系 138-1234-5678"
+              ]
+            },
+            {
+              "token": "B(demo02) 139-2345-6789",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            }
+          ]
+        },
+        {
+          "exit": "出口6 match 项 POST /api/match(demo02 视角)",
+          "direction": "self",
+          "source": "POST http://localhost:18080/api/match → HTTP 200",
+          "note": "items.title/reason",
+          "leaks": 0,
+          "leaksOther": 0,
+          "selfVisible": true,
+          "checks": [
+            {
+              "token": "B(demo02) 139-2345-6789",
+              "exact": 0,
+              "rawKeep": 1,
+              "sample": [
+                "F3RB4F 拾到物品 请联系 139-2345-6789"
+              ]
+            },
+            {
+              "token": "A(demo01) 138-1234-5678",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            }
+          ]
+        },
+        {
+          "exit": "出口7 pair 卡片 owner 详情 pairs[](A)",
+          "direction": "self",
+          "source": "GET http://localhost:18080/api/records/27 → HTTP 200",
+          "note": "counterpartTitle/otherNote 必须遮蔽；own title 原文允许",
+          "leaks": 0,
+          "leaksOther": 0,
+          "selfVisible": true,
+          "checks": [
+            {
+              "token": "A(demo01) 138-1234-5678",
+              "exact": 0,
+              "rawKeep": 1,
+              "sample": [
+                "F3RB4L 拾到物品 请联系 138-1234-5678",
+                "F3RB4L F3-R 出口实测。正文描述里的联系方式写作 138-1234-5678，请据此联系我。"
+              ]
+            },
+            {
+              "token": "B(demo02) 139-2345-6789",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            }
+          ]
+        },
+        {
+          "exit": "出口7 pair 卡片 owner 详情 pairs[](B)",
+          "direction": "self",
+          "source": "GET http://localhost:18080/api/records/28 → HTTP 200",
+          "note": "counterpartTitle/myNote 必须遮蔽；own title 原文允许",
+          "leaks": 0,
+          "leaksOther": 0,
+          "selfVisible": true,
+          "checks": [
+            {
+              "token": "B(demo02) 139-2345-6789",
+              "exact": 0,
+              "rawKeep": 1,
+              "sample": [
+                "F3RB4F 拾到物品 请联系 139-2345-6789",
+                "F3RB4F F3-R 出口实测。正文描述里的联系方式写作 139-2345-6789，请据此联系我。"
+              ]
+            },
+            {
+              "token": "A(demo01) 138-1234-5678",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            }
+          ]
+        },
+        {
+          "exit": "出口7 pair 卡片 unlock 响应 note",
+          "direction": "privacy",
+          "source": "POST http://localhost:18080/api/pairs/34/contact-unlock → HTTP 200 / POST http://localhost:18080/api/pairs/34/contact-unlock → HTTP 200",
+          "note": "ContactUnlockResponse.note",
+          "leaks": 0,
+          "leaksOther": 0,
+          "selfVisible": false,
+          "checks": [
+            {
+              "token": "A(demo01) 138-1234-5678",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            },
+            {
+              "token": "B(demo02) 139-2345-6789",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            }
+          ]
+        },
+        {
+          "exit": "出口8 t_match_result 快照",
+          "direction": "privacy",
+          "source": "SQL SELECT CONCAT(input_text, ' || ', candidates) FROM t_match_result WHERE input_text LIKE '%F3RB4%' ORDER BY id DESC LIMIT 2;",
+          "note": "input_text + candidates 写入前脱敏",
+          "leaks": 0,
+          "leaksOther": 0,
+          "selfVisible": false,
+          "checks": [
+            {
+              "token": "A(demo01) 138-1234-5678",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            },
+            {
+              "token": "B(demo02) 139-2345-6789",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            }
+          ]
+        },
+        {
+          "exit": "出口8 t_pair_score 附言落库",
+          "direction": "privacy",
+          "source": "SQL SELECT CONCAT(IFNULL(lost_unlock_note,'∅'), ' || ', IFNULL(found_unlock_note,'∅')) FROM t_pair_score WHERE id=34;",
+          "note": "A 侧附言:我的号码 [手机号已隐藏]，随时打给我 || B 侧附言:我的号码 [手机号已隐藏]，随时打给我",
+          "leaks": 0,
+          "leaksOther": 0,
+          "selfVisible": false,
+          "checks": [
+            {
+              "token": "A(demo01) 138-1234-5678",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            },
+            {
+              "token": "B(demo02) 139-2345-6789",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            }
+          ]
+        }
+      ],
+      "dbRawStored": "F3RB4L 拾到物品 请联系 138-1234-5678 ~ F3RB4L F3-R 出口实测。正文描述里的联系方式写作 138-1234-5678，请据此联系我。\nF3RB4F 拾到物品 请联系 139-2345-6789 ~ F3RB4F F3-R 出口实测。正文描述里的联系方式写作 139-2345-6789，请据此联系我。",
+      "totalLeak": 0,
+      "verdict": "PASS（越权/对端/落库方向 0 完整号码）"
+    },
+    {
+      "case": "B5",
+      "label": "零宽字符拆",
+      "kind": "phone",
+      "injectedA": "\"1​38​1234​5678\"",
+      "injectedB": "\"1​39​2345​6789\"",
+      "lostId": 27,
+      "foundId": 28,
+      "pairId": 34,
+      "exits": [
+        {
+          "exit": "出口1 匿名列表 GET /api/records?status=ALL",
+          "direction": "privacy",
+          "source": "GET http://localhost:18080/api/records?status=ALL&pageSize=50&page=1 → HTTP 200",
+          "note": "title 遮蔽视角",
+          "leaks": 0,
+          "leaksOther": 0,
+          "selfVisible": false,
+          "checks": [
+            {
+              "token": "A(demo01) 1​38​1234​5678",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            },
+            {
+              "token": "B(demo02) 1​39​2345​6789",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            }
+          ]
+        },
+        {
+          "exit": "出口2 匿名详情 GET /api/records/{lostId}",
+          "direction": "privacy",
+          "source": "GET http://localhost:18080/api/records/27 → HTTP 200",
+          "note": "title+description 遮蔽视角",
+          "leaks": 0,
+          "leaksOther": 0,
+          "selfVisible": false,
+          "checks": [
+            {
+              "token": "A(demo01) 1​38​1234​5678",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            },
+            {
+              "token": "B(demo02) 1​39​2345​6789",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            }
+          ]
+        },
+        {
+          "exit": "出口2 匿名详情 GET /api/records/{foundId}",
+          "direction": "privacy",
+          "source": "GET http://localhost:18080/api/records/28 → HTTP 200",
+          "note": "title+description 遮蔽视角",
+          "leaks": 0,
+          "leaksOther": 0,
+          "selfVisible": false,
+          "checks": [
+            {
+              "token": "A(demo01) 1​38​1234​5678",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            },
+            {
+              "token": "B(demo02) 1​39​2345​6789",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            }
+          ]
+        },
+        {
+          "exit": "出口3 非所有者详情 GET /api/records/{lostId}",
+          "direction": "privacy",
+          "source": "GET http://localhost:18080/api/records/27 → HTTP 200",
+          "note": "demo02 读 demo01 记录",
+          "leaks": 0,
+          "leaksOther": 0,
+          "selfVisible": false,
+          "checks": [
+            {
+              "token": "A(demo01) 1​38​1234​5678",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            },
+            {
+              "token": "B(demo02) 1​39​2345​6789",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            }
+          ]
+        },
+        {
+          "exit": "出口3 非所有者详情 GET /api/records/{foundId}",
+          "direction": "privacy",
+          "source": "GET http://localhost:18080/api/records/28 → HTTP 200",
+          "note": "demo01 读 demo02 记录",
+          "leaks": 0,
+          "leaksOther": 0,
+          "selfVisible": false,
+          "checks": [
+            {
+              "token": "A(demo01) 1​38​1234​5678",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            },
+            {
+              "token": "B(demo02) 1​39​2345​6789",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            }
+          ]
+        },
+        {
+          "exit": "出口4 GET /api/my/records(demo01 本人集合)",
+          "direction": "self",
+          "source": "GET http://localhost:18080/api/my/records?pageSize=50 → HTTP 200",
+          "note": "own title 原文允许；pairs[].counterpartTitle 必须遮蔽",
+          "leaks": 0,
+          "leaksOther": 0,
+          "selfVisible": true,
+          "checks": [
+            {
+              "token": "A(demo01) 1​38​1234​5678",
+              "exact": 0,
+              "rawKeep": 1,
+              "sample": [
+                "F3RB5L 拾到物品 请联系 1​38​1234​5678"
+              ]
+            },
+            {
+              "token": "B(demo02) 1​39​2345​6789",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            }
+          ]
+        },
+        {
+          "exit": "出口4 GET /api/my/records(demo02 本人集合)",
+          "direction": "self",
+          "source": "GET http://localhost:18080/api/my/records?pageSize=50 → HTTP 200",
+          "note": "own title 原文允许；pairs[].counterpartTitle 必须遮蔽",
+          "leaks": 0,
+          "leaksOther": 0,
+          "selfVisible": true,
+          "checks": [
+            {
+              "token": "B(demo02) 1​39​2345​6789",
+              "exact": 0,
+              "rawKeep": 1,
+              "sample": [
+                "F3RB5F 拾到物品 请联系 1​39​2345​6789"
+              ]
+            },
+            {
+              "token": "A(demo01) 1​38​1234​5678",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            }
+          ]
+        },
+        {
+          "exit": "出口5 通知 /api/notifications(demo01)",
+          "direction": "privacy",
+          "source": "GET http://localhost:18080/api/notifications?page=1&pageSize=50 → HTTP 200",
+          "note": "title+body",
+          "leaks": 0,
+          "leaksOther": 0,
+          "selfVisible": false,
+          "checks": [
+            {
+              "token": "A(demo01) 1​38​1234​5678",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            },
+            {
+              "token": "B(demo02) 1​39​2345​6789",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            }
+          ]
+        },
+        {
+          "exit": "出口5 通知 /api/notifications(demo02)",
+          "direction": "privacy",
+          "source": "GET http://localhost:18080/api/notifications?page=1&pageSize=50 → HTTP 200",
+          "note": "title+body",
+          "leaks": 0,
+          "leaksOther": 0,
+          "selfVisible": false,
+          "checks": [
+            {
+              "token": "A(demo01) 1​38​1234​5678",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            },
+            {
+              "token": "B(demo02) 1​39​2345​6789",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            }
+          ]
+        },
+        {
+          "exit": "出口6 match 项 POST /api/match(demo01 视角)",
+          "direction": "self",
+          "source": "POST http://localhost:18080/api/match → HTTP 200",
+          "note": "items.title/reason；自己发的 FOUND 不存在于此视角",
+          "leaks": 0,
+          "leaksOther": 0,
+          "selfVisible": true,
+          "checks": [
+            {
+              "token": "A(demo01) 1​38​1234​5678",
+              "exact": 0,
+              "rawKeep": 1,
+              "sample": [
+                "F3RB5L 拾到物品 请联系 1​38​1234​5678"
+              ]
+            },
+            {
+              "token": "B(demo02) 1​39​2345​6789",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            }
+          ]
+        },
+        {
+          "exit": "出口6 match 项 POST /api/match(demo02 视角)",
+          "direction": "self",
+          "source": "POST http://localhost:18080/api/match → HTTP 200",
+          "note": "items.title/reason",
+          "leaks": 0,
+          "leaksOther": 0,
+          "selfVisible": true,
+          "checks": [
+            {
+              "token": "B(demo02) 1​39​2345​6789",
+              "exact": 0,
+              "rawKeep": 1,
+              "sample": [
+                "F3RB5F 拾到物品 请联系 1​39​2345​6789"
+              ]
+            },
+            {
+              "token": "A(demo01) 1​38​1234​5678",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            }
+          ]
+        },
+        {
+          "exit": "出口7 pair 卡片 owner 详情 pairs[](A)",
+          "direction": "self",
+          "source": "GET http://localhost:18080/api/records/27 → HTTP 200",
+          "note": "counterpartTitle/otherNote 必须遮蔽；own title 原文允许",
+          "leaks": 0,
+          "leaksOther": 0,
+          "selfVisible": true,
+          "checks": [
+            {
+              "token": "A(demo01) 1​38​1234​5678",
+              "exact": 0,
+              "rawKeep": 1,
+              "sample": [
+                "F3RB5L 拾到物品 请联系 1​38​1234​5678",
+                "F3RB5L F3-R 出口实测。正文描述里的联系方式写作 1​38​1234​5678，请据此联系我。"
+              ]
+            },
+            {
+              "token": "B(demo02) 1​39​2345​6789",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            }
+          ]
+        },
+        {
+          "exit": "出口7 pair 卡片 owner 详情 pairs[](B)",
+          "direction": "self",
+          "source": "GET http://localhost:18080/api/records/28 → HTTP 200",
+          "note": "counterpartTitle/myNote 必须遮蔽；own title 原文允许",
+          "leaks": 0,
+          "leaksOther": 0,
+          "selfVisible": true,
+          "checks": [
+            {
+              "token": "B(demo02) 1​39​2345​6789",
+              "exact": 0,
+              "rawKeep": 1,
+              "sample": [
+                "F3RB5F 拾到物品 请联系 1​39​2345​6789",
+                "F3RB5F F3-R 出口实测。正文描述里的联系方式写作 1​39​2345​6789，请据此联系我。"
+              ]
+            },
+            {
+              "token": "A(demo01) 1​38​1234​5678",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            }
+          ]
+        },
+        {
+          "exit": "出口7 pair 卡片 unlock 响应 note",
+          "direction": "privacy",
+          "source": "POST http://localhost:18080/api/pairs/34/contact-unlock → HTTP 200 / POST http://localhost:18080/api/pairs/34/contact-unlock → HTTP 200",
+          "note": "ContactUnlockResponse.note",
+          "leaks": 0,
+          "leaksOther": 0,
+          "selfVisible": false,
+          "checks": [
+            {
+              "token": "A(demo01) 1​38​1234​5678",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            },
+            {
+              "token": "B(demo02) 1​39​2345​6789",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            }
+          ]
+        },
+        {
+          "exit": "出口8 t_match_result 快照",
+          "direction": "privacy",
+          "source": "SQL SELECT CONCAT(input_text, ' || ', candidates) FROM t_match_result WHERE input_text LIKE '%F3RB5%' ORDER BY id DESC LIMIT 2;",
+          "note": "input_text + candidates 写入前脱敏",
+          "leaks": 0,
+          "leaksOther": 0,
+          "selfVisible": false,
+          "checks": [
+            {
+              "token": "A(demo01) 1​38​1234​5678",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            },
+            {
+              "token": "B(demo02) 1​39​2345​6789",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            }
+          ]
+        },
+        {
+          "exit": "出口8 t_pair_score 附言落库",
+          "direction": "privacy",
+          "source": "SQL SELECT CONCAT(IFNULL(lost_unlock_note,'∅'), ' || ', IFNULL(found_unlock_note,'∅')) FROM t_pair_score WHERE id=34;",
+          "note": "A 侧附言:我的号码 [手机号已隐藏]，随时打给我 || B 侧附言:我的号码 [手机号已隐藏]，随时打给我",
+          "leaks": 0,
+          "leaksOther": 0,
+          "selfVisible": false,
+          "checks": [
+            {
+              "token": "A(demo01) 1​38​1234​5678",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            },
+            {
+              "token": "B(demo02) 1​39​2345​6789",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            }
+          ]
+        }
+      ],
+      "dbRawStored": "F3RB5L 拾到物品 请联系 1​38​1234​5678 ~ F3RB5L F3-R 出口实测。正文描述里的联系方式写作 1​38​1234​5678，请据此联系我。\nF3RB5F 拾到物品 请联系 1​39​2345​6789 ~ F3RB5F F3-R 出口实测。正文描述里的联系方式写作 1​39​2345​6789，请据此联系我。",
+      "totalLeak": 0,
+      "verdict": "PASS（越权/对端/落库方向 0 完整号码）"
+    },
+    {
+      "case": "B6",
+      "label": "全角空格拆",
+      "kind": "phone",
+      "injectedA": "\"138　1234　5678\"",
+      "injectedB": "\"139　2345　6789\"",
+      "lostId": 27,
+      "foundId": 28,
+      "pairId": 34,
+      "exits": [
+        {
+          "exit": "出口1 匿名列表 GET /api/records?status=ALL",
+          "direction": "privacy",
+          "source": "GET http://localhost:18080/api/records?status=ALL&pageSize=50&page=1 → HTTP 200",
+          "note": "title 遮蔽视角",
+          "leaks": 0,
+          "leaksOther": 0,
+          "selfVisible": false,
+          "checks": [
+            {
+              "token": "A(demo01) 138␣1234␣5678",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            },
+            {
+              "token": "B(demo02) 139␣2345␣6789",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            }
+          ]
+        },
+        {
+          "exit": "出口2 匿名详情 GET /api/records/{lostId}",
+          "direction": "privacy",
+          "source": "GET http://localhost:18080/api/records/27 → HTTP 200",
+          "note": "title+description 遮蔽视角",
+          "leaks": 0,
+          "leaksOther": 0,
+          "selfVisible": false,
+          "checks": [
+            {
+              "token": "A(demo01) 138␣1234␣5678",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            },
+            {
+              "token": "B(demo02) 139␣2345␣6789",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            }
+          ]
+        },
+        {
+          "exit": "出口2 匿名详情 GET /api/records/{foundId}",
+          "direction": "privacy",
+          "source": "GET http://localhost:18080/api/records/28 → HTTP 200",
+          "note": "title+description 遮蔽视角",
+          "leaks": 0,
+          "leaksOther": 0,
+          "selfVisible": false,
+          "checks": [
+            {
+              "token": "A(demo01) 138␣1234␣5678",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            },
+            {
+              "token": "B(demo02) 139␣2345␣6789",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            }
+          ]
+        },
+        {
+          "exit": "出口3 非所有者详情 GET /api/records/{lostId}",
+          "direction": "privacy",
+          "source": "GET http://localhost:18080/api/records/27 → HTTP 200",
+          "note": "demo02 读 demo01 记录",
+          "leaks": 0,
+          "leaksOther": 0,
+          "selfVisible": false,
+          "checks": [
+            {
+              "token": "A(demo01) 138␣1234␣5678",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            },
+            {
+              "token": "B(demo02) 139␣2345␣6789",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            }
+          ]
+        },
+        {
+          "exit": "出口3 非所有者详情 GET /api/records/{foundId}",
+          "direction": "privacy",
+          "source": "GET http://localhost:18080/api/records/28 → HTTP 200",
+          "note": "demo01 读 demo02 记录",
+          "leaks": 0,
+          "leaksOther": 0,
+          "selfVisible": false,
+          "checks": [
+            {
+              "token": "A(demo01) 138␣1234␣5678",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            },
+            {
+              "token": "B(demo02) 139␣2345␣6789",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            }
+          ]
+        },
+        {
+          "exit": "出口4 GET /api/my/records(demo01 本人集合)",
+          "direction": "self",
+          "source": "GET http://localhost:18080/api/my/records?pageSize=50 → HTTP 200",
+          "note": "own title 原文允许；pairs[].counterpartTitle 必须遮蔽",
+          "leaks": 0,
+          "leaksOther": 0,
+          "selfVisible": true,
+          "checks": [
+            {
+              "token": "A(demo01) 138␣1234␣5678",
+              "exact": 0,
+              "rawKeep": 1,
+              "sample": [
+                "F3RB6L 拾到物品 请联系 138　1234　5678"
+              ]
+            },
+            {
+              "token": "B(demo02) 139␣2345␣6789",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            }
+          ]
+        },
+        {
+          "exit": "出口4 GET /api/my/records(demo02 本人集合)",
+          "direction": "self",
+          "source": "GET http://localhost:18080/api/my/records?pageSize=50 → HTTP 200",
+          "note": "own title 原文允许；pairs[].counterpartTitle 必须遮蔽",
+          "leaks": 0,
+          "leaksOther": 0,
+          "selfVisible": true,
+          "checks": [
+            {
+              "token": "B(demo02) 139␣2345␣6789",
+              "exact": 0,
+              "rawKeep": 1,
+              "sample": [
+                "F3RB6F 拾到物品 请联系 139　2345　6789"
+              ]
+            },
+            {
+              "token": "A(demo01) 138␣1234␣5678",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            }
+          ]
+        },
+        {
+          "exit": "出口5 通知 /api/notifications(demo01)",
+          "direction": "privacy",
+          "source": "GET http://localhost:18080/api/notifications?page=1&pageSize=50 → HTTP 200",
+          "note": "title+body",
+          "leaks": 0,
+          "leaksOther": 0,
+          "selfVisible": false,
+          "checks": [
+            {
+              "token": "A(demo01) 138␣1234␣5678",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            },
+            {
+              "token": "B(demo02) 139␣2345␣6789",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            }
+          ]
+        },
+        {
+          "exit": "出口5 通知 /api/notifications(demo02)",
+          "direction": "privacy",
+          "source": "GET http://localhost:18080/api/notifications?page=1&pageSize=50 → HTTP 200",
+          "note": "title+body",
+          "leaks": 0,
+          "leaksOther": 0,
+          "selfVisible": false,
+          "checks": [
+            {
+              "token": "A(demo01) 138␣1234␣5678",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            },
+            {
+              "token": "B(demo02) 139␣2345␣6789",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            }
+          ]
+        },
+        {
+          "exit": "出口6 match 项 POST /api/match(demo01 视角)",
+          "direction": "self",
+          "source": "POST http://localhost:18080/api/match → HTTP 200",
+          "note": "items.title/reason；自己发的 FOUND 不存在于此视角",
+          "leaks": 0,
+          "leaksOther": 0,
+          "selfVisible": true,
+          "checks": [
+            {
+              "token": "A(demo01) 138␣1234␣5678",
+              "exact": 0,
+              "rawKeep": 1,
+              "sample": [
+                "F3RB6L 拾到物品 请联系 138　1234　5678"
+              ]
+            },
+            {
+              "token": "B(demo02) 139␣2345␣6789",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            }
+          ]
+        },
+        {
+          "exit": "出口6 match 项 POST /api/match(demo02 视角)",
+          "direction": "self",
+          "source": "POST http://localhost:18080/api/match → HTTP 200",
+          "note": "items.title/reason",
+          "leaks": 0,
+          "leaksOther": 0,
+          "selfVisible": true,
+          "checks": [
+            {
+              "token": "B(demo02) 139␣2345␣6789",
+              "exact": 0,
+              "rawKeep": 1,
+              "sample": [
+                "F3RB6F 拾到物品 请联系 139　2345　6789"
+              ]
+            },
+            {
+              "token": "A(demo01) 138␣1234␣5678",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            }
+          ]
+        },
+        {
+          "exit": "出口7 pair 卡片 owner 详情 pairs[](A)",
+          "direction": "self",
+          "source": "GET http://localhost:18080/api/records/27 → HTTP 200",
+          "note": "counterpartTitle/otherNote 必须遮蔽；own title 原文允许",
+          "leaks": 0,
+          "leaksOther": 0,
+          "selfVisible": true,
+          "checks": [
+            {
+              "token": "A(demo01) 138␣1234␣5678",
+              "exact": 0,
+              "rawKeep": 1,
+              "sample": [
+                "F3RB6L 拾到物品 请联系 138　1234　5678",
+                "F3RB6L F3-R 出口实测。正文描述里的联系方式写作 138　1234　5678，请据此联系我。"
+              ]
+            },
+            {
+              "token": "B(demo02) 139␣2345␣6789",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            }
+          ]
+        },
+        {
+          "exit": "出口7 pair 卡片 owner 详情 pairs[](B)",
+          "direction": "self",
+          "source": "GET http://localhost:18080/api/records/28 → HTTP 200",
+          "note": "counterpartTitle/myNote 必须遮蔽；own title 原文允许",
+          "leaks": 0,
+          "leaksOther": 0,
+          "selfVisible": true,
+          "checks": [
+            {
+              "token": "B(demo02) 139␣2345␣6789",
+              "exact": 0,
+              "rawKeep": 1,
+              "sample": [
+                "F3RB6F 拾到物品 请联系 139　2345　6789",
+                "F3RB6F F3-R 出口实测。正文描述里的联系方式写作 139　2345　6789，请据此联系我。"
+              ]
+            },
+            {
+              "token": "A(demo01) 138␣1234␣5678",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            }
+          ]
+        },
+        {
+          "exit": "出口7 pair 卡片 unlock 响应 note",
+          "direction": "privacy",
+          "source": "POST http://localhost:18080/api/pairs/34/contact-unlock → HTTP 200 / POST http://localhost:18080/api/pairs/34/contact-unlock → HTTP 200",
+          "note": "ContactUnlockResponse.note",
+          "leaks": 0,
+          "leaksOther": 0,
+          "selfVisible": false,
+          "checks": [
+            {
+              "token": "A(demo01) 138␣1234␣5678",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            },
+            {
+              "token": "B(demo02) 139␣2345␣6789",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            }
+          ]
+        },
+        {
+          "exit": "出口8 t_match_result 快照",
+          "direction": "privacy",
+          "source": "SQL SELECT CONCAT(input_text, ' || ', candidates) FROM t_match_result WHERE input_text LIKE '%F3RB6%' ORDER BY id DESC LIMIT 2;",
+          "note": "input_text + candidates 写入前脱敏",
+          "leaks": 0,
+          "leaksOther": 0,
+          "selfVisible": false,
+          "checks": [
+            {
+              "token": "A(demo01) 138␣1234␣5678",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            },
+            {
+              "token": "B(demo02) 139␣2345␣6789",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            }
+          ]
+        },
+        {
+          "exit": "出口8 t_pair_score 附言落库",
+          "direction": "privacy",
+          "source": "SQL SELECT CONCAT(IFNULL(lost_unlock_note,'∅'), ' || ', IFNULL(found_unlock_note,'∅')) FROM t_pair_score WHERE id=34;",
+          "note": "A 侧附言:我的号码 [手机号已隐藏]，随时打给我 || B 侧附言:我的号码 [手机号已隐藏]，随时打给我",
+          "leaks": 0,
+          "leaksOther": 0,
+          "selfVisible": false,
+          "checks": [
+            {
+              "token": "A(demo01) 138␣1234␣5678",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            },
+            {
+              "token": "B(demo02) 139␣2345␣6789",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            }
+          ]
+        }
+      ],
+      "dbRawStored": "F3RB6L 拾到物品 请联系 138　1234　5678 ~ F3RB6L F3-R 出口实测。正文描述里的联系方式写作 138　1234　5678，请据此联系我。\nF3RB6F 拾到物品 请联系 139　2345　6789 ~ F3RB6F F3-R 出口实测。正文描述里的联系方式写作 139　2345　6789，请据此联系我。",
+      "totalLeak": 0,
+      "verdict": "PASS（越权/对端/落库方向 0 完整号码）"
+    },
+    {
+      "case": "B7",
+      "label": "国际前缀",
+      "kind": "phone",
+      "injectedA": "\"+8613812345678\"",
+      "injectedB": "\"+8613923456789\"",
+      "lostId": 27,
+      "foundId": 28,
+      "pairId": 34,
+      "exits": [
+        {
+          "exit": "出口1 匿名列表 GET /api/records?status=ALL",
+          "direction": "privacy",
+          "source": "GET http://localhost:18080/api/records?status=ALL&pageSize=50&page=1 → HTTP 200",
+          "note": "title 遮蔽视角",
+          "leaks": 0,
+          "leaksOther": 0,
+          "selfVisible": false,
+          "checks": [
+            {
+              "token": "A(demo01) +8613812345678",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            },
+            {
+              "token": "B(demo02) +8613923456789",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            }
+          ]
+        },
+        {
+          "exit": "出口2 匿名详情 GET /api/records/{lostId}",
+          "direction": "privacy",
+          "source": "GET http://localhost:18080/api/records/27 → HTTP 200",
+          "note": "title+description 遮蔽视角",
+          "leaks": 0,
+          "leaksOther": 0,
+          "selfVisible": false,
+          "checks": [
+            {
+              "token": "A(demo01) +8613812345678",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            },
+            {
+              "token": "B(demo02) +8613923456789",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            }
+          ]
+        },
+        {
+          "exit": "出口2 匿名详情 GET /api/records/{foundId}",
+          "direction": "privacy",
+          "source": "GET http://localhost:18080/api/records/28 → HTTP 200",
+          "note": "title+description 遮蔽视角",
+          "leaks": 0,
+          "leaksOther": 0,
+          "selfVisible": false,
+          "checks": [
+            {
+              "token": "A(demo01) +8613812345678",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            },
+            {
+              "token": "B(demo02) +8613923456789",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            }
+          ]
+        },
+        {
+          "exit": "出口3 非所有者详情 GET /api/records/{lostId}",
+          "direction": "privacy",
+          "source": "GET http://localhost:18080/api/records/27 → HTTP 200",
+          "note": "demo02 读 demo01 记录",
+          "leaks": 0,
+          "leaksOther": 0,
+          "selfVisible": false,
+          "checks": [
+            {
+              "token": "A(demo01) +8613812345678",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            },
+            {
+              "token": "B(demo02) +8613923456789",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            }
+          ]
+        },
+        {
+          "exit": "出口3 非所有者详情 GET /api/records/{foundId}",
+          "direction": "privacy",
+          "source": "GET http://localhost:18080/api/records/28 → HTTP 200",
+          "note": "demo01 读 demo02 记录",
+          "leaks": 0,
+          "leaksOther": 0,
+          "selfVisible": false,
+          "checks": [
+            {
+              "token": "A(demo01) +8613812345678",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            },
+            {
+              "token": "B(demo02) +8613923456789",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            }
+          ]
+        },
+        {
+          "exit": "出口4 GET /api/my/records(demo01 本人集合)",
+          "direction": "self",
+          "source": "GET http://localhost:18080/api/my/records?pageSize=50 → HTTP 200",
+          "note": "own title 原文允许；pairs[].counterpartTitle 必须遮蔽",
+          "leaks": 0,
+          "leaksOther": 0,
+          "selfVisible": true,
+          "checks": [
+            {
+              "token": "A(demo01) +8613812345678",
+              "exact": 1,
+              "rawKeep": 1,
+              "sample": [
+                "F3RB7L 拾到物品 请联系 +8613812345678"
+              ]
+            },
+            {
+              "token": "B(demo02) +8613923456789",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            }
+          ]
+        },
+        {
+          "exit": "出口4 GET /api/my/records(demo02 本人集合)",
+          "direction": "self",
+          "source": "GET http://localhost:18080/api/my/records?pageSize=50 → HTTP 200",
+          "note": "own title 原文允许；pairs[].counterpartTitle 必须遮蔽",
+          "leaks": 0,
+          "leaksOther": 0,
+          "selfVisible": true,
+          "checks": [
+            {
+              "token": "B(demo02) +8613923456789",
+              "exact": 1,
+              "rawKeep": 1,
+              "sample": [
+                "F3RB7F 拾到物品 请联系 +8613923456789"
+              ]
+            },
+            {
+              "token": "A(demo01) +8613812345678",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            }
+          ]
+        },
+        {
+          "exit": "出口5 通知 /api/notifications(demo01)",
+          "direction": "privacy",
+          "source": "GET http://localhost:18080/api/notifications?page=1&pageSize=50 → HTTP 200",
+          "note": "title+body",
+          "leaks": 0,
+          "leaksOther": 0,
+          "selfVisible": false,
+          "checks": [
+            {
+              "token": "A(demo01) +8613812345678",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            },
+            {
+              "token": "B(demo02) +8613923456789",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            }
+          ]
+        },
+        {
+          "exit": "出口5 通知 /api/notifications(demo02)",
+          "direction": "privacy",
+          "source": "GET http://localhost:18080/api/notifications?page=1&pageSize=50 → HTTP 200",
+          "note": "title+body",
+          "leaks": 0,
+          "leaksOther": 0,
+          "selfVisible": false,
+          "checks": [
+            {
+              "token": "A(demo01) +8613812345678",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            },
+            {
+              "token": "B(demo02) +8613923456789",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            }
+          ]
+        },
+        {
+          "exit": "出口6 match 项 POST /api/match(demo01 视角)",
+          "direction": "self",
+          "source": "POST http://localhost:18080/api/match → HTTP 200",
+          "note": "items.title/reason；自己发的 FOUND 不存在于此视角",
+          "leaks": 0,
+          "leaksOther": 0,
+          "selfVisible": true,
+          "checks": [
+            {
+              "token": "A(demo01) +8613812345678",
+              "exact": 1,
+              "rawKeep": 1,
+              "sample": [
+                "F3RB7L 拾到物品 请联系 +8613812345678"
+              ]
+            },
+            {
+              "token": "B(demo02) +8613923456789",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            }
+          ]
+        },
+        {
+          "exit": "出口6 match 项 POST /api/match(demo02 视角)",
+          "direction": "self",
+          "source": "POST http://localhost:18080/api/match → HTTP 200",
+          "note": "items.title/reason",
+          "leaks": 0,
+          "leaksOther": 0,
+          "selfVisible": true,
+          "checks": [
+            {
+              "token": "B(demo02) +8613923456789",
+              "exact": 1,
+              "rawKeep": 1,
+              "sample": [
+                "F3RB7F 拾到物品 请联系 +8613923456789"
+              ]
+            },
+            {
+              "token": "A(demo01) +8613812345678",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            }
+          ]
+        },
+        {
+          "exit": "出口7 pair 卡片 owner 详情 pairs[](A)",
+          "direction": "self",
+          "source": "GET http://localhost:18080/api/records/27 → HTTP 200",
+          "note": "counterpartTitle/otherNote 必须遮蔽；own title 原文允许",
+          "leaks": 0,
+          "leaksOther": 0,
+          "selfVisible": true,
+          "checks": [
+            {
+              "token": "A(demo01) +8613812345678",
+              "exact": 2,
+              "rawKeep": 1,
+              "sample": [
+                "F3RB7L 拾到物品 请联系 +8613812345678",
+                "F3RB7L F3-R 出口实测。正文描述里的联系方式写作 +8613812345678，请据此联系我。"
+              ]
+            },
+            {
+              "token": "B(demo02) +8613923456789",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            }
+          ]
+        },
+        {
+          "exit": "出口7 pair 卡片 owner 详情 pairs[](B)",
+          "direction": "self",
+          "source": "GET http://localhost:18080/api/records/28 → HTTP 200",
+          "note": "counterpartTitle/myNote 必须遮蔽；own title 原文允许",
+          "leaks": 0,
+          "leaksOther": 0,
+          "selfVisible": true,
+          "checks": [
+            {
+              "token": "B(demo02) +8613923456789",
+              "exact": 2,
+              "rawKeep": 1,
+              "sample": [
+                "F3RB7F 拾到物品 请联系 +8613923456789",
+                "F3RB7F F3-R 出口实测。正文描述里的联系方式写作 +8613923456789，请据此联系我。"
+              ]
+            },
+            {
+              "token": "A(demo01) +8613812345678",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            }
+          ]
+        },
+        {
+          "exit": "出口7 pair 卡片 unlock 响应 note",
+          "direction": "privacy",
+          "source": "POST http://localhost:18080/api/pairs/34/contact-unlock → HTTP 200 / POST http://localhost:18080/api/pairs/34/contact-unlock → HTTP 200",
+          "note": "ContactUnlockResponse.note",
+          "leaks": 0,
+          "leaksOther": 0,
+          "selfVisible": false,
+          "checks": [
+            {
+              "token": "A(demo01) +8613812345678",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            },
+            {
+              "token": "B(demo02) +8613923456789",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            }
+          ]
+        },
+        {
+          "exit": "出口8 t_match_result 快照",
+          "direction": "privacy",
+          "source": "SQL SELECT CONCAT(input_text, ' || ', candidates) FROM t_match_result WHERE input_text LIKE '%F3RB7%' ORDER BY id DESC LIMIT 2;",
+          "note": "input_text + candidates 写入前脱敏",
+          "leaks": 0,
+          "leaksOther": 0,
+          "selfVisible": false,
+          "checks": [
+            {
+              "token": "A(demo01) +8613812345678",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            },
+            {
+              "token": "B(demo02) +8613923456789",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            }
+          ]
+        },
+        {
+          "exit": "出口8 t_pair_score 附言落库",
+          "direction": "privacy",
+          "source": "SQL SELECT CONCAT(IFNULL(lost_unlock_note,'∅'), ' || ', IFNULL(found_unlock_note,'∅')) FROM t_pair_score WHERE id=34;",
+          "note": "A 侧附言:我的号码 [手机号已隐藏]，随时打给我 || B 侧附言:我的号码 [手机号已隐藏]，随时打给我",
+          "leaks": 0,
+          "leaksOther": 0,
+          "selfVisible": false,
+          "checks": [
+            {
+              "token": "A(demo01) +8613812345678",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            },
+            {
+              "token": "B(demo02) +8613923456789",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            }
+          ]
+        }
+      ],
+      "dbRawStored": "F3RB7L 拾到物品 请联系 +8613812345678 ~ F3RB7L F3-R 出口实测。正文描述里的联系方式写作 +8613812345678，请据此联系我。\nF3RB7F 拾到物品 请联系 +8613923456789 ~ F3RB7F F3-R 出口实测。正文描述里的联系方式写作 +8613923456789，请据此联系我。",
+      "totalLeak": 0,
+      "verdict": "PASS（越权/对端/落库方向 0 完整号码）"
+    },
+    {
+      "case": "B8",
+      "label": "证件号分段",
+      "kind": "id",
+      "injectedA": "\"1101 0119 9001 0112 34\"",
+      "injectedB": "\"1102 0219 9002 0212 34\"",
+      "lostId": 27,
+      "foundId": 28,
+      "pairId": 34,
+      "exits": [
+        {
+          "exit": "出口1 匿名列表 GET /api/records?status=ALL",
+          "direction": "privacy",
+          "source": "GET http://localhost:18080/api/records?status=ALL&pageSize=50&page=1 → HTTP 200",
+          "note": "title 遮蔽视角",
+          "leaks": 0,
+          "leaksOther": 0,
+          "selfVisible": false,
+          "checks": [
+            {
+              "token": "A(demo01) 1101␣0119␣9001␣0112␣34",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            },
+            {
+              "token": "B(demo02) 1102␣0219␣9002␣0212␣34",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            }
+          ]
+        },
+        {
+          "exit": "出口2 匿名详情 GET /api/records/{lostId}",
+          "direction": "privacy",
+          "source": "GET http://localhost:18080/api/records/27 → HTTP 200",
+          "note": "title+description 遮蔽视角",
+          "leaks": 0,
+          "leaksOther": 0,
+          "selfVisible": false,
+          "checks": [
+            {
+              "token": "A(demo01) 1101␣0119␣9001␣0112␣34",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            },
+            {
+              "token": "B(demo02) 1102␣0219␣9002␣0212␣34",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            }
+          ]
+        },
+        {
+          "exit": "出口2 匿名详情 GET /api/records/{foundId}",
+          "direction": "privacy",
+          "source": "GET http://localhost:18080/api/records/28 → HTTP 200",
+          "note": "title+description 遮蔽视角",
+          "leaks": 0,
+          "leaksOther": 0,
+          "selfVisible": false,
+          "checks": [
+            {
+              "token": "A(demo01) 1101␣0119␣9001␣0112␣34",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            },
+            {
+              "token": "B(demo02) 1102␣0219␣9002␣0212␣34",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            }
+          ]
+        },
+        {
+          "exit": "出口3 非所有者详情 GET /api/records/{lostId}",
+          "direction": "privacy",
+          "source": "GET http://localhost:18080/api/records/27 → HTTP 200",
+          "note": "demo02 读 demo01 记录",
+          "leaks": 0,
+          "leaksOther": 0,
+          "selfVisible": false,
+          "checks": [
+            {
+              "token": "A(demo01) 1101␣0119␣9001␣0112␣34",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            },
+            {
+              "token": "B(demo02) 1102␣0219␣9002␣0212␣34",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            }
+          ]
+        },
+        {
+          "exit": "出口3 非所有者详情 GET /api/records/{foundId}",
+          "direction": "privacy",
+          "source": "GET http://localhost:18080/api/records/28 → HTTP 200",
+          "note": "demo01 读 demo02 记录",
+          "leaks": 0,
+          "leaksOther": 0,
+          "selfVisible": false,
+          "checks": [
+            {
+              "token": "A(demo01) 1101␣0119␣9001␣0112␣34",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            },
+            {
+              "token": "B(demo02) 1102␣0219␣9002␣0212␣34",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            }
+          ]
+        },
+        {
+          "exit": "出口4 GET /api/my/records(demo01 本人集合)",
+          "direction": "self",
+          "source": "GET http://localhost:18080/api/my/records?pageSize=50 → HTTP 200",
+          "note": "own title 原文允许；pairs[].counterpartTitle 必须遮蔽",
+          "leaks": 0,
+          "leaksOther": 0,
+          "selfVisible": true,
+          "checks": [
+            {
+              "token": "A(demo01) 1101␣0119␣9001␣0112␣34",
+              "exact": 0,
+              "rawKeep": 1,
+              "sample": [
+                "F3RB8L 拾到物品 请联系 1101 0119 9001 0112 34"
+              ]
+            },
+            {
+              "token": "B(demo02) 1102␣0219␣9002␣0212␣34",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            }
+          ]
+        },
+        {
+          "exit": "出口4 GET /api/my/records(demo02 本人集合)",
+          "direction": "self",
+          "source": "GET http://localhost:18080/api/my/records?pageSize=50 → HTTP 200",
+          "note": "own title 原文允许；pairs[].counterpartTitle 必须遮蔽",
+          "leaks": 0,
+          "leaksOther": 0,
+          "selfVisible": true,
+          "checks": [
+            {
+              "token": "B(demo02) 1102␣0219␣9002␣0212␣34",
+              "exact": 0,
+              "rawKeep": 1,
+              "sample": [
+                "F3RB8F 拾到物品 请联系 1102 0219 9002 0212 34"
+              ]
+            },
+            {
+              "token": "A(demo01) 1101␣0119␣9001␣0112␣34",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            }
+          ]
+        },
+        {
+          "exit": "出口5 通知 /api/notifications(demo01)",
+          "direction": "privacy",
+          "source": "GET http://localhost:18080/api/notifications?page=1&pageSize=50 → HTTP 200",
+          "note": "title+body",
+          "leaks": 0,
+          "leaksOther": 0,
+          "selfVisible": false,
+          "checks": [
+            {
+              "token": "A(demo01) 1101␣0119␣9001␣0112␣34",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            },
+            {
+              "token": "B(demo02) 1102␣0219␣9002␣0212␣34",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            }
+          ]
+        },
+        {
+          "exit": "出口5 通知 /api/notifications(demo02)",
+          "direction": "privacy",
+          "source": "GET http://localhost:18080/api/notifications?page=1&pageSize=50 → HTTP 200",
+          "note": "title+body",
+          "leaks": 0,
+          "leaksOther": 0,
+          "selfVisible": false,
+          "checks": [
+            {
+              "token": "A(demo01) 1101␣0119␣9001␣0112␣34",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            },
+            {
+              "token": "B(demo02) 1102␣0219␣9002␣0212␣34",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            }
+          ]
+        },
+        {
+          "exit": "出口6 match 项 POST /api/match(demo01 视角)",
+          "direction": "self",
+          "source": "POST http://localhost:18080/api/match → HTTP 200",
+          "note": "items.title/reason；自己发的 FOUND 不存在于此视角",
+          "leaks": 0,
+          "leaksOther": 0,
+          "selfVisible": true,
+          "checks": [
+            {
+              "token": "A(demo01) 1101␣0119␣9001␣0112␣34",
+              "exact": 0,
+              "rawKeep": 1,
+              "sample": [
+                "F3RB8L 拾到物品 请联系 1101 0119 9001 0112 34"
+              ]
+            },
+            {
+              "token": "B(demo02) 1102␣0219␣9002␣0212␣34",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            }
+          ]
+        },
+        {
+          "exit": "出口6 match 项 POST /api/match(demo02 视角)",
+          "direction": "self",
+          "source": "POST http://localhost:18080/api/match → HTTP 200",
+          "note": "items.title/reason",
+          "leaks": 0,
+          "leaksOther": 0,
+          "selfVisible": true,
+          "checks": [
+            {
+              "token": "B(demo02) 1102␣0219␣9002␣0212␣34",
+              "exact": 0,
+              "rawKeep": 1,
+              "sample": [
+                "F3RB8F 拾到物品 请联系 1102 0219 9002 0212 34"
+              ]
+            },
+            {
+              "token": "A(demo01) 1101␣0119␣9001␣0112␣34",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            }
+          ]
+        },
+        {
+          "exit": "出口7 pair 卡片 owner 详情 pairs[](A)",
+          "direction": "self",
+          "source": "GET http://localhost:18080/api/records/27 → HTTP 200",
+          "note": "counterpartTitle/otherNote 必须遮蔽；own title 原文允许",
+          "leaks": 0,
+          "leaksOther": 0,
+          "selfVisible": true,
+          "checks": [
+            {
+              "token": "A(demo01) 1101␣0119␣9001␣0112␣34",
+              "exact": 0,
+              "rawKeep": 1,
+              "sample": [
+                "F3RB8L 拾到物品 请联系 1101 0119 9001 0112 34",
+                "F3RB8L F3-R 出口实测。正文描述里的联系方式写作 1101 0119 9001 0112 34，请据此联系我。"
+              ]
+            },
+            {
+              "token": "B(demo02) 1102␣0219␣9002␣0212␣34",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            }
+          ]
+        },
+        {
+          "exit": "出口7 pair 卡片 owner 详情 pairs[](B)",
+          "direction": "self",
+          "source": "GET http://localhost:18080/api/records/28 → HTTP 200",
+          "note": "counterpartTitle/myNote 必须遮蔽；own title 原文允许",
+          "leaks": 0,
+          "leaksOther": 0,
+          "selfVisible": true,
+          "checks": [
+            {
+              "token": "B(demo02) 1102␣0219␣9002␣0212␣34",
+              "exact": 0,
+              "rawKeep": 1,
+              "sample": [
+                "F3RB8F 拾到物品 请联系 1102 0219 9002 0212 34",
+                "F3RB8F F3-R 出口实测。正文描述里的联系方式写作 1102 0219 9002 0212 34，请据此联系我。"
+              ]
+            },
+            {
+              "token": "A(demo01) 1101␣0119␣9001␣0112␣34",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            }
+          ]
+        },
+        {
+          "exit": "出口7 pair 卡片 unlock 响应 note",
+          "direction": "privacy",
+          "source": "POST http://localhost:18080/api/pairs/34/contact-unlock → HTTP 200 / POST http://localhost:18080/api/pairs/34/contact-unlock → HTTP 200",
+          "note": "ContactUnlockResponse.note",
+          "leaks": 0,
+          "leaksOther": 0,
+          "selfVisible": false,
+          "checks": [
+            {
+              "token": "A(demo01) 1101␣0119␣9001␣0112␣34",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            },
+            {
+              "token": "B(demo02) 1102␣0219␣9002␣0212␣34",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            }
+          ]
+        },
+        {
+          "exit": "出口8 t_match_result 快照",
+          "direction": "privacy",
+          "source": "SQL SELECT CONCAT(input_text, ' || ', candidates) FROM t_match_result WHERE input_text LIKE '%F3RB8%' ORDER BY id DESC LIMIT 2;",
+          "note": "input_text + candidates 写入前脱敏",
+          "leaks": 0,
+          "leaksOther": 0,
+          "selfVisible": false,
+          "checks": [
+            {
+              "token": "A(demo01) 1101␣0119␣9001␣0112␣34",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            },
+            {
+              "token": "B(demo02) 1102␣0219␣9002␣0212␣34",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            }
+          ]
+        },
+        {
+          "exit": "出口8 t_pair_score 附言落库",
+          "direction": "privacy",
+          "source": "SQL SELECT CONCAT(IFNULL(lost_unlock_note,'∅'), ' || ', IFNULL(found_unlock_note,'∅')) FROM t_pair_score WHERE id=34;",
+          "note": "A 侧附言:我的号码 [证件号已隐藏]，随时打给我 || B 侧附言:我的号码 [证件号已隐藏]，随时打给我",
+          "leaks": 0,
+          "leaksOther": 0,
+          "selfVisible": false,
+          "checks": [
+            {
+              "token": "A(demo01) 1101␣0119␣9001␣0112␣34",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            },
+            {
+              "token": "B(demo02) 1102␣0219␣9002␣0212␣34",
+              "exact": 0,
+              "rawKeep": 0,
+              "sample": []
+            }
+          ]
+        }
+      ],
+      "dbRawStored": "F3RB8L 拾到物品 请联系 1101 0119 9001 0112 34 ~ F3RB8L F3-R 出口实测。正文描述里的联系方式写作 1101 0119 9001 0112 34，请据此联系我。\nF3RB8F 拾到物品 请联系 1102 0219 9002 0212 34 ~ F3RB8F F3-R 出口实测。正文描述里的联系方式写作 1102 0219 9002 0212 34，请据此联系我。",
+      "totalLeak": 0,
+      "verdict": "PASS（越权/对端/落库方向 0 完整号码）"
+    }
+  ],
+  "controls": [
+    {
+      "key": "C1",
+      "text": "13812345678",
+      "norm": "13812345678",
+      "name": "连续 11 位",
+      "expectMasked": true,
+      "id": 27,
+      "masked": true,
+      "exact": 0,
+      "rawKeep": 0,
+      "keptVerbatim": false,
+      "title": "F3RCC1 拾到物品 请联系 [手机号已隐藏]",
+      "description": "F3RCC1 F3-R 出口实测。正文描述里的联系方式写作 [手机号已隐藏]，请据此联系我。",
+      "verdict": "PASS"
+    },
+    {
+      "key": "C2",
+      "text": "１３８１２３４５６７８",
+      "norm": "13812345678",
+      "name": "全角 11 位",
+      "expectMasked": true,
+      "id": 28,
+      "masked": true,
+      "exact": 0,
+      "rawKeep": 0,
+      "keptVerbatim": false,
+      "title": "F3RCC2 拾到物品 请联系 [手机号已隐藏]",
+      "description": "F3RCC2 F3-R 出口实测。正文描述里的联系方式写作 [手机号已隐藏]，请据此联系我。",
+      "verdict": "PASS"
+    },
+    {
+      "key": "C3",
+      "text": "学号 20230101",
+      "norm": "13812345678",
+      "name": "裸 8 位学号",
+      "expectMasked": false,
+      "id": 29,
+      "masked": false,
+      "exact": 0,
+      "rawKeep": 1,
+      "keptVerbatim": true,
+      "title": "F3RCC3 拾到物品 请联系 学号 20230101",
+      "description": "F3RCC3 F3-R 出口实测。正文描述里的联系方式写作 学号 20230101，请据此联系我。",
+      "verdict": "PASS"
+    },
+    {
+      "key": "C4",
+      "text": "3 号楼 201 房间",
+      "norm": "13812345678",
+      "name": "楼栋房间号",
+      "expectMasked": false,
+      "id": 30,
+      "masked": false,
+      "exact": 0,
+      "rawKeep": 1,
+      "keptVerbatim": true,
+      "title": "F3RCC4 拾到物品 请联系 3 号楼 201 房间",
+      "description": "F3RCC4 F3-R 出口实测。正文描述里的联系方式写作 3 号楼 201 房间，请据此联系我。",
+      "verdict": "PASS"
+    },
+    {
+      "key": "C5",
+      "text": "2026-10-21 13:30",
+      "norm": "13812345678",
+      "name": "日期时间",
+      "expectMasked": false,
+      "id": 31,
+      "masked": false,
+      "exact": 0,
+      "rawKeep": 1,
+      "keptVerbatim": true,
+      "title": "F3RCC5 拾到物品 请联系 2026-10-21 13:30",
+      "description": "F3RCC5 F3-R 出口实测。正文描述里的联系方式写作 2026-10-21 13:30，请据此联系我。",
+      "verdict": "PASS"
+    }
+  ],
+  "r1": [
+    {
+      "key": "R1a",
+      "label": "逗号拆",
+      "text": "138,1234,5678",
+      "lostId": 27,
+      "foundId": 28,
+      "pairId": 34,
+      "unlockHttp": "HTTP 200/code=0",
+      "anon": {
+        "token": "逗号拆",
+        "exact": 0,
+        "rawKeep": 1,
+        "sample": [
+          "F3RR1aL 拾到物品 请联系 138,1234,5678",
+          "F3RR1aL F3-R 出口实测。正文描述里的联系方式写作 138,1234,5678，请据此联系我。"
+        ]
+      },
+      "nonOwner": {
+        "token": "逗号拆",
+        "exact": 0,
+        "rawKeep": 1,
+        "sample": [
+          "F3RR1aL 拾到物品 请联系 138,1234,5678",
+          "F3RR1aL F3-R 出口实测。正文描述里的联系方式写作 138,1234,5678，请据此联系我。"
+        ]
+      },
+      "note": {
+        "token": "逗号拆",
+        "exact": 0,
+        "rawKeep": 1,
+        "sample": [
+          "号码 138,1234,5678"
+        ]
+      },
+      "noteDb": "号码 138,1234,5678",
+      "match": {
+        "token": "逗号拆",
+        "exact": 0,
+        "rawKeep": 0,
+        "sample": []
+      },
+      "snapshot": {
+        "token": "逗号拆",
+        "exact": 0,
+        "rawKeep": 1,
+        "sample": [
+          "F3RR1a 回电 138,1234,5678 || [{\"score\": 0.08, \"reason\": \"关键词命中:电\", \"recordId\": 17}, {\"score\": 0.0, \"reason\": \"无关键词命中\", \"recordId\": 13}, {\"score\": 0.0, \"reason\": \"无关键词命中\", \"recordId\": 14}, {\"score\": 0.0, \"reason\": \"无关键词命中\", \"recordId\": 15}, {\"score\": 0.0, \"reason\": \"无关键词命中\", \"recordId\": 16}, {\"score\": 0.0, \"reason\": \"无关键词命中\", \"recordId\": 18}, {\"score\": 0.0, \"reason\": \"无关键词命中\", \"recordId\": 19}, {\"score\": 0.0, \"reason\": \"无关键词命中\", \"recordId\": 20}, {\"score\": 0.0, \"reason\": \"无关键词命中\", \"recordId\": 21}, {\"score\": 0.0, \"reason\": \"无关键词命中\", \"recordId\": 22}, {\"score\": 0.0, \"reason\": \"无关键词命中\", \"recordId\": 23}, {\"score\": 0.0, \"reason\": \"无关键词命中\", \"recordId\": 26}, {\"score\": 0.0, \"reason\": \"无关键词命中\", \"recordId\": 28}]"
+        ]
+      },
+      "hit": true
+    },
+    {
+      "key": "R1b",
+      "label": "冒号拆",
+      "text": "138:1234:5678",
+      "lostId": 27,
+      "foundId": 28,
+      "pairId": 34,
+      "unlockHttp": "HTTP 200/code=0",
+      "anon": {
+        "token": "冒号拆",
+        "exact": 0,
+        "rawKeep": 1,
+        "sample": [
+          "F3RR1bL 拾到物品 请联系 138:1234:5678",
+          "F3RR1bL F3-R 出口实测。正文描述里的联系方式写作 138:1234:5678，请据此联系我。"
+        ]
+      },
+      "nonOwner": {
+        "token": "冒号拆",
+        "exact": 0,
+        "rawKeep": 1,
+        "sample": [
+          "F3RR1bL 拾到物品 请联系 138:1234:5678",
+          "F3RR1bL F3-R 出口实测。正文描述里的联系方式写作 138:1234:5678，请据此联系我。"
+        ]
+      },
+      "note": {
+        "token": "冒号拆",
+        "exact": 0,
+        "rawKeep": 1,
+        "sample": [
+          "号码 138:1234:5678"
+        ]
+      },
+      "noteDb": "号码 138:1234:5678",
+      "match": {
+        "token": "冒号拆",
+        "exact": 0,
+        "rawKeep": 0,
+        "sample": []
+      },
+      "snapshot": {
+        "token": "冒号拆",
+        "exact": 0,
+        "rawKeep": 1,
+        "sample": [
+          "F3RR1b 回电 138:1234:5678 || [{\"score\": 0.08, \"reason\": \"关键词命中:电\", \"recordId\": 17}, {\"score\": 0.0, \"reason\": \"无关键词命中\", \"recordId\": 13}, {\"score\": 0.0, \"reason\": \"无关键词命中\", \"recordId\": 14}, {\"score\": 0.0, \"reason\": \"无关键词命中\", \"recordId\": 15}, {\"score\": 0.0, \"reason\": \"无关键词命中\", \"recordId\": 16}, {\"score\": 0.0, \"reason\": \"无关键词命中\", \"recordId\": 18}, {\"score\": 0.0, \"reason\": \"无关键词命中\", \"recordId\": 19}, {\"score\": 0.0, \"reason\": \"无关键词命中\", \"recordId\": 20}, {\"score\": 0.0, \"reason\": \"无关键词命中\", \"recordId\": 21}, {\"score\": 0.0, \"reason\": \"无关键词命中\", \"recordId\": 22}, {\"score\": 0.0, \"reason\": \"无关键词命中\", \"recordId\": 23}, {\"score\": 0.0, \"reason\": \"无关键词命中\", \"recordId\": 26}, {\"score\": 0.0, \"reason\": \"无关键词命中\", \"recordId\": 28}]"
+        ]
+      },
+      "hit": true
+    },
+    {
+      "key": "R1c",
+      "label": "分号拆",
+      "text": "138;1234;5678",
+      "lostId": 27,
+      "foundId": 28,
+      "pairId": 34,
+      "unlockHttp": "HTTP 200/code=0",
+      "anon": {
+        "token": "分号拆",
+        "exact": 0,
+        "rawKeep": 1,
+        "sample": [
+          "F3RR1cL 拾到物品 请联系 138;1234;5678",
+          "F3RR1cL F3-R 出口实测。正文描述里的联系方式写作 138;1234;5678，请据此联系我。"
+        ]
+      },
+      "nonOwner": {
+        "token": "分号拆",
+        "exact": 0,
+        "rawKeep": 1,
+        "sample": [
+          "F3RR1cL 拾到物品 请联系 138;1234;5678",
+          "F3RR1cL F3-R 出口实测。正文描述里的联系方式写作 138;1234;5678，请据此联系我。"
+        ]
+      },
+      "note": {
+        "token": "分号拆",
+        "exact": 0,
+        "rawKeep": 1,
+        "sample": [
+          "号码 138;1234;5678"
+        ]
+      },
+      "noteDb": "号码 138;1234;5678",
+      "match": {
+        "token": "分号拆",
+        "exact": 0,
+        "rawKeep": 0,
+        "sample": []
+      },
+      "snapshot": {
+        "token": "分号拆",
+        "exact": 0,
+        "rawKeep": 1,
+        "sample": [
+          "F3RR1c 回电 138;1234;5678 || [{\"score\": 0.08, \"reason\": \"关键词命中:电\", \"recordId\": 17}, {\"score\": 0.0, \"reason\": \"无关键词命中\", \"recordId\": 13}, {\"score\": 0.0, \"reason\": \"无关键词命中\", \"recordId\": 14}, {\"score\": 0.0, \"reason\": \"无关键词命中\", \"recordId\": 15}, {\"score\": 0.0, \"reason\": \"无关键词命中\", \"recordId\": 16}, {\"score\": 0.0, \"reason\": \"无关键词命中\", \"recordId\": 18}, {\"score\": 0.0, \"reason\": \"无关键词命中\", \"recordId\": 19}, {\"score\": 0.0, \"reason\": \"无关键词命中\", \"recordId\": 20}, {\"score\": 0.0, \"reason\": \"无关键词命中\", \"recordId\": 21}, {\"score\": 0.0, \"reason\": \"无关键词命中\", \"recordId\": 22}, {\"score\": 0.0, \"reason\": \"无关键词命中\", \"recordId\": 23}, {\"score\": 0.0, \"reason\": \"无关键词命中\", \"recordId\": 26}, {\"score\": 0.0, \"reason\": \"无关键词命中\", \"recordId\": 28}]"
+        ]
+      },
+      "hit": true
+    }
+  ]
+}
