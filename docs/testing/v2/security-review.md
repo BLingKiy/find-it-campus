@@ -27,7 +27,7 @@
 2. **一个终态不可改的竞态**：`PUT /api/records/{id}` 在「Java 查 PENDING」与「UPDATE」之间没有 `status='PENDING'` 条件；并发 `PATCH` 先关闭后，PUT 仍可改终态记录正文。见 P2-1。
 3. **个性化 GET 响应没有 `Cache-Control`**：本人详情（明文 `contact`）、`/api/my/records`、通知等响应未设 `no-store/private`；当前单实例本地部署不构成现网可利用，但上共享缓存/CDN 后可能跨身份返回视图，绕过 COMPLETED 详情的 404 门槛。见 P2-2。
 
-**做得好的地方（不是客套）：** 登录的时序等化与统一失败文案（`AuthService`）、`changeSessionId()` + 失效 + 清 Cookie（`SessionAuth`）、写默认拦 + controller 二次 `requireUser`（`AuthGateFilter`/各 controller）、pair 三档判定与错误码顺序（`PairAccessPolicy`/`PairContactService`）、审计 fail-closed（`AccessLogService`）、pair 重算只更新分数列（`PairScoreMapper.upsertScore`）、状态写入收敛（`RecordService`/`RecordMapper`）、SQL 全 `#{}` + ORDER BY 白名单、密钥只走 env。详见 §14。
+**做得好的地方（不是客套）：** 登录的时序等化与统一失败文案（`AuthService`）、`changeSessionId()` + 失效 + 清 Cookie（`SessionAuth`）、写默认拦 + controller 二次 `requireUser`（`AuthGateFilter`/各 controller）、pair 三档判定与错误码顺序（`PairAccessPolicy`/`PairContactService`）、审计 fail-closed（`AccessLogService`）、pair 重算只更新分数列（`PairScoreMapper.upsertScore`）、状态写入收敛（`RecordService`/`RecordMapper`）、SQL 全 `#{}` + ORDER BY 白名单、密钥只走 env。详见 §13。
 
 ---
 
@@ -363,7 +363,7 @@ pair 侧：
 | Java `PairStatuses` | NEW / CONTACTED / MATCHED / IGNORED | `PairStatuses.java:11-14` |
 | pair「已解决」 | **不存在** | `PairScore.java:21` 注释；无 RESOLVED/已解决字段 |
 
-**`CLAIMED` 残留：** `server/src` + `db` + `web/src` 共 **13** 处，全部是「已作废/收到即 10001」的注释或测试（如 `RecordStatus.java:15-16`、`StatusUpdateRequest.java:14`、`RecordStatusPolicyTest.java:35-39`、`MyRecordsApiTest.java:99-101`）；`web/src` 仅 1 处注释（`types/api.ts:5`）。**没有枚举值/DB CHECK/默认值使用 CLAIMED**。唯一需要改的是 `db/README.md:72-75` 的过期 v1 说明（P3-1）。
+**`CLAIMED` 残留：** `server/src` + `db` + `web/src` 共 **13** 处；除 `db/README.md:72` 的过期 v1 说明外，其余都是「已作废/收到即 10001」的注释或测试（如 `RecordStatus.java:15-16`、`StatusUpdateRequest.java:14`、`RecordStatusPolicyTest.java:35-39`、`MyRecordsApiTest.java:99-101`）；`web/src` 仅 1 处注释（`types/api.ts:5`）。**没有枚举值/DB CHECK/默认值使用 CLAIMED**。唯一需要改的是 `db/README.md:72-75` 的过期 v1 说明（P3-1）。
 
 ### 11.6 pair 独立性
 
