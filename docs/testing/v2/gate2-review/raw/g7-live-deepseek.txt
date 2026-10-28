@@ -1,0 +1,58 @@
+=== 第 7 组 · D1 真实 DeepSeek 调用（阶段 A：进程内注入密钥）===
+采集时间：2026-10-28 07:33–07:35（Asia/Shanghai）
+执行方式：同一条 shell 内先 export DEEPSEEK_API_KEY="$(cat %USERPROFILE%\.hifox-secrets\deepseek_api_key.txt)"，再 exec java -jar server/target/find-it-campus-0.0.1-SNAPSHOT.jar --server.port=18082
+（密钥只在该 java 进程内可见；本文件任何位置都不含密钥值）
+
+=== 第 7 组 · 阶段 A：真 key 版 ===
+服务端口 18082 / 库 findit_gate2_64_g7（schema+seed 后清空业务表，仅留 3 账号 9 分类）
+密钥来源：%USERPROFILE%\.hifox-secrets\deepseek_api_key.txt（进程内注入，长度 35；值不入日志）
+LLM 配置：默认 findit.llm.base-url=https://api.deepseek.com/v1 / model=deepseek-chat
+
+-- 健康检查：{"code":0,"message":"ok","data":{"status":"UP","db":"UP","version":"0.0.1-SNAPSHOT","engine":"local"},"requestId":"ecf1215c61574667"} HTTP=200
+-- 登录 demo02 → HTTP 200
+-- 登录 demo03 → HTTP 200
+
+-- 依次发布三档样本（LOST 由 demo02、FOUND 由 demo03）
+   高相似 LOST  → HTTP/耗时 200 0.137462   id=1
+   高相似 FOUND  → HTTP/耗时 200 0.021072   id=2
+   中相似 LOST  → HTTP/耗时 200 0.032990   id=3
+   中相似 FOUND  → HTTP/耗时 200 0.020815   id=4
+   低相似 LOST  → HTTP/耗时 200 0.027589   id=5
+   低相似 FOUND  → HTTP/耗时 200 0.345131   id=6
+
+   记录 id：高 1/2 ｜ 中 3/4 ｜ 低 5/6
+
+-- 等待异步打分（worker-threads=2）
+   1s: 总行=6  已真实调用=6
+   2s: 总行=8  已真实调用=8
+   3s: 总行=9  已真实调用=9
+
+-- t_pair_score 全量（id | lost | found | score | engine | degraded_reason | latency_ms | prompt_tokens | completion_tokens | prompt_version | status）
+id	lost_id	found_id	score	engine	IFNULL(degraded_reason,'NULL')	IFNULL(latency_ms,'NULL')	IFNULL(prompt_tokens,'NULL')	IFNULL(completion_tokens,'NULL')	prompt_version	status
+1	3	2	0.0000	DEEPSEEK	NULL	653	227	25	pair-score-v1	NEW
+2	1	2	1.0000	DEEPSEEK	NULL	1459	245	29	pair-score-v1	NEW
+3	1	4	0.0000	DEEPSEEK	NULL	628	224	29	pair-score-v1	NEW
+4	5	2	0.0000	DEEPSEEK	NULL	650	234	25	pair-score-v1	NEW
+5	5	4	0.0000	DEEPSEEK	NULL	457	213	28	pair-score-v1	NEW
+6	3	4	0.8500	DEEPSEEK	NULL	600	206	28	pair-score-v1	NEW
+7	1	6	0.0500	DEEPSEEK	NULL	709	226	33	pair-score-v1	NEW
+8	3	6	0.0000	DEEPSEEK	NULL	701	208	25	pair-score-v1	NEW
+9	5	6	0.0000	DEEPSEEK	NULL	775	215	28	pair-score-v1	NEW
+
+-- 判据逐条（对 engine=DEEPSEEK 的行）
+deepseek_rows	latency_pos	prompt_pos	completion_pos	score_in_range	reason_null	prompt_ver_ok
+9	9	9	9	9	9	9
+
+-- 配对明细（含两端标题，用于三档归档）
+id	lost_id	title	found_id	title	score	engine	IFNULL(s.degraded_reason,'NULL')	IFNULL(s.latency_ms,'NULL')	IFNULL(s.prompt_tokens,'NULL')	IFNULL(s.completion_tokens,'NULL')	prompt_version
+1	3	丢失深蓝色折叠伞	2	捡到黑色小米充电宝20000毫安	0.0000	DEEPSEEK	NULL	653	227	25	pair-score-v1
+2	1	遗失黑色小米充电宝20000毫安	2	捡到黑色小米充电宝20000毫安	1.0000	DEEPSEEK	NULL	1459	245	29	pair-score-v1
+3	1	遗失黑色小米充电宝20000毫安	4	拾到一把雨伞	0.0000	DEEPSEEK	NULL	628	224	29	pair-score-v1
+4	5	丢失银色不锈钢保温杯	2	捡到黑色小米充电宝20000毫安	0.0000	DEEPSEEK	NULL	650	234	25	pair-score-v1
+5	5	丢失银色不锈钢保温杯	4	拾到一把雨伞	0.0000	DEEPSEEK	NULL	457	213	28	pair-score-v1
+6	3	丢失深蓝色折叠伞	4	拾到一把雨伞	0.8500	DEEPSEEK	NULL	600	206	28	pair-score-v1
+7	1	遗失黑色小米充电宝20000毫安	6	捡到一副黑色蓝牙耳机	0.0500	DEEPSEEK	NULL	709	226	33	pair-score-v1
+8	3	丢失深蓝色折叠伞	6	捡到一副黑色蓝牙耳机	0.0000	DEEPSEEK	NULL	701	208	25	pair-score-v1
+9	5	丢失银色不锈钢保温杯	6	捡到一副黑色蓝牙耳机	0.0000	DEEPSEEK	NULL	775	215	28	pair-score-v1
+
+=== 阶段 A 结束 ===

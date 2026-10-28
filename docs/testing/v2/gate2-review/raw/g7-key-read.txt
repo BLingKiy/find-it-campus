@@ -1,0 +1,13 @@
+=== 第 7 组 · 密钥可读性（只记录可读性、字节数与长度，不记录值）===
+$ test -s /c/Users/NhNoK/.hifox-secrets/deepseek_api_key.txt && echo TEST_S_OK
+TEST_S_OK
+$ wc -c < /c/Users/NhNoK/.hifox-secrets/deepseek_api_key.txt
+35
+$ ls -l /c/Users/NhNoK/.hifox-secrets/
+total 1
+-rw-r--r-- 1 NhNoK 197121 35 Oct 27 23:08 deepseek_api_key.txt
+
+$ DEEPSEEK_API_KEY="$(cat /c/Users/NhNoK/.hifox-secrets/deepseek_api_key.txt)"; test -n "$DEEPSEEK_API_KEY" && echo key-length=${#DEEPSEEK_API_KEY}
+key-length=35
+
+说明：值本身没有被 echo / 写入任何文件；上面只输出字节数（35）与字符长度（35）。

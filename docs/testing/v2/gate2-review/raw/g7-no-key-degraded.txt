@@ -1,0 +1,82 @@
+=== 第 7 组 · 去掉密钥重启后的降级对照（阶段 B）===
+采集时间：2026-10-28 07:36–07:38（Asia/Shanghai）
+执行方式：停掉阶段 A 进程，在同一 shell 内 unset DEEPSEEK_API_KEY（KEY_STATE=empty(len=0)），同 jar / 同库 / 同端口重启
+
+=== 第 7 组 · 阶段 B：去掉 key 重启（降级对照）===
+启动命令内 unset DEEPSEEK_API_KEY（实测 KEY_STATE=empty(len=0)），同一 jar、同一库、同一端口 18082
+
+-- 健康检查：{"code":0,"message":"ok","data":{"status":"UP","db":"UP","version":"0.0.1-SNAPSHOT","engine":"local"},"requestId":"9a98d7054d1f4e1e"} HTTP=200
+-- 登录 demo02 → HTTP 200
+
+-- 用与阶段 A 完全相同的内容再发 3 条 LOST（可与阶段 A 同内容对比）
+   高相似 LOST（与阶段 A 同一份正文）→ HTTP/耗时 200 0.167472   id=7
+   中相似 LOST（与阶段 A 同一份正文）→ HTTP/耗时 200 0.053600   id=8
+   低相似 LOST（与阶段 A 同一份正文）→ HTTP/耗时 200 0.061483   id=9
+
+-- 等待异步打分（无 key：应走本地关键词并落 EMPTY_KEY）
+   1s: 新 LOST 关联行=9
+
+-- 阶段 B 新行（lost_id ∈ {7,8,9}）
+id	lost_id	title	found_id	title	score	engine	IFNULL(s.degraded_reason,'NULL')	IFNULL(s.latency_ms,'NULL')	IFNULL(s.prompt_tokens,'NULL')	IFNULL(s.completion_tokens,'NULL')	prompt_version
+10	7	遗失黑色小米充电宝20000毫安	2	捡到黑色小米充电宝20000毫安	1.0000	LOCAL_KEYWORD	EMPTY_KEY	NULL	NULL	NULL	pair-score-v1
+11	7	遗失黑色小米充电宝20000毫安	4	拾到一把雨伞	0.0300	LOCAL_KEYWORD	EMPTY_KEY	NULL	NULL	NULL	pair-score-v1
+12	7	遗失黑色小米充电宝20000毫安	6	捡到一副黑色蓝牙耳机	0.0500	LOCAL_KEYWORD	EMPTY_KEY	NULL	NULL	NULL	pair-score-v1
+13	8	丢失深蓝色折叠伞	2	捡到黑色小米充电宝20000毫安	0.0300	LOCAL_KEYWORD	EMPTY_KEY	NULL	NULL	NULL	pair-score-v1
+14	8	丢失深蓝色折叠伞	4	拾到一把雨伞	0.1600	LOCAL_KEYWORD	EMPTY_KEY	NULL	NULL	NULL	pair-score-v1
+15	8	丢失深蓝色折叠伞	6	捡到一副黑色蓝牙耳机	0.0700	LOCAL_KEYWORD	EMPTY_KEY	NULL	NULL	NULL	pair-score-v1
+16	9	丢失银色不锈钢保温杯	2	捡到黑色小米充电宝20000毫安	0.0800	LOCAL_KEYWORD	EMPTY_KEY	NULL	NULL	NULL	pair-score-v1
+17	9	丢失银色不锈钢保温杯	4	拾到一把雨伞	0.0200	LOCAL_KEYWORD	EMPTY_KEY	NULL	NULL	NULL	pair-score-v1
+18	9	丢失银色不锈钢保温杯	6	捡到一副黑色蓝牙耳机	0.0100	LOCAL_KEYWORD	EMPTY_KEY	NULL	NULL	NULL	pair-score-v1
+
+-- 同内容并列对比：阶段 A（DEEPSEEK） vs 阶段 B（LOCAL_KEYWORD）
+a_lost	found_id	a_score	a_engine	a_latency	a_ptok	a_ctok	b_lost	b_score	b_engine	b_reason	b_pver
+1	2	1.0000	DEEPSEEK	1459	245	29	7	1.0000	LOCAL_KEYWORD	EMPTY_KEY	pair-score-v1
+1	2	1.0000	DEEPSEEK	1459	245	29	8	0.0300	LOCAL_KEYWORD	EMPTY_KEY	pair-score-v1
+1	2	1.0000	DEEPSEEK	1459	245	29	9	0.0800	LOCAL_KEYWORD	EMPTY_KEY	pair-score-v1
+3	2	0.0000	DEEPSEEK	653	227	25	7	1.0000	LOCAL_KEYWORD	EMPTY_KEY	pair-score-v1
+3	2	0.0000	DEEPSEEK	653	227	25	8	0.0300	LOCAL_KEYWORD	EMPTY_KEY	pair-score-v1
+3	2	0.0000	DEEPSEEK	653	227	25	9	0.0800	LOCAL_KEYWORD	EMPTY_KEY	pair-score-v1
+5	2	0.0000	DEEPSEEK	650	234	25	7	1.0000	LOCAL_KEYWORD	EMPTY_KEY	pair-score-v1
+5	2	0.0000	DEEPSEEK	650	234	25	8	0.0300	LOCAL_KEYWORD	EMPTY_KEY	pair-score-v1
+5	2	0.0000	DEEPSEEK	650	234	25	9	0.0800	LOCAL_KEYWORD	EMPTY_KEY	pair-score-v1
+1	4	0.0000	DEEPSEEK	628	224	29	7	0.0300	LOCAL_KEYWORD	EMPTY_KEY	pair-score-v1
+1	4	0.0000	DEEPSEEK	628	224	29	8	0.1600	LOCAL_KEYWORD	EMPTY_KEY	pair-score-v1
+1	4	0.0000	DEEPSEEK	628	224	29	9	0.0200	LOCAL_KEYWORD	EMPTY_KEY	pair-score-v1
+3	4	0.8500	DEEPSEEK	600	206	28	7	0.0300	LOCAL_KEYWORD	EMPTY_KEY	pair-score-v1
+3	4	0.8500	DEEPSEEK	600	206	28	8	0.1600	LOCAL_KEYWORD	EMPTY_KEY	pair-score-v1
+3	4	0.8500	DEEPSEEK	600	206	28	9	0.0200	LOCAL_KEYWORD	EMPTY_KEY	pair-score-v1
+5	4	0.0000	DEEPSEEK	457	213	28	7	0.0300	LOCAL_KEYWORD	EMPTY_KEY	pair-score-v1
+5	4	0.0000	DEEPSEEK	457	213	28	8	0.1600	LOCAL_KEYWORD	EMPTY_KEY	pair-score-v1
+5	4	0.0000	DEEPSEEK	457	213	28	9	0.0200	LOCAL_KEYWORD	EMPTY_KEY	pair-score-v1
+1	6	0.0500	DEEPSEEK	709	226	33	7	0.0500	LOCAL_KEYWORD	EMPTY_KEY	pair-score-v1
+1	6	0.0500	DEEPSEEK	709	226	33	8	0.0700	LOCAL_KEYWORD	EMPTY_KEY	pair-score-v1
+1	6	0.0500	DEEPSEEK	709	226	33	9	0.0100	LOCAL_KEYWORD	EMPTY_KEY	pair-score-v1
+3	6	0.0000	DEEPSEEK	701	208	25	7	0.0500	LOCAL_KEYWORD	EMPTY_KEY	pair-score-v1
+3	6	0.0000	DEEPSEEK	701	208	25	8	0.0700	LOCAL_KEYWORD	EMPTY_KEY	pair-score-v1
+3	6	0.0000	DEEPSEEK	701	208	25	9	0.0100	LOCAL_KEYWORD	EMPTY_KEY	pair-score-v1
+5	6	0.0000	DEEPSEEK	775	215	28	7	0.0500	LOCAL_KEYWORD	EMPTY_KEY	pair-score-v1
+5	6	0.0000	DEEPSEEK	775	215	28	8	0.0700	LOCAL_KEYWORD	EMPTY_KEY	pair-score-v1
+5	6	0.0000	DEEPSEEK	775	215	28	9	0.0100	LOCAL_KEYWORD	EMPTY_KEY	pair-score-v1
+
+-- 阶段 B 判据（新行整体）
+rows_b	local_rows	empty_key_rows	score_in_range	latency_null	ptok_null
+9	9	9	9	9	9
+
+-- 全表引擎分布（阶段 B 结束时）
+engine	reason	c
+DEEPSEEK	NULL	9
+LOCAL_KEYWORD	EMPTY_KEY	9
+
+-- 记录侧标志（/api/my/records 里新 LOST 的 pairState / pairDegraded）
+   record 7 片段："id":7,"type":"LOST","status":"PENDING","title":"遗失黑色小米充电宝20000毫安","categoryId":2,"categoryName":"手机数码","location":"图书馆三楼自习区","occurredAt":"2026-10-28 06:10:00","completedAt":null,"contact":"13900001111","publisherName":"演示乙","pairState":"DEGRADED","pairDegraded":true,"pairCount":3,"relatedCount":1,"lowConfidenceCount":2,"hasMatchedPair":false,"matchedPairCount":0,"detailVisible":true,"pairs":[
+   record 8 片段："id":8,"type":"LOST","status":"PENDING","title":"丢失深蓝色折叠伞","categoryId":8,"categoryName":"其他","location":"体育馆门口","occurredAt":"2026-10-28 06:30:00","completedAt":null,"contact":"13900001111","publisherName":"演示乙","pairState":"DEGRADED","pairDegraded":true,"pairCount":3,"relatedCount":0,"lowConfidenceCount":3,"hasMatchedPair":false,"matchedPairCount":0,"detailVisible":true,"pairs":[],"createdAt":"2026-10-28 07:38:06","updatedAt":"2026-10-28 07:38:06"},
+   record 9 片段："id":9,"type":"LOST","status":"PENDING","title":"丢失银色不锈钢保温杯","categoryId":2,"categoryName":"手机数码","location":"实验楼四楼走廊","occurredAt":"2026-10-28 06:50:00","completedAt":null,"contact":"13900001111","publisherName":"演示乙","pairState":"DEGRADED","pairDegraded":true,"pairCount":3,"relatedCount":0,"lowConfidenceCount":3,"hasMatchedPair":false,"matchedPairCount":0,"detailVisible":true,"pairs":[],"createdAt":"2026-10-28 07:38:06","updatedAt":"2026-10-28 07:38:06"},
+
+=== 阶段 B 结束 ===
+-- 记录侧标志（/api/my/records，重取一次以免控制台码页污染箭头字符）
+   GET /api/my/records -> HTTP 200
+   record 7 片段："id":7,"type":"LOST","status":"PENDING","title":"遗失黑色小米充电宝20000毫安","categoryId":2,"categoryName":"手机数码","location":"图书馆三楼自习区","occurredAt":"2026-10-28 06:10:00","completedAt":null,"contact":"13900001111","publisherName":"演示乙","pairState":"DEGRADED","pairDegraded":true,"pairCount":3,"relatedCount":1,"lowConfidenceCount":2,"hasMatchedPair":false,"matchedPairCount":0,"detailVisible":true,"pairs":[
+   record 8 片段："id":8,"type":"LOST","status":"PENDING","title":"丢失深蓝色折叠伞","categoryId":8,"categoryName":"其他","location":"体育馆门口","occurredAt":"2026-10-28 06:30:00","completedAt":null,"contact":"13900001111","publisherName":"演示乙","pairState":"DEGRADED","pairDegraded":true,"pairCount":3,"relatedCount":0,"lowConfidenceCount":3,"hasMatchedPair":false,"matchedPairCount":0,"detailVisible":true,"pairs":[],"createdAt":"2026-10-28 07:38:06","updatedAt":"2026-10-28 07:38:06"},
+   record 9 片段："id":9,"type":"LOST","status":"PENDING","title":"丢失银色不锈钢保温杯","categoryId":2,"categoryName":"手机数码","location":"实验楼四楼走廊","occurredAt":"2026-10-28 06:50:00","completedAt":null,"contact":"13900001111","publisherName":"演示乙","pairState":"DEGRADED","pairDegraded":true,"pairCount":3,"relatedCount":0,"lowConfidenceCount":3,"hasMatchedPair":false,"matchedPairCount":0,"detailVisible":true,"pairs":[],"createdAt":"2026-10-28 07:38:06","updatedAt":"2026-10-28 07:38:06"},
+
+=== 阶段 B 结束 ===

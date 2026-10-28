@@ -1,6 +1,7 @@
 # 门禁 2 复核 · 幂等 / 降级 / 分档 / 多对 / 终态 / B2 会话 / 真实 DeepSeek
 
 > 任务 [ZHYYKFX-64](https://app.hifox.com/nhnok/task/ZHYYKFX-64)｜复核人：端测测｜复核时间：2026-10-28 01:10–01:35（Asia/Shanghai）
+> **第 7 组重跑：2026-10-28 07:33–07:38**（人类给出本地密钥文件路径后，按派工单「第 7 组重跑」一节补测；其余六组结论不变）
 > **本文只做复核留证，不判定门禁 2 是否放行**——放行由人类在ZHYYKFX-64 签字。
 > 所有结论都对应 `raw/` 下的原始输出；本文里的每段引用都能在对应 raw 文件里逐字找到。
 
@@ -9,14 +10,14 @@
 | 组 | 判据 | 结论 |
 |---|---|---|
 | 1 幂等 | 同 pair 触发 3 次仍 1 行 / LLM 计数不变；改标题只重算相关 pair；20 并发不双行不 500 | **PASS**（3/3） |
-| 2 降级 | 空 Key / 401 / 超时 / 非 JSON 四种：发布 200、`engine=LOCAL_KEYWORD`、有分数、页面提示可见；恢复后可重算；P99 < 500ms | **PASS**（判据 4/4），但**「真实调用成功一次」这一格未满足**（无密钥，见 §8） |
+| 2 降级 | 空 Key / 401 / 超时 / 非 JSON 四种：发布 200、`engine=LOCAL_KEYWORD`、有分数、页面提示可见；恢复后可重算；P99 < 500ms | **PASS**（判据 4/4）；「真实调用成功一次」一格已在第 7 组补齐（§8） |
 | 3 分档 | 0.92 双端可看；0.80 未授权/授权/撤回/附言清空；<0.75 一律 403；改阈值档位随之变化 | **PASS**（4/4） |
 | 4 多对 pair | 一条招领×两条寻物 1:1×2；一个 CONTACTED、另一个仍 NEW 且可解锁；招领仍在候选池 | **PASS**（3/3） |
 | 5 终态 | 未 MATCHED 标完成 409；COMPLETED 列表 0/匹配命中且 <0.90 详情 404；CLOSED 双 0 且取号 403；到期从匹配消失 | **PASS**（4/4） |
 | 6 B2 会话 | 无 session 401/10006；非参与方 403/10007 且审计无成功行；异常 id 404 不 500；他人通知 403 | **PASS**（4/4） |
-| 7 真实 DeepSeek | 至少 1 行 `engine=DEEPSEEK` 且 latency/tokens/score/prompt_version 达标 | **不可判定 · 运行时无法读取密钥**（0/1，见 §8） |
+| 7 真实 DeepSeek | 至少 1 行 `engine=DEEPSEEK` 且 latency/tokens/score/prompt_version 达标 | **PASS**（0/1 → **1/1**，9 行真实调用，见 §8） |
 
-**放行判据里唯一缺口**：降级组要求「包含『真实调用成功一次』的记录（model / latency / tokens）」。本机三处 `DEEPSEEK_API_KEY` 全为空，这一格只能记为不可判定；其余各组均为实跑，无推测格。
+**七组均为实跑，无推测格、无「不可判定」格。** 第 7 组上一轮记为「不可判定 · 运行时无法读取密钥」，根因是只查了环境变量、没有在启动命令里显式注入；本轮按人类给出的本地密钥文件路径，在同一条 shell 内注入后重启实测通过，§8 已改写。
 
 ## 1. 基线与环境
 
@@ -44,6 +45,8 @@ web   : npm run type-check          -> exit 0（两个 tsconfig 均通过）
 | A | 8088 / 18080 | 未设置 | 默认 `api.deepseek.com` | 默认阈值 |
 | C | 8088 | 未设置 | 同 A | `contact_direct_threshold=0.85`、`contact_unlock_threshold=0.40` |
 | D | 18080 | 本机假密钥 `sk-local-stub-not-a-real-key` | 本机假端点 `127.0.0.1:18099/v1` | `read-timeout=1000`、`total-timeout=2500`、`circuit-failure-threshold=10000`、`degraded-retry-minutes=1` |
+| E | 18082 | 本地密钥文件注入（同一条 shell，`key-length=35`） | 默认 `api.deepseek.com/v1` | 新库 `findit_gate2_64_g7`（schema+seed 后清空业务表） |
+| F | 18082 | 未设置（`unset`，`len=0`） | 同 E | 同库重启，用与 E 相同的正文复跑 |
 
 数据库为**新建** `findit_gate2_64`（`db/schema.sql` + `db/seed.sql` 原样执行，仅替换库名），初始 7 表 / 24 条记录 / 14 条 pair / 3 个账号（`demo01/02/03`，口令 `Demo@123456`）。
 证据全部来自**真实服务端**：没有任何 `page.route` 注入、没有手写响应体冒充返回、没有假卡片；浏览器只用 CDP 点真实按钮。
@@ -130,6 +133,7 @@ POST /api/records -> HTTP 200 / 0.092790s      (FOUND id=137)
 
 三种故障下：发布接口始终 200、永远有分数（0.71）、`degraded_reason` 精确区分三种原因、`tokens` 保持 NULL 不估算、`pair.status` 保持 NEW。
 原始输出：`raw/G2-degradation.txt` §2.2。
+**关于配置 D 的假密钥串**：`sk-local-stub-not-a-real-key`（§1 表格第 47 行）是上一轮本机假端点 `127.0.0.1:18099/v1` 的固定占位值，不是凭据、对任何真实端点无效；它含连字符，因此不匹配零明文扫描的形状 `sk-[A-Za-z0-9]{24,}`。本轮为保留上一轮证据原文，**不改写**这一处，只在此单独说明。
 
 ### 2.3 恢复后兜底可重算
 
@@ -307,30 +311,73 @@ PATCH /api/pairs/13 {CONTACT}   -> 403 {"code":50005,...}
 
 原始输出：`raw/G6-b2-session.txt`。
 
-## 8. 第 7 组 · 真实 DeepSeek 调用 → 不可判定
+## 8. 第 7 组 · 真实 DeepSeek 调用 → PASS
 
-**结论：不可判定 · 运行时无法读取密钥。**
+**结论：PASS（1/1）。** 2026-10-28 07:33–07:35 在真 key 环境下跑完 `D1-deepseek-live.md` 的 5 步，9 行真实调用全部达标；07:36–07:38 去掉密钥重启做同内容对照，降级行为不变。
 
-已尝试的读取方式（逐条实读，结果均为空或不存在）：
+### 8.1 密钥与注入（只写路径，不写值）
 
-| # | 读取方式 | 结果 |
-|---|---|---|
-| 1 | `[Environment]::GetEnvironmentVariable('DEEPSEEK_API_KEY','Machine')` | 空字符串 |
-| 2 | `[Environment]::GetEnvironmentVariable('DEEPSEEK_API_KEY','User')` | 空字符串 |
-| 3 | 当前进程 `$env:DEEPSEEK_API_KEY`（本运行时） | 空字符串 |
-| 4 | `C:\Users\NhNoK\.deepseek`（目录/`key` 文件） | 不存在 |
-| 5 | `C:\Users\NhNoK\.deepseek_api_key` | 不存在 |
-| 6 | `C:\Project\deepseek.key`、`C:\Project\tools\deepseek.key` | 不存在 |
-| 7 | 工作区根 `.env`、`find-it-campus/.env` | 不存在（只有 `web/.env.example`、`web/.env.local`，与 LLM 无关） |
-| 8 | `Get-ChildItem C:\Project -Filter *deepseek* -Recurse -Depth 2` | 0 命中 |
+| 项 | 值 |
+|---|---|
+| 来源 | `%USERPROFILE%\.hifox-secrets\deepseek_api_key.txt` |
+| 可读性 | `test -s` 通过，`wc -c` = **35**，注入后 `key-length=35`（`raw/g7-key-read.txt`） |
+| 注入 | 与该次 `java -jar … --server.port=18082` **同一条 shell**：`export DEEPSEEK_API_KEY="$(cat <路径>)"`，不换会话、不用 `Start-Process`/后台守护 |
+| 端点 / 模型 | 默认 `https://api.deepseek.com/v1` / `deepseek-chat`（`findit.llm.*` 配置值） |
+| 库 | 新建 `findit_gate2_64_g7`（schema + seed 后清空业务表：3 账号 / 9 分类 / 0 记录 / 0 pair） |
 
-按派工单口径：不编造真实调用证据，不为此反复返工。`docs/testing/v2/D1-deepseek-live.md` 的 5 步补测步骤与 6 条判据保持原样，等密钥可读时按该文档执行即可（10 分钟内可完成）。
+上一轮记为「不可判定 · 运行时无法读取密钥」，根因是**只查了环境变量**（dsh / codebuddy 运行时不继承 agent 级环境变量），不是密钥无效。本轮显式注入后 `/api/health` → `status=UP / db=UP`，同一批样本 9 对全部走真实端点。
 
-**必须点明的一格**：门禁 2 的放行判据要求降级组包含「真实调用成功一次」的记录（model / latency / tokens）。本次只有**假端点**的成功记录（`engine=DEEPSEEK`、`latency_ms=1`、`prompt_tokens=213`、`completion_tokens=19`），它只能证明「解析 → 校验 → 落库」链路通，**不能**替代真实调用。这一格与第 7 组同源，一并记未满足。
+### 8.2 三档结果
+
+| 档位 | model | 时间（Asia/Shanghai） | latency_ms | prompt_tokens | completion_tokens | score | engine |
+|---|---|---|---|---|---|---|---|
+| 高相似（充电宝：同标题同描述） | deepseek-chat | 2026-10-28 07:35:38 | 1459 | 245 | 29 | 1.0000 | DEEPSEEK |
+| 中相似（雨伞：同物不同措辞） | deepseek-chat | 2026-10-28 07:35:39 | 600 | 206 | 28 | 0.8500 | DEEPSEEK |
+| 低相似（保温杯 ↔ 蓝牙耳机） | deepseek-chat | 2026-10-28 07:35:42 | 775 | 215 | 28 | 0.0000 | DEEPSEEK |
+
+`model` 列填配置值：打分器不把响应里的 `model` 落库，这里不臆造回显值。
+9 行全量（3 LOST × 3 FOUND）：`latency_ms` 457–1459、prompt 206–245、completion 25–33、`score` 0.0000–1.0000。
+
+判据逐条（SQL 聚合，原始输出同一文件）：
+
+```
+deepseek_rows  latency_pos  prompt_pos  completion_pos  score_in_range  reason_null  prompt_ver_ok
+9              9            9           9               9               9            9
+```
+
+### 8.3 与 LOCAL_KEYWORD 的同内容对照
+
+停进程、`unset DEEPSEEK_API_KEY`（实测 `len=0`）后同 jar / 同库 / 同端口重启，用**完全相同的三份 LOST 正文**再发一次，新记录与阶段 A 的同一条 FOUND 成 pair：
+
+| 档位 | DEEPSEEK（真 key） | LOCAL_KEYWORD（无 key） | 说明 |
+|---|---|---|---|
+| 高相似 | 1.0000 / 1459ms / 245+29 | **1.0000** / `EMPTY_KEY` / NULL | 同标题同描述，关键词路径也能满分 |
+| 中相似 | **0.8500** / 600ms / 206+28 | **0.1600** / `EMPTY_KEY` / NULL | 差距 0.69：模型识别「同一把折叠伞」，关键词只共享「伞 / 体育馆」 |
+| 低相似 | 0.0000 / 775ms / 215+28 | 0.0100 / `EMPTY_KEY` / NULL | 均判无关 |
+
+### 8.4 去掉密钥后：发布仍 200、仍降级
+
+```
+高相似 LOST  → HTTP 200 / 0.167s   id=7
+中相似 LOST  → HTTP 200 / 0.054s   id=8
+低相似 LOST  → HTTP 200 / 0.061s   id=9
+阶段 B 新行：9/9 engine=LOCAL_KEYWORD，9/9 degraded_reason=EMPTY_KEY
+             latency_ms / prompt_tokens / completion_tokens 全 NULL（不估算）
+记录侧：record 7/8/9 均 pairState=DEGRADED、pairDegraded=true
+```
+
+§0 第 2 组里「真实调用成功一次（model / latency / tokens）」这一格**已由上表补齐**；原有 §2.2 的 401 / 超时 / 非 JSON 三种降级结论**不变**（仍是本机假端点、同一条 `DeepSeekPairScorer` 路径），本轮不重跑、交叉引用即可。
+
+### 8.5 原始输出与零明文
+
+- `raw/g7-live-deepseek.txt`：阶段 A（发布 → 等待 → 全量行 → 判据聚合 → 含两端标题的明细）
+- `raw/g7-no-key-degraded.txt`：阶段 B（无 key 重启 → 同内容重发 → 同内容并列对比 → 引擎分布 → 记录侧标志）
+- `raw/g7-key-read.txt`：`ls -l` / `test -s` / `wc -c` / `key-length`
+- `raw/g7-secret-scan.txt`：零明文扫描的命令与原始输出。口径分三层——真实密钥形态 `sk-[A-Za-z0-9]{24,}` 对**全库**（tracked + 未跟踪）扫描 **0 命中**（`git grep` 与 `grep -rn` 各一次，均 exit=1）；宽松前缀 `sk-` 对 `raw/g7-*.txt` 四个数据文件 **0 命中**；对本文与 `D1-deepseek-live.md` 的 `sk-` 命中只有 §1 配置 D 占位串与本文/文档的自述引用，均非凭据（见 §3 说明行）。
 
 ## 9. 未覆盖 / 风险陈述
 
-1. **真实 DeepSeek**：如 §8，完全没跑。打分质量（三档分布是否合理）因此也无法评价。
+1. **真实 DeepSeek 的样本面很窄**：§8 只有 3 对（9 行），三档结论只说明「同物同描述 / 同物不同措辞 / 完全不同」能被区分。长描述、模糊表述、同名不同物、跨语言、带图片的样本都没测；也不能由此推断线上分数分布。
 2. **降级的 401/超时/非 JSON 用本机假端点**：走的是同一条 `DeepSeekPairScorer` 代码路径，但不是供应商真实行为；真实网络抖动、429 限流、IPv6/代理问题未覆盖。
 3. **发布 P99 余量小**：稳态最好 182ms、最差 **487ms**（阈值 500ms）。第 4 轮变慢发生在配对表从 165 行涨到 312 行、且后台仍在补算的过程中，属「数据量增长 + 后台打分争用」的综合结果，**不建议把这台机器的 487ms 当成容量承诺**；冷启动/更大数据量需重测。
 4. **并发维度只测了「发布」**：没有测并发取号、并发 `CONFIRM`、并发 `PUBLISH/REVOKE` 同一条 pair。`PairLockService`/命名锁对这些路径的保护本次未验证。
@@ -353,6 +400,7 @@ PATCH /api/pairs/13 {CONTACT}   -> 403 {"code":50005,...}
 | 第 4 组原始输出 | `raw/G4-multi-pair.txt`、`raw/G4b-multi-pair.txt` |
 | 第 5 组原始输出 | `raw/G5-terminal-1.txt` … `raw/G5-terminal-5.txt` |
 | 第 6 组原始输出 | `raw/G6-b2-session.txt` |
+| 第 7 组原始输出 | `raw/g7-live-deepseek.txt`（真 key）、`raw/g7-no-key-degraded.txt`（去 key 对照）、`raw/g7-key-read.txt`（密钥可读性）、`raw/g7-secret-scan.txt`（零明文扫描：密钥形态全库 0 命中） |
 
 复现顺序（本机，Git Bash + PowerShell 混用；库名自定）：
 
@@ -361,6 +409,6 @@ PATCH /api/pairs/13 {CONTACT}   -> 403 {"code":50005,...}
 3. 配置 A 起服务（端口 18080，`FINDIT_DB_URL` 指向该库，`OPS_SCAN_TOKEN` 自定，不设 `DEEPSEEK_API_KEY`）→ 跑第 3、4、5、6 组与第 2 组 2.1。
 4. 配置 C（追加 `--findit.pair.contact_direct_threshold=0.85 --findit.pair.contact_unlock_threshold=0.40`）→ 跑 3.4，跑完复原。
 5. 配置 D（假密钥 + `FINDIT_LLM_BASE_URL=http://127.0.0.1:18099/v1` + 三个 timeout/熔断参数）→ 跑第 1 组、第 2 组 2.2/2.3；假端点模式用文件切换（`ok`/`401`/`timeout`/`nonjson`）。
-6. 第 7 组：拿到密钥后按 `docs/testing/v2/D1-deepseek-live.md` 执行，只填 model / 时间 / latency / tokens / score / engine。
+6. 第 7 组（配置 E/F）：新库 `findit_gate2_64_g7` → 同一条 shell 内 `export DEEPSEEK_API_KEY="$(cat %USERPROFILE%\.hifox-secrets\deepseek_api_key.txt)"` 后 `java -jar … --server.port=18082` → 发布 3 对样本（`raw/g7-live-deepseek.txt`）；停进程、`unset` 后同端口重启 → 同正文再发 3 条 LOST（`raw/g7-no-key-degraded.txt`）。判据与表格见 `D1-deepseek-live.md`。
 
 > 本次复核未改任何业务代码、未改 `db/`、未推 `main`、未合并 `main`；本分支只新增 `docs/testing/v2/gate2-review.md` 与 `docs/testing/v2/gate2-review/` 下的证据文件。
