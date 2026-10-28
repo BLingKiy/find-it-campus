@@ -1,4 +1,6 @@
-// v2 · F3-R 项 6：P2-1 终态竞态复验（HTTP 出口 + EV-SQL + 真并发编排）。
+// v2 · F3-R 组6（任务项 6）：P2-1 终态竞态复验（HTTP 出口 + EV-SQL + 真并发编排）。
+//
+// 用途：证明「读写之间不是同一时刻」这个窗口不会让 PUT 改写已终态记录 —— 这是 P2-1 修复的复验。
 //
 // P2-1 的原始担忧：update 的「Java 侧查 PENDING」与「UPDATE」之间不是同一时刻，
 // 并发 PATCH 先提交 CLOSED 后，PUT 仍可能改写终态记录正文。
@@ -15,8 +17,12 @@
 // 不改任何业务代码：②③ 里的对照 SQL 由测试自己发，应用走的仍是原路径。
 //
 // 运行：node qa/f3r/state-race.mjs
-// 前置：后端 18080、MySQL 3306（qa/lib/db.mjs 的 MYSQL_* 环境变量）
-// 输出：qa/reports/f3r-state-race.txt / .json
+// 前置：后端 18080、MySQL 3306（qa/lib/db.mjs 的 MYSQL_BIN / MYSQL_USER / MYSQL_PASSWORD /
+//       MYSQL_DB 环境变量，默认见 docs/testing/v2/F3R-how-to-rerun.md §7）；脚本自己 resetSeed。
+// 期望输出：逐条用例 PASS/FAIL + 20 轮裸并发分布，末段「## 收尾：恢复 seed 初始态」；
+//           落盘 qa/reports/f3r-state-race.{txt,json}（本轮覆盖写），
+//           2026-10-28 那轮的冻结归档见 qa/reports/f3r-2026-10-28-state-race.{txt,json}。
+// 退出码：0 = 11 条用例全 PASS；1 = 有失败项。
 
 import { execFile } from 'node:child_process';
 import { writeFile } from 'node:fs/promises';

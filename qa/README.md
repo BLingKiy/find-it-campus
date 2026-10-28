@@ -12,8 +12,9 @@
 | `e2e/consistency.mjs` | 跨页一致性：量计算样式 + 320/768/1280 溢出检查，9 条 |
 | `db/evidence.mjs` | 真实落库取证：直查 MySQL 七张表，19 项检查 |
 | `run-all.mjs` | 一条命令跑完上面全部，前后各重置一次库 |
+| `f3r/` | F3-R（P1/P2 修复的 HTTP 级复验）固定入口，共 6 个脚本：28 探针 `phone-scan-28.sh`（转调 `api/f2-scan.mjs`）、缓存头 `cache-headers.sh`、日志注入 `log-injection.mjs`、状态竞态 `state-race.mjs`、过期扫描 `expired-scan.mjs` + `expired-scan-startup.mjs`、附加 `p1-bypass.mjs`。**复跑步骤见 `docs/testing/v2/F3R-how-to-rerun.md`** |
 | `lib/` | 测试执行器、HTTP 客户端（支持多身份 Cookie）、登录夹具、MySQL/日志证据工具 |
-| `reports/` | 生成物：`api-f1-v2.*`、`e2e-f1-v2.*`、`consistency-5.1.*`、`match-eval.*`、`db-evidence.txt`、`run-all-output.txt`、`screenshots/` |
+| `reports/` | 生成物：`api-f1-v2.*`、`e2e-f1-v2.*`、`consistency-5.1.*`、`match-eval.*`、`db-evidence.txt`、`run-all-output.txt`、`screenshots/`；F3-R 的冻结归档为 `f3r-<YYYY-MM-DD>-<组名>.*`（如 `f3r-2026-10-28-cache-headers.txt`），复跑只覆盖不带日期的同名文件，不动归档 |
 
 ## 前置
 

@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
-# v2 · F3-R 项 4：P2-2 缓存头实测（curl -i 原始响应头，不经包装库）。
+# v2 · F3-R 组4（任务项 4）：P2-2 缓存头实测（curl -i 原始响应头，不经包装库）。
+#
+# 用途：证明 /api/** 统一带上 Cache-Control: no-store 与 Vary: Cookie，且 401 短路、
+#       403/404/405 这些「框架默认错误体」也带；这是 P2-2 修复的 HTTP 级复验。
 #
 # 口径（ZHYYKFX-74 范围项 4）：/api/records/{id}、/api/my/records、/api/notifications、
 # /api/match、/api/pairs/{id} 逐个断言 Cache-Control 含 no-store 与 Vary: Cookie；
@@ -9,9 +12,17 @@
 # GET /{id}/contact、POST /{id}/contact-unlock、PATCH /{id}；裸 GET /api/pairs/{id} 没有 handler，
 # 因此 E5–E9 把这三条路由与「裸路径实际状态」都断言上，避免只测 contact 就宣称覆盖了第 5 个端点。
 #
-# 前置：后端 18080 已起、库为 seed 初始状态。pairId=1 是 seed 里 demo01(lost#1)↔demo02(found#13)
-# 的 0.96 CONTACTED 对，两端身份都能打 contact。
+# 前置：
+#   · 后端在 18080 起来（API 变量可改），库为 db/schema.sql + db/seed.sql 的初始态；
+#   · pairId=1 是 seed 里 demo01(lost#1)↔demo02(found#13) 的 0.96 CONTACTED 对，两端身份都能打 contact；
+#   · 需要 curl（Git Bash 自带）与 awk/sed；账号 demo01/demo02，密码 Demo@123456（seed 内）。
+#
 # 运行：bash qa/f3r/cache-headers.sh > qa/reports/f3r-cache-headers.txt
+# 期望输出：先逐例打印原始响应头，最后一张 25 行汇总表 + 「断言用例数=25，FAIL=0」；
+#           2026-10-28 那轮原文见 qa/reports/f3r-2026-10-28-cache-headers.txt。
+# 退出码：恒为 0（脚本末尾是 echo，本脚本不做机器判定，不改脚本逻辑）。
+#         判定看汇总表的 FAIL 列与最后一行 FAIL=0；机器判定请
+#         grep -c '^FAIL' qa/reports/f3r-cache-headers.txt 并期望 0。
 #
 # 判据：任何一行 Cache-Control 缺 no-store 或 Vary 缺 Cookie 记 FAIL。
 # 请求体走 UTF-8 文件而不是命令行 -d：Git Bash 会把命令行中文按本机代码页送出，

@@ -1,4 +1,7 @@
-// v2 · F3-R 项 7：P2-4 过期 COMPLETED 不再被扫描复验（两阶段，中间夹一次后端重启）。
+// v2 · F3-R 组7（任务项 7）：P2-4 过期 COMPLETED 不再被扫描复验（两阶段，中间夹一次后端重启）。
+//
+// 用途：证明「已过期（completed_at < now-30d）的 COMPLETED 记录会被每日扫描重打分」这个担心已被堵住 ——
+//      过期记录既不重算、也不新建 pair / 通知，同时保留期内的记录仍能被正常扫到（正对照）。
 //
 // P2-4 的原始担忧：过期 COMPLETED（completed_at 早于 now-30d）若停在 PENDING/SCORING/DEGRADED，
 // 每日扫描会重新给它打分 → 新建 pair → 发通知，而通知点进去按可见性规则是 404。
@@ -23,11 +26,21 @@
 //   再给一条 SQL 层反证：把修复前的目标 SQL 条件手抄一遍跑一次，X1/X2 会被选上；
 //     跑修复后的条件选不上 —— 说明挡住它们的就是那个 cutoff 谓词。
 //
+// 前置：后端 18080 可被杀掉重启（prepare 阶段要重启它，见 docs/testing/v2/F3R-how-to-rerun.md §8）、
+//      MySQL 3306（qa/lib/db.mjs 的 MYSQL_* 环境变量）、jar 已构建、
+//      JDK17 的 java 可执行（JAVA_BIN，默认 C:/Project/tools/jdk17/jdk-17.0.20.1+1/bin/java.exe）、
+//      env OPS_SCAN_TOKEN 非空（verify 阶段要打 POST /api/ops/pair-scan）。
+//
 // 运行：node qa/f3r/expired-scan.mjs prepare
 //       （重启后端，带 OPS_SCAN_TOKEN）
 //       node qa/f3r/expired-scan.mjs verify
-// 输出：qa/reports/f3r-expired-scan.txt / .json、qa/reports/f3r-expired-fixtures.json
-// 退出码：0 = 全部判据成立。
+// 期望输出：prepare 打印夹具 X1–X4 的 id 与指纹；verify 打印 V1–V8 逐条 PASS/FAIL，
+//          末行「P2-4 复验通过：过期 COMPLETED 既不重算也不新建 pair/通知，且对照仍能正常打分。」
+//          落盘 qa/reports/f3r-expired-scan.{txt,json}、qa/reports/f3r-expired-prepare.txt、
+//          qa/reports/f3r-expired-fixtures.json（供 expired-scan-startup.mjs 复用，属运行时产物不归档）；
+//          2026-10-28 那轮的冻结归档见 qa/reports/f3r-2026-10-28-expired-{prepare,scan}.{txt,json}。
+// 退出码：0 = 全部判据成立；1 = 有失败项。
+// 注意：prepare 与 verify 必须按顺序、同一套夹具跑；单独 verify 会读不到 fixtures.json 而报错。
 
 import { readFile, writeFile, stat } from 'node:fs/promises';
 import { resolve, dirname } from 'node:path';
