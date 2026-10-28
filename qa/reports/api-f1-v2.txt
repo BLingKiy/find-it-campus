@@ -1,117 +1,117 @@
 # api-f1-v2
-开始时间: 2026-10-28T01:34:14.088Z | 用例总数: 111 | 通过: 111 | 失败: 0（其中已登记缺陷: 0）| 通过率: 100.0% | 耗时: 188278ms
+开始时间: 2026-10-28T02:06:01.187Z | 用例总数: 111 | 通过: 111 | 失败: 0（其中已登记缺陷: 0）| 通过率: 100.0% | 耗时: 409223ms
 
-[PASS] ENV-01 (P0) 后端可达且数据库为 seed 初始状态（total=21）  148ms
-[PASS] ENV-02 (P0) 数据库为 v2 七表；t_user 不存手机号（PHONE 口径）  307ms
-[PASS] API-CON-01 (P1) 外层响应体恒含 code/message/data/requestId 四字段  36ms
-[PASS] API-CON-02 (P1) 未知路径返回 404 + 10003，而非框架默认错误页  12ms
-[PASS] API-CON-03 (P1) 动词不支持返回 405 + 10004（登录态下越过会话门禁）  22ms
-[PASS] API-CON-04 (P2) 请求体不是合法 JSON 时返回 400 + 10001  43ms
-[PASS] API-CON-05 (P2) 错误响应不含堆栈信息  41ms
-[PASS] API-L-01 (P0) 默认参数：status=PENDING、page=1、pageSize=10、createdAt desc  24ms
-[PASS] API-L-02 (P0) 列表项字段白名单：不含 description / contact / publisherName，含 isMine  31ms
-[PASS] API-L-03 (P0) type=FOUND 过滤后全部为 FOUND  24ms
-[PASS] API-L-04 (P1) 公共列表恒为 PENDING：status=ALL 仍 21；COMPLETED/CLOSED 0 命中  36ms
-[PASS] API-L-05 (P1) categoryId 过滤且停用分类返回 40002  37ms
-[PASS] API-L-06 (P1) keyword 命中标题与描述（中文，不区分字段）  17ms
-[PASS] API-L-07 (P1) keyword 中的 % 与 _ 按字面量处理，不当通配符  21ms
-[PASS] API-L-08 (P1) 分页无重复且末页 hasNext=false  46ms
-[PASS] API-L-09 (P1) sortBy=occurredAt&asc 按发生时间升序  19ms
-[PASS] API-L-10 (P1) sortBy=createdAt&desc 严格降序且两次调用顺序一致  52ms
-[PASS] API-L-11 (P2) 分页与枚举参数非法逐项返回 10001 + fieldErrors  71ms
-[PASS] API-L-12 (P3) 页码越界返回空列表而非报错  14ms
-[PASS] AUTH-01 (P0) 登录成功签发 JSESSIONID（HttpOnly/SameSite=Lax），me 返回本人  109ms
-[PASS] AUTH-02 (P0) 错口令与不存在账号同为 401 + 10006 + 同一文案（防枚举）  189ms
-[PASS] AUTH-03 (P1) 登录参数缺失/超长返回 400 + 10001 + fieldErrors  15ms
-[PASS] AUTH-04 (P1) 登出幂等：匿名 200；已登出会话再用 401  134ms
-[PASS] AUTH-05 (P0) 三套登录上下文互不串会话：me 分别返回 1/2/3  13ms
-[PASS] AUTH-06 (P1) 会话失效（未登录）后读私有集合与 pair 均 401，未实现路径也先 401  14ms
-[PASS] AUTHZ-01 (P0) POST /records 三态：匿名 401；本人 200；另一登录用户 200（发布归自己）  168ms
-[PASS] AUTHZ-02 (P0) PUT /records 三态：匿名 401；本人 200；非本人 403 + 10007  929ms
-[PASS] AUTHZ-03 (P0) PATCH status 三态：匿名 401；本人 200；非本人 403 + 10007  1241ms
-[PASS] AUTHZ-04 (P0) DELETE /records 三态：匿名 401；非本人 403；本人 200  808ms
-[PASS] AUTHZ-05 (P0) pair 写接口三态：匿名 401；参与方 200；非参与方 403 + 10007  7749ms
-[PASS] AUTHZ-06 (P0) 通知已读三态：匿名 401；接收人 200；他人 403 + 10007  791ms
-[PASS] AUTHZ-07 (P0) POST /match 三态：匿名 401；任一登录用户 200（候选对所有人遮蔽）  435ms
-[PASS] API-D-01 (P0) 所有者详情返回完整字段、allowedStatuses 与 pairs  20ms
-[PASS] API-D-02 (P1) 逻辑删除记录 404 + 20001  779ms
-[PASS] API-D-03 (P1) 不存在的 id 404 + 20001  6ms
-[PASS] API-D-04 (P1) 非数字 id 400 + 10001（/records/new 路由不被 id 抢走）  16ms
-[PASS] API-D-05 (P1) CLOSED / 到期 COMPLETED 任何身份 404；保留期 COMPLETED 仅合格对端可见  84ms
-[PASS] API-D-06 (P2) 无分类记录的 categoryId / categoryName 为 null  17ms
-[PASS] API-C-01 (P0) 合法提交返回与详情同构的对象，初始状态 PENDING  420ms
-[PASS] API-C-02 (P1) 可选字段缺省时落为 null  32ms
-[PASS] API-C-03 (P1) 分类不存在 404/40001，分类停用 409/40002  14ms
-[PASS] API-C-04 (P1) 标题长度边界：1 字与 65 字均 10001  16ms
-[PASS] API-C-05 (P1) 描述长度边界：1 字拒绝、2000 字通过  753ms
-[PASS] API-C-06 (P1) 地点 129 字拒绝、1 字通过  41ms
-[PASS] API-C-07 (P1) occurredAt 未来 10 分钟拒绝、3 分钟放行（容差 5 分钟）  54ms
-[PASS] API-C-08 (P1) occurredAt 格式严格（分隔符、时间必须合法）  72ms
-[PASS] API-C-09 (P1) type 非法 10001，必填项缺失一并返回 fieldErrors  31ms
-[PASS] API-C-10 (P1) contact 只做手机号格式校验：^1[3-9]\d{9}$，无短信验证  127ms
-[PASS] API-C-11 (P2) 中文与 emoji 往返无损（UTF-8 全链路）  379ms
-[PASS] API-C-12 (P2) 纯空格标题被 strip 后判空  5ms
-[PASS] API-C-13 (P3) 重复提交不幂等（契约 §4.3 已知行为，产生两条记录）  1157ms
-[PASS] API-U-01 (P0) 全量更新成功且不改 status  458ms
-[PASS] API-U-02 (P1) 未传的可选字段按全量语义清空为 null  50ms
-[PASS] API-U-03 (P1) 已关闭记录不可修改 409 + 20003；非本人 403  828ms
-[PASS] API-U-04 (P1) PUT 不存在的记录 404 + 20001  8ms
-[PASS] API-U-05 (P1) PUT 缺 type 或字段非法时 10001  402ms
-[PASS] API-S-01 (P0) PENDING → CLOSED 成功；终态再流转 409 + 20002  817ms
-[PASS] API-S-02 (P1) 终态不可再流转 409 + 20002，且带 current / allowed  1176ms
-[PASS] API-S-03 (P1) 流转到当前相同状态 409 + 20002（PENDING 不是合法目标值 → 400）  1228ms
-[PASS] API-S-04 (P1) 目标状态非法 400 + 10001（field=status，CLAIMED 亦非法）  43ms
-[PASS] API-S-05 (P1) 对不存在的记录流转 404 + 20001  14ms
-[PASS] API-X-01 (P0) 逻辑删除后详情 404、列表不可见、匹配候选池不含  451ms
-[PASS] API-X-02 (P1) 重复删除 404 + 20001  807ms
-[PASS] API-X-03 (P1) 删除不存在的记录 404 + 20001  6ms
-[PASS] API-CAT-01 (P0) 默认只返启用分类，按 sortOrder 升序，字段与契约一致  10ms
+[PASS] ENV-01 (P0) 后端可达且数据库为 seed 初始状态（total=21）  23ms
+[PASS] ENV-02 (P0) 数据库为 v2 七表；t_user 不存手机号（PHONE 口径）  6459ms
+[PASS] API-CON-01 (P1) 外层响应体恒含 code/message/data/requestId 四字段  28ms
+[PASS] API-CON-02 (P1) 未知路径返回 404 + 10003，而非框架默认错误页  7ms
+[PASS] API-CON-03 (P1) 动词不支持返回 405 + 10004（登录态下越过会话门禁）  16ms
+[PASS] API-CON-04 (P2) 请求体不是合法 JSON 时返回 400 + 10001  26ms
+[PASS] API-CON-05 (P2) 错误响应不含堆栈信息  28ms
+[PASS] API-L-01 (P0) 默认参数：status=PENDING、page=1、pageSize=10、createdAt desc  19ms
+[PASS] API-L-02 (P0) 列表项字段白名单：不含 description / contact / publisherName，含 isMine  20ms
+[PASS] API-L-03 (P0) type=FOUND 过滤后全部为 FOUND  22ms
+[PASS] API-L-04 (P1) 公共列表恒为 PENDING：status=ALL 仍 21；COMPLETED/CLOSED 0 命中  38ms
+[PASS] API-L-05 (P1) categoryId 过滤且停用分类返回 40002  38ms
+[PASS] API-L-06 (P1) keyword 命中标题与描述（中文，不区分字段）  16ms
+[PASS] API-L-07 (P1) keyword 中的 % 与 _ 按字面量处理，不当通配符  17ms
+[PASS] API-L-08 (P1) 分页无重复且末页 hasNext=false  52ms
+[PASS] API-L-09 (P1) sortBy=occurredAt&asc 按发生时间升序  20ms
+[PASS] API-L-10 (P1) sortBy=createdAt&desc 严格降序且两次调用顺序一致  49ms
+[PASS] API-L-11 (P2) 分页与枚举参数非法逐项返回 10001 + fieldErrors  62ms
+[PASS] API-L-12 (P3) 页码越界返回空列表而非报错  11ms
+[PASS] AUTH-01 (P0) 登录成功签发 JSESSIONID（HttpOnly/SameSite=Lax），me 返回本人  101ms
+[PASS] AUTH-02 (P0) 错口令与不存在账号同为 401 + 10006 + 同一文案（防枚举）  181ms
+[PASS] AUTH-03 (P1) 登录参数缺失/超长返回 400 + 10001 + fieldErrors  13ms
+[PASS] AUTH-04 (P1) 登出幂等：匿名 200；已登出会话再用 401  132ms
+[PASS] AUTH-05 (P0) 三套登录上下文互不串会话：me 分别返回 1/2/3  12ms
+[PASS] AUTH-06 (P1) 会话失效（未登录）后读私有集合与 pair 均 401，未实现路径也先 401  11ms
+[PASS] AUTHZ-01 (P0) POST /records 三态：匿名 401；本人 200；另一登录用户 200（发布归自己）  146ms
+[PASS] AUTHZ-02 (P0) PUT /records 三态：匿名 401；本人 200；非本人 403 + 10007  169ms
+[PASS] AUTHZ-03 (P0) PATCH status 三态：匿名 401；本人 200；非本人 403 + 10007  402ms
+[PASS] AUTHZ-04 (P0) DELETE /records 三态：匿名 401；非本人 403；本人 200  806ms
+[PASS] AUTHZ-05 (P0) pair 写接口三态：匿名 401；参与方 200；非参与方 403 + 10007  14985ms
+[PASS] AUTHZ-06 (P0) 通知已读三态：匿名 401；接收人 200；他人 403 + 10007  2835ms
+[PASS] AUTHZ-07 (P0) POST /match 三态：匿名 401；任一登录用户 200（候选对所有人遮蔽）  443ms
+[PASS] API-D-01 (P0) 所有者详情返回完整字段、allowedStatuses 与 pairs  25ms
+[PASS] API-D-02 (P1) 逻辑删除记录 404 + 20001  1099ms
+[PASS] API-D-03 (P1) 不存在的 id 404 + 20001  5ms
+[PASS] API-D-04 (P1) 非数字 id 400 + 10001（/records/new 路由不被 id 抢走）  10ms
+[PASS] API-D-05 (P1) CLOSED / 到期 COMPLETED 任何身份 404；保留期 COMPLETED 仅合格对端可见  58ms
+[PASS] API-D-06 (P2) 无分类记录的 categoryId / categoryName 为 null  6ms
+[PASS] API-C-01 (P0) 合法提交返回与详情同构的对象，初始状态 PENDING  319ms
+[PASS] API-C-02 (P1) 可选字段缺省时落为 null  702ms
+[PASS] API-C-03 (P1) 分类不存在 404/40001，分类停用 409/40002  20ms
+[PASS] API-C-04 (P1) 标题长度边界：1 字与 65 字均 10001  12ms
+[PASS] API-C-05 (P1) 描述长度边界：1 字拒绝、2000 字通过  353ms
+[PASS] API-C-06 (P1) 地点 129 字拒绝、1 字通过  712ms
+[PASS] API-C-07 (P1) occurredAt 未来 10 分钟拒绝、3 分钟放行（容差 5 分钟）  388ms
+[PASS] API-C-08 (P1) occurredAt 格式严格（分隔符、时间必须合法）  25ms
+[PASS] API-C-09 (P1) type 非法 10001，必填项缺失一并返回 fieldErrors  18ms
+[PASS] API-C-10 (P1) contact 只做手机号格式校验：^1[3-9]\d{9}$，无短信验证  407ms
+[PASS] API-C-11 (P2) 中文与 emoji 往返无损（UTF-8 全链路）  21ms
+[PASS] API-C-12 (P2) 纯空格标题被 strip 后判空  7ms
+[PASS] API-C-13 (P3) 重复提交不幂等（契约 §4.3 已知行为，产生两条记录）  809ms
+[PASS] API-U-01 (P0) 全量更新成功且不改 status  1146ms
+[PASS] API-U-02 (P1) 未传的可选字段按全量语义清空为 null  441ms
+[PASS] API-U-03 (P1) 已关闭记录不可修改 409 + 20003；非本人 403  67ms
+[PASS] API-U-04 (P1) PUT 不存在的记录 404 + 20001  11ms
+[PASS] API-U-05 (P1) PUT 缺 type 或字段非法时 10001  34ms
+[PASS] API-S-01 (P0) PENDING → CLOSED 成功；终态再流转 409 + 20002  405ms
+[PASS] API-S-02 (P1) 终态不可再流转 409 + 20002，且带 current / allowed  1129ms
+[PASS] API-S-03 (P1) 流转到当前相同状态 409 + 20002（PENDING 不是合法目标值 → 400）  797ms
+[PASS] API-S-04 (P1) 目标状态非法 400 + 10001（field=status，CLAIMED 亦非法）  406ms
+[PASS] API-S-05 (P1) 对不存在的记录流转 404 + 20001  7ms
+[PASS] API-X-01 (P0) 逻辑删除后详情 404、列表不可见、匹配候选池不含  826ms
+[PASS] API-X-02 (P1) 重复删除 404 + 20001  60ms
+[PASS] API-X-03 (P1) 删除不存在的记录 404 + 20001  5ms
+[PASS] API-CAT-01 (P0) 默认只返启用分类，按 sortOrder 升序，字段与契约一致  9ms
 [PASS] API-CAT-02 (P1) onlyActive=false 含停用分类  6ms
-[PASS] API-M-01 (P0) S1–S6 正例 top1 命中（失主找招领帖 ⇒ type=FOUND）  2395ms
-[PASS] API-M-02 (P0) 结果结构与排序：倒序、去重、score 口径、total=items.length  25ms
-[PASS] API-M-03 (P1) excludeRecordId 生效（详情页发起匹配时排除自身）  25ms
-[PASS] API-M-04 (P1) N1 计算器问句命中 7（拾到者找失物帖 ⇒ type=LOST）  21ms
-[PASS] API-M-05 (P1) N2 负例返回 200 + 空结果（不是错误、不是高分误报）  767ms
-[PASS] API-M-06 (P1) N4：COMPLETED 保留期内进候选池并标 RESTRICTED；CLOSED 与到期记录 0 命中  42ms
-[PASS] API-M-07 (P1) N3 同时命中 4 与 16（雨伞语义两侧都能召回）  393ms
-[PASS] API-M-08 (P1) 同一输入两次调用结果完全一致（本地实现必须确定）  450ms
-[PASS] API-M-09 (P1) topN / minScore / type / categoryId 约束生效  95ms
-[PASS] API-M-10 (P1) text 非法统一回 400 + 30001（空/1 字/超长）  25ms
-[PASS] API-M-11 (P2) topN / minScore / type / categoryId 非法各自 10001 或 40001  49ms
-[PASS] API-M-12 (P2) 并发 10 次匹配全部 200 且快照 id 唯一  679ms
-[PASS] MASK-01 (P0) 列表出口：标题号码打码、地点截断、无 contact/publisherName/description  30ms
-[PASS] MASK-02 (P0) 详情出口：非本人 contact=null、描述打码、地点截断；本人原值  18ms
-[PASS] MASK-03 (P0) 匹配出口：候选 title/location/reason 走同一打码器，不返回 contact/publisherName  779ms
-[PASS] MASK-04 (P0) 通知出口：title/body 不含手机号（写入前已打码）  16ms
-[PASS] MASK-05 (P0) 我的启事出口：本人数据不遮蔽（与公共出口口径不同，但只对本人）  94ms
-[PASS] MASK-06 (P0) 非本人响应全量扫描 1[3-9]\d{9}：列表/详情/匹配/通知 0 命中  307ms
-[PASS] TIER-01 (P0) DIRECT（≥0.90）：两端各自拿到对方号码，且写 GRANTED 审计  11519ms
-[PASS] TIER-02 (P0) AUTHORIZABLE（0.75–0.90）：未公开 available=false → 公开有号带打码附言 → 撤回回退  5196ms
-[PASS] TIER-03 (P0) <0.75 LOW：取号/授权/改 pair 全部 403 + 50002，并留 DENIED_LOW_SCORE  4206ms
-[PASS] TIER-04 (P1) 阈值边界：0.90=DIRECT、0.75=AUTHORIZABLE、0.7499=LOW  14954ms
-[PASS] IDEM-01 (P0) 同一 pair 重复 CONTACT：200 且 updatedAt 不变（不写库）  3888ms
-[PASS] IDEM-02 (P0) 重复 CONFIRM：单端不刷新 confirmed_at；两端齐后 MATCHED，重复不再改  5041ms
-[PASS] IDEM-03 (P1) 重复 PUBLISH：unlockedAt 不变且不重复写 PAIR_UNLOCK 通知  4833ms
-[PASS] IDEM-04 (P1) 重复 REVOKE：200 且保持 null（自然幂等）  5156ms
-[PASS] DEG-01 (P0) 空 Key 发布：记录照常 200，pair 落 LOCAL_KEYWORD + EMPTY_KEY，记录 pairState=DEGRADED  2987ms
-[PASS] DEG-02 (P1) 降级不影响 /api/match：仍返回 200 + LOCAL_KEYWORD（不是 503）  399ms
-[PASS] DEG-03 (P0) hash 变化触发重算：仍为 LOCAL_KEYWORD + EMPTY_KEY，分数写新值（不静默成功）  9702ms
-[PASS] PAIR-01 (P0) 一条招领与两条寻物各成 pair：A 标已联系后 B 仍 NEW，招领仍在候选池，记录全 PENDING  3774ms
-[PASS] PAIR-02 (P0) 唯一键 (lost_id, found_id)：重算/重复触发仍只有一行  7939ms
-[PASS] PAIR-03 (P0) 无占用/锁定：A pair MATCHED 后 B pair 仍可联系，招领仍可被匹配  2366ms
-[PASS] PAIR-04 (P0) pair 进展不触发记录状态变更：status / updated_at 前后一致  8436ms
-[PASS] PAIR-05 (P1) pair 不接受 status 直传 / 已解决 action；状态只允许四态  6162ms
-[PASS] PAIR-06 (P0) 1:1 ×N 可同时 MATCHED：两条 pair 各自两端确认，互不影响  3417ms
-[PASS] PAIR-07 (P0) hash 变化重算不重置 IGNORED：unlocked 列/附言原样；系统无恢复路径  7042ms
-[PASS] PAIR-07b (P1) 只有手动恢复才翻转：SQL 置回 NEW 后重算保持 NEW  5674ms
-[PASS] STAT-01 (P0) 未达 MATCHED 标完成 → 409 + 20005，status/completed_at/updated_at 零变化  1320ms
-[PASS] STAT-02 (P0) COMPLETED：列表/搜索 0 命中、匹配可命中、owner 404、合格对端 200、非合格 404  6846ms
-[PASS] STAT-03 (P0) COMPLETED 分数 <0.90 的非合格对端：详情 404（score 是硬门槛）  3809ms
-[PASS] STAT-04 (P0) CLOSED：列表与匹配双 0 命中，详情任何身份 404，pair 取号 403 + 50005  3903ms
-[PASS] STAT-05 (P0) 到期 COMPLETED：completed_at 推出保留期后从匹配消失、详情 404，status 不被自动改写  4748ms
-[PASS] TERM-06 (P0) IGNORED pair 不作 COMPLETED 详情通道：非所有者与所有者均 404、t_access_log 不新增；改回 NEW 后 200  3680ms
-[PASS] NOUNPUB-01 (P0) 「不自动下架」限定 PENDING：打分跑完仍 PENDING、deleted_at 为空、列表可见、updated_at 不变  4538ms
-[PASS] PHONE-01 (P1) 手机号只做格式校验：不落 t_user、接口无短信验证、contact 明文入库仅输出层遮蔽  628ms
+[PASS] API-M-01 (P0) S1–S6 正例 top1 命中（失主找招领帖 ⇒ type=FOUND）  1609ms
+[PASS] API-M-02 (P0) 结果结构与排序：倒序、去重、score 口径、total=items.length  31ms
+[PASS] API-M-03 (P1) excludeRecordId 生效（详情页发起匹配时排除自身）  735ms
+[PASS] API-M-04 (P1) N1 计算器问句命中 7（拾到者找失物帖 ⇒ type=LOST）  30ms
+[PASS] API-M-05 (P1) N2 负例返回 200 + 空结果（不是错误、不是高分误报）  23ms
+[PASS] API-M-06 (P1) N4：COMPLETED 保留期内进候选池并标 RESTRICTED；CLOSED 与到期记录 0 命中  25ms
+[PASS] API-M-07 (P1) N3 同时命中 4 与 16（雨伞语义两侧都能召回）  383ms
+[PASS] API-M-08 (P1) 同一输入两次调用结果完全一致（本地实现必须确定）  776ms
+[PASS] API-M-09 (P1) topN / minScore / type / categoryId 约束生效  1143ms
+[PASS] API-M-10 (P1) text 非法统一回 400 + 30001（空/1 字/超长）  20ms
+[PASS] API-M-11 (P2) topN / minScore / type / categoryId 非法各自 10001 或 40001  38ms
+[PASS] API-M-12 (P2) 并发 10 次匹配全部 200 且快照 id 唯一  360ms
+[PASS] MASK-01 (P0) 列表出口：标题号码打码、地点截断、无 contact/publisherName/description  404ms
+[PASS] MASK-02 (P0) 详情出口：非本人 contact=null、描述打码、地点截断；本人原值  23ms
+[PASS] MASK-03 (P0) 匹配出口：候选 title/location/reason 走同一打码器，不返回 contact/publisherName  759ms
+[PASS] MASK-04 (P0) 通知出口：title/body 不含手机号（写入前已打码）  24ms
+[PASS] MASK-05 (P0) 我的启事出口：本人数据不遮蔽（与公共出口口径不同，但只对本人）  78ms
+[PASS] MASK-06 (P0) 非本人响应全量扫描 1[3-9]\d{9}：列表/详情/匹配/通知 0 命中  315ms
+[PASS] TIER-01 (P0) DIRECT（≥0.90）：两端各自拿到对方号码，且写 GRANTED 审计  21579ms
+[PASS] TIER-02 (P0) AUTHORIZABLE（0.75–0.90）：未公开 available=false → 公开有号带打码附言 → 撤回回退  12460ms
+[PASS] TIER-03 (P0) <0.75 LOW：取号/授权/改 pair 全部 403 + 50002，并留 DENIED_LOW_SCORE  11370ms
+[PASS] TIER-04 (P1) 阈值边界：0.90=DIRECT、0.75=AUTHORIZABLE、0.7499=LOW  27692ms
+[PASS] IDEM-01 (P0) 同一 pair 重复 CONTACT：200 且 updatedAt 不变（不写库）  13526ms
+[PASS] IDEM-02 (P0) 重复 CONFIRM：单端不刷新 confirmed_at；两端齐后 MATCHED，重复不再改  13832ms
+[PASS] IDEM-03 (P1) 重复 PUBLISH：unlockedAt 不变且不重复写 PAIR_UNLOCK 通知  13850ms
+[PASS] IDEM-04 (P1) 重复 REVOKE：200 且保持 null（自然幂等）  9213ms
+[PASS] DEG-01 (P0) 空 Key 发布：记录照常 200，pair 落 LOCAL_KEYWORD + EMPTY_KEY，记录 pairState=DEGRADED  6766ms
+[PASS] DEG-02 (P1) 降级不影响 /api/match：仍返回 200 + LOCAL_KEYWORD（不是 503）  20ms
+[PASS] DEG-03 (P0) hash 变化触发重算：仍为 LOCAL_KEYWORD + EMPTY_KEY，分数写新值（不静默成功）  12846ms
+[PASS] PAIR-01 (P0) 一条招领与两条寻物各成 pair：A 标已联系后 B 仍 NEW，招领仍在候选池，记录全 PENDING  23112ms
+[PASS] PAIR-02 (P0) 唯一键 (lost_id, found_id)：重算/重复触发仍只有一行  24628ms
+[PASS] PAIR-03 (P0) 无占用/锁定：A pair MATCHED 后 B pair 仍可联系，招领仍可被匹配  8237ms
+[PASS] PAIR-04 (P0) pair 进展不触发记录状态变更：status / updated_at 前后一致  17643ms
+[PASS] PAIR-05 (P1) pair 不接受 status 直传 / 已解决 action；状态只允许四态  9317ms
+[PASS] PAIR-06 (P0) 1:1 ×N 可同时 MATCHED：两条 pair 各自两端确认，互不影响  14633ms
+[PASS] PAIR-07 (P0) hash 变化重算不重置 IGNORED：unlocked 列/附言原样；系统无恢复路径  17914ms
+[PASS] PAIR-07b (P1) 只有手动恢复才翻转：SQL 置回 NEW 后重算保持 NEW  11352ms
+[PASS] STAT-01 (P0) 未达 MATCHED 标完成 → 409 + 20005，status/completed_at/updated_at 零变化  5377ms
+[PASS] STAT-02 (P0) COMPLETED：列表/搜索 0 命中、匹配可命中、owner 404、合格对端 200、非合格 404  14519ms
+[PASS] STAT-03 (P0) COMPLETED 分数 <0.90 的非合格对端：详情 404（score 是硬门槛）  11378ms
+[PASS] STAT-04 (P0) CLOSED：列表与匹配双 0 命中，详情任何身份 404，pair 取号 403 + 50005  12130ms
+[PASS] STAT-05 (P0) 到期 COMPLETED：completed_at 推出保留期后从匹配消失、详情 404，status 不被自动改写  14328ms
+[PASS] TERM-06 (P0) IGNORED pair 不作 COMPLETED 详情通道：非所有者与所有者均 404、t_access_log 不新增；改回 NEW 后 200  18373ms
+[PASS] NOUNPUB-01 (P0) 「不自动下架」限定 PENDING：打分跑完仍 PENDING、deleted_at 为空、列表可见、updated_at 不变  7220ms
+[PASS] PHONE-01 (P1) 手机号只做格式校验：不落 t_user、接口无短信验证、contact 明文入库仅输出层遮蔽  4281ms
 
 --- 失败明细 ---
 （无）

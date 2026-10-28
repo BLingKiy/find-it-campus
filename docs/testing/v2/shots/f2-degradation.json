@@ -1,0 +1,22 @@
+{
+  "title": "f2-degradation",
+  "startedAt": "2026-10-28T02:23:40.976Z",
+  "total": 1,
+  "passed": 1,
+  "failed": 0,
+  "knownFailures": 0,
+  "passRate": "100.0%",
+  "durationMs": 10146,
+  "evidence": {
+    "recordId": 27,
+    "postStatus": 200,
+    "pairState": "DEGRADED",
+    "pairId": 15,
+    "engine": "LOCAL_KEYWORD",
+    "degradedReason": "EMPTY_KEY",
+    "score": "0.5600",
+    "bannerText": "已降级\n智能匹配暂不可用，已用关键词匹配。分数仅供参考。",
+    "screenshot": "docs/testing/v2/shots/11-degraded-detail.png"
+  },
+  "generatedAt": "2026-10-28T02:23:51.122Z"
+}

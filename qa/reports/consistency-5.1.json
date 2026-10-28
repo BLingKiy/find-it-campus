@@ -1,13 +1,13 @@
 {
   "summary": {
     "title": "consistency-5.1",
-    "startedAt": "2026-10-28T01:37:57.848Z",
+    "startedAt": "2026-10-28T02:14:17.245Z",
     "total": 9,
     "passed": 9,
     "failed": 0,
     "knownFailures": 0,
     "passRate": "100.0%",
-    "durationMs": 15688
+    "durationMs": 16102
   },
   "cases": [
     {
@@ -15,63 +15,63 @@
       "priority": "P0",
       "name": "三页读取到同一套 token（品牌色 / 圆角 / 容器宽）",
       "status": "PASS",
-      "durationMs": 1272
+      "durationMs": 1387
     },
     {
       "id": "CON-02",
       "priority": "P0",
       "name": "按钮：三页所有 .btn 变体圆角一致，主按钮配色一致",
       "status": "PASS",
-      "durationMs": 862
+      "durationMs": 894
     },
     {
       "id": "CON-03",
       "priority": "P0",
       "name": "表单控件：高度 / 圆角 / 描边一致（列表筛选区 + 提交表单）",
       "status": "PASS",
-      "durationMs": 782
+      "durationMs": 895
     },
     {
       "id": "CON-04",
       "priority": "P1",
       "name": "面板与徽标：面板 10px、徽标 pill，卡片与面板各用一档间距",
       "status": "PASS",
-      "durationMs": 930
+      "durationMs": 951
     },
     {
       "id": "CON-05",
       "priority": "P1",
       "name": "页面头（.page-head）三页同字号、同容器宽、同内边距",
       "status": "PASS",
-      "durationMs": 829
+      "durationMs": 1015
     },
     {
       "id": "CON-06",
       "priority": "P1",
       "name": "加载态：列表与详情用同一骨架类（.skeleton），不是各自一套",
       "status": "PASS",
-      "durationMs": 805
+      "durationMs": 799
     },
     {
       "id": "CON-07",
       "priority": "P1",
       "name": "空态与错误态：三页共用 .empty / .alert--danger 结构",
       "status": "PASS",
-      "durationMs": 1801
+      "durationMs": 1814
     },
     {
       "id": "CON-08",
       "priority": "P0",
       "name": "320 / 768 / 1280 三档 × 三页均无横向溢出",
       "status": "PASS",
-      "durationMs": 4950
+      "durationMs": 4907
     },
     {
       "id": "CON-09",
       "priority": "P2",
       "name": "深色模式本期不做：暗色偏好下颜色不变（口径接受，不计缺陷）",
       "status": "PASS",
-      "durationMs": 842
+      "durationMs": 839
     }
   ]
 }

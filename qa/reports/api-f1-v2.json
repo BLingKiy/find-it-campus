@@ -1,13 +1,13 @@
 {
   "summary": {
     "title": "api-f1-v2",
-    "startedAt": "2026-10-28T01:34:14.088Z",
+    "startedAt": "2026-10-28T02:06:01.187Z",
     "total": 111,
     "passed": 111,
     "failed": 0,
     "knownFailures": 0,
     "passRate": "100.0%",
-    "durationMs": 188277
+    "durationMs": 409222
   },
   "cases": [
     {
@@ -15,455 +15,455 @@
       "priority": "P0",
       "name": "后端可达且数据库为 seed 初始状态（total=21）",
       "status": "PASS",
-      "durationMs": 148
+      "durationMs": 23
     },
     {
       "id": "ENV-02",
       "priority": "P0",
       "name": "数据库为 v2 七表；t_user 不存手机号（PHONE 口径）",
       "status": "PASS",
-      "durationMs": 307
+      "durationMs": 6459
     },
     {
       "id": "API-CON-01",
       "priority": "P1",
       "name": "外层响应体恒含 code/message/data/requestId 四字段",
       "status": "PASS",
-      "durationMs": 36
+      "durationMs": 28
     },
     {
       "id": "API-CON-02",
       "priority": "P1",
       "name": "未知路径返回 404 + 10003，而非框架默认错误页",
       "status": "PASS",
-      "durationMs": 12
+      "durationMs": 7
     },
     {
       "id": "API-CON-03",
       "priority": "P1",
       "name": "动词不支持返回 405 + 10004（登录态下越过会话门禁）",
       "status": "PASS",
-      "durationMs": 22
+      "durationMs": 16
     },
     {
       "id": "API-CON-04",
       "priority": "P2",
       "name": "请求体不是合法 JSON 时返回 400 + 10001",
       "status": "PASS",
-      "durationMs": 43
+      "durationMs": 26
     },
     {
       "id": "API-CON-05",
       "priority": "P2",
       "name": "错误响应不含堆栈信息",
       "status": "PASS",
-      "durationMs": 41
+      "durationMs": 28
     },
     {
       "id": "API-L-01",
       "priority": "P0",
       "name": "默认参数：status=PENDING、page=1、pageSize=10、createdAt desc",
       "status": "PASS",
-      "durationMs": 24
+      "durationMs": 19
     },
     {
       "id": "API-L-02",
       "priority": "P0",
       "name": "列表项字段白名单：不含 description / contact / publisherName，含 isMine",
       "status": "PASS",
-      "durationMs": 31
+      "durationMs": 20
     },
     {
       "id": "API-L-03",
       "priority": "P0",
       "name": "type=FOUND 过滤后全部为 FOUND",
       "status": "PASS",
-      "durationMs": 24
+      "durationMs": 22
     },
     {
       "id": "API-L-04",
       "priority": "P1",
       "name": "公共列表恒为 PENDING：status=ALL 仍 21；COMPLETED/CLOSED 0 命中",
       "status": "PASS",
-      "durationMs": 36
+      "durationMs": 38
     },
     {
       "id": "API-L-05",
       "priority": "P1",
       "name": "categoryId 过滤且停用分类返回 40002",
       "status": "PASS",
-      "durationMs": 37
+      "durationMs": 38
     },
     {
       "id": "API-L-06",
       "priority": "P1",
       "name": "keyword 命中标题与描述（中文，不区分字段）",
       "status": "PASS",
-      "durationMs": 17
+      "durationMs": 16
     },
     {
       "id": "API-L-07",
       "priority": "P1",
       "name": "keyword 中的 % 与 _ 按字面量处理，不当通配符",
       "status": "PASS",
-      "durationMs": 21
+      "durationMs": 17
     },
     {
       "id": "API-L-08",
       "priority": "P1",
       "name": "分页无重复且末页 hasNext=false",
       "status": "PASS",
-      "durationMs": 46
+      "durationMs": 52
     },
     {
       "id": "API-L-09",
       "priority": "P1",
       "name": "sortBy=occurredAt&asc 按发生时间升序",
       "status": "PASS",
-      "durationMs": 19
+      "durationMs": 20
     },
     {
       "id": "API-L-10",
       "priority": "P1",
       "name": "sortBy=createdAt&desc 严格降序且两次调用顺序一致",
       "status": "PASS",
-      "durationMs": 52
+      "durationMs": 49
     },
     {
       "id": "API-L-11",
       "priority": "P2",
       "name": "分页与枚举参数非法逐项返回 10001 + fieldErrors",
       "status": "PASS",
-      "durationMs": 71
+      "durationMs": 62
     },
     {
       "id": "API-L-12",
       "priority": "P3",
       "name": "页码越界返回空列表而非报错",
       "status": "PASS",
-      "durationMs": 14
+      "durationMs": 11
     },
     {
       "id": "AUTH-01",
       "priority": "P0",
       "name": "登录成功签发 JSESSIONID（HttpOnly/SameSite=Lax），me 返回本人",
       "status": "PASS",
-      "durationMs": 109
+      "durationMs": 101
     },
     {
       "id": "AUTH-02",
       "priority": "P0",
       "name": "错口令与不存在账号同为 401 + 10006 + 同一文案（防枚举）",
       "status": "PASS",
-      "durationMs": 189
+      "durationMs": 181
     },
     {
       "id": "AUTH-03",
       "priority": "P1",
       "name": "登录参数缺失/超长返回 400 + 10001 + fieldErrors",
       "status": "PASS",
-      "durationMs": 15
+      "durationMs": 13
     },
     {
       "id": "AUTH-04",
       "priority": "P1",
       "name": "登出幂等：匿名 200；已登出会话再用 401",
       "status": "PASS",
-      "durationMs": 134
+      "durationMs": 132
     },
     {
       "id": "AUTH-05",
       "priority": "P0",
       "name": "三套登录上下文互不串会话：me 分别返回 1/2/3",
       "status": "PASS",
-      "durationMs": 13
+      "durationMs": 12
     },
     {
       "id": "AUTH-06",
       "priority": "P1",
       "name": "会话失效（未登录）后读私有集合与 pair 均 401，未实现路径也先 401",
       "status": "PASS",
-      "durationMs": 14
+      "durationMs": 11
     },
     {
       "id": "AUTHZ-01",
       "priority": "P0",
       "name": "POST /records 三态：匿名 401；本人 200；另一登录用户 200（发布归自己）",
       "status": "PASS",
-      "durationMs": 168
+      "durationMs": 146
     },
     {
       "id": "AUTHZ-02",
       "priority": "P0",
       "name": "PUT /records 三态：匿名 401；本人 200；非本人 403 + 10007",
       "status": "PASS",
-      "durationMs": 929
+      "durationMs": 169
     },
     {
       "id": "AUTHZ-03",
       "priority": "P0",
       "name": "PATCH status 三态：匿名 401；本人 200；非本人 403 + 10007",
       "status": "PASS",
-      "durationMs": 1241
+      "durationMs": 402
     },
     {
       "id": "AUTHZ-04",
       "priority": "P0",
       "name": "DELETE /records 三态：匿名 401；非本人 403；本人 200",
       "status": "PASS",
-      "durationMs": 808
+      "durationMs": 806
     },
     {
       "id": "AUTHZ-05",
       "priority": "P0",
       "name": "pair 写接口三态：匿名 401；参与方 200；非参与方 403 + 10007",
       "status": "PASS",
-      "durationMs": 7749
+      "durationMs": 14985
     },
     {
       "id": "AUTHZ-06",
       "priority": "P0",
       "name": "通知已读三态：匿名 401；接收人 200；他人 403 + 10007",
       "status": "PASS",
-      "durationMs": 791
+      "durationMs": 2835
     },
     {
       "id": "AUTHZ-07",
       "priority": "P0",
       "name": "POST /match 三态：匿名 401；任一登录用户 200（候选对所有人遮蔽）",
       "status": "PASS",
-      "durationMs": 435
+      "durationMs": 443
     },
     {
       "id": "API-D-01",
       "priority": "P0",
       "name": "所有者详情返回完整字段、allowedStatuses 与 pairs",
       "status": "PASS",
-      "durationMs": 20
+      "durationMs": 25
     },
     {
       "id": "API-D-02",
       "priority": "P1",
       "name": "逻辑删除记录 404 + 20001",
       "status": "PASS",
-      "durationMs": 779
+      "durationMs": 1099
     },
     {
       "id": "API-D-03",
       "priority": "P1",
       "name": "不存在的 id 404 + 20001",
       "status": "PASS",
-      "durationMs": 6
+      "durationMs": 5
     },
     {
       "id": "API-D-04",
       "priority": "P1",
       "name": "非数字 id 400 + 10001（/records/new 路由不被 id 抢走）",
       "status": "PASS",
-      "durationMs": 16
+      "durationMs": 10
     },
     {
       "id": "API-D-05",
       "priority": "P1",
       "name": "CLOSED / 到期 COMPLETED 任何身份 404；保留期 COMPLETED 仅合格对端可见",
       "status": "PASS",
-      "durationMs": 84
+      "durationMs": 58
     },
     {
       "id": "API-D-06",
       "priority": "P2",
       "name": "无分类记录的 categoryId / categoryName 为 null",
       "status": "PASS",
-      "durationMs": 17
+      "durationMs": 6
     },
     {
       "id": "API-C-01",
       "priority": "P0",
       "name": "合法提交返回与详情同构的对象，初始状态 PENDING",
       "status": "PASS",
-      "durationMs": 420
+      "durationMs": 319
     },
     {
       "id": "API-C-02",
       "priority": "P1",
       "name": "可选字段缺省时落为 null",
       "status": "PASS",
-      "durationMs": 32
+      "durationMs": 702
     },
     {
       "id": "API-C-03",
       "priority": "P1",
       "name": "分类不存在 404/40001，分类停用 409/40002",
       "status": "PASS",
-      "durationMs": 14
+      "durationMs": 20
     },
     {
       "id": "API-C-04",
       "priority": "P1",
       "name": "标题长度边界：1 字与 65 字均 10001",
       "status": "PASS",
-      "durationMs": 16
+      "durationMs": 12
     },
     {
       "id": "API-C-05",
       "priority": "P1",
       "name": "描述长度边界：1 字拒绝、2000 字通过",
       "status": "PASS",
-      "durationMs": 753
+      "durationMs": 353
     },
     {
       "id": "API-C-06",
       "priority": "P1",
       "name": "地点 129 字拒绝、1 字通过",
       "status": "PASS",
-      "durationMs": 41
+      "durationMs": 712
     },
     {
       "id": "API-C-07",
       "priority": "P1",
       "name": "occurredAt 未来 10 分钟拒绝、3 分钟放行（容差 5 分钟）",
       "status": "PASS",
-      "durationMs": 54
+      "durationMs": 388
     },
     {
       "id": "API-C-08",
       "priority": "P1",
       "name": "occurredAt 格式严格（分隔符、时间必须合法）",
       "status": "PASS",
-      "durationMs": 72
+      "durationMs": 25
     },
     {
       "id": "API-C-09",
       "priority": "P1",
       "name": "type 非法 10001，必填项缺失一并返回 fieldErrors",
       "status": "PASS",
-      "durationMs": 31
+      "durationMs": 18
     },
     {
       "id": "API-C-10",
       "priority": "P1",
       "name": "contact 只做手机号格式校验：^1[3-9]\\d{9}$，无短信验证",
       "status": "PASS",
-      "durationMs": 127
+      "durationMs": 407
     },
     {
       "id": "API-C-11",
       "priority": "P2",
       "name": "中文与 emoji 往返无损（UTF-8 全链路）",
       "status": "PASS",
-      "durationMs": 379
+      "durationMs": 21
     },
     {
       "id": "API-C-12",
       "priority": "P2",
       "name": "纯空格标题被 strip 后判空",
       "status": "PASS",
-      "durationMs": 5
+      "durationMs": 7
     },
     {
       "id": "API-C-13",
       "priority": "P3",
       "name": "重复提交不幂等（契约 §4.3 已知行为，产生两条记录）",
       "status": "PASS",
-      "durationMs": 1157
+      "durationMs": 809
     },
     {
       "id": "API-U-01",
       "priority": "P0",
       "name": "全量更新成功且不改 status",
       "status": "PASS",
-      "durationMs": 458
+      "durationMs": 1146
     },
     {
       "id": "API-U-02",
       "priority": "P1",
       "name": "未传的可选字段按全量语义清空为 null",
       "status": "PASS",
-      "durationMs": 50
+      "durationMs": 441
     },
     {
       "id": "API-U-03",
       "priority": "P1",
       "name": "已关闭记录不可修改 409 + 20003；非本人 403",
       "status": "PASS",
-      "durationMs": 828
+      "durationMs": 67
     },
     {
       "id": "API-U-04",
       "priority": "P1",
       "name": "PUT 不存在的记录 404 + 20001",
       "status": "PASS",
-      "durationMs": 8
+      "durationMs": 11
     },
     {
       "id": "API-U-05",
       "priority": "P1",
       "name": "PUT 缺 type 或字段非法时 10001",
       "status": "PASS",
-      "durationMs": 402
+      "durationMs": 34
     },
     {
       "id": "API-S-01",
       "priority": "P0",
       "name": "PENDING → CLOSED 成功；终态再流转 409 + 20002",
       "status": "PASS",
-      "durationMs": 817
+      "durationMs": 405
     },
     {
       "id": "API-S-02",
       "priority": "P1",
       "name": "终态不可再流转 409 + 20002，且带 current / allowed",
       "status": "PASS",
-      "durationMs": 1176
+      "durationMs": 1129
     },
     {
       "id": "API-S-03",
       "priority": "P1",
       "name": "流转到当前相同状态 409 + 20002（PENDING 不是合法目标值 → 400）",
       "status": "PASS",
-      "durationMs": 1228
+      "durationMs": 797
     },
     {
       "id": "API-S-04",
       "priority": "P1",
       "name": "目标状态非法 400 + 10001（field=status，CLAIMED 亦非法）",
       "status": "PASS",
-      "durationMs": 43
+      "durationMs": 406
     },
     {
       "id": "API-S-05",
       "priority": "P1",
       "name": "对不存在的记录流转 404 + 20001",
       "status": "PASS",
-      "durationMs": 14
+      "durationMs": 7
     },
     {
       "id": "API-X-01",
       "priority": "P0",
       "name": "逻辑删除后详情 404、列表不可见、匹配候选池不含",
       "status": "PASS",
-      "durationMs": 451
+      "durationMs": 826
     },
     {
       "id": "API-X-02",
       "priority": "P1",
       "name": "重复删除 404 + 20001",
       "status": "PASS",
-      "durationMs": 807
+      "durationMs": 60
     },
     {
       "id": "API-X-03",
       "priority": "P1",
       "name": "删除不存在的记录 404 + 20001",
       "status": "PASS",
-      "durationMs": 6
+      "durationMs": 5
     },
     {
       "id": "API-CAT-01",
       "priority": "P0",
       "name": "默认只返启用分类，按 sortOrder 升序，字段与契约一致",
       "status": "PASS",
-      "durationMs": 10
+      "durationMs": 9
     },
     {
       "id": "API-CAT-02",
@@ -477,315 +477,315 @@
       "priority": "P0",
       "name": "S1–S6 正例 top1 命中（失主找招领帖 ⇒ type=FOUND）",
       "status": "PASS",
-      "durationMs": 2395
+      "durationMs": 1609
     },
     {
       "id": "API-M-02",
       "priority": "P0",
       "name": "结果结构与排序：倒序、去重、score 口径、total=items.length",
       "status": "PASS",
-      "durationMs": 25
+      "durationMs": 31
     },
     {
       "id": "API-M-03",
       "priority": "P1",
       "name": "excludeRecordId 生效（详情页发起匹配时排除自身）",
       "status": "PASS",
-      "durationMs": 25
+      "durationMs": 735
     },
     {
       "id": "API-M-04",
       "priority": "P1",
       "name": "N1 计算器问句命中 7（拾到者找失物帖 ⇒ type=LOST）",
       "status": "PASS",
-      "durationMs": 21
+      "durationMs": 30
     },
     {
       "id": "API-M-05",
       "priority": "P1",
       "name": "N2 负例返回 200 + 空结果（不是错误、不是高分误报）",
       "status": "PASS",
-      "durationMs": 767
+      "durationMs": 23
     },
     {
       "id": "API-M-06",
       "priority": "P1",
       "name": "N4：COMPLETED 保留期内进候选池并标 RESTRICTED；CLOSED 与到期记录 0 命中",
       "status": "PASS",
-      "durationMs": 42
+      "durationMs": 25
     },
     {
       "id": "API-M-07",
       "priority": "P1",
       "name": "N3 同时命中 4 与 16（雨伞语义两侧都能召回）",
       "status": "PASS",
-      "durationMs": 393
+      "durationMs": 383
     },
     {
       "id": "API-M-08",
       "priority": "P1",
       "name": "同一输入两次调用结果完全一致（本地实现必须确定）",
       "status": "PASS",
-      "durationMs": 450
+      "durationMs": 776
     },
     {
       "id": "API-M-09",
       "priority": "P1",
       "name": "topN / minScore / type / categoryId 约束生效",
       "status": "PASS",
-      "durationMs": 95
+      "durationMs": 1143
     },
     {
       "id": "API-M-10",
       "priority": "P1",
       "name": "text 非法统一回 400 + 30001（空/1 字/超长）",
       "status": "PASS",
-      "durationMs": 25
+      "durationMs": 20
     },
     {
       "id": "API-M-11",
       "priority": "P2",
       "name": "topN / minScore / type / categoryId 非法各自 10001 或 40001",
       "status": "PASS",
-      "durationMs": 49
+      "durationMs": 38
     },
     {
       "id": "API-M-12",
       "priority": "P2",
       "name": "并发 10 次匹配全部 200 且快照 id 唯一",
       "status": "PASS",
-      "durationMs": 679
+      "durationMs": 360
     },
     {
       "id": "MASK-01",
       "priority": "P0",
       "name": "列表出口：标题号码打码、地点截断、无 contact/publisherName/description",
       "status": "PASS",
-      "durationMs": 30
+      "durationMs": 404
     },
     {
       "id": "MASK-02",
       "priority": "P0",
       "name": "详情出口：非本人 contact=null、描述打码、地点截断；本人原值",
       "status": "PASS",
-      "durationMs": 18
+      "durationMs": 23
     },
     {
       "id": "MASK-03",
       "priority": "P0",
       "name": "匹配出口：候选 title/location/reason 走同一打码器，不返回 contact/publisherName",
       "status": "PASS",
-      "durationMs": 779
+      "durationMs": 759
     },
     {
       "id": "MASK-04",
       "priority": "P0",
       "name": "通知出口：title/body 不含手机号（写入前已打码）",
       "status": "PASS",
-      "durationMs": 16
+      "durationMs": 24
     },
     {
       "id": "MASK-05",
       "priority": "P0",
       "name": "我的启事出口：本人数据不遮蔽（与公共出口口径不同，但只对本人）",
       "status": "PASS",
-      "durationMs": 94
+      "durationMs": 78
     },
     {
       "id": "MASK-06",
       "priority": "P0",
       "name": "非本人响应全量扫描 1[3-9]\\d{9}：列表/详情/匹配/通知 0 命中",
       "status": "PASS",
-      "durationMs": 307
+      "durationMs": 315
     },
     {
       "id": "TIER-01",
       "priority": "P0",
       "name": "DIRECT（≥0.90）：两端各自拿到对方号码，且写 GRANTED 审计",
       "status": "PASS",
-      "durationMs": 11519
+      "durationMs": 21579
     },
     {
       "id": "TIER-02",
       "priority": "P0",
       "name": "AUTHORIZABLE（0.75–0.90）：未公开 available=false → 公开有号带打码附言 → 撤回回退",
       "status": "PASS",
-      "durationMs": 5196
+      "durationMs": 12460
     },
     {
       "id": "TIER-03",
       "priority": "P0",
       "name": "<0.75 LOW：取号/授权/改 pair 全部 403 + 50002，并留 DENIED_LOW_SCORE",
       "status": "PASS",
-      "durationMs": 4206
+      "durationMs": 11370
     },
     {
       "id": "TIER-04",
       "priority": "P1",
       "name": "阈值边界：0.90=DIRECT、0.75=AUTHORIZABLE、0.7499=LOW",
       "status": "PASS",
-      "durationMs": 14954
+      "durationMs": 27692
     },
     {
       "id": "IDEM-01",
       "priority": "P0",
       "name": "同一 pair 重复 CONTACT：200 且 updatedAt 不变（不写库）",
       "status": "PASS",
-      "durationMs": 3888
+      "durationMs": 13526
     },
     {
       "id": "IDEM-02",
       "priority": "P0",
       "name": "重复 CONFIRM：单端不刷新 confirmed_at；两端齐后 MATCHED，重复不再改",
       "status": "PASS",
-      "durationMs": 5041
+      "durationMs": 13832
     },
     {
       "id": "IDEM-03",
       "priority": "P1",
       "name": "重复 PUBLISH：unlockedAt 不变且不重复写 PAIR_UNLOCK 通知",
       "status": "PASS",
-      "durationMs": 4833
+      "durationMs": 13850
     },
     {
       "id": "IDEM-04",
       "priority": "P1",
       "name": "重复 REVOKE：200 且保持 null（自然幂等）",
       "status": "PASS",
-      "durationMs": 5156
+      "durationMs": 9213
     },
     {
       "id": "DEG-01",
       "priority": "P0",
       "name": "空 Key 发布：记录照常 200，pair 落 LOCAL_KEYWORD + EMPTY_KEY，记录 pairState=DEGRADED",
       "status": "PASS",
-      "durationMs": 2987
+      "durationMs": 6766
     },
     {
       "id": "DEG-02",
       "priority": "P1",
       "name": "降级不影响 /api/match：仍返回 200 + LOCAL_KEYWORD（不是 503）",
       "status": "PASS",
-      "durationMs": 399
+      "durationMs": 20
     },
     {
       "id": "DEG-03",
       "priority": "P0",
       "name": "hash 变化触发重算：仍为 LOCAL_KEYWORD + EMPTY_KEY，分数写新值（不静默成功）",
       "status": "PASS",
-      "durationMs": 9702
+      "durationMs": 12846
     },
     {
       "id": "PAIR-01",
       "priority": "P0",
       "name": "一条招领与两条寻物各成 pair：A 标已联系后 B 仍 NEW，招领仍在候选池，记录全 PENDING",
       "status": "PASS",
-      "durationMs": 3774
+      "durationMs": 23112
     },
     {
       "id": "PAIR-02",
       "priority": "P0",
       "name": "唯一键 (lost_id, found_id)：重算/重复触发仍只有一行",
       "status": "PASS",
-      "durationMs": 7939
+      "durationMs": 24628
     },
     {
       "id": "PAIR-03",
       "priority": "P0",
       "name": "无占用/锁定：A pair MATCHED 后 B pair 仍可联系，招领仍可被匹配",
       "status": "PASS",
-      "durationMs": 2366
+      "durationMs": 8237
     },
     {
       "id": "PAIR-04",
       "priority": "P0",
       "name": "pair 进展不触发记录状态变更：status / updated_at 前后一致",
       "status": "PASS",
-      "durationMs": 8436
+      "durationMs": 17643
     },
     {
       "id": "PAIR-05",
       "priority": "P1",
       "name": "pair 不接受 status 直传 / 已解决 action；状态只允许四态",
       "status": "PASS",
-      "durationMs": 6162
+      "durationMs": 9317
     },
     {
       "id": "PAIR-06",
       "priority": "P0",
       "name": "1:1 ×N 可同时 MATCHED：两条 pair 各自两端确认，互不影响",
       "status": "PASS",
-      "durationMs": 3417
+      "durationMs": 14633
     },
     {
       "id": "PAIR-07",
       "priority": "P0",
       "name": "hash 变化重算不重置 IGNORED：unlocked 列/附言原样；系统无恢复路径",
       "status": "PASS",
-      "durationMs": 7042
+      "durationMs": 17914
     },
     {
       "id": "PAIR-07b",
       "priority": "P1",
       "name": "只有手动恢复才翻转：SQL 置回 NEW 后重算保持 NEW",
       "status": "PASS",
-      "durationMs": 5674
+      "durationMs": 11352
     },
     {
       "id": "STAT-01",
       "priority": "P0",
       "name": "未达 MATCHED 标完成 → 409 + 20005，status/completed_at/updated_at 零变化",
       "status": "PASS",
-      "durationMs": 1320
+      "durationMs": 5377
     },
     {
       "id": "STAT-02",
       "priority": "P0",
       "name": "COMPLETED：列表/搜索 0 命中、匹配可命中、owner 404、合格对端 200、非合格 404",
       "status": "PASS",
-      "durationMs": 6846
+      "durationMs": 14519
     },
     {
       "id": "STAT-03",
       "priority": "P0",
       "name": "COMPLETED 分数 <0.90 的非合格对端：详情 404（score 是硬门槛）",
       "status": "PASS",
-      "durationMs": 3809
+      "durationMs": 11378
     },
     {
       "id": "STAT-04",
       "priority": "P0",
       "name": "CLOSED：列表与匹配双 0 命中，详情任何身份 404，pair 取号 403 + 50005",
       "status": "PASS",
-      "durationMs": 3903
+      "durationMs": 12130
     },
     {
       "id": "STAT-05",
       "priority": "P0",
       "name": "到期 COMPLETED：completed_at 推出保留期后从匹配消失、详情 404，status 不被自动改写",
       "status": "PASS",
-      "durationMs": 4748
+      "durationMs": 14328
     },
     {
       "id": "TERM-06",
       "priority": "P0",
       "name": "IGNORED pair 不作 COMPLETED 详情通道：非所有者与所有者均 404、t_access_log 不新增；改回 NEW 后 200",
       "status": "PASS",
-      "durationMs": 3680
+      "durationMs": 18373
     },
     {
       "id": "NOUNPUB-01",
       "priority": "P0",
       "name": "「不自动下架」限定 PENDING：打分跑完仍 PENDING、deleted_at 为空、列表可见、updated_at 不变",
       "status": "PASS",
-      "durationMs": 4538
+      "durationMs": 7220
     },
     {
       "id": "PHONE-01",
       "priority": "P1",
       "name": "手机号只做格式校验：不落 t_user、接口无短信验证、contact 明文入库仅输出层遮蔽",
       "status": "PASS",
-      "durationMs": 628
+      "durationMs": 4281
     }
   ]
 }

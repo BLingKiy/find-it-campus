@@ -1,0 +1,18 @@
+[EV-SQL] MP 初始 pair：15=NEW / 17=NEW / 19=NEW / 21=NEW / 23=NEW / 25=NEW / 27=NEW / 29=NEW / 31=NEW / 33=NEW / 34=NEW / 44=NEW（同一招领 foundId=27）
+[EV-API] MP CONTACT A(pairId=34) → HTTP 200；A=CONTACTED，B=NEW；CONTACT B(pairId=44) → HTTP 200/CONTACTED
+[EV-API] MP /api/match 命中招领 recordId=27：true；三条记录 status 均 PENDING
+[EV-SQL] MP 目标 pair（A/B）行数=2；该招领自动评分产生 pair 共 12 行（多条寻物各自成对，互不覆盖）
+[EV-API] TERM-01 PATCH COMPLETED recordId=30 → HTTP 409 / code=20005 / {"currentStatus":"PENDING","required":"MATCHED_PAIR","matchedPairCount":0}
+[EV-SQL] TERM-01 前 {"status":"PENDING","completedAt":"NULL","updatedAt":"2026-10-28 10:26:16","deletedAt":"NULL"}，后 {"status":"PENDING","completedAt":"NULL","updatedAt":"2026-10-28 10:26:16","deletedAt":"NULL"}（零写入）
+[EV-API] TERM-02 recordId=31（score=0.95）：列表命中=false；搜索 total=0；match 召回=true detailAccess=RESTRICTED
+[EV-API] TERM-02 详情：所有者 HTTP 404；合格对端(demo02) HTTP 200；非合格(demo03) HTTP 404
+[EV-SQL] TERM-02 t_record.status=COMPLETED completed_at=2026-10-28 10:26:31
+[EV-API] TERM-03 recordId=33 pair score=0.80 < 0.90：合格对端详情 HTTP 404/code=20001
+[EV-API] TERM-04 recordId=35 CLOSED：列表命中=false；搜索 total=0；match 召回=false
+[EV-API] TERM-04 详情：{"anon":404,"owner":404,"other":404}；pair contact HTTP 403/code=50005；pair CONTACT HTTP 403/code=50005
+[EV-SQL] TERM-04 pairId=118 status=CONTACTED；对端记录 status=PENDING
+[EV-API] TERM-05 recordId=37：31 天前完成时召回=true，到期后召回=false；合格对端详情 HTTP 404
+[EV-SQL] TERM-05 到期后 t_record.status=COMPLETED completed_at=2026-09-27 10:27:15（status 未被改写）
+[EV-API] DEG-01 recordId=39 POST /api/records → HTTP 200/code=0；pairState=DEGRADED
+[EV-SQL] DEG-01 pair engine=LOCAL_KEYWORD degraded_reason=EMPTY_KEY score=0.5500
+[EV-API] DEG-01 /api/match → HTTP 200 engine=LOCAL_KEYWORD（非 503）

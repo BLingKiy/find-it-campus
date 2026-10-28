@@ -1,0 +1,60 @@
+# F2 手机号泄漏全局扫描 · 2026-10-28T02:22:26.490Z
+- 正则：1[3-9]\d{9}
+- 载体：匿名响应体 / 非本人响应体 / 通知 title+body
+- 去噪：扫描前剔除 requestId（16 位随机十六进制，会偶发撞出号码形状，本轮实际撞到 1 次）
+- 探针：28 个；命中：0
+- 结论：PASS（0 命中）
+
+PASS  匿名-列表 PENDING/ALL 第 1 页
+      GET http://localhost:18080/api/records?status=ALL&pageSize=50&page=1 → HTTP 200 / code=0 / 命中 0
+PASS  匿名-列表 PENDING/ALL 第 2 页
+      GET http://localhost:18080/api/records?status=ALL&pageSize=50&page=2 → HTTP 200 / code=0 / 命中 0
+PASS  匿名-详情 #1
+      GET http://localhost:18080/api/records/1 → HTTP 200 / code=0 / 命中 0
+PASS  匿名-详情 #2
+      GET http://localhost:18080/api/records/2 → HTTP 200 / code=0 / 命中 0
+PASS  匿名-详情 #3
+      GET http://localhost:18080/api/records/3 → HTTP 200 / code=0 / 命中 0
+PASS  匿名-详情 #5
+      GET http://localhost:18080/api/records/5 → HTTP 200 / code=0 / 命中 0
+PASS  匿名-详情 #6
+      GET http://localhost:18080/api/records/6 → HTTP 200 / code=0 / 命中 0
+PASS  匿名-详情 #13
+      GET http://localhost:18080/api/records/13 → HTTP 200 / code=0 / 命中 0
+PASS  匿名-详情 #14
+      GET http://localhost:18080/api/records/14 → HTTP 200 / code=0 / 命中 0
+PASS  匿名-详情 #15
+      GET http://localhost:18080/api/records/15 → HTTP 200 / code=0 / 命中 0
+PASS  匿名-详情 #16
+      GET http://localhost:18080/api/records/16 → HTTP 200 / code=0 / 命中 0
+PASS  匿名-详情 #17
+      GET http://localhost:18080/api/records/17 → HTTP 200 / code=0 / 命中 0
+PASS  匿名-详情 #18
+      GET http://localhost:18080/api/records/18 → HTTP 200 / code=0 / 命中 0
+PASS  匿名-POST /api/match（应 401）
+      POST http://localhost:18080/api/match → HTTP 401 / code=10006 / 命中 0
+PASS  非本人(demo02)-详情 #1（owner=demo01）
+      GET http://localhost:18080/api/records/1 → HTTP 200 / code=0 / 命中 0
+PASS  非本人(demo02)-详情 #2（owner=demo01）
+      GET http://localhost:18080/api/records/2 → HTTP 200 / code=0 / 命中 0
+PASS  非本人(demo02)-详情 #3（owner=demo01）
+      GET http://localhost:18080/api/records/3 → HTTP 200 / code=0 / 命中 0
+PASS  非本人(demo02)-详情 #5（owner=demo01）
+      GET http://localhost:18080/api/records/5 → HTTP 200 / code=0 / 命中 0
+PASS  非本人(demo01)-详情 #13（owner=demo02）
+      GET http://localhost:18080/api/records/13 → HTTP 200 / code=0 / 命中 0
+PASS  非本人(demo01)-详情 #16（owner=demo02）
+      GET http://localhost:18080/api/records/16 → HTTP 200 / code=0 / 命中 0
+PASS  非本人(demo01)-/api/match 候选
+      POST http://localhost:18080/api/match → HTTP 200 / code=0 / 命中 0
+PASS  非本人(demo02)-/api/match 候选
+      POST http://localhost:18080/api/match → HTTP 200 / code=0 / 命中 0
+PASS  通知正文-demo01
+      GET http://localhost:18080/api/notifications?page=1&pageSize=50 → HTTP 200 / code=0 / 命中 0
+PASS  通知 title/body 字段-demo01：5 条，命中 0
+PASS  通知正文-demo02
+      GET http://localhost:18080/api/notifications?page=1&pageSize=50 → HTTP 200 / code=0 / 命中 0
+PASS  通知 title/body 字段-demo02：2 条，命中 0
+PASS  通知正文-demo03
+      GET http://localhost:18080/api/notifications?page=1&pageSize=50 → HTTP 200 / code=0 / 命中 0
+PASS  通知 title/body 字段-demo03：1 条，命中 0
