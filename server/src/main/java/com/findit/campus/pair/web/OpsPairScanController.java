@@ -9,6 +9,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.findit.campus.common.api.ApiResponse;
@@ -49,14 +50,28 @@ public class OpsPairScanController {
         this.opsToken = opsToken == null ? "" : opsToken.trim();
     }
 
+    /**
+     * 手动兜底扫描。
+     *
+     * @param scope {@code full}（默认，v2.0 行为）或 {@code degraded}（只扫降级记录，ZHYYKFX-88）
+     */
     @PostMapping("/pair-scan")
-    public ApiResponse<PairScanResult> scan(@RequestHeader(value = "X-Ops-Token", required = false) String token) {
+    public ApiResponse<PairScanResult> scan(@RequestHeader(value = "X-Ops-Token", required = false) String token,
+                                            @RequestParam(value = "scope", required = false) String scope) {
         if (opsToken.isEmpty() || !constantTimeEquals(opsToken, token)) {
             // 不区分"没传/传错/没配置"：三种情况对外都是"这个路径不存在"
             throw BizException.of(ErrorCode.RESOURCE_NOT_FOUND);
         }
-        log.info("pair scan triggered by ops http");
-        return ApiResponse.success(scanService.scan("http"), "扫描完成");
+        // 默认 full：v2.0 的调用方（cron 脚本/流水线）不带 scope，必须保持原语义
+        boolean degraded = scope != null && "degraded".equalsIgnoreCase(scope.trim());
+        if (scope != null && !scope.isBlank() && !degraded && !"full".equalsIgnoreCase(scope.trim())) {
+            throw BizException.of(ErrorCode.VALIDATION_FAILED);
+        }
+        log.info("pair scan triggered by ops http scope={}", degraded ? "DEGRADED" : "FULL");
+        PairScanResult result = degraded
+                ? scanService.scanDegraded("http-degraded")
+                : scanService.scan("http");
+        return ApiResponse.success(result, degraded ? "降级重扫完成" : "扫描完成");
     }
 
     static boolean constantTimeEquals(String expected, String actual) {

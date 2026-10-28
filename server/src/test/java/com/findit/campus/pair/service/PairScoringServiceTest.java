@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -16,6 +17,7 @@ import static org.mockito.Mockito.when;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -263,6 +265,84 @@ class PairScoringServiceTest {
         assertEquals("READY", outcome.pairState());
         verify(recallService).recall(any());
         verify(recordMapper).markPairScored(eq(1L), eq("READY"), any());
+    }
+
+    @Test
+    @DisplayName("降级行冷却未到（< degraded-retry-minutes）：哈希未变也不调 LLM、不写库")
+    void degradedRowWithinCooldownIsNotRescored() {
+        PairScore degraded = existingRow(lostHash(), foundHash(), new BigDecimal("0.42"), "LOCAL_KEYWORD");
+        degraded.setDegradedReason("TIMEOUT");
+        degraded.setUpdatedAt(LocalDateTime.now().minusMinutes(5));
+        when(pairScoreMapper.selectByPair(1L, 2L)).thenReturn(degraded);
+
+        PairScoringService.PairOutcome outcome = service.scorePair(lostSide, foundSide, "llm-recovered", 1L);
+
+        assertEquals(PairScoringService.PairOutcome.Status.SKIPPED_UNCHANGED, outcome.status());
+        verify(llmScorer, never()).score(any());
+        verify(pairScoreMapper, never()).upsertScore(any());
+    }
+
+    @Test
+    @DisplayName("冷却已过：降级行重算升级为 DEEPSEEK、degraded_reason 清空，且不写 status/解锁/确认")
+    void degradedRowPastCooldownUpgradesEngine() {
+        LocalDateTime unlockedAt = LocalDateTime.of(2026, 10, 1, 8, 0);
+        PairScore degraded = existingRow(lostHash(), foundHash(), new BigDecimal("0.42"), "LOCAL_KEYWORD");
+        degraded.setDegradedReason("TIMEOUT");
+        degraded.setUpdatedAt(LocalDateTime.now().minusMinutes(61));
+        degraded.setStatus("IGNORED");
+        degraded.setLostUnlockedAt(unlockedAt);
+        degraded.setFoundUnlockNote("已线下联系");
+        degraded.setLostConfirmedAt(LocalDateTime.of(2026, 10, 2, 9, 0));
+        when(pairScoreMapper.selectByPair(1L, 2L)).thenReturn(degraded);
+        when(llmScorer.score(any())).thenReturn(
+                PairScoreResult.llm(new BigDecimal("0.93"), 88, 410, 12, "恢复后重算"));
+
+        PairScoringService.PairOutcome outcome = service.scorePair(lostSide, foundSide, "llm-recovered", 1L);
+
+        assertEquals(PairScoringService.PairOutcome.Status.WRITTEN, outcome.status());
+        assertEquals("DEEPSEEK", outcome.engine());
+        ArgumentCaptor<PairScore> captor = ArgumentCaptor.forClass(PairScore.class);
+        verify(pairScoreMapper).upsertScore(captor.capture());
+        PairScore row = captor.getValue();
+        assertEquals("DEEPSEEK", row.getEngine(), "engine 从 LOCAL_KEYWORD 升级");
+        assertNull(row.getDegradedReason(), "degraded_reason 必须清空");
+        assertEquals(new BigDecimal("0.93"), row.getScore());
+        assertNull(row.getStatus(), "重算不写 status：IGNORED 不会被翻回 NEW");
+        assertNull(row.getLostUnlockedAt(), "已有解锁时间不由打分链路写");
+        assertNull(row.getFoundUnlockNote(), "已有附言不由打分链路写");
+        assertNull(row.getLostConfirmedAt(), "已确认时间不由打分链路写");
+
+        // 分数跨过通知阈值（0.75）→ 按新分数重新判定通知；历史通知不删除（insertIfAbsent 幂等）
+        ArgumentCaptor<com.findit.campus.notification.domain.Notification> notification =
+                ArgumentCaptor.forClass(com.findit.campus.notification.domain.Notification.class);
+        verify(notificationMapper, times(2)).insertIfAbsent(notification.capture());
+        assertTrue(notification.getAllValues().get(0).getBody().contains("93"),
+                "通知正文应按新分数 93% 重新生成");
+    }
+
+    @Test
+    @DisplayName("预算在一条记录内生效：算完第 1 对就停，truncated=true 且不刷新 pair_scored_at")
+    void budgetStopsWithinOneRecord() {
+        Record found2 = record(3L, RecordType.FOUND, "捡到一张饭卡", "二食堂门口捡到，蓝色卡套");
+        PairSide found2Side = PairRecallService.toSide(found2);
+        when(recallService.recall(any())).thenReturn(List.of(foundSide, found2Side));
+        when(pairScoreMapper.selectByPair(1L, 2L)).thenReturn(null);
+        when(pairScoreMapper.selectByPair(1L, 3L)).thenReturn(null);
+        AtomicInteger calls = new AtomicInteger();
+        when(llmScorer.score(any())).thenAnswer(invocation -> {
+            calls.incrementAndGet();
+            return PairScoreResult.llm(new BigDecimal("0.90"), 10, 100, 10, "ok");
+        });
+
+        PairScoringService.RecordScoreOutcome outcome =
+                service.scoreRecord(1L, "scan", () -> calls.get() >= 1);
+
+        assertTrue(outcome.truncated(), "第 2 对之前预算已耗尽");
+        assertEquals(1, outcome.written(), "只写了第 1 对");
+        assertEquals(1, calls.get(), "预算 1 次，不许多调");
+        verify(pairScoreMapper, times(1)).upsertScore(any());
+        verify(recordMapper).markPairScoredKeepTimestamp(eq(1L), anyString());
+        verify(recordMapper, never()).markPairScored(anyLong(), anyString(), any());
     }
 
     // ------------------------------------------------------------------ fixtures
