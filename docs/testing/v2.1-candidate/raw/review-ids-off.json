@@ -1,0 +1,12 @@
+[
+  {
+    "name": "MODE_OFF",
+    "http": 200,
+    "code": 0,
+    "id": 7,
+    "reviewState": "APPROVED",
+    "reviewManualRequired": false,
+    "title": "M6OFF 黑色钱包",
+    "body": "{\"code\":0,\"message\":\"已提交\",\"data\":{\"id\":7,\"type\":\"LOST\",\"status\":\"PENDING\",\"title\":\"M6OFF 黑色钱包\",\"description\":\"M6OFF 姓名：张三 电话 13800000009 在第三教学楼 201 丢失的黑色钱包\",\"categoryId\":2,\"categoryName\":\"手机数码\",\"location\":\"第三教学楼 201\",\"occurredAt\":\"2026-10-24 15:20:00\",\"completedAt\":null,\"contact\":\"13800000009\",\"publisherName\":\"张三\",\"allowedStatuses\":[\"CLOSED\"],\"hasMatchedPair\":false,\"matchedPairCount\":0,\"isMine\":tr"
+  }
+]

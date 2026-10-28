@@ -1,0 +1,28 @@
+# M6 candidate package / four-face self-check — exact commands
+# cwd: C:\Project\hifox-workspaces\panshishi\m6-work  (worktree at 30002de, branch test/v2-M6-candidate-package)
+
+## 1. build candidate package (offline caches, sandbox-only Vite shim)
+$env:JAVA_HOME='C:\Project\tools\jdk17\jdk-17.0.20.1+1'
+$env:MAVEN_ARGS='-o'; $env:npm_config_offline='true'
+$env:NODE_OPTIONS='--require C:\Project\hifox-workspaces\panshishi\vite-exec-shim.cjs'
+powershell -NoProfile -ExecutionPolicy Bypass -File .\deploy\build-package.ps1 -MavenBin .\server\mvnw.cmd -JavaHome $env:JAVA_HOME -NpmBin C:\Users\NhNoK\.hifox\managed-runtimes\node\v22.23.3\windows-x64\npm.cmd -NginxZip C:\Project\hifox-workspaces\panshishi\rel82\build\deploy\.cache\nginx-1.30.6.zip
+
+## 2. clean-directory install/start/status/stop (package root C:\Project\hifox-workspaces\panshishi\m6-deploy\find-it-campus-windows-x64)
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts\install.ps1 -DbHost 127.0.0.1 -DbPort 3306 -DbName findit_m6 -DbUser root -EmptyDbPassword -Engine local -MysqlBin C:\Project\tools\mysql\mysql-8.0.29-winx64\bin\mysql.exe -JavaBin C:\Project\tools\jdk17\jdk-17.0.20.1+1\bin\java.exe
+nginx.exe -t -p <pkg>\nginx\ -c conf/nginx.conf
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts\start.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts\status.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts\stop.ps1
+
+## 3. four-face driver (single foreground script each; MySQL started in-script)
+powershell -NoProfile -ExecutionPolicy Bypass -File ..\m6-tmp\part1.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ..\m6-tmp\part2.ps1
+
+## 4. regression
+cd server; .\mvnw.cmd -o test
+cd web; npm run type-check
+cd web; $env:NODE_OPTIONS='--require C:\Project\hifox-workspaces\panshishi\vite-exec-shim.cjs'; npm run build
+
+## 5. remote state
+git ls-remote origin
+

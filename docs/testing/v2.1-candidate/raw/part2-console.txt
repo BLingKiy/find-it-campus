@@ -1,0 +1,447 @@
+
+===== 0. env =====
+pkg=C:\Project\hifox-workspaces\panshishi\m6-deploy\find-it-campus-windows-x64
+deepseek key=True len=35
+ops token=m6-ops-token
+
+===== 1. MySQL + app (review off, no key) =====
+[2026-10-29 03:37:23] [INFO] 
+[2026-10-29 03:37:23] [STEP] ==== find-it-campus Windows 停止 ====
+[2026-10-29 03:37:23] [INFO] 部署包目录：C:\Project\hifox-workspaces\panshishi\m6-deploy\find-it-campus-windows-x64
+[2026-10-29 03:37:23] [OK] Nginx 未运行（幂等）。
+[2026-10-29 03:37:23] [OK] 后端未运行（幂等）。
+[2026-10-29 03:37:23] [INFO] 
+[2026-10-29 03:37:23] [STEP] ==== 等待端口释放 ====
+[2026-10-29 03:37:25] [OK] 8088 已释放
+[2026-10-29 03:37:25] [OK] 18080 已释放
+[2026-10-29 03:37:25] [INFO] 
+[2026-10-29 03:37:25] [STEP] ==== 停止结果 ====
+
+Component Result Detail         
+--------- ------ ------         
+后端        未运行    PID 文件不存在或进程未运行
+Nginx     未运行    PID 文件不存在或进程未运行
+
+
+[2026-10-29 03:37:25] [INFO] 后端：未运行；Nginx：未运行；8088 释放=True；18080 释放=True
+[2026-10-29 03:37:25] [INFO] 停止日志：C:\Project\hifox-workspaces\panshishi\m6-deploy\find-it-campus-windows-x64\logs\stop-20261029-033723.log
+[2026-10-29 03:37:25] [OK] RESULT: STOPPED
+STOP_EXIT=0
+[2026-10-29 03:37:25] [INFO] 
+[2026-10-29 03:37:25] [STEP] ==== find-it-campus Windows 启动 ====
+[2026-10-29 03:37:25] [INFO] 部署包目录：C:\Project\hifox-workspaces\panshishi\m6-deploy\find-it-campus-windows-x64
+[2026-10-29 03:37:26] [OK] JDK 17：C:\Project\tools\jdk17\jdk-17.0.20.1+1\bin\java.exe
+[2026-10-29 03:37:26] [INFO] 后端 jar：C:\Project\hifox-workspaces\panshishi\m6-deploy\find-it-campus-windows-x64\app\find-it-campus-0.0.1-SNAPSHOT.jar
+[2026-10-29 03:37:26] [INFO] 前端目录：C:\Project\hifox-workspaces\panshishi\m6-deploy\find-it-campus-windows-x64\web\dist
+[2026-10-29 03:37:26] [INFO] Nginx：C:\Project\hifox-workspaces\panshishi\m6-deploy\find-it-campus-windows-x64\nginx\nginx.exe
+[2026-10-29 03:37:26] [INFO] 数据库：127.0.0.1:3306/findit_m6，引擎：local
+[2026-10-29 03:37:27] [INFO] 
+[2026-10-29 03:37:27] [STEP] ==== 启动后端（127.0.0.1:18080） ====
+[2026-10-29 03:37:27] [INFO] 已拉起后端：PID 13324，日志：C:\Project\hifox-workspaces\panshishi\m6-deploy\find-it-campus-windows-x64\logs\backend.log
+[2026-10-29 03:37:29] [INFO] 等待后端健康检查：无法连接到远程服务器
+[2026-10-29 03:37:36] [OK] 后端健康：code=0, status=UP, db=UP, engine=local
+[2026-10-29 03:37:37] [INFO] 
+[2026-10-29 03:37:37] [STEP] ==== 启动 Nginx（8088） ====
+[2026-10-29 03:37:37] [OK] Nginx 已就绪：http://127.0.0.1:8088/ → code=0, status=UP, db=UP
+[2026-10-29 03:37:37] [INFO] 
+[2026-10-29 03:37:37] [STEP] ==== 启动完成 ====
+[2026-10-29 03:37:37] [OK] 后端：PID 13324，http://127.0.0.1:18080/api/health
+[2026-10-29 03:37:37] [OK] Nginx：PID 4416，http://127.0.0.1:8088/
+[2026-10-29 03:37:37] [OK] 健康：code=0, status=UP, db=UP, engine=local
+[2026-10-29 03:37:37] [INFO] 访问：http://127.0.0.1:8088/
+[2026-10-29 03:37:37] [INFO] 启动日志：C:\Project\hifox-workspaces\panshishi\m6-deploy\find-it-campus-windows-x64\logs\start-20261029-033725.log
+START_EXIT=0
+truncated
+records=0
+
+===== 2. publish P01 pair -> degraded LOCAL_KEYWORD =====
+{
+  "mode": "degrade",
+  "sample": "P01",
+  "class": "A",
+  "expect": "MATCH",
+  "expectedTier": null,
+  "lostId": 1,
+  "foundId": 2,
+  "publishHttp": 200,
+  "pairState": "READY",
+  "lowConfidenceCount": 0,
+  "timedOut": false,
+  "waitMs": 19,
+  "card": {
+    "pairId": 1,
+    "score": 0.73,
+    "scorePercent": 73,
+    "engine": "LOCAL_KEYWORD",
+    "tier": "AUTHORIZABLE",
+    "degraded": true,
+    "contactAvailable": false,
+    "contactHint": "对方尚未公开",
+    "status": "NEW",
+    "matched": false
+  },
+  "passed": false
+}
+NODE_EXIT=1
+CHECK faceC.degrade.publish = FAIL :: pair scored while no key
+lostId=1 foundId=2 pairId=1
+pair before=0.7300|LOCAL_KEYWORD|EMPTY_KEY|NEW|NULL|NULL|NULL|NULL|NULL|NULL|2026-10-29 03:37:53
+CHECK faceC.degrade.engineLocal = PASS :: engine=LOCAL_KEYWORD
+CHECK faceC.degrade.reasonEmptyKey = PASS :: degraded_reason=EMPTY_KEY
+CHECK faceC.degrade.recordState = FAIL :: record=READY|2026-10-29 03:37:53|PENDING
+
+===== 3. UI degraded banner =====
+[
+  {
+    "path": "/records/1",
+    "httpStatus": 200,
+    "url": "http://127.0.0.1:8088/records/1",
+    "file": "C:\\Project\\hifox-workspaces\\panshishi\\m6-evidence-part2\\shots-degraded\\m6-records-1.png",
+    "title": "校园失物招领",
+    "text": "跳到主要内容 FI 校园失物招领 启事列表 发布启事 通知 我的启事 学号 demo02 退出 启事详情 看清单条启事，或让匹配找找可能相关的另一条。 ← 返回列表 编辑 关闭 寻物 进行中 我的启事 #1 丢失黑色小米充电宝 分类 手机数码 地点 图书馆三楼自习区 发生时间 2026-10-24 15:20:00 发布时间 2026-10-29 03:37:52 最后更新 2026-10-29 03:37:52 联系方式 13800000002 联系人 演示乙 详细描述 在图书馆三楼自习区丢的，黑色小米充电宝，20000毫安，外壳有一道划痕，应该落在靠窗的位置 当前状态没有可执行的流转；「标记完成」需要已有双方确认的匹配（当前有效匹配 0 对）。 可能相关（1 条可查看） 按匹配度从高到低排列。每一对独立处理：标记联系、确认或忽略其中一条，不影响其他启事。 已降级 当前为关键词匹配，同义/近义描述可能匹配不到，也可能出现不相关的结果，结果显示仅供参考。 73% 匹配度 可能相关 待联系 已降级 #1 招领 进行中 #2 捡到小米充电宝一个 图书馆三楼自习区 · 发生 2026-10-24 16:05:00 公开我的联系方式 仅这一对可见，不影响其他配对 附言（选填，最多 200 字；会打码手机号） 0/200 查看联系方式 对方尚未公开 标记已联系 确认匹配 忽略这条 find-it-campus · 校园失物招领",
+    "h1": [
+      "启事详情",
+      "丢失黑色小米充电宝",
+      "可能相关（1 条可查看）"
+    ],
+    "hasDegradedBanner": true,
+    "hasPairPanel": true,
+    "cardCount": 1,
+    "tiers": [
+      "可能相关"
+    ],
+    "scores": [
+      "73%"
+    ],
+    "degradedBadges": [
+      "已降级"
+    ],
+    "lowCountText": ""
+  }
+]
+NODE_EXIT=0
+CHECK faceC.degrade.screenshot = PASS :: /records/1
+CHECK faceC.degrade.banner = PASS :: banner text 已降级 + 当前为关键词匹配
+
+===== 4. restart with real key, confirm + unlock both sides =====
+[2026-10-29 03:38:02] [INFO] 
+[2026-10-29 03:38:03] [STEP] ==== find-it-campus Windows 停止 ====
+[2026-10-29 03:38:03] [INFO] 部署包目录：C:\Project\hifox-workspaces\panshishi\m6-deploy\find-it-campus-windows-x64
+[2026-10-29 03:38:03] [INFO] 停止 Nginx：先执行 nginx -s quit（PID 4416）
+[2026-10-29 03:38:04] [OK] Nginx 已停止（nginx -s quit 成功）。
+[2026-10-29 03:38:04] [INFO] 停止后端：PID 13324
+[2026-10-29 03:38:05] [OK] 后端已停止（PID 13324）。
+[2026-10-29 03:38:05] [INFO] 
+[2026-10-29 03:38:05] [STEP] ==== 等待端口释放 ====
+[2026-10-29 03:38:06] [OK] 8088 已释放
+[2026-10-29 03:38:06] [OK] 18080 已释放
+[2026-10-29 03:38:06] [INFO] 
+[2026-10-29 03:38:06] [STEP] ==== 停止结果 ====
+
+Component Result Detail                                      
+--------- ------ ------                                      
+后端        已停止    PID 13324；Windows 无服务控制，JVM 为进程终止（非优雅 drain）
+Nginx     已停止    nginx -s quit 成功                            
+
+
+[2026-10-29 03:38:06] [INFO] 后端：已停止；Nginx：已停止；8088 释放=True；18080 释放=True
+[2026-10-29 03:38:06] [INFO] 停止日志：C:\Project\hifox-workspaces\panshishi\m6-deploy\find-it-campus-windows-x64\logs\stop-20261029-033802.log
+[2026-10-29 03:38:06] [OK] RESULT: STOPPED
+STOP_EXIT=0
+[2026-10-29 03:38:07] [INFO] 
+[2026-10-29 03:38:07] [STEP] ==== find-it-campus Windows 启动 ====
+[2026-10-29 03:38:07] [INFO] 部署包目录：C:\Project\hifox-workspaces\panshishi\m6-deploy\find-it-campus-windows-x64
+[2026-10-29 03:38:07] [OK] JDK 17：C:\Project\tools\jdk17\jdk-17.0.20.1+1\bin\java.exe
+[2026-10-29 03:38:07] [INFO] 后端 jar：C:\Project\hifox-workspaces\panshishi\m6-deploy\find-it-campus-windows-x64\app\find-it-campus-0.0.1-SNAPSHOT.jar
+[2026-10-29 03:38:07] [INFO] 前端目录：C:\Project\hifox-workspaces\panshishi\m6-deploy\find-it-campus-windows-x64\web\dist
+[2026-10-29 03:38:07] [INFO] Nginx：C:\Project\hifox-workspaces\panshishi\m6-deploy\find-it-campus-windows-x64\nginx\nginx.exe
+[2026-10-29 03:38:07] [INFO] 数据库：127.0.0.1:3306/findit_m6，引擎：local
+[2026-10-29 03:38:08] [INFO] 
+[2026-10-29 03:38:08] [STEP] ==== 启动后端（127.0.0.1:18080） ====
+[2026-10-29 03:38:09] [INFO] 已拉起后端：PID 13660，日志：C:\Project\hifox-workspaces\panshishi\m6-deploy\find-it-campus-windows-x64\logs\backend.log
+[2026-10-29 03:38:11] [INFO] 等待后端健康检查：无法连接到远程服务器
+[2026-10-29 03:38:18] [OK] 后端健康：code=0, status=UP, db=UP, engine=local
+[2026-10-29 03:38:18] [INFO] 
+[2026-10-29 03:38:18] [STEP] ==== 启动 Nginx（8088） ====
+[2026-10-29 03:38:19] [OK] Nginx 已就绪：http://127.0.0.1:8088/ → code=0, status=UP, db=UP
+[2026-10-29 03:38:19] [INFO] 
+[2026-10-29 03:38:19] [STEP] ==== 启动完成 ====
+[2026-10-29 03:38:19] [OK] 后端：PID 13660，http://127.0.0.1:18080/api/health
+[2026-10-29 03:38:19] [OK] Nginx：PID 3532，http://127.0.0.1:8088/
+[2026-10-29 03:38:19] [OK] 健康：code=0, status=UP, db=UP, engine=local
+[2026-10-29 03:38:19] [INFO] 访问：http://127.0.0.1:8088/
+[2026-10-29 03:38:19] [INFO] 启动日志：C:\Project\hifox-workspaces\panshishi\m6-deploy\find-it-campus-windows-x64\logs\start-20261029-033807.log
+START_EXIT=0
+{
+  "pairId": 1,
+  "confirm": [
+    {
+      "who": "lost",
+      "http": 200,
+      "code": 0,
+      "raw": "{\"code\":0,\"message\":\"已确认，等待对方确认\",\"data\":{\"pairId\":1,\"status\":\"CONTACTED\",\"matched\":false,\"mySide\":\"LOST\",\"myConfirmed\":true,\"otherConfirmed\":false,\"lostConfirmedAt\":\"2026-10-29 03:38:20\",\"foundConfirmedAt\":null,\"updatedAt\":\"2026-10-29 03:38:20\"},\"requestId\":\"d390a6897b604d90\"}"
+    },
+    {
+      "who": "found",
+      "http": 200,
+      "code": 0,
+      "raw": "{\"code\":0,\"message\":\"已完成双方确认\",\"data\":{\"pairId\":1,\"status\":\"MATCHED\",\"matched\":true,\"mySide\":\"FOUND\",\"myConfirmed\":true,\"otherConfirmed\":true,\"lostConfirmedAt\":\"2026-10-29 03:38:20\",\"foundConfirmedAt\":\"2026-10-29 03:38:21\",\"updatedAt\":\"2026-10-29 03:38:20\"},\"requestId\":\"6ffdfd02f4dc48e3\"}"
+    }
+  ],
+  "unlock": [
+    {
+      "who": "lost",
+      "http": 200,
+      "code": 0,
+      "raw": "{\"code\":0,\"message\":\"ok\",\"data\":{\"pairId\":1,\"side\":\"LOST\",\"unlockedAt\":\"2026-10-29 03:38:20\",\"note\":\"m6 保留性验证 lost\",\"public\":true},\"requestId\":\"d208e608dbb54188\"}"
+    },
+    {
+      "who": "found",
+      "http": 200,
+      "code": 0,
+      "raw": "{\"code\":0,\"message\":\"ok\",\"data\":{\"pairId\":1,\"side\":\"FOUND\",\"unlockedAt\":\"2026-10-29 03:38:21\",\"note\":\"m6 保留性验证 found\",\"public\":true},\"requestId\":\"af54f922066b4727\"}"
+    }
+  ],
+  "pair": {
+    "pairId": 1,
+    "score": 0.73,
+    "scorePercent": 73,
+    "tier": "AUTHORIZABLE",
+    "status": "MATCHED",
+    "matched": true,
+    "myConfirmed": true,
+    "otherConfirmed": true,
+    "lostConfirmedAt": "2026-10-29 03:38:20",
+    "foundConfirmedAt": "2026-10-29 03:38:21",
+    "engine": "LOCAL_KEYWORD",
+    "degraded": true,
+    "scoreReason": null,
+    "counterpart": {
+      "recordId": 2,
+      "type": "FOUND",
+      "title": "捡到小米充电宝一个",
+      "location": "图书馆三楼自习区",
+      "occurredAt": "2026-10-24 16:05:00",
+      "createdAt": "2026-10-29 03:37:52",
+      "status": "PENDING"
+    },
+    "mySide": "LOST",
+    "myUnlocked": true,
+    "otherUnlocked": true,
+    "myNote": "m6 保留性验证 lost",
+    "otherNote": "m6 保留性验证 found",
+    "contactAvailable": true,
+    "contactHint": "对方已公开联系方式"
+  }
+}
+NODE_EXIT=0
+CHECK faceC.confirm.api = PASS :: CONFIRM + contact-unlock from both sides
+pair pre-recovery=0.7300|LOCAL_KEYWORD|EMPTY_KEY|MATCHED|2026-10-29 03:38:20|2026-10-29 03:38:21|2026-10-29 03:38:20|2026-10-29 03:38:21|m6 保留性验证 lost|m6 保留性验证 found|2026-10-29 03:38:20
+CHECK faceC.pre.MATCHED = PASS :: status=MATCHED
+CHECK faceC.pre.unlocked = PASS :: lost=2026-10-29 03:38:20 found=2026-10-29 03:38:21
+
+===== 5. age cooldown and trigger manual degraded scan =====
+aged
+manual scan HTTP=200
+{"code":0,"message":"降级重扫完成","data":{"scanned":2,"rescored":1,"degraded":0,"skipped":1,"expired":-1,"limited":false,"elapsedMs":3324,"trigger":"http-degraded","scope":"DEGRADED","skipReason":null,"counters":{"llmCalls":1,"llmSuccess":1,"degraded":0,"skippedUnchanged":1,"pairsWritten":1,"enqueueRejected":0,"lockMisses":0,"degradedByReason":{}}},"requestId":"9fc2a8ac45d54065"}
+manual scan data={"scanned":2,"rescored":1,"degraded":0,"skipped":1,"expired":-1,"limited":false,"elapsedMs":3324,"trigger":"http-degraded","scope":"DEGRADED","skipReason":null,"counters":{"llmCalls":1,"llmSuccess":1,"degraded":0,"skippedUnchanged":1,"pairsWritten":1,"enqueueRejected":0,"lockMisses":0,"degradedByReason":{}}}
+CHECK faceC.rescan.http200 = PASS :: HTTP=200
+CHECK faceC.rescan.scanned = PASS :: scanned=2 skipReason=
+pair after rescan=0.9800|DEEPSEEK|NULL|MATCHED|2026-10-29 03:38:20|2026-10-29 03:38:21|2026-10-29 03:38:20|2026-10-29 03:38:21|m6 保留性验证 lost|m6 保留性验证 found|2026-10-29 03:38:24
+CHECK faceC.rescan.engineDeepseek = PASS :: engine=DEEPSEEK
+CHECK faceC.rescan.reasonCleared = PASS :: degraded_reason=NULL
+CHECK faceC.rescan.scoreUpgraded = PASS :: score=0.9800
+CHECK faceC.rescan.statusPreserved = PASS :: status=MATCHED
+CHECK faceC.rescan.confirmPreserved = PASS :: confirmed=2026-10-29 03:38:20/2026-10-29 03:38:21
+CHECK faceC.rescan.unlockPreserved = PASS :: unlocked=2026-10-29 03:38:20/2026-10-29 03:38:21
+CHECK faceC.rescan.notesPreserved = PASS :: notes=m6 保留性验证 lost/m6 保留性验证 found
+CHECK faceC.rescan.recordReady = PASS :: record=READY|2026-10-29 03:38:25|PENDING
+
+===== 6. config rollback: degraded-scan-enabled=false + 10s cron =====
+reset-to-degraded
+[2026-10-29 03:38:31] [INFO] 
+[2026-10-29 03:38:31] [STEP] ==== find-it-campus Windows 停止 ====
+[2026-10-29 03:38:31] [INFO] 部署包目录：C:\Project\hifox-workspaces\panshishi\m6-deploy\find-it-campus-windows-x64
+[2026-10-29 03:38:31] [INFO] 停止 Nginx：先执行 nginx -s quit（PID 3532）
+[2026-10-29 03:38:33] [OK] Nginx 已停止（nginx -s quit 成功）。
+[2026-10-29 03:38:33] [INFO] 停止后端：PID 13660
+[2026-10-29 03:38:33] [OK] 后端已停止（PID 13660）。
+[2026-10-29 03:38:33] [INFO] 
+[2026-10-29 03:38:33] [STEP] ==== 等待端口释放 ====
+[2026-10-29 03:38:35] [OK] 8088 已释放
+[2026-10-29 03:38:35] [OK] 18080 已释放
+[2026-10-29 03:38:35] [INFO] 
+[2026-10-29 03:38:35] [STEP] ==== 停止结果 ====
+
+Component Result Detail                                      
+--------- ------ ------                                      
+后端        已停止    PID 13660；Windows 无服务控制，JVM 为进程终止（非优雅 drain）
+Nginx     已停止    nginx -s quit 成功                            
+
+
+[2026-10-29 03:38:35] [INFO] 后端：已停止；Nginx：已停止；8088 释放=True；18080 释放=True
+[2026-10-29 03:38:35] [INFO] 停止日志：C:\Project\hifox-workspaces\panshishi\m6-deploy\find-it-campus-windows-x64\logs\stop-20261029-033831.log
+[2026-10-29 03:38:35] [OK] RESULT: STOPPED
+STOP_EXIT=0
+[2026-10-29 03:38:35] [INFO] 
+[2026-10-29 03:38:35] [STEP] ==== find-it-campus Windows 启动 ====
+[2026-10-29 03:38:35] [INFO] 部署包目录：C:\Project\hifox-workspaces\panshishi\m6-deploy\find-it-campus-windows-x64
+[2026-10-29 03:38:36] [OK] JDK 17：C:\Project\tools\jdk17\jdk-17.0.20.1+1\bin\java.exe
+[2026-10-29 03:38:36] [INFO] 后端 jar：C:\Project\hifox-workspaces\panshishi\m6-deploy\find-it-campus-windows-x64\app\find-it-campus-0.0.1-SNAPSHOT.jar
+[2026-10-29 03:38:36] [INFO] 前端目录：C:\Project\hifox-workspaces\panshishi\m6-deploy\find-it-campus-windows-x64\web\dist
+[2026-10-29 03:38:36] [INFO] Nginx：C:\Project\hifox-workspaces\panshishi\m6-deploy\find-it-campus-windows-x64\nginx\nginx.exe
+[2026-10-29 03:38:36] [INFO] 数据库：127.0.0.1:3306/findit_m6，引擎：local
+[2026-10-29 03:38:37] [INFO] 
+[2026-10-29 03:38:37] [STEP] ==== 启动后端（127.0.0.1:18080） ====
+[2026-10-29 03:38:37] [INFO] 已拉起后端：PID 10372，日志：C:\Project\hifox-workspaces\panshishi\m6-deploy\find-it-campus-windows-x64\logs\backend.log
+[2026-10-29 03:38:40] [INFO] 等待后端健康检查：无法连接到远程服务器
+[2026-10-29 03:38:46] [OK] 后端健康：code=0, status=UP, db=UP, engine=local
+[2026-10-29 03:38:47] [INFO] 
+[2026-10-29 03:38:47] [STEP] ==== 启动 Nginx（8088） ====
+[2026-10-29 03:38:47] [OK] Nginx 已就绪：http://127.0.0.1:8088/ → code=0, status=UP, db=UP
+[2026-10-29 03:38:47] [INFO] 
+[2026-10-29 03:38:47] [STEP] ==== 启动完成 ====
+[2026-10-29 03:38:47] [OK] 后端：PID 10372，http://127.0.0.1:18080/api/health
+[2026-10-29 03:38:47] [OK] Nginx：PID 14276，http://127.0.0.1:8088/
+[2026-10-29 03:38:47] [OK] 健康：code=0, status=UP, db=UP, engine=local
+[2026-10-29 03:38:47] [INFO] 访问：http://127.0.0.1:8088/
+[2026-10-29 03:38:47] [INFO] 启动日志：C:\Project\hifox-workspaces\panshishi\m6-deploy\find-it-campus-windows-x64\logs\start-20261029-033835.log
+START_EXIT=0
+disabled after 25s: scheduledLogs=0 pair=0.7300|LOCAL_KEYWORD|EMPTY_KEY|MATCHED|2026-10-29 03:38:20|2026-10-29 03:38:21|2026-10-29 03:38:20|2026-10-29 03:38:21|m6 保留性验证 lost|m6 保留性验证 found|2026-10-29 02:37:30
+CHECK faceC.rollback.disabledNoScheduledScan = PASS :: scheduledLogs=0 engine=LOCAL_KEYWORD
+
+===== 7. config re-enable + 10s cron -> scheduled scan upgrades =====
+[2026-10-29 03:39:13] [INFO] 
+[2026-10-29 03:39:13] [STEP] ==== find-it-campus Windows 停止 ====
+[2026-10-29 03:39:13] [INFO] 部署包目录：C:\Project\hifox-workspaces\panshishi\m6-deploy\find-it-campus-windows-x64
+[2026-10-29 03:39:13] [INFO] 停止 Nginx：先执行 nginx -s quit（PID 14276）
+[2026-10-29 03:39:14] [OK] Nginx 已停止（nginx -s quit 成功）。
+[2026-10-29 03:39:15] [INFO] 停止后端：PID 10372
+[2026-10-29 03:39:15] [OK] 后端已停止（PID 10372）。
+[2026-10-29 03:39:15] [INFO] 
+[2026-10-29 03:39:15] [STEP] ==== 等待端口释放 ====
+[2026-10-29 03:39:17] [OK] 8088 已释放
+[2026-10-29 03:39:17] [OK] 18080 已释放
+[2026-10-29 03:39:17] [INFO] 
+[2026-10-29 03:39:17] [STEP] ==== 停止结果 ====
+
+Component Result Detail                                      
+--------- ------ ------                                      
+后端        已停止    PID 10372；Windows 无服务控制，JVM 为进程终止（非优雅 drain）
+Nginx     已停止    nginx -s quit 成功                            
+
+
+[2026-10-29 03:39:17] [INFO] 后端：已停止；Nginx：已停止；8088 释放=True；18080 释放=True
+[2026-10-29 03:39:17] [INFO] 停止日志：C:\Project\hifox-workspaces\panshishi\m6-deploy\find-it-campus-windows-x64\logs\stop-20261029-033913.log
+[2026-10-29 03:39:17] [OK] RESULT: STOPPED
+STOP_EXIT=0
+[2026-10-29 03:39:17] [INFO] 
+[2026-10-29 03:39:17] [STEP] ==== find-it-campus Windows 启动 ====
+[2026-10-29 03:39:17] [INFO] 部署包目录：C:\Project\hifox-workspaces\panshishi\m6-deploy\find-it-campus-windows-x64
+[2026-10-29 03:39:18] [OK] JDK 17：C:\Project\tools\jdk17\jdk-17.0.20.1+1\bin\java.exe
+[2026-10-29 03:39:18] [INFO] 后端 jar：C:\Project\hifox-workspaces\panshishi\m6-deploy\find-it-campus-windows-x64\app\find-it-campus-0.0.1-SNAPSHOT.jar
+[2026-10-29 03:39:18] [INFO] 前端目录：C:\Project\hifox-workspaces\panshishi\m6-deploy\find-it-campus-windows-x64\web\dist
+[2026-10-29 03:39:18] [INFO] Nginx：C:\Project\hifox-workspaces\panshishi\m6-deploy\find-it-campus-windows-x64\nginx\nginx.exe
+[2026-10-29 03:39:18] [INFO] 数据库：127.0.0.1:3306/findit_m6，引擎：local
+[2026-10-29 03:39:19] [INFO] 
+[2026-10-29 03:39:19] [STEP] ==== 启动后端（127.0.0.1:18080） ====
+[2026-10-29 03:39:19] [INFO] 已拉起后端：PID 2352，日志：C:\Project\hifox-workspaces\panshishi\m6-deploy\find-it-campus-windows-x64\logs\backend.log
+[2026-10-29 03:39:21] [INFO] 等待后端健康检查：无法连接到远程服务器
+[2026-10-29 03:39:29] [OK] 后端健康：code=0, status=UP, db=UP, engine=local
+[2026-10-29 03:39:29] [INFO] 
+[2026-10-29 03:39:29] [STEP] ==== 启动 Nginx（8088） ====
+[2026-10-29 03:39:29] [OK] Nginx 已就绪：http://127.0.0.1:8088/ → code=0, status=UP, db=UP
+[2026-10-29 03:39:29] [INFO] 
+[2026-10-29 03:39:29] [STEP] ==== 启动完成 ====
+[2026-10-29 03:39:29] [OK] 后端：PID 2352，http://127.0.0.1:18080/api/health
+[2026-10-29 03:39:29] [OK] Nginx：PID 4220，http://127.0.0.1:8088/
+[2026-10-29 03:39:29] [OK] 健康：code=0, status=UP, db=UP, engine=local
+[2026-10-29 03:39:29] [INFO] 访问：http://127.0.0.1:8088/
+[2026-10-29 03:39:29] [INFO] 启动日志：C:\Project\hifox-workspaces\panshishi\m6-deploy\find-it-campus-windows-x64\logs\start-20261029-033917.log
+START_EXIT=0
+enabled after 25s: scheduledLogs=11 upgradeLogs=4 pair=0.9800|DEEPSEEK|NULL|MATCHED|2026-10-29 03:38:20|2026-10-29 03:38:21|2026-10-29 03:38:20|2026-10-29 03:38:21|m6 保留性验证 lost|m6 保留性验证 found|2026-10-29 03:39:31
+CHECK faceC.rollback.enabledScheduledScan = PASS :: scheduledLogs=11
+CHECK faceC.rollback.enabledUpgrade = PASS :: engine=DEEPSEEK
+CHECK faceC.rollback.preservedAfterScheduled = PASS :: status=MATCHED confirmed=2026-10-29 03:38:20 unlocked=2026-10-29 03:38:20
+
+===== 8. stop + ports =====
+[2026-10-29 03:39:55] [INFO] 
+[2026-10-29 03:39:55] [STEP] ==== find-it-campus Windows 停止 ====
+[2026-10-29 03:39:55] [INFO] 部署包目录：C:\Project\hifox-workspaces\panshishi\m6-deploy\find-it-campus-windows-x64
+[2026-10-29 03:39:55] [INFO] 停止 Nginx：先执行 nginx -s quit（PID 4220）
+[2026-10-29 03:39:56] [OK] Nginx 已停止（nginx -s quit 成功）。
+[2026-10-29 03:39:57] [INFO] 停止后端：PID 2352
+[2026-10-29 03:39:57] [OK] 后端已停止（PID 2352）。
+[2026-10-29 03:39:57] [INFO] 
+[2026-10-29 03:39:57] [STEP] ==== 等待端口释放 ====
+[2026-10-29 03:39:59] [OK] 8088 已释放
+[2026-10-29 03:39:59] [OK] 18080 已释放
+[2026-10-29 03:39:59] [INFO] 
+[2026-10-29 03:39:59] [STEP] ==== 停止结果 ====
+
+Component Result Detail                                     
+--------- ------ ------                                     
+后端        已停止    PID 2352；Windows 无服务控制，JVM 为进程终止（非优雅 drain）
+Nginx     已停止    nginx -s quit 成功                           
+
+
+[2026-10-29 03:39:59] [INFO] 后端：已停止；Nginx：已停止；8088 释放=True；18080 释放=True
+[2026-10-29 03:39:59] [INFO] 停止日志：C:\Project\hifox-workspaces\panshishi\m6-deploy\find-it-campus-windows-x64\logs\stop-20261029-033955.log
+[2026-10-29 03:39:59] [OK] RESULT: STOPPED
+STOP_EXIT=0
+CHECK cleanup.portsReleased = PASS :: 8088=0 18080=0
+
+===== cleanup =====
+[2026-10-29 03:40:02] [INFO] 
+[2026-10-29 03:40:02] [STEP] ==== find-it-campus Windows 停止 ====
+[2026-10-29 03:40:02] [INFO] 部署包目录：C:\Project\hifox-workspaces\panshishi\m6-deploy\find-it-campus-windows-x64
+[2026-10-29 03:40:02] [OK] Nginx 未运行（幂等）。
+[2026-10-29 03:40:02] [OK] 后端未运行（幂等）。
+[2026-10-29 03:40:02] [INFO] 
+[2026-10-29 03:40:02] [STEP] ==== 等待端口释放 ====
+[2026-10-29 03:40:03] [OK] 8088 已释放
+[2026-10-29 03:40:03] [OK] 18080 已释放
+[2026-10-29 03:40:03] [INFO] 
+[2026-10-29 03:40:03] [STEP] ==== 停止结果 ====
+
+Component Result Detail         
+--------- ------ ------         
+后端        未运行    PID 文件不存在或进程未运行
+Nginx     未运行    PID 文件不存在或进程未运行
+
+
+[2026-10-29 03:40:03] [INFO] 后端：未运行；Nginx：未运行；8088 释放=True；18080 释放=True
+[2026-10-29 03:40:04] [INFO] 停止日志：C:\Project\hifox-workspaces\panshishi\m6-deploy\find-it-campus-windows-x64\logs\stop-20261029-034002.log
+[2026-10-29 03:40:04] [OK] RESULT: STOPPED
+STOP_EXIT=0
+mysqld shutdown requested
+
+===== SUMMARY =====
+FAIL faceC.degrade.publish :: pair scored while no key
+PASS faceC.degrade.engineLocal :: engine=LOCAL_KEYWORD
+PASS faceC.degrade.reasonEmptyKey :: degraded_reason=EMPTY_KEY
+FAIL faceC.degrade.recordState :: record=READY|2026-10-29 03:37:53|PENDING
+PASS faceC.degrade.screenshot :: /records/1
+PASS faceC.degrade.banner :: banner text 已降级 + 当前为关键词匹配
+PASS faceC.confirm.api :: CONFIRM + contact-unlock from both sides
+PASS faceC.pre.MATCHED :: status=MATCHED
+PASS faceC.pre.unlocked :: lost=2026-10-29 03:38:20 found=2026-10-29 03:38:21
+PASS faceC.rescan.http200 :: HTTP=200
+PASS faceC.rescan.scanned :: scanned=2 skipReason=
+PASS faceC.rescan.engineDeepseek :: engine=DEEPSEEK
+PASS faceC.rescan.reasonCleared :: degraded_reason=NULL
+PASS faceC.rescan.scoreUpgraded :: score=0.9800
+PASS faceC.rescan.statusPreserved :: status=MATCHED
+PASS faceC.rescan.confirmPreserved :: confirmed=2026-10-29 03:38:20/2026-10-29 03:38:21
+PASS faceC.rescan.unlockPreserved :: unlocked=2026-10-29 03:38:20/2026-10-29 03:38:21
+PASS faceC.rescan.notesPreserved :: notes=m6 保留性验证 lost/m6 保留性验证 found
+PASS faceC.rescan.recordReady :: record=READY|2026-10-29 03:38:25|PENDING
+PASS faceC.rollback.disabledNoScheduledScan :: scheduledLogs=0 engine=LOCAL_KEYWORD
+PASS faceC.rollback.enabledScheduledScan :: scheduledLogs=11
+PASS faceC.rollback.enabledUpgrade :: engine=DEEPSEEK
+PASS faceC.rollback.preservedAfterScheduled :: status=MATCHED confirmed=2026-10-29 03:38:20 unlocked=2026-10-29 03:38:20
+PASS cleanup.portsReleased :: 8088=0 18080=0
+TOTAL=24 FAILED=2
+
+===== RESULT =====
+PART2_FAIL

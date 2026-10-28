@@ -1,0 +1,12 @@
+[
+  {
+    "name": "AI_FAIL",
+    "http": 200,
+    "code": 0,
+    "id": 6,
+    "reviewState": "PENDING",
+    "reviewManualRequired": false,
+    "title": "审核失败黑色钱包",
+    "body": "{\"code\":0,\"message\":\"已提交\",\"data\":{\"id\":6,\"type\":\"LOST\",\"status\":\"PENDING\",\"title\":\"审核失败黑色钱包\",\"description\":\"图书馆三楼丢失黑色皮质钱包，内有工行卡，请捡到者联系\",\"categoryId\":2,\"categoryName\":\"手机数码\",\"location\":\"图书馆三楼\",\"occurredAt\":\"2026-10-24 15:20:00\",\"completedAt\":null,\"contact\":\"13800000002\",\"publisherName\":\"演示乙\",\"allowedStatuses\":[\"CLOSED\"],\"hasMatchedPair\":false,\"matchedPairCount\":0,\"isMine\":true,\"pairState\":\"PENDING\""
+  }
+]

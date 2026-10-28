@@ -1,0 +1,13 @@
+{
+    "name":  "AI_FAIL",
+    "payload":  {
+                    "occurredAt":  "2026-10-24 15:20:00",
+                    "contact":  "13800000002",
+                    "title":  "审核失败黑色钱包",
+                    "location":  "图书馆三楼",
+                    "type":  "LOST",
+                    "description":  "图书馆三楼丢失黑色皮质钱包，内有工行卡，请捡到者联系",
+                    "publisherName":  "演示乙",
+                    "categoryId":  2
+                }
+}

@@ -1,0 +1,13 @@
+{
+    "name":  "MODE_OFF",
+    "payload":  {
+                    "occurredAt":  "2026-10-24 15:20:00",
+                    "contact":  "13800000009",
+                    "title":  "M6OFF 黑色钱包",
+                    "location":  "第三教学楼 201",
+                    "type":  "LOST",
+                    "description":  "M6OFF 姓名：张三 电话 13800000009 在第三教学楼 201 丢失的黑色钱包",
+                    "publisherName":  "张三",
+                    "categoryId":  2
+                }
+}

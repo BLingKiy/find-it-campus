@@ -1,0 +1,930 @@
+
+===== 0. package facts =====
+zip=C:\Project\hifox-workspaces\panshishi\m6-work\deploy\dist\find-it-campus-windows-x64-30002de.zip
+size=28535449
+sha256=ACBA7323689DA1387A5D51569720B7FDE7737D92F4F1FE3630EBB8F0122D1557
+sha256 file=ACBA7323689DA1387A5D51569720B7FDE7737D92F4F1FE3630EBB8F0122D1557 *find-it-campus-windows-x64-30002de.zip
+deepseek key in secret store=True len=35
+
+===== 1. MySQL + fresh install =====
+MYSQL_VERSION=8.0.29
+[2026-10-29 03:31:49] [INFO] 
+[2026-10-29 03:31:49] [STEP] ==== find-it-campus Windows 部署安装 ====
+[2026-10-29 03:31:49] [INFO] 部署包目录：C:\Project\hifox-workspaces\panshishi\m6-deploy\find-it-campus-windows-x64
+[2026-10-29 03:31:49] [INFO] 安装日志：C:\Project\hifox-workspaces\panshishi\m6-deploy\find-it-campus-windows-x64\logs\install-20261029-033149.log
+[2026-10-29 03:31:49] [INFO] 目标 MySQL：127.0.0.1:3306，库：findit_m6，账号：root，引擎：local
+[2026-10-29 03:31:49] [INFO] 
+[2026-10-29 03:31:49] [STEP] ==== 检查 JDK 17 ====
+[2026-10-29 03:31:49] [OK] JDK 17 可用：C:\Project\tools\jdk17\jdk-17.0.20.1+1\bin\java.exe
+[2026-10-29 03:31:49] [INFO] openjdk version "17.0.20.1" 2026-08-18
+[2026-10-29 03:31:49] [INFO] 
+[2026-10-29 03:31:49] [STEP] ==== 检查 MySQL 8 客户端与连通性 ====
+[2026-10-29 03:31:49] [OK] MySQL 客户端：C:\Project\tools\mysql\mysql-8.0.29-winx64\bin\mysql.exe
+[2026-10-29 03:31:49] [OK] MySQL 服务端版本：8.0.29
+[2026-10-29 03:31:50] [OK] 数据库已创建（utf8mb4）：findit_m6
+[2026-10-29 03:31:50] [INFO] 
+[2026-10-29 03:31:50] [STEP] ==== 导入 schema.sql 与 seed.sql ====
+[2026-10-29 03:31:50] [INFO] 执行 schema.sql → findit_m6
+[2026-10-29 03:32:07] [INFO] 执行 seed.sql → findit_m6
+[2026-10-29 03:32:25] [OK] 导入校验：t_category=9 行，t_record=24 行
+[2026-10-29 03:32:25] [INFO] 
+[2026-10-29 03:32:25] [STEP] ==== 生成部署连接配置 ====
+[2026-10-29 03:32:25] [OK] 已生成（含真实密码，已被 .gitignore 忽略）：C:\Project\hifox-workspaces\panshishi\m6-deploy\find-it-campus-windows-x64\config\deploy.env.ps1
+[2026-10-29 03:32:25] [INFO] 
+[2026-10-29 03:32:25] [STEP] ==== 安装完成 ====
+[2026-10-29 03:32:25] [OK] 数据库：127.0.0.1:3306/findit_m6（utf8mb4）
+[2026-10-29 03:32:25] [OK] 配置：C:\Project\hifox-workspaces\panshishi\m6-deploy\find-it-campus-windows-x64\config\deploy.env.ps1
+[2026-10-29 03:32:25] [INFO] 下一步：powershell -NoProfile -ExecutionPolicy Bypass -File scripts\start.ps1  （启动后端 18080 与 Nginx 8088）
+[2026-10-29 03:32:25] [INFO] 访问：http://127.0.0.1:8088/
+[2026-10-29 03:32:25] [INFO] 安装日志：C:\Project\hifox-workspaces\panshishi\m6-deploy\find-it-campus-windows-x64\logs\install-20261029-033149.log
+INSTALL_EXIT=0
+CHECK install.exit0 = PASS :: exit=0
+CHECK install.seedRows = PASS :: t_record=24
+
+===== 2. start package (review off, no key) =====
+[2026-10-29 03:32:26] [INFO] 
+[2026-10-29 03:32:26] [STEP] ==== find-it-campus Windows 停止 ====
+[2026-10-29 03:32:26] [INFO] 部署包目录：C:\Project\hifox-workspaces\panshishi\m6-deploy\find-it-campus-windows-x64
+[2026-10-29 03:32:26] [OK] Nginx 未运行（幂等）。
+[2026-10-29 03:32:27] [OK] 后端未运行（幂等）。
+[2026-10-29 03:32:27] [INFO] 
+[2026-10-29 03:32:27] [STEP] ==== 等待端口释放 ====
+[2026-10-29 03:32:28] [OK] 8088 已释放
+[2026-10-29 03:32:28] [OK] 18080 已释放
+[2026-10-29 03:32:28] [INFO] 
+[2026-10-29 03:32:28] [STEP] ==== 停止结果 ====
+
+Component Result Detail         
+--------- ------ ------         
+后端        未运行    PID 文件不存在或进程未运行
+Nginx     未运行    PID 文件不存在或进程未运行
+
+
+[2026-10-29 03:32:28] [INFO] 后端：未运行；Nginx：未运行；8088 释放=True；18080 释放=True
+[2026-10-29 03:32:28] [INFO] 停止日志：C:\Project\hifox-workspaces\panshishi\m6-deploy\find-it-campus-windows-x64\logs\stop-20261029-033226.log
+[2026-10-29 03:32:28] [OK] RESULT: STOPPED
+STOP_EXIT=0
+[2026-10-29 03:32:29] [INFO] 
+[2026-10-29 03:32:29] [STEP] ==== find-it-campus Windows 启动 ====
+[2026-10-29 03:32:29] [INFO] 部署包目录：C:\Project\hifox-workspaces\panshishi\m6-deploy\find-it-campus-windows-x64
+[2026-10-29 03:32:29] [OK] JDK 17：C:\Project\tools\jdk17\jdk-17.0.20.1+1\bin\java.exe
+[2026-10-29 03:32:29] [INFO] 后端 jar：C:\Project\hifox-workspaces\panshishi\m6-deploy\find-it-campus-windows-x64\app\find-it-campus-0.0.1-SNAPSHOT.jar
+[2026-10-29 03:32:29] [INFO] 前端目录：C:\Project\hifox-workspaces\panshishi\m6-deploy\find-it-campus-windows-x64\web\dist
+[2026-10-29 03:32:29] [INFO] Nginx：C:\Project\hifox-workspaces\panshishi\m6-deploy\find-it-campus-windows-x64\nginx\nginx.exe
+[2026-10-29 03:32:29] [INFO] 数据库：127.0.0.1:3306/findit_m6，引擎：local
+[2026-10-29 03:32:31] [INFO] 
+[2026-10-29 03:32:31] [STEP] ==== 启动后端（127.0.0.1:18080） ====
+[2026-10-29 03:32:31] [INFO] 已拉起后端：PID 12692，日志：C:\Project\hifox-workspaces\panshishi\m6-deploy\find-it-campus-windows-x64\logs\backend.log
+[2026-10-29 03:32:33] [INFO] 等待后端健康检查：无法连接到远程服务器
+[2026-10-29 03:32:42] [OK] 后端健康：code=0, status=UP, db=UP, engine=local
+[2026-10-29 03:32:42] [INFO] 
+[2026-10-29 03:32:42] [STEP] ==== 启动 Nginx（8088） ====
+[2026-10-29 03:32:43] [OK] Nginx 已就绪：http://127.0.0.1:8088/ → code=0, status=UP, db=UP
+[2026-10-29 03:32:43] [INFO] 
+[2026-10-29 03:32:43] [STEP] ==== 启动完成 ====
+[2026-10-29 03:32:43] [OK] 后端：PID 12692，http://127.0.0.1:18080/api/health
+[2026-10-29 03:32:43] [OK] Nginx：PID 12424，http://127.0.0.1:8088/
+[2026-10-29 03:32:43] [OK] 健康：code=0, status=UP, db=UP, engine=local
+[2026-10-29 03:32:43] [INFO] 访问：http://127.0.0.1:8088/
+[2026-10-29 03:32:43] [INFO] 启动日志：C:\Project\hifox-workspaces\panshishi\m6-deploy\find-it-campus-windows-x64\logs\start-20261029-033229.log
+START_EXIT=0
+health={"code":0,"message":"ok","data":{"status":"UP","db":"UP","version":"0.0.1-SNAPSHOT","engine":"local"},"requestId":"21148c2a5d234173"}
+CHECK health.code0/statusUP/dbUP = PASS :: code=0 status=UP db=UP
+
+===== 3. nginx -t =====
+nginx: the configuration file C:\Project\hifox-workspaces\panshishi\m6-deploy\find-it-campus-windows-x64\nginx\conf/nginx.conf syntax is ok
+nginx: configuration file C:\Project\hifox-workspaces\panshishi\m6-deploy\find-it-campus-windows-x64\nginx\conf/nginx.conf test is successful
+CHECK nginx.configTest = PASS :: exit=0
+
+===== 4. three pages + screenshots (anonymous) =====
+/ -> HTTP 200 bytes=1231 hasAppDiv=True
+CHECK page/.200 = PASS :: HTTP 200 bytes=1231
+/records/1 -> HTTP 200 bytes=1231 hasAppDiv=True
+CHECK page/records/1.200 = PASS :: HTTP 200 bytes=1231
+/records/new -> HTTP 200 bytes=1231 hasAppDiv=True
+CHECK page/records/new.200 = PASS :: HTTP 200 bytes=1231
+[
+  {
+    "path": "/",
+    "httpStatus": 200,
+    "url": "http://127.0.0.1:8088/",
+    "file": "C:\\Project\\hifox-workspaces\\panshishi\\m6-evidence-part1\\shots-anon\\m6-home.png",
+    "title": "校园失物招领",
+    "text": "跳到主要内容 FI 校园失物招领 启事列表 发布启事 登录 启事列表 按类型、状态、分类筛选；点卡片看详情并匹配相关启事。 + 发布启事 类型 全部 寻物 招领 状态 进行中 全部状态 分类 全部分类 钱包卡证 手机数码 钥匙 证件资料 包袋 衣物饰品 书籍文具 其他 关键词 重置筛选 招领 进行中 #26 捡到一张浅蓝色卡片 未分类 · 大学生活动中心公… 发生 2026-10-21 13:30:00 招领 进行中 #22 捡到一副黑框眼镜 其他 · 第一食堂一楼门口 发生 2026-10-21 12:40:00 招领 进行中 #15 教室捡到卡套内有学生证 证件资料 · 第三教学楼… 发生 2026-10-21 12:10:00 寻物 进行中 #3 学生证和校园卡一起丢了 证件资料 · 第三教学楼… 发生 2026-10-21 10:40:00 寻物 进行中 #7 丢了科学计算器 书籍文具 · 第一教学楼自习室 发生 2026-10-21 09:00:00 招领 进行中 #18 快递点捡到三把钥匙带小熊挂件 钥匙 · 7号宿舍楼下快递… 发生 2026-10-20 21:00:00 寻物 进行中 #6 一串宿舍钥匙丢了 钥匙 · 7号宿舍楼下快递… 发生 2026-10-20 19:20:00 招领 进行中 #19 捡到一副红色羽毛球拍 其他 · 体育场看台 发生 2026-10-20 17:00:00 寻物 进行中 #4 丢失深蓝色折叠雨伞 衣物饰品 · 第二食堂… 发生 2026-10-19 18:50:00 寻物 进行中 #1 图书馆丢了黑色钱包 钱包卡证 · 图书馆三楼自习区 发生 2026-10-19 17:30:00 上一页 1 2 3 下一页 共 21 条 / 3 页 find-it-campus · 校园失物招领",
+    "h1": [
+      "启事列表",
+      "捡到一张浅蓝色卡片",
+      "捡到一副黑框眼镜",
+      "教室捡到卡套内有学生证",
+      "学生证和校园卡一起丢了",
+      "丢了科学计算器"
+    ],
+    "hasDegradedBanner": false,
+    "hasPairPanel": false,
+    "cardCount": 0,
+    "tiers": [],
+    "scores": [],
+    "degradedBadges": [],
+    "lowCountText": ""
+  },
+  {
+    "path": "/records/1",
+    "httpStatus": 200,
+    "url": "http://127.0.0.1:8088/records/1",
+    "file": "C:\\Project\\hifox-workspaces\\panshishi\\m6-evidence-part1\\shots-anon\\m6-records-1.png",
+    "title": "校园失物招领",
+    "text": "跳到主要内容 FI 校园失物招领 启事列表 发布启事 登录 启事详情 看清单条启事，或让匹配找找可能相关的另一条。 ← 返回列表 你正在匿名浏览 登录后可管理你发布的启事，并在配对确认后查看对方联系方式。 去登录 寻物 进行中 #1 图书馆丢了黑色钱包 分类 钱包卡证 地点 图书馆三楼自习区 发生时间 2026-10-19 17:30:00 发布时间 2026-10-20 09:10:00 最后更新 2026-10-20 09:10:00 联系方式 登录后可查看 查看联系方式 联系人 李** 详细描述 昨天下午在图书馆三楼自习区靠窗的位置看书，起身走的时候发现黑色皮质钱包不见了，里面有两张银行卡和三百多块现金，卡是工行的，非常着急，捡到的同学联系我，必有感谢。 登录后可参与匹配、管理自己的启事；联系方式在配对确认后可见。 帮我找找相关启事 按这段描述在候选池里找相似启事，排除本条自身；结果按相似度从高到低排列。 开始匹配 点「开始匹配」后，这里会按相似度从高到低列出最相近的几条启事，并说明每条为什么被选中。 find-it-campus · 校园失物招领",
+    "h1": [
+      "启事详情",
+      "图书馆丢了黑色钱包",
+      "帮我找找相关启事"
+    ],
+    "hasDegradedBanner": false,
+    "hasPairPanel": false,
+    "cardCount": 0,
+    "tiers": [],
+    "scores": [],
+    "degradedBadges": [],
+    "lowCountText": ""
+  },
+  {
+    "path": "/records/new",
+    "httpStatus": 200,
+    "url": "http://127.0.0.1:8088/login?redirect=%2Frecords%2Fnew",
+    "file": "C:\\Project\\hifox-workspaces\\panshishi\\m6-evidence-part1\\shots-anon\\m6-records-new.png",
+    "title": "校园失物招领",
+    "text": "跳到主要内容 FI 校园失物招领 启事列表 发布启事 登录 登录 用学号和密码登录后即可发布、编辑启事并查看通知。 请先登录 登录成功后会自动回到刚才访问的页面。 学号 密码 登录 账号由管理员开通，不开放注册。 find-it-campus · 校园失物招领",
+    "h1": [
+      "登录"
+    ],
+    "hasDegradedBanner": false,
+    "hasPairPanel": false,
+    "cardCount": 0,
+    "tiers": [],
+    "scores": [],
+    "degradedBadges": [],
+    "lowCountText": ""
+  }
+]
+NODE_EXIT=0
+CHECK screenshots.anon = PASS :: see shots-anon/shots.json
+[
+  {
+    "path": "/records/new",
+    "httpStatus": 200,
+    "url": "http://127.0.0.1:8088/records/new",
+    "file": "C:\\Project\\hifox-workspaces\\panshishi\\m6-evidence-part1\\shots-auth\\m6-records-new.png",
+    "title": "校园失物招领",
+    "text": "跳到主要内容 FI 校园失物招领 启事列表 发布启事 通知 5 我的启事 学号 demo01 退出 发布启事 带 * 的为必填项；描述越具体，语义匹配越准。 类型 * 寻物启事（我丢了东西） 招领启事（我捡到东西） 标题 * 0/64 详细描述 * 0/2000 分类 暂不分类 钱包卡证 手机数码 钥匙 证件资料 包袋 衣物饰品 书籍文具 其他 地点 * 发生时间 * 联系方式 联系人称呼 提交启事 取消并返回 find-it-campus · 校园失物招领",
+    "h1": [
+      "发布启事"
+    ],
+    "hasDegradedBanner": false,
+    "hasPairPanel": false,
+    "cardCount": 0,
+    "tiers": [],
+    "scores": [],
+    "degradedBadges": [],
+    "lowCountText": ""
+  },
+  {
+    "path": "/records/1",
+    "httpStatus": 200,
+    "url": "http://127.0.0.1:8088/records/1",
+    "file": "C:\\Project\\hifox-workspaces\\panshishi\\m6-evidence-part1\\shots-auth\\m6-records-1.png",
+    "title": "校园失物招领",
+    "text": "跳到主要内容 FI 校园失物招领 启事列表 发布启事 通知 5 我的启事 学号 demo01 退出 启事详情 看清单条启事，或让匹配找找可能相关的另一条。 ← 返回列表 编辑 关闭 寻物 进行中 我的启事 #1 图书馆丢了黑色钱包 分类 钱包卡证 地点 图书馆三楼自习区 发生时间 2026-10-19 17:30:00 发布时间 2026-10-20 09:10:00 最后更新 2026-10-20 09:10:00 联系方式 13800000001 联系人 李同学 详细描述 昨天下午在图书馆三楼自习区靠窗的位置看书，起身走的时候发现黑色皮质钱包不见了，里面有两张银行卡和三百多块现金，卡是工行的，非常着急，捡到的同学联系我，必有感谢。 当前状态没有可执行的流转；「标记完成」需要已有双方确认的匹配（当前有效匹配 0 对）。 可能相关（1 条可查看） 按匹配度从高到低排列。每一对独立处理：标记联系、确认或忽略其中一条，不影响其他启事。 96% 匹配度 高置信匹配 已联系 #1 招领 进行中 #13 图书馆拾到黑色钱包 图书馆三楼自习区 · 发生 2026-09-15 15:00:00 查看联系方式 匹配度较高，可直接查看 确认匹配 忽略这条 find-it-campus · 校园失物招领",
+    "h1": [
+      "启事详情",
+      "图书馆丢了黑色钱包",
+      "可能相关（1 条可查看）"
+    ],
+    "hasDegradedBanner": false,
+    "hasPairPanel": true,
+    "cardCount": 1,
+    "tiers": [
+      "高置信匹配"
+    ],
+    "scores": [
+      "96%"
+    ],
+    "degradedBadges": [],
+    "lowCountText": ""
+  }
+]
+NODE_EXIT=0
+CHECK screenshots.auth = PASS :: demo01 login; /records/new form + owner detail
+
+===== 5. Face A: CORS through 8088 =====
+{
+  "base": "http://127.0.0.1:8088",
+  "login": {
+    "status": 200,
+    "body": "{\"code\":0,\"message\":\"登录成功\",\"data\":{\"id\":1,\"studentNo\":\"demo01\",\"displayName\":\"演示甲\"},\"requestId\":\"6bedfca3a79f4e4e\"}"
+  },
+  "checks": {
+    "sameOrigin": {
+      "method": "POST",
+      "path": "/api/records",
+      "requestOrigin": "http://127.0.0.1:8088",
+      "status": 200,
+      "acao": null,
+      "acac": null,
+      "acam": null,
+      "vary": "Cookie, Origin, Access-Control-Request-Method, Access-Control-Request-Headers",
+      "body": "{\"code\":0,\"message\":\"已提交\",\"data\":{\"id\":27,\"type\":\"LOST\",\"status\":\"PENDING\",\"title\":\"M6 CORS SAME 黑色钱包\",\"description\":\"M6 CORS SAME 在图书馆三楼丢失黑色皮质钱包，内有工行卡\",\"categoryId\":null,\"categoryName\":null,\"location\":\"图书馆三楼\",\"occurredAt\":\"2026-10-25 15:00:00\",\"completedAt\":null,\"contact\":\"13800000002\",\"publisherName\":\"演示乙\",\"allowedStatuses\":[\"CLOSED\"],\"hasMatchedPair\":false,\"matchedPairCount\":0,\"isMine\":true,\"pairState\":\"PENDING\",\"lowConfidenceCount\":0,\"reviewState\":\"APPROVED\",\"reviewManualRequired\":false,\"reviewReason\":null,\"reviewedAt\":\"2026-10-29 03:33:00\",\"summary\":null,\"pairs\":[],\"createdAt\":\"2026-10-29",
+      "setCookie": []
+    },
+    "noOrigin": {
+      "method": "POST",
+      "path": "/api/records",
+      "requestOrigin": null,
+      "status": 200,
+      "acao": null,
+      "acac": null,
+      "acam": null,
+      "vary": "Cookie, Origin, Access-Control-Request-Method, Access-Control-Request-Headers",
+      "body": "{\"code\":0,\"message\":\"已提交\",\"data\":{\"id\":28,\"type\":\"LOST\",\"status\":\"PENDING\",\"title\":\"M6 CORS NONE 黑色钱包\",\"description\":\"M6 CORS NONE 在图书馆三楼丢失黑色皮质钱包，内有工行卡\",\"categoryId\":null,\"categoryName\":null,\"location\":\"图书馆三楼\",\"occurredAt\":\"2026-10-25 15:00:00\",\"completedAt\":null,\"contact\":\"13800000002\",\"publisherName\":\"演示乙\",\"allowedStatuses\":[\"CLOSED\"],\"hasMatchedPair\":false,\"matchedPairCount\":0,\"isMine\":true,\"pairState\":\"PENDING\",\"lowConfidenceCount\":0,\"reviewState\":\"APPROVED\",\"reviewManualRequired\":false,\"reviewReason\":null,\"reviewedAt\":\"2026-10-29 03:33:01\",\"summary\":null,\"pairs\":[],\"createdAt\":\"2026-10-29",
+      "setCookie": []
+    },
+    "crossOriginLoopback": {
+      "method": "POST",
+      "path": "/api/records",
+      "requestOrigin": "http://localhost:5173",
+      "status": 200,
+      "acao": "http://localhost:5173",
+      "acac": "true",
+      "acam": null,
+      "vary": "Cookie, Origin, Access-Control-Request-Method, Access-Control-Request-Headers",
+      "body": "{\"code\":0,\"message\":\"已提交\",\"data\":{\"id\":29,\"type\":\"LOST\",\"status\":\"PENDING\",\"title\":\"M6 CORS CROSS 黑色钱包\",\"description\":\"M6 CORS CROSS 在图书馆三楼丢失黑色皮质钱包，内有工行卡\",\"categoryId\":null,\"categoryName\":null,\"location\":\"图书馆三楼\",\"occurredAt\":\"2026-10-25 15:00:00\",\"completedAt\":null,\"contact\":\"13800000002\",\"publisherName\":\"演示乙\",\"allowedStatuses\":[\"CLOSED\"],\"hasMatchedPair\":false,\"matchedPairCount\":0,\"isMine\":true,\"pairState\":\"PENDING\",\"lowConfidenceCount\":0,\"reviewState\":\"APPROVED\",\"reviewManualRequired\":false,\"reviewReason\":null,\"reviewedAt\":\"2026-10-29 03:33:01\",\"summary\":null,\"pairs\":[],\"createdAt\":\"2026-10-",
+      "setCookie": []
+    },
+    "externalOrigin": {
+      "method": "POST",
+      "path": "/api/records",
+      "requestOrigin": "http://evil.example",
+      "status": 403,
+      "acao": null,
+      "acac": null,
+      "acam": null,
+      "vary": "Cookie, Origin, Access-Control-Request-Method, Access-Control-Request-Headers",
+      "body": "Invalid CORS request",
+      "setCookie": []
+    },
+    "preflight": {
+      "method": "OPTIONS",
+      "path": "/api/records",
+      "requestOrigin": "http://127.0.0.1:8088",
+      "status": 200,
+      "acao": null,
+      "acac": null,
+      "acam": null,
+      "vary": "Cookie, Origin, Access-Control-Request-Method, Access-Control-Request-Headers",
+      "body": "",
+      "setCookie": []
+    },
+    "preflightCrossOrigin": {
+      "method": "OPTIONS",
+      "path": "/api/records",
+      "requestOrigin": "http://localhost:5173",
+      "status": 200,
+      "acao": "http://localhost:5173",
+      "acac": "true",
+      "acam": "GET,POST,PUT,PATCH,DELETE,OPTIONS",
+      "vary": "Cookie, Origin, Access-Control-Request-Method, Access-Control-Request-Headers",
+      "body": "",
+      "setCookie": []
+    }
+  },
+  "verdict": {
+    "sameOriginOk": true,
+    "sameOriginNot403": true,
+    "sameOriginNoAcaoBecauseSameOrigin": true,
+    "noOriginOk": true,
+    "crossOriginLoopbackOk": true,
+    "crossOriginAcao": true,
+    "crossOriginCredentials": true,
+    "externalForbidden": true,
+    "externalNoAcao": true,
+    "preflightSameOriginOk": true,
+    "preflightCrossOk": true
+  },
+  "passed": true
+}
+NODE_EXIT=0
+CHECK faceA.cors = PASS :: shot JSON: faceA-cors.json
+
+===== 6. Face D local: clean DB per sample =====
+truncated
+records=0
+{
+  "mode": "verify",
+  "sample": "P01",
+  "class": "A",
+  "expect": "MATCH",
+  "expectedTier": "AUTHORIZABLE",
+  "lostId": 1,
+  "foundId": 2,
+  "publishHttp": 200,
+  "pairState": "READY",
+  "lowConfidenceCount": 0,
+  "timedOut": false,
+  "waitMs": 18,
+  "card": {
+    "pairId": 9,
+    "score": 0.73,
+    "scorePercent": 73,
+    "engine": "LOCAL_KEYWORD",
+    "tier": "AUTHORIZABLE",
+    "degraded": true,
+    "contactAvailable": false,
+    "contactHint": "对方尚未公开",
+    "status": "NEW",
+    "matched": false
+  },
+  "passed": true
+}
+NODE_EXIT=0
+CHECK faceD.local.P01.AUTHORIZABLE = PASS :: score 0.73 card visible, low=0
+[
+  {
+    "path": "/records/1",
+    "httpStatus": 200,
+    "url": "http://127.0.0.1:8088/records/1",
+    "file": "C:\\Project\\hifox-workspaces\\panshishi\\m6-evidence-part1\\shots-faceD-local\\m6-records-1.png",
+    "title": "校园失物招领",
+    "text": "跳到主要内容 FI 校园失物招领 启事列表 发布启事 通知 我的启事 学号 demo02 退出 启事详情 看清单条启事，或让匹配找找可能相关的另一条。 ← 返回列表 编辑 关闭 寻物 进行中 我的启事 #1 丢失黑色小米充电宝 分类 手机数码 地点 图书馆三楼自习区 发生时间 2026-10-24 15:20:00 发布时间 2026-10-29 03:33:21 最后更新 2026-10-29 03:33:21 联系方式 13800000002 联系人 演示乙 详细描述 在图书馆三楼自习区丢的，黑色小米充电宝，20000毫安，外壳有一道划痕，应该落在靠窗的位置 当前状态没有可执行的流转；「标记完成」需要已有双方确认的匹配（当前有效匹配 0 对）。 可能相关（1 条可查看） 按匹配度从高到低排列。每一对独立处理：标记联系、确认或忽略其中一条，不影响其他启事。 已降级 当前为关键词匹配，同义/近义描述可能匹配不到，也可能出现不相关的结果，结果显示仅供参考。 73% 匹配度 可能相关 待联系 已降级 #9 招领 进行中 #2 捡到小米充电宝一个 图书馆三楼自习区 · 发生 2026-10-24 16:05:00 公开我的联系方式 仅这一对可见，不影响其他配对 附言（选填，最多 200 字；会打码手机号） 0/200 查看联系方式 对方尚未公开 标记已联系 确认匹配 忽略这条 find-it-campus · 校园失物招领",
+    "h1": [
+      "启事详情",
+      "丢失黑色小米充电宝",
+      "可能相关（1 条可查看）"
+    ],
+    "hasDegradedBanner": true,
+    "hasPairPanel": true,
+    "cardCount": 1,
+    "tiers": [
+      "可能相关"
+    ],
+    "scores": [
+      "73%"
+    ],
+    "degradedBadges": [
+      "已降级"
+    ],
+    "lowCountText": ""
+  }
+]
+NODE_EXIT=0
+CHECK faceD.local.screenshot = PASS :: owner detail /records/1
+truncated
+records=0
+{
+  "mode": "verify",
+  "sample": "P13",
+  "class": "C",
+  "expect": "NO_MATCH",
+  "expectedTier": "HIDDEN",
+  "lostId": 1,
+  "foundId": 2,
+  "publishHttp": 200,
+  "pairState": "READY",
+  "lowConfidenceCount": 1,
+  "timedOut": false,
+  "waitMs": 19,
+  "card": null,
+  "passed": true
+}
+NODE_EXIT=0
+CHECK faceD.local.P13.HIDDEN = PASS :: no card, lowConfidenceCount>=1
+
+===== 7. Face D deepseek: mode=off + real key, clean DB per sample =====
+[2026-10-29 03:33:47] [INFO] 
+[2026-10-29 03:33:47] [STEP] ==== find-it-campus Windows 停止 ====
+[2026-10-29 03:33:47] [INFO] 部署包目录：C:\Project\hifox-workspaces\panshishi\m6-deploy\find-it-campus-windows-x64
+[2026-10-29 03:33:47] [INFO] 停止 Nginx：先执行 nginx -s quit（PID 12424）
+[2026-10-29 03:33:48] [OK] Nginx 已停止（nginx -s quit 成功）。
+[2026-10-29 03:33:48] [INFO] 停止后端：PID 12692
+[2026-10-29 03:33:49] [OK] 后端已停止（PID 12692）。
+[2026-10-29 03:33:49] [INFO] 
+[2026-10-29 03:33:49] [STEP] ==== 等待端口释放 ====
+[2026-10-29 03:33:51] [OK] 8088 已释放
+[2026-10-29 03:33:51] [OK] 18080 已释放
+[2026-10-29 03:33:51] [INFO] 
+[2026-10-29 03:33:51] [STEP] ==== 停止结果 ====
+
+Component Result Detail                                      
+--------- ------ ------                                      
+后端        已停止    PID 12692；Windows 无服务控制，JVM 为进程终止（非优雅 drain）
+Nginx     已停止    nginx -s quit 成功                            
+
+
+[2026-10-29 03:33:51] [INFO] 后端：已停止；Nginx：已停止；8088 释放=True；18080 释放=True
+[2026-10-29 03:33:51] [INFO] 停止日志：C:\Project\hifox-workspaces\panshishi\m6-deploy\find-it-campus-windows-x64\logs\stop-20261029-033346.log
+[2026-10-29 03:33:51] [OK] RESULT: STOPPED
+STOP_EXIT=0
+[2026-10-29 03:33:51] [INFO] 
+[2026-10-29 03:33:51] [STEP] ==== find-it-campus Windows 启动 ====
+[2026-10-29 03:33:51] [INFO] 部署包目录：C:\Project\hifox-workspaces\panshishi\m6-deploy\find-it-campus-windows-x64
+[2026-10-29 03:33:52] [OK] JDK 17：C:\Project\tools\jdk17\jdk-17.0.20.1+1\bin\java.exe
+[2026-10-29 03:33:52] [INFO] 后端 jar：C:\Project\hifox-workspaces\panshishi\m6-deploy\find-it-campus-windows-x64\app\find-it-campus-0.0.1-SNAPSHOT.jar
+[2026-10-29 03:33:52] [INFO] 前端目录：C:\Project\hifox-workspaces\panshishi\m6-deploy\find-it-campus-windows-x64\web\dist
+[2026-10-29 03:33:52] [INFO] Nginx：C:\Project\hifox-workspaces\panshishi\m6-deploy\find-it-campus-windows-x64\nginx\nginx.exe
+[2026-10-29 03:33:52] [INFO] 数据库：127.0.0.1:3306/findit_m6，引擎：local
+[2026-10-29 03:33:53] [INFO] 
+[2026-10-29 03:33:53] [STEP] ==== 启动后端（127.0.0.1:18080） ====
+[2026-10-29 03:33:53] [INFO] 已拉起后端：PID 7296，日志：C:\Project\hifox-workspaces\panshishi\m6-deploy\find-it-campus-windows-x64\logs\backend.log
+[2026-10-29 03:33:55] [INFO] 等待后端健康检查：无法连接到远程服务器
+[2026-10-29 03:34:02] [OK] 后端健康：code=0, status=UP, db=UP, engine=local
+[2026-10-29 03:34:03] [INFO] 
+[2026-10-29 03:34:03] [STEP] ==== 启动 Nginx（8088） ====
+[2026-10-29 03:34:03] [OK] Nginx 已就绪：http://127.0.0.1:8088/ → code=0, status=UP, db=UP
+[2026-10-29 03:34:03] [INFO] 
+[2026-10-29 03:34:03] [STEP] ==== 启动完成 ====
+[2026-10-29 03:34:03] [OK] 后端：PID 7296，http://127.0.0.1:18080/api/health
+[2026-10-29 03:34:03] [OK] Nginx：PID 14000，http://127.0.0.1:8088/
+[2026-10-29 03:34:03] [OK] 健康：code=0, status=UP, db=UP, engine=local
+[2026-10-29 03:34:03] [INFO] 访问：http://127.0.0.1:8088/
+[2026-10-29 03:34:03] [INFO] 启动日志：C:\Project\hifox-workspaces\panshishi\m6-deploy\find-it-campus-windows-x64\logs\start-20261029-033351.log
+START_EXIT=0
+truncated
+records=0
+{
+  "mode": "verify",
+  "sample": "P01",
+  "class": "A",
+  "expect": "MATCH",
+  "expectedTier": "DIRECT",
+  "lostId": 1,
+  "foundId": 2,
+  "publishHttp": 200,
+  "pairState": "READY",
+  "lowConfidenceCount": 0,
+  "timedOut": false,
+  "waitMs": 19,
+  "card": {
+    "pairId": 1,
+    "score": 0.98,
+    "scorePercent": 98,
+    "engine": "DEEPSEEK",
+    "tier": "DIRECT",
+    "degraded": false,
+    "contactAvailable": true,
+    "contactHint": "匹配度较高，可直接查看",
+    "status": "NEW",
+    "matched": false
+  },
+  "passed": true
+}
+NODE_EXIT=0
+CHECK faceD.deepseek.P01.DIRECT = PASS :: score >= 0.95 card visible
+[
+  {
+    "path": "/records/1",
+    "httpStatus": 200,
+    "url": "http://127.0.0.1:8088/records/1",
+    "file": "C:\\Project\\hifox-workspaces\\panshishi\\m6-evidence-part1\\shots-faceD-deepseek\\m6-records-1.png",
+    "title": "校园失物招领",
+    "text": "跳到主要内容 FI 校园失物招领 启事列表 发布启事 通知 1 我的启事 学号 demo02 退出 启事详情 看清单条启事，或让匹配找找可能相关的另一条。 ← 返回列表 编辑 关闭 寻物 进行中 我的启事 #1 丢失黑色小米充电宝 分类 手机数码 地点 图书馆三楼自习区 发生时间 2026-10-24 15:20:00 发布时间 2026-10-29 03:34:17 最后更新 2026-10-29 03:34:17 联系方式 13800000002 联系人 演示乙 详细描述 在图书馆三楼自习区丢的，黑色小米充电宝，20000毫安，外壳有一道划痕，应该落在靠窗的位置 当前状态没有可执行的流转；「标记完成」需要已有双方确认的匹配（当前有效匹配 0 对）。 可能相关（1 条可查看） 按匹配度从高到低排列。每一对独立处理：标记联系、确认或忽略其中一条，不影响其他启事。 98% 匹配度 高置信匹配 待联系 #1 判定依据：品牌、颜色、容量、划痕、地点均吻合，时间相近，高度可能为同一物品 招领 进行中 #2 捡到小米充电宝一个 图书馆三楼自习区 · 发生 2026-10-24 16:05:00 查看联系方式 匹配度较高，可直接查看 标记已联系 确认匹配 忽略这条 find-it-campus · 校园失物招领",
+    "h1": [
+      "启事详情",
+      "丢失黑色小米充电宝",
+      "可能相关（1 条可查看）"
+    ],
+    "hasDegradedBanner": false,
+    "hasPairPanel": true,
+    "cardCount": 1,
+    "tiers": [
+      "高置信匹配"
+    ],
+    "scores": [
+      "98%"
+    ],
+    "degradedBadges": [],
+    "lowCountText": ""
+  }
+]
+NODE_EXIT=0
+CHECK faceD.deepseek.screenshot = PASS :: owner detail /records/1
+truncated
+records=0
+{
+  "mode": "verify",
+  "sample": "P06",
+  "class": "B",
+  "expect": "MATCH",
+  "expectedTier": "AUTHORIZABLE",
+  "lostId": 1,
+  "foundId": 2,
+  "publishHttp": 200,
+  "pairState": "READY",
+  "lowConfidenceCount": 0,
+  "timedOut": false,
+  "waitMs": 17,
+  "card": {
+    "pairId": 1,
+    "score": 0.92,
+    "scorePercent": 92,
+    "engine": "DEEPSEEK",
+    "tier": "AUTHORIZABLE",
+    "degraded": false,
+    "contactAvailable": false,
+    "contactHint": "对方尚未公开",
+    "status": "NEW",
+    "matched": false
+  },
+  "passed": true
+}
+NODE_EXIT=0
+CHECK faceD.deepseek.P06.AUTHORIZABLE = PASS :: 0.80 <= score < 0.95 card visible
+truncated
+records=0
+{
+  "mode": "verify",
+  "sample": "P13",
+  "class": "C",
+  "expect": "NO_MATCH",
+  "expectedTier": "HIDDEN",
+  "lostId": 1,
+  "foundId": 2,
+  "publishHttp": 200,
+  "pairState": "READY",
+  "lowConfidenceCount": 1,
+  "timedOut": false,
+  "waitMs": 24,
+  "card": null,
+  "passed": true
+}
+NODE_EXIT=0
+CHECK faceD.deepseek.P13.HIDDEN = PASS :: score < 0.80 hidden + low count
+
+===== 8. Face B: review.mode=ai + real DeepSeek =====
+[2026-10-29 03:35:06] [INFO] 
+[2026-10-29 03:35:06] [STEP] ==== find-it-campus Windows 停止 ====
+[2026-10-29 03:35:06] [INFO] 部署包目录：C:\Project\hifox-workspaces\panshishi\m6-deploy\find-it-campus-windows-x64
+[2026-10-29 03:35:06] [INFO] 停止 Nginx：先执行 nginx -s quit（PID 14000）
+[2026-10-29 03:35:07] [OK] Nginx 已停止（nginx -s quit 成功）。
+[2026-10-29 03:35:08] [INFO] 停止后端：PID 7296
+[2026-10-29 03:35:08] [OK] 后端已停止（PID 7296）。
+[2026-10-29 03:35:08] [INFO] 
+[2026-10-29 03:35:08] [STEP] ==== 等待端口释放 ====
+[2026-10-29 03:35:10] [OK] 8088 已释放
+[2026-10-29 03:35:10] [OK] 18080 已释放
+[2026-10-29 03:35:10] [INFO] 
+[2026-10-29 03:35:10] [STEP] ==== 停止结果 ====
+
+Component Result Detail                                     
+--------- ------ ------                                     
+后端        已停止    PID 7296；Windows 无服务控制，JVM 为进程终止（非优雅 drain）
+Nginx     已停止    nginx -s quit 成功                           
+
+
+[2026-10-29 03:35:10] [INFO] 后端：已停止；Nginx：已停止；8088 释放=True；18080 释放=True
+[2026-10-29 03:35:10] [INFO] 停止日志：C:\Project\hifox-workspaces\panshishi\m6-deploy\find-it-campus-windows-x64\logs\stop-20261029-033506.log
+[2026-10-29 03:35:10] [OK] RESULT: STOPPED
+STOP_EXIT=0
+[2026-10-29 03:35:10] [INFO] 
+[2026-10-29 03:35:11] [STEP] ==== find-it-campus Windows 启动 ====
+[2026-10-29 03:35:11] [INFO] 部署包目录：C:\Project\hifox-workspaces\panshishi\m6-deploy\find-it-campus-windows-x64
+[2026-10-29 03:35:11] [OK] JDK 17：C:\Project\tools\jdk17\jdk-17.0.20.1+1\bin\java.exe
+[2026-10-29 03:35:11] [INFO] 后端 jar：C:\Project\hifox-workspaces\panshishi\m6-deploy\find-it-campus-windows-x64\app\find-it-campus-0.0.1-SNAPSHOT.jar
+[2026-10-29 03:35:11] [INFO] 前端目录：C:\Project\hifox-workspaces\panshishi\m6-deploy\find-it-campus-windows-x64\web\dist
+[2026-10-29 03:35:11] [INFO] Nginx：C:\Project\hifox-workspaces\panshishi\m6-deploy\find-it-campus-windows-x64\nginx\nginx.exe
+[2026-10-29 03:35:11] [INFO] 数据库：127.0.0.1:3306/findit_m6，引擎：local
+[2026-10-29 03:35:12] [INFO] 
+[2026-10-29 03:35:12] [STEP] ==== 启动后端（127.0.0.1:18080） ====
+[2026-10-29 03:35:13] [INFO] 已拉起后端：PID 11172，日志：C:\Project\hifox-workspaces\panshishi\m6-deploy\find-it-campus-windows-x64\logs\backend.log
+[2026-10-29 03:35:16] [INFO] 等待后端健康检查：无法连接到远程服务器
+[2026-10-29 03:35:22] [OK] 后端健康：code=0, status=UP, db=UP, engine=local
+[2026-10-29 03:35:23] [INFO] 
+[2026-10-29 03:35:23] [STEP] ==== 启动 Nginx（8088） ====
+[2026-10-29 03:35:23] [OK] Nginx 已就绪：http://127.0.0.1:8088/ → code=0, status=UP, db=UP
+[2026-10-29 03:35:23] [INFO] 
+[2026-10-29 03:35:23] [STEP] ==== 启动完成 ====
+[2026-10-29 03:35:23] [OK] 后端：PID 11172，http://127.0.0.1:18080/api/health
+[2026-10-29 03:35:23] [OK] Nginx：PID 13232，http://127.0.0.1:8088/
+[2026-10-29 03:35:23] [OK] 健康：code=0, status=UP, db=UP, engine=local
+[2026-10-29 03:35:23] [INFO] 访问：http://127.0.0.1:8088/
+[2026-10-29 03:35:23] [INFO] 启动日志：C:\Project\hifox-workspaces\panshishi\m6-deploy\find-it-campus-windows-x64\logs\start-20261029-033510.log
+START_EXIT=0
+[
+  {
+    "name": "APPROVE",
+    "http": 200,
+    "code": 0,
+    "id": 3,
+    "reviewState": "PENDING",
+    "reviewManualRequired": false,
+    "title": "图书馆丢失黑色钱包",
+    "body": "{\"code\":0,\"message\":\"已提交\",\"data\":{\"id\":3,\"type\":\"LOST\",\"status\":\"PENDING\",\"title\":\"图书馆丢失黑色钱包\",\"description\":\"在图书馆三楼自习区靠窗位置丢失一个黑色皮质钱包，里面有工行卡一张，请捡到的同学联系\",\"categoryId\":2,\"categoryName\":\"手机数码\",\"location\":\"图书馆三楼自习区\",\"occurredAt\":\"2026-10-24 15:20:00\",\"completedAt\":null,\"contact\":\"13800000002\",\"publisherName\":\"演示乙\",\"allowedStatuses\":[\"CLOSED\"],\"hasMatchedPair\":false,\"matchedPairCount\":0,\"isMine\":true,\"p"
+  },
+  {
+    "name": "REJECT_IDENTITY_ONLY",
+    "http": 200,
+    "code": 0,
+    "id": 4,
+    "reviewState": "PENDING",
+    "reviewManualRequired": false,
+    "title": "[姓名已隐藏]个人物品",
+    "body": "{\"code\":0,\"message\":\"已提交\",\"data\":{\"id\":4,\"type\":\"LOST\",\"status\":\"PENDING\",\"title\":\"[姓名已隐藏]个人物品\",\"description\":\"[姓名已隐藏]个人联系电话[手机号已隐藏]学号[已隐藏]宿舍3号楼201，丢了东西\",\"categoryId\":2,\"categoryName\":\"手机数码\",\"location\":\"3号楼201\",\"occurredAt\":\"2026-10-24 15:20:00\",\"completedAt\":null,\"contact\":\"13800000009\",\"publisherName\":\"张三\",\"allowedStatuses\":[\"CLOSED\"],\"hasMatchedPair\":false,\"matchedPairCount\":0,\"isMine\":true,\"pa"
+  },
+  {
+    "name": "REJECT_NO_FEATURES",
+    "http": 200,
+    "code": 0,
+    "id": 5,
+    "reviewState": "PENDING",
+    "reviewManualRequired": false,
+    "title": "寻物",
+    "body": "{\"code\":0,\"message\":\"已提交\",\"data\":{\"id\":5,\"type\":\"LOST\",\"status\":\"PENDING\",\"title\":\"寻物\",\"description\":\"找东西\",\"categoryId\":2,\"categoryName\":\"手机数码\",\"location\":\"校内\",\"occurredAt\":\"2026-10-24 15:20:00\",\"completedAt\":null,\"contact\":\"13800000002\",\"publisherName\":\"演示乙\",\"allowedStatuses\":[\"CLOSED\"],\"hasMatchedPair\":false,\"matchedPairCount\":0,\"isMine\":true,\"pairState\":\"PENDING\",\"lowConfidenceCount\":0,\"reviewS"
+  }
+]
+NODE_EXIT=0
+CHECK faceB.ai.publish = PASS :: APPROVE + 2 REJECT candidates submitted
+review APPROVE id=3 final=APPROVED|1|0|1
+review REJECT_IDENTITY_ONLY id=4 final=REJECTED|1|0|0
+review REJECT_NO_FEATURES id=5 final=REJECTED|1|0|0
+3|APPROVED|DEEPSEEK|deepseek-chat|1|0|1|已去除具体自习区与靠窗座位等可定位细节，地点泛化到图书馆三楼；保留黑色、皮质、工行卡等关键特征，便于匹配；未出现姓名、学号或联系方式
+4|REJECTED|DEEPSEEK|deepseek-chat|1|0|0|原文含姓名、手机号、学号等身份信息，改写后描述未保留任何物品特征，无法在保留关键特征前提下完成去身份化；原文含精准门牌号3号楼201，已泛化，但物品信息缺失导致无法公示匹配
+5|REJECTED|DEEPSEEK|deepseek-chat|1|0|0|描述仅为“找东西”，缺少物品类别、颜色、品牌等关键特征，无法识别物品；地点仅泛化为“校内”，缺少楼栋或区域信息，无法有效匹配；未提供任何可用于辨认物品的区分性线索
+[
+  {
+    "name": "APPROVE",
+    "id": 3,
+    "publishReviewState": "PENDING",
+    "inPublicList": true,
+    "publicTotal": 3,
+    "otherDetailHttp": 200,
+    "otherDetailCode": 0,
+    "otherDetailReviewState": "APPROVED"
+  },
+  {
+    "name": "REJECT_IDENTITY_ONLY",
+    "id": 4,
+    "publishReviewState": "PENDING",
+    "inPublicList": false,
+    "publicTotal": 3,
+    "otherDetailHttp": 404,
+    "otherDetailCode": 20001,
+    "otherDetailReviewState": null
+  },
+  {
+    "name": "REJECT_NO_FEATURES",
+    "id": 5,
+    "publishReviewState": "PENDING",
+    "inPublicList": false,
+    "publicTotal": 3,
+    "otherDetailHttp": 404,
+    "otherDetailCode": 20001,
+    "otherDetailReviewState": null
+  }
+]
+NODE_EXIT=0
+APPROVE row=APPROVED|DEEPSEEK|1|图书馆丢失黑色钱包|在图书馆三楼自习区靠窗位置丢失一个黑色皮质钱包，内有工行卡一张，请捡到的同学联系。|图书馆丢失黑色钱包
+CHECK faceB.ai.APPROVED.state = PASS :: state=APPROVED visible=1
+CHECK faceB.ai.APPROVED.engine = PASS :: engine=DEEPSEEK
+CHECK faceB.ai.APPROVED.deidentified = PASS :: display text has no phone/name
+CHECK faceB.ai.APPROVED.public = PASS :: inPublicList=True otherDetail=200
+CHECK faceB.ai.APPROVED.audit = PASS :: auditRows=1
+CHECK faceB.ai.APPROVED.pairs = PASS :: scoring triggered
+REJECT candidate REJECT_IDENTITY_ONLY row=REJECTED|DEEPSEEK|0|原文含姓名、手机号、学号等身份信息，改写后描述未保留任何物品特征，无法在保留关键特征前提下完成去身份化；原文含精准门牌号3号楼201，已泛化，但物品信息缺失导致无法公示匹配
+REJECT candidate REJECT_NO_FEATURES row=REJECTED|DEEPSEEK|0|描述仅为“找东西”，缺少物品类别、颜色、品牌等关键特征，无法识别物品；地点仅泛化为“校内”，缺少楼栋或区域信息，无法有效匹配；未提供任何可用于辨认物品的区分性线索
+CHECK faceB.ai.REJECTED.notVisible = PASS :: at least one candidate REJECTED, invisible, other detail 404
+
+===== 9. Face B: AI consecutive failure -> PENDING + manual =====
+[2026-10-29 03:35:30] [INFO] 
+[2026-10-29 03:35:30] [STEP] ==== find-it-campus Windows 停止 ====
+[2026-10-29 03:35:30] [INFO] 部署包目录：C:\Project\hifox-workspaces\panshishi\m6-deploy\find-it-campus-windows-x64
+[2026-10-29 03:35:31] [INFO] 停止 Nginx：先执行 nginx -s quit（PID 13232）
+[2026-10-29 03:35:32] [OK] Nginx 已停止（nginx -s quit 成功）。
+[2026-10-29 03:35:32] [INFO] 停止后端：PID 11172
+[2026-10-29 03:35:33] [OK] 后端已停止（PID 11172）。
+[2026-10-29 03:35:33] [INFO] 
+[2026-10-29 03:35:33] [STEP] ==== 等待端口释放 ====
+[2026-10-29 03:35:34] [OK] 8088 已释放
+[2026-10-29 03:35:34] [OK] 18080 已释放
+[2026-10-29 03:35:34] [INFO] 
+[2026-10-29 03:35:34] [STEP] ==== 停止结果 ====
+
+Component Result Detail                                      
+--------- ------ ------                                      
+后端        已停止    PID 11172；Windows 无服务控制，JVM 为进程终止（非优雅 drain）
+Nginx     已停止    nginx -s quit 成功                            
+
+
+[2026-10-29 03:35:34] [INFO] 后端：已停止；Nginx：已停止；8088 释放=True；18080 释放=True
+[2026-10-29 03:35:34] [INFO] 停止日志：C:\Project\hifox-workspaces\panshishi\m6-deploy\find-it-campus-windows-x64\logs\stop-20261029-033530.log
+[2026-10-29 03:35:34] [OK] RESULT: STOPPED
+STOP_EXIT=0
+[2026-10-29 03:35:35] [INFO] 
+[2026-10-29 03:35:35] [STEP] ==== find-it-campus Windows 启动 ====
+[2026-10-29 03:35:35] [INFO] 部署包目录：C:\Project\hifox-workspaces\panshishi\m6-deploy\find-it-campus-windows-x64
+[2026-10-29 03:35:35] [OK] JDK 17：C:\Project\tools\jdk17\jdk-17.0.20.1+1\bin\java.exe
+[2026-10-29 03:35:35] [INFO] 后端 jar：C:\Project\hifox-workspaces\panshishi\m6-deploy\find-it-campus-windows-x64\app\find-it-campus-0.0.1-SNAPSHOT.jar
+[2026-10-29 03:35:35] [INFO] 前端目录：C:\Project\hifox-workspaces\panshishi\m6-deploy\find-it-campus-windows-x64\web\dist
+[2026-10-29 03:35:35] [INFO] Nginx：C:\Project\hifox-workspaces\panshishi\m6-deploy\find-it-campus-windows-x64\nginx\nginx.exe
+[2026-10-29 03:35:35] [INFO] 数据库：127.0.0.1:3306/findit_m6，引擎：local
+[2026-10-29 03:35:36] [INFO] 
+[2026-10-29 03:35:36] [STEP] ==== 启动后端（127.0.0.1:18080） ====
+[2026-10-29 03:35:36] [INFO] 已拉起后端：PID 7616，日志：C:\Project\hifox-workspaces\panshishi\m6-deploy\find-it-campus-windows-x64\logs\backend.log
+[2026-10-29 03:35:39] [INFO] 等待后端健康检查：无法连接到远程服务器
+[2026-10-29 03:35:45] [OK] 后端健康：code=0, status=UP, db=UP, engine=local
+[2026-10-29 03:35:46] [INFO] 
+[2026-10-29 03:35:46] [STEP] ==== 启动 Nginx（8088） ====
+[2026-10-29 03:35:46] [OK] Nginx 已就绪：http://127.0.0.1:8088/ → code=0, status=UP, db=UP
+[2026-10-29 03:35:46] [INFO] 
+[2026-10-29 03:35:46] [STEP] ==== 启动完成 ====
+[2026-10-29 03:35:46] [OK] 后端：PID 7616，http://127.0.0.1:18080/api/health
+[2026-10-29 03:35:46] [OK] Nginx：PID 628，http://127.0.0.1:8088/
+[2026-10-29 03:35:46] [OK] 健康：code=0, status=UP, db=UP, engine=local
+[2026-10-29 03:35:46] [INFO] 访问：http://127.0.0.1:8088/
+[2026-10-29 03:35:46] [INFO] 启动日志：C:\Project\hifox-workspaces\panshishi\m6-deploy\find-it-campus-windows-x64\logs\start-20261029-033535.log
+START_EXIT=0
+[
+  {
+    "name": "AI_FAIL",
+    "http": 200,
+    "code": 0,
+    "id": 6,
+    "reviewState": "PENDING",
+    "reviewManualRequired": false,
+    "title": "审核失败黑色钱包",
+    "body": "{\"code\":0,\"message\":\"已提交\",\"data\":{\"id\":6,\"type\":\"LOST\",\"status\":\"PENDING\",\"title\":\"审核失败黑色钱包\",\"description\":\"图书馆三楼丢失黑色皮质钱包，内有工行卡，请捡到者联系\",\"categoryId\":2,\"categoryName\":\"手机数码\",\"location\":\"图书馆三楼\",\"occurredAt\":\"2026-10-24 15:20:00\",\"completedAt\":null,\"contact\":\"13800000002\",\"publisherName\":\"演示乙\",\"allowedStatuses\":[\"CLOSED\"],\"hasMatchedPair\":false,\"matchedPairCount\":0,\"isMine\":true,\"pairState\":\"PENDING\""
+  }
+]
+NODE_EXIT=0
+AI_FAIL final=PENDING|3|1|0
+AI_FAIL row=PENDING|3|1|0|AI 审核连续失败（HTTP_ERROR），记录保持待审并转人工；不会自动上架
+CHECK faceB.ai.failure.PENDINGmanual = PASS :: PENDING|3|1|0|AI 审核连续失败（HTTP_ERROR），记录保持待审并转人工；不会自动上架
+CHECK faceB.ai.failure.noPairs = PASS :: no pair rows
+
+===== 10. Face B: review.mode=off regression =====
+[2026-10-29 03:35:50] [INFO] 
+[2026-10-29 03:35:50] [STEP] ==== find-it-campus Windows 停止 ====
+[2026-10-29 03:35:50] [INFO] 部署包目录：C:\Project\hifox-workspaces\panshishi\m6-deploy\find-it-campus-windows-x64
+[2026-10-29 03:35:51] [INFO] 停止 Nginx：先执行 nginx -s quit（PID 628）
+[2026-10-29 03:35:52] [OK] Nginx 已停止（nginx -s quit 成功）。
+[2026-10-29 03:35:52] [INFO] 停止后端：PID 7616
+[2026-10-29 03:35:53] [OK] 后端已停止（PID 7616）。
+[2026-10-29 03:35:53] [INFO] 
+[2026-10-29 03:35:53] [STEP] ==== 等待端口释放 ====
+[2026-10-29 03:35:54] [OK] 8088 已释放
+[2026-10-29 03:35:54] [OK] 18080 已释放
+[2026-10-29 03:35:54] [INFO] 
+[2026-10-29 03:35:54] [STEP] ==== 停止结果 ====
+
+Component Result Detail                                     
+--------- ------ ------                                     
+后端        已停止    PID 7616；Windows 无服务控制，JVM 为进程终止（非优雅 drain）
+Nginx     已停止    nginx -s quit 成功                           
+
+
+[2026-10-29 03:35:54] [INFO] 后端：已停止；Nginx：已停止；8088 释放=True；18080 释放=True
+[2026-10-29 03:35:54] [INFO] 停止日志：C:\Project\hifox-workspaces\panshishi\m6-deploy\find-it-campus-windows-x64\logs\stop-20261029-033550.log
+[2026-10-29 03:35:54] [OK] RESULT: STOPPED
+STOP_EXIT=0
+[2026-10-29 03:35:55] [INFO] 
+[2026-10-29 03:35:55] [STEP] ==== find-it-campus Windows 启动 ====
+[2026-10-29 03:35:55] [INFO] 部署包目录：C:\Project\hifox-workspaces\panshishi\m6-deploy\find-it-campus-windows-x64
+[2026-10-29 03:35:55] [OK] JDK 17：C:\Project\tools\jdk17\jdk-17.0.20.1+1\bin\java.exe
+[2026-10-29 03:35:55] [INFO] 后端 jar：C:\Project\hifox-workspaces\panshishi\m6-deploy\find-it-campus-windows-x64\app\find-it-campus-0.0.1-SNAPSHOT.jar
+[2026-10-29 03:35:55] [INFO] 前端目录：C:\Project\hifox-workspaces\panshishi\m6-deploy\find-it-campus-windows-x64\web\dist
+[2026-10-29 03:35:55] [INFO] Nginx：C:\Project\hifox-workspaces\panshishi\m6-deploy\find-it-campus-windows-x64\nginx\nginx.exe
+[2026-10-29 03:35:55] [INFO] 数据库：127.0.0.1:3306/findit_m6，引擎：local
+[2026-10-29 03:35:56] [INFO] 
+[2026-10-29 03:35:56] [STEP] ==== 启动后端（127.0.0.1:18080） ====
+[2026-10-29 03:35:57] [INFO] 已拉起后端：PID 8644，日志：C:\Project\hifox-workspaces\panshishi\m6-deploy\find-it-campus-windows-x64\logs\backend.log
+[2026-10-29 03:35:59] [INFO] 等待后端健康检查：无法连接到远程服务器
+[2026-10-29 03:36:06] [OK] 后端健康：code=0, status=UP, db=UP, engine=local
+[2026-10-29 03:36:07] [INFO] 
+[2026-10-29 03:36:07] [STEP] ==== 启动 Nginx（8088） ====
+[2026-10-29 03:36:07] [OK] Nginx 已就绪：http://127.0.0.1:8088/ → code=0, status=UP, db=UP
+[2026-10-29 03:36:07] [INFO] 
+[2026-10-29 03:36:07] [STEP] ==== 启动完成 ====
+[2026-10-29 03:36:07] [OK] 后端：PID 8644，http://127.0.0.1:18080/api/health
+[2026-10-29 03:36:07] [OK] Nginx：PID 2508，http://127.0.0.1:8088/
+[2026-10-29 03:36:07] [OK] 健康：code=0, status=UP, db=UP, engine=local
+[2026-10-29 03:36:07] [INFO] 访问：http://127.0.0.1:8088/
+[2026-10-29 03:36:07] [INFO] 启动日志：C:\Project\hifox-workspaces\panshishi\m6-deploy\find-it-campus-windows-x64\logs\start-20261029-033555.log
+START_EXIT=0
+[
+  {
+    "name": "MODE_OFF",
+    "http": 200,
+    "code": 0,
+    "id": 7,
+    "reviewState": "APPROVED",
+    "reviewManualRequired": false,
+    "title": "M6OFF 黑色钱包",
+    "body": "{\"code\":0,\"message\":\"已提交\",\"data\":{\"id\":7,\"type\":\"LOST\",\"status\":\"PENDING\",\"title\":\"M6OFF 黑色钱包\",\"description\":\"M6OFF 姓名：张三 电话 13800000009 在第三教学楼 201 丢失的黑色钱包\",\"categoryId\":2,\"categoryName\":\"手机数码\",\"location\":\"第三教学楼 201\",\"occurredAt\":\"2026-10-24 15:20:00\",\"completedAt\":null,\"contact\":\"13800000009\",\"publisherName\":\"张三\",\"allowedStatuses\":[\"CLOSED\"],\"hasMatchedPair\":false,\"matchedPairCount\":0,\"isMine\":tr"
+  }
+]
+NODE_EXIT=0
+MODE_OFF publish reviewState=APPROVED
+[
+  {
+    "name": "MODE_OFF",
+    "id": 7,
+    "publishReviewState": "APPROVED",
+    "inPublicList": true,
+    "publicTotal": 4,
+    "otherDetailHttp": 200,
+    "otherDetailCode": 0,
+    "otherDetailReviewState": "APPROVED"
+  }
+]
+NODE_EXIT=0
+MODE_OFF row=APPROVED|OFF|1|NULL|NULL
+CHECK faceB.off.immediateApproved = PASS :: reviewState=APPROVED
+CHECK faceB.off.engineOFF = PASS :: engine=OFF
+CHECK faceB.off.visible = PASS :: inPublicList=True otherDetail=200
+CHECK faceB.off.rawNull = PASS :: raw_title=NULL match_title=NULL
+
+===== 11. stop + ports =====
+[2026-10-29 03:36:10] [INFO] 
+[2026-10-29 03:36:10] [STEP] ==== find-it-campus Windows 停止 ====
+[2026-10-29 03:36:10] [INFO] 部署包目录：C:\Project\hifox-workspaces\panshishi\m6-deploy\find-it-campus-windows-x64
+[2026-10-29 03:36:11] [INFO] 停止 Nginx：先执行 nginx -s quit（PID 2508）
+[2026-10-29 03:36:12] [OK] Nginx 已停止（nginx -s quit 成功）。
+[2026-10-29 03:36:12] [INFO] 停止后端：PID 8644
+[2026-10-29 03:36:13] [OK] 后端已停止（PID 8644）。
+[2026-10-29 03:36:13] [INFO] 
+[2026-10-29 03:36:13] [STEP] ==== 等待端口释放 ====
+[2026-10-29 03:36:14] [OK] 8088 已释放
+[2026-10-29 03:36:14] [OK] 18080 已释放
+[2026-10-29 03:36:14] [INFO] 
+[2026-10-29 03:36:14] [STEP] ==== 停止结果 ====
+
+Component Result Detail                                     
+--------- ------ ------                                     
+后端        已停止    PID 8644；Windows 无服务控制，JVM 为进程终止（非优雅 drain）
+Nginx     已停止    nginx -s quit 成功                           
+
+
+[2026-10-29 03:36:14] [INFO] 后端：已停止；Nginx：已停止；8088 释放=True；18080 释放=True
+[2026-10-29 03:36:14] [INFO] 停止日志：C:\Project\hifox-workspaces\panshishi\m6-deploy\find-it-campus-windows-x64\logs\stop-20261029-033610.log
+[2026-10-29 03:36:14] [OK] RESULT: STOPPED
+STOP_EXIT=0
+CHECK cleanup.portsReleased = PASS :: 8088=0 18080=0
+
+===== cleanup =====
+[2026-10-29 03:36:17] [INFO] 
+[2026-10-29 03:36:17] [STEP] ==== find-it-campus Windows 停止 ====
+[2026-10-29 03:36:17] [INFO] 部署包目录：C:\Project\hifox-workspaces\panshishi\m6-deploy\find-it-campus-windows-x64
+[2026-10-29 03:36:17] [OK] Nginx 未运行（幂等）。
+[2026-10-29 03:36:18] [OK] 后端未运行（幂等）。
+[2026-10-29 03:36:18] [INFO] 
+[2026-10-29 03:36:18] [STEP] ==== 等待端口释放 ====
+[2026-10-29 03:36:19] [OK] 8088 已释放
+[2026-10-29 03:36:19] [OK] 18080 已释放
+[2026-10-29 03:36:19] [INFO] 
+[2026-10-29 03:36:19] [STEP] ==== 停止结果 ====
+
+Component Result Detail         
+--------- ------ ------         
+后端        未运行    PID 文件不存在或进程未运行
+Nginx     未运行    PID 文件不存在或进程未运行
+
+
+[2026-10-29 03:36:19] [INFO] 后端：未运行；Nginx：未运行；8088 释放=True；18080 释放=True
+[2026-10-29 03:36:19] [INFO] 停止日志：C:\Project\hifox-workspaces\panshishi\m6-deploy\find-it-campus-windows-x64\logs\stop-20261029-033617.log
+[2026-10-29 03:36:19] [OK] RESULT: STOPPED
+STOP_EXIT=0
+mysqld shutdown requested
+
+===== SUMMARY =====
+PASS install.exit0 :: exit=0
+PASS install.seedRows :: t_record=24
+PASS health.code0/statusUP/dbUP :: code=0 status=UP db=UP
+PASS nginx.configTest :: exit=0
+PASS page/.200 :: HTTP 200 bytes=1231
+PASS page/records/1.200 :: HTTP 200 bytes=1231
+PASS page/records/new.200 :: HTTP 200 bytes=1231
+PASS screenshots.anon :: see shots-anon/shots.json
+PASS screenshots.auth :: demo01 login; /records/new form + owner detail
+PASS faceA.cors :: shot JSON: faceA-cors.json
+PASS faceD.local.P01.AUTHORIZABLE :: score 0.73 card visible, low=0
+PASS faceD.local.screenshot :: owner detail /records/1
+PASS faceD.local.P13.HIDDEN :: no card, lowConfidenceCount>=1
+PASS faceD.deepseek.P01.DIRECT :: score >= 0.95 card visible
+PASS faceD.deepseek.screenshot :: owner detail /records/1
+PASS faceD.deepseek.P06.AUTHORIZABLE :: 0.80 <= score < 0.95 card visible
+PASS faceD.deepseek.P13.HIDDEN :: score < 0.80 hidden + low count
+PASS faceB.ai.publish :: APPROVE + 2 REJECT candidates submitted
+PASS faceB.ai.APPROVED.state :: state=APPROVED visible=1
+PASS faceB.ai.APPROVED.engine :: engine=DEEPSEEK
+PASS faceB.ai.APPROVED.deidentified :: display text has no phone/name
+PASS faceB.ai.APPROVED.public :: inPublicList=True otherDetail=200
+PASS faceB.ai.APPROVED.audit :: auditRows=1
+PASS faceB.ai.APPROVED.pairs :: scoring triggered
+PASS faceB.ai.REJECTED.notVisible :: at least one candidate REJECTED, invisible, other detail 404
+PASS faceB.ai.failure.PENDINGmanual :: PENDING|3|1|0|AI 审核连续失败（HTTP_ERROR），记录保持待审并转人工；不会自动上架
+PASS faceB.ai.failure.noPairs :: no pair rows
+PASS faceB.off.immediateApproved :: reviewState=APPROVED
+PASS faceB.off.engineOFF :: engine=OFF
+PASS faceB.off.visible :: inPublicList=True otherDetail=200
+PASS faceB.off.rawNull :: raw_title=NULL match_title=NULL
+PASS cleanup.portsReleased :: 8088=0 18080=0
+TOTAL=32 FAILED=0
+
+===== RESULT =====
+PART1_OK

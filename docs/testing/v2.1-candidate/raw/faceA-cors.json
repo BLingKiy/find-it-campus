@@ -1,0 +1,95 @@
+{
+  "base": "http://127.0.0.1:8088",
+  "login": {
+    "status": 200,
+    "body": "{\"code\":0,\"message\":\"登录成功\",\"data\":{\"id\":1,\"studentNo\":\"demo01\",\"displayName\":\"演示甲\"},\"requestId\":\"6bedfca3a79f4e4e\"}"
+  },
+  "checks": {
+    "sameOrigin": {
+      "method": "POST",
+      "path": "/api/records",
+      "requestOrigin": "http://127.0.0.1:8088",
+      "status": 200,
+      "acao": null,
+      "acac": null,
+      "acam": null,
+      "vary": "Cookie, Origin, Access-Control-Request-Method, Access-Control-Request-Headers",
+      "body": "{\"code\":0,\"message\":\"已提交\",\"data\":{\"id\":27,\"type\":\"LOST\",\"status\":\"PENDING\",\"title\":\"M6 CORS SAME 黑色钱包\",\"description\":\"M6 CORS SAME 在图书馆三楼丢失黑色皮质钱包，内有工行卡\",\"categoryId\":null,\"categoryName\":null,\"location\":\"图书馆三楼\",\"occurredAt\":\"2026-10-25 15:00:00\",\"completedAt\":null,\"contact\":\"13800000002\",\"publisherName\":\"演示乙\",\"allowedStatuses\":[\"CLOSED\"],\"hasMatchedPair\":false,\"matchedPairCount\":0,\"isMine\":true,\"pairState\":\"PENDING\",\"lowConfidenceCount\":0,\"reviewState\":\"APPROVED\",\"reviewManualRequired\":false,\"reviewReason\":null,\"reviewedAt\":\"2026-10-29 03:33:00\",\"summary\":null,\"pairs\":[],\"createdAt\":\"2026-10-29",
+      "setCookie": []
+    },
+    "noOrigin": {
+      "method": "POST",
+      "path": "/api/records",
+      "requestOrigin": null,
+      "status": 200,
+      "acao": null,
+      "acac": null,
+      "acam": null,
+      "vary": "Cookie, Origin, Access-Control-Request-Method, Access-Control-Request-Headers",
+      "body": "{\"code\":0,\"message\":\"已提交\",\"data\":{\"id\":28,\"type\":\"LOST\",\"status\":\"PENDING\",\"title\":\"M6 CORS NONE 黑色钱包\",\"description\":\"M6 CORS NONE 在图书馆三楼丢失黑色皮质钱包，内有工行卡\",\"categoryId\":null,\"categoryName\":null,\"location\":\"图书馆三楼\",\"occurredAt\":\"2026-10-25 15:00:00\",\"completedAt\":null,\"contact\":\"13800000002\",\"publisherName\":\"演示乙\",\"allowedStatuses\":[\"CLOSED\"],\"hasMatchedPair\":false,\"matchedPairCount\":0,\"isMine\":true,\"pairState\":\"PENDING\",\"lowConfidenceCount\":0,\"reviewState\":\"APPROVED\",\"reviewManualRequired\":false,\"reviewReason\":null,\"reviewedAt\":\"2026-10-29 03:33:01\",\"summary\":null,\"pairs\":[],\"createdAt\":\"2026-10-29",
+      "setCookie": []
+    },
+    "crossOriginLoopback": {
+      "method": "POST",
+      "path": "/api/records",
+      "requestOrigin": "http://localhost:5173",
+      "status": 200,
+      "acao": "http://localhost:5173",
+      "acac": "true",
+      "acam": null,
+      "vary": "Cookie, Origin, Access-Control-Request-Method, Access-Control-Request-Headers",
+      "body": "{\"code\":0,\"message\":\"已提交\",\"data\":{\"id\":29,\"type\":\"LOST\",\"status\":\"PENDING\",\"title\":\"M6 CORS CROSS 黑色钱包\",\"description\":\"M6 CORS CROSS 在图书馆三楼丢失黑色皮质钱包，内有工行卡\",\"categoryId\":null,\"categoryName\":null,\"location\":\"图书馆三楼\",\"occurredAt\":\"2026-10-25 15:00:00\",\"completedAt\":null,\"contact\":\"13800000002\",\"publisherName\":\"演示乙\",\"allowedStatuses\":[\"CLOSED\"],\"hasMatchedPair\":false,\"matchedPairCount\":0,\"isMine\":true,\"pairState\":\"PENDING\",\"lowConfidenceCount\":0,\"reviewState\":\"APPROVED\",\"reviewManualRequired\":false,\"reviewReason\":null,\"reviewedAt\":\"2026-10-29 03:33:01\",\"summary\":null,\"pairs\":[],\"createdAt\":\"2026-10-",
+      "setCookie": []
+    },
+    "externalOrigin": {
+      "method": "POST",
+      "path": "/api/records",
+      "requestOrigin": "http://evil.example",
+      "status": 403,
+      "acao": null,
+      "acac": null,
+      "acam": null,
+      "vary": "Cookie, Origin, Access-Control-Request-Method, Access-Control-Request-Headers",
+      "body": "Invalid CORS request",
+      "setCookie": []
+    },
+    "preflight": {
+      "method": "OPTIONS",
+      "path": "/api/records",
+      "requestOrigin": "http://127.0.0.1:8088",
+      "status": 200,
+      "acao": null,
+      "acac": null,
+      "acam": null,
+      "vary": "Cookie, Origin, Access-Control-Request-Method, Access-Control-Request-Headers",
+      "body": "",
+      "setCookie": []
+    },
+    "preflightCrossOrigin": {
+      "method": "OPTIONS",
+      "path": "/api/records",
+      "requestOrigin": "http://localhost:5173",
+      "status": 200,
+      "acao": "http://localhost:5173",
+      "acac": "true",
+      "acam": "GET,POST,PUT,PATCH,DELETE,OPTIONS",
+      "vary": "Cookie, Origin, Access-Control-Request-Method, Access-Control-Request-Headers",
+      "body": "",
+      "setCookie": []
+    }
+  },
+  "verdict": {
+    "sameOriginOk": true,
+    "sameOriginNot403": true,
+    "sameOriginNoAcaoBecauseSameOrigin": true,
+    "noOriginOk": true,
+    "crossOriginLoopbackOk": true,
+    "crossOriginAcao": true,
+    "crossOriginCredentials": true,
+    "externalForbidden": true,
+    "externalNoAcao": true,
+    "preflightSameOriginOk": true,
+    "preflightCrossOk": true
+  },
+  "passed": true
+}

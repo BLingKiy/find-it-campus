@@ -1,0 +1,41 @@
+[
+    {
+        "name":  "APPROVE",
+        "payload":  {
+                        "occurredAt":  "2026-10-24 15:20:00",
+                        "contact":  "13800000002",
+                        "title":  "图书馆丢失黑色钱包",
+                        "location":  "图书馆三楼自习区",
+                        "type":  "LOST",
+                        "description":  "在图书馆三楼自习区靠窗位置丢失一个黑色皮质钱包，里面有工行卡一张，请捡到的同学联系",
+                        "publisherName":  "演示乙",
+                        "categoryId":  2
+                    }
+    },
+    {
+        "name":  "REJECT_IDENTITY_ONLY",
+        "payload":  {
+                        "occurredAt":  "2026-10-24 15:20:00",
+                        "contact":  "13800000009",
+                        "title":  "张三个人物品",
+                        "location":  "3号楼201",
+                        "type":  "LOST",
+                        "description":  "张三个人联系电话13800000009学号2023123456宿舍3号楼201，丢了东西",
+                        "publisherName":  "张三",
+                        "categoryId":  2
+                    }
+    },
+    {
+        "name":  "REJECT_NO_FEATURES",
+        "payload":  {
+                        "occurredAt":  "2026-10-24 15:20:00",
+                        "contact":  "13800000002",
+                        "title":  "寻物",
+                        "location":  "校内",
+                        "type":  "LOST",
+                        "description":  "找东西",
+                        "publisherName":  "演示乙",
+                        "categoryId":  2
+                    }
+    }
+]

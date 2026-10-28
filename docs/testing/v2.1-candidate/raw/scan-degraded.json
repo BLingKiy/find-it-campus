@@ -1,0 +1,1 @@
+{"code":0,"message":"降级重扫完成","data":{"scanned":2,"rescored":1,"degraded":0,"skipped":1,"expired":-1,"limited":false,"elapsedMs":2569,"trigger":"http-degraded","scope":"DEGRADED","skipReason":null,"counters":{"llmCalls":1,"llmSuccess":1,"degraded":0,"skippedUnchanged":1,"pairsWritten":1,"enqueueRejected":0,"lockMisses":0,"degradedByReason":{}}},"requestId":"dccf5ff6e0254320"}
