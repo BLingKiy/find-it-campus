@@ -1,4 +1,7 @@
-// v2 · F3-R 项 5：P2-3 日志注入实测（HTTP 打到真实日志文件，不是单测）。
+// v2 · F3-R 组5（任务项 5）：P2-3 日志注入实测（HTTP 打到真实日志文件，不是单测）。
+//
+// 用途：证明攻击者可控的输入（查询参数 / 路径参数 / 请求体 / 学号）落在日志里时，
+//       LogSafe 不会让它变出一整行伪造日志 —— 这是 P2-3 修复的日志级复验。
 //
 // 七条注入通路，每条用一个**互不相同的假时间戳**（…51~57 秒）做归属，
 // 跑完只需在日志增量里数「以该假时间戳开头的行」—— 出现即说明真的多出一整行。
@@ -16,10 +19,14 @@
 //   ② 日志文件按 JVM 默认字符集（本机 GBK）写出，Node 侧要 TextDecoder('gbk') 才能读到中文原文，
 //      关键字检索只用 ASCII（FORGED/假时间戳），避免中文匹配失败造成假阴性。
 //
+// 前置：后端 18080 已起，且 stdout 落盘到 FINDIT_SERVER_LOG（默认 qa/reports/server.log，
+//       启动命令见 docs/testing/v2/F3R-how-to-rerun.md §3）；库为 seed 初始态。
 // 运行：node qa/f3r/log-injection.mjs
-// 前置：后端 18080 已起，且 stdout 落盘到 FINDIT_SERVER_LOG（默认 qa/reports/server.log）
-// 输出：qa/reports/f3r-log-injection.txt
-// 退出码：0 = 所有通路都无伪造整行。
+// 期望输出：逐条通路列出「判据 A 命中的伪造行数」与 LogSafe 替换痕迹，末行
+//           「## 结论：PASS（N 条通路均无伪造整行，LogSafe 替换可见）」；
+//           落盘 qa/reports/f3r-log-injection.{txt,json}（本轮覆盖写），
+//           2026-10-28 那轮的冻结归档见 qa/reports/f3r-2026-10-28-log-injection.{txt,json}。
+// 退出码：0 = 所有通路都无伪造整行；1 = 多出伪造行（判据 A 命中）。
 
 import { readFile, writeFile, stat } from 'node:fs/promises';
 import { resolve, dirname } from 'node:path';

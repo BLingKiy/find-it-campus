@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-28T02:12:53.915Z",
+  "generatedAt": "2026-10-28T06:43:25.836Z",
   "params": {
     "topN": 5,
     "minScore": 0.3
@@ -33,7 +33,7 @@
         },
         "deterministic": true,
         "tookMs": 0,
-        "clientMs": 17,
+        "clientMs": 117.6,
         "matchId": 41,
         "engine": "LOCAL_KEYWORD",
         "inputType": "FOUND"
@@ -63,7 +63,7 @@
         },
         "deterministic": true,
         "tookMs": 0,
-        "clientMs": 15.1,
+        "clientMs": 16.3,
         "matchId": 43,
         "engine": "LOCAL_KEYWORD",
         "inputType": "FOUND"
@@ -93,7 +93,7 @@
         },
         "deterministic": true,
         "tookMs": 0,
-        "clientMs": 373.8,
+        "clientMs": 393.2,
         "matchId": 45,
         "engine": "LOCAL_KEYWORD",
         "inputType": "FOUND"
@@ -123,7 +123,7 @@
         },
         "deterministic": true,
         "tookMs": 0,
-        "clientMs": 394.3,
+        "clientMs": 13.9,
         "matchId": 47,
         "engine": "LOCAL_KEYWORD",
         "inputType": "FOUND"
@@ -153,7 +153,7 @@
         },
         "deterministic": true,
         "tookMs": 0,
-        "clientMs": 16.2,
+        "clientMs": 15.4,
         "matchId": 49,
         "engine": "LOCAL_KEYWORD",
         "inputType": "FOUND"
@@ -184,7 +184,7 @@
         },
         "deterministic": true,
         "tookMs": 0,
-        "clientMs": 15.9,
+        "clientMs": 16.4,
         "matchId": 51,
         "engine": "LOCAL_KEYWORD",
         "inputType": "FOUND"
@@ -218,7 +218,7 @@
         },
         "deterministic": true,
         "tookMs": 0,
-        "clientMs": 20.5,
+        "clientMs": 13.8,
         "matchId": 53,
         "engine": "LOCAL_KEYWORD",
         "inputType": "LOST"
@@ -243,7 +243,7 @@
         },
         "deterministic": true,
         "tookMs": 0,
-        "clientMs": 13,
+        "clientMs": 14.8,
         "matchId": 55,
         "engine": "LOCAL_KEYWORD",
         "inputType": "LOST"
@@ -275,7 +275,7 @@
         },
         "deterministic": true,
         "tookMs": 0,
-        "clientMs": 15.5,
+        "clientMs": 396.2,
         "matchId": 57,
         "engine": "LOCAL_KEYWORD",
         "inputType": null
@@ -313,8 +313,8 @@
           "top1": 10
         },
         "deterministic": true,
-        "tookMs": 1,
-        "clientMs": 20,
+        "tookMs": 0,
+        "clientMs": 30.8,
         "matchId": 59,
         "engine": "LOCAL_KEYWORD",
         "inputType": null
@@ -327,12 +327,12 @@
       "top3Hit": 10,
       "top3Rate": "100%",
       "deterministic": 10,
-      "avgMs": 0.1,
-      "p95Ms": 1,
-      "maxMs": 1,
-      "clientAvgMs": 90.1,
-      "clientP95Ms": 394.3,
-      "clientMaxMs": 394.3
+      "avgMs": 0,
+      "p95Ms": 0,
+      "maxMs": 0,
+      "clientAvgMs": 102.8,
+      "clientP95Ms": 396.2,
+      "clientMaxMs": 396.2
     }
   },
   "any": {
@@ -364,8 +364,8 @@
           "top1": 13
         },
         "deterministic": true,
-        "tookMs": 1,
-        "clientMs": 385.3,
+        "tookMs": 0,
+        "clientMs": 13.3,
         "matchId": 61,
         "engine": "LOCAL_KEYWORD",
         "inputType": null
@@ -398,7 +398,7 @@
         },
         "deterministic": true,
         "tookMs": 0,
-        "clientMs": 375.7,
+        "clientMs": 398.1,
         "matchId": 63,
         "engine": "LOCAL_KEYWORD",
         "inputType": null
@@ -431,7 +431,7 @@
         },
         "deterministic": true,
         "tookMs": 1,
-        "clientMs": 13.9,
+        "clientMs": 393.2,
         "matchId": 65,
         "engine": "LOCAL_KEYWORD",
         "inputType": null
@@ -464,7 +464,7 @@
         },
         "deterministic": true,
         "tookMs": 0,
-        "clientMs": 15.2,
+        "clientMs": 14,
         "matchId": 67,
         "engine": "LOCAL_KEYWORD",
         "inputType": null
@@ -495,7 +495,7 @@
         },
         "deterministic": true,
         "tookMs": 0,
-        "clientMs": 15.2,
+        "clientMs": 42.3,
         "matchId": 69,
         "engine": "LOCAL_KEYWORD",
         "inputType": null
@@ -530,7 +530,7 @@
         },
         "deterministic": true,
         "tookMs": 0,
-        "clientMs": 15,
+        "clientMs": 398.5,
         "matchId": 71,
         "engine": "LOCAL_KEYWORD",
         "inputType": null
@@ -563,8 +563,8 @@
           "top1": 7
         },
         "deterministic": true,
-        "tookMs": 1,
-        "clientMs": 14.1,
+        "tookMs": 0,
+        "clientMs": 384.2,
         "matchId": 73,
         "engine": "LOCAL_KEYWORD",
         "inputType": null
@@ -589,7 +589,7 @@
         },
         "deterministic": true,
         "tookMs": 0,
-        "clientMs": 14.4,
+        "clientMs": 11.7,
         "matchId": 75,
         "engine": "LOCAL_KEYWORD",
         "inputType": null
@@ -621,7 +621,7 @@
         },
         "deterministic": true,
         "tookMs": 0,
-        "clientMs": 13.6,
+        "clientMs": 396.2,
         "matchId": 77,
         "engine": "LOCAL_KEYWORD",
         "inputType": null
@@ -660,7 +660,7 @@
         },
         "deterministic": true,
         "tookMs": 0,
-        "clientMs": 13.3,
+        "clientMs": 400.8,
         "matchId": 79,
         "engine": "LOCAL_KEYWORD",
         "inputType": null
@@ -673,12 +673,12 @@
       "top3Hit": 10,
       "top3Rate": "100%",
       "deterministic": 10,
-      "avgMs": 0.3,
+      "avgMs": 0.1,
       "p95Ms": 1,
       "maxMs": 1,
-      "clientAvgMs": 87.6,
-      "clientP95Ms": 385.3,
-      "clientMaxMs": 385.3
+      "clientAvgMs": 245.2,
+      "clientP95Ms": 400.8,
+      "clientMaxMs": 400.8
     }
   },
   "baseline": [

@@ -1,4 +1,8 @@
-// v2 · F3-R 项 3：P1 八类绕过输入的 HTTP 出口实测（不是单测）。
+// v2 · F3-R 组3（任务项 3）：P1 八类绕过输入的 HTTP 出口实测（不是单测）。
+//
+// 用途：证明分隔符 / 全角 / 国际前缀这些绕过写法在 8 个 HTTP 出口（列表、详情、通知、匹配、
+//      pair、落库等）都读不到完整号码 —— 这是 P1 遮蔽修复的出口级复验。
+//      （本组不在「28 探针、缓存头、日志注入、状态竞态、过期扫描」五组之内，是同时入仓的第 6 个脚本。）
 //
 // 判定为什么要「双号分侧」：契约 §4.2/§4.12 规定本人视角的自有内容返回原文
 // （RecordDetailResponse 的 ownerView 分支、MyRecordListItemResponse.title=row.getTitle()）。
@@ -13,9 +17,13 @@
 //   rawKeep —— 用户原始写法（带分隔符的整串）原样出现在出口 ⇒ 号码仍可整段读出，同样按泄漏计。
 // 只用泛化正则 1[3-9]\d{9} 会漏判带分隔符的绕过。
 //
-// 运行：node qa/f3r/p1-bypass.mjs     前置：后端 18080 已起（每条用例自己 resetSeed）
-// 输出：qa/reports/f3r-p1-bypass.{txt,json}
-// 退出码：0 = 八类绕过的越权方向 0 命中且对照组不误伤。
+// 前置：后端 18080、MySQL 3306（qa/lib/db.mjs 的 MYSQL_* 环境变量），账本套夹具由脚本自己 resetSeed；
+//       库会被重置成 seed 初始态。
+// 运行：node qa/f3r/p1-bypass.mjs
+// 期望输出：八类绕过 × 8 出口组逐组 PASS/HIT 计数 + 对照组 5/5 + R-1 三例现状，末段「## 汇总」；
+//          落盘 qa/reports/f3r-p1-bypass.{txt,json}（本轮覆盖写），
+//          2026-10-28 那轮的冻结归档见 qa/reports/f3r-2026-10-28-p1-bypass.{txt,json}。
+// 退出码：0 = 八类绕过的越权方向 0 命中且对照组不误伤；1 = 有泄漏命中或对照组异常。
 
 import { mkdir, writeFile } from 'node:fs/promises';
 import { resolve, dirname } from 'node:path';
