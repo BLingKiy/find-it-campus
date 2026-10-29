@@ -6,6 +6,7 @@ import java.time.LocalDateTime;
 
 import com.findit.campus.pair.domain.ContactTier;
 import com.findit.campus.record.domain.Record;
+import com.findit.campus.record.domain.RecordReviewState;
 import com.findit.campus.record.domain.RecordStatus;
 import com.findit.campus.record.service.RecordVisibilityPolicy;
 
@@ -36,6 +37,11 @@ public final class PairAccessPolicy {
 
     private static boolean isRecordUsable(Record record, int retentionDays, LocalDateTime now) {
         if (record == null || record.getStatus() == null) {
+            return false;
+        }
+        // 发布闸门：任一端的展示文本没通过审核，这一对就不能被取号/确认/忽略。
+        // SQL 读路径已按 is_visible 过滤；这里是纯函数层的第二道，防未来新入口绕过 SQL。
+        if (record.getReviewState() != RecordReviewState.APPROVED) {
             return false;
         }
         if (record.getStatus() == RecordStatus.CLOSED) {

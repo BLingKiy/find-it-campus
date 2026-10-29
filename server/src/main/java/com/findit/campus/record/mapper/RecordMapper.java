@@ -79,7 +79,8 @@ public interface RecordMapper {
     /** 关闭：无前置条件；{@code completed_at} 显式置 NULL（PENDING 本来就是 NULL，兜住脏数据）。 */
     int close(@Param("id") long id, @Param("at") LocalDateTime at);
 
-    /** 逻辑删除；只写 {@code deleted_at}/{@code updated_at}，<b>不写 status</b>（契约 §4.6）。 */
+    /** 逻辑删除；只写 {@code deleted_at}/{@code updated_at}，<b>不写 status</b>（契约 §4.6）。
+     * 同时把 {@code raw_*} 置 NULL（人类 2026-10-29 拍板）：原文不随逻辑删除长期留存。 */
     int markDeleted(@Param("id") long id, @Param("deletedAt") LocalDateTime deletedAt);
 
     /**
@@ -189,4 +190,68 @@ public interface RecordMapper {
      * 定时器只负责把它们<b>数出来</b>写进日志，用于容量与合规统计。返回 0 也是正常结果。
      */
     long countExpiredCompleted(@Param("cutoff") LocalDateTime cutoff);
+
+    // ------------------------------------------------------------------
+    // 发布闸门（ZHYYKFX-85）：审核态写路径。全部带 review_state='PENDING' 条件。
+    // ------------------------------------------------------------------
+
+    /** 记录一次 AI 尝试次数；{@code WHERE review_state='PENDING'} 保证不覆盖已定稿结论。 */
+    int markReviewAttempt(@Param("id") long id, @Param("attempts") int attempts);
+
+    /** AI/人工通过：同一条 UPDATE 写展示文本、摘要与全部审计元数据，避免半套状态。 */
+    int approveReview(@Param("id") long id,
+                      @Param("title") String title,
+                      @Param("description") String description,
+                      @Param("location") String location,
+                      @Param("summary") String summary,
+                      @Param("reason") String reason,
+                      @Param("engine") String engine,
+                      @Param("model") String model,
+                      @Param("promptVersion") String promptVersion,
+                      @Param("latencyMs") Integer latencyMs,
+                      @Param("tokens") Integer tokens,
+                      @Param("attempts") int attempts,
+                      @Param("at") LocalDateTime at);
+
+    /** 拒绝：不改展示文本（它本来就不对外可见），只落结论、理由与审计元数据。 */
+    int rejectReview(@Param("id") long id,
+                     @Param("reason") String reason,
+                     @Param("engine") String engine,
+                     @Param("model") String model,
+                     @Param("promptVersion") String promptVersion,
+                     @Param("latencyMs") Integer latencyMs,
+                     @Param("tokens") Integer tokens,
+                     @Param("attempts") int attempts,
+                     @Param("manualRequired") boolean manualRequired,
+                     @Param("at") LocalDateTime at);
+
+    /** AI 连续失败：保持 PENDING，标「待本人确认」并置 {@code review_engine=RULE_ONLY}。绝不自动上架。 */
+    int markOwnerConfirmRequired(@Param("id") long id,
+                                 @Param("reason") String reason,
+                                 @Param("model") String model,
+                                 @Param("promptVersion") String promptVersion,
+                                 @Param("latencyMs") Integer latencyMs,
+                                 @Param("tokens") Integer tokens,
+                                 @Param("attempts") int attempts);
+
+    /** 兜底调度候选：待审 + 未转本人确认 + 已过冷却。{@code totalAttempts} = 首次 + 重试次数。 */
+    List<Record> selectReviewCandidates(@Param("createdBefore") LocalDateTime before,
+                                        @Param("totalAttempts") int totalAttempts,
+                                        @Param("limit") int limit);
+
+    /**
+     * 发布者本人确认发布：只改审核列，不碰展示文本（提交时已落规则脱敏后的展示文本）。
+     *
+     * <p>条件里同时要求 {@code review_state='PENDING'} 与 {@code review_manual_required=1}：
+     * AI 正常（未失败）的记录命中 0 行，从 SQL 层堵死"绕过 AI 审核"。
+     */
+    int confirmOwnerReview(@Param("id") long id,
+                           @Param("reason") String reason,
+                           @Param("at") LocalDateTime at);
+
+    /** 只读排障队列：待审且已标「待本人确认」。<b>不提供改判写方法。</b> */
+    List<Record> selectOwnerConfirmQueue(@Param("limit") int limit);
+
+    /** 运维面板计数：{@code manualOnly=1} 时只数待人工的。 */
+    long countReviewState(@Param("reviewState") String reviewState, @Param("manualOnly") int manualOnly);
 }

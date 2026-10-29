@@ -40,6 +40,22 @@ const confirmingClose = ref(false)
 const actionError = ref<unknown>(null)
 
 const isPending = computed(() => props.record.status === 'PENDING')
+/** 发布闸门：审核态是"能不能对外可见"的独立状态，不能并进三态标签 */
+const reviewBadge = computed(() => {
+  if (props.record.reviewState === 'REJECTED') {
+    return { text: '未通过审核', cls: 'badge--warning' }
+  }
+  if (props.record.reviewState === 'PENDING') {
+    return {
+      text: props.record.reviewManualRequired ? '待本人确认' : '审核中',
+      cls: 'badge--pending'
+    }
+  }
+  return { text: '已通过审核', cls: 'badge--completed' }
+})
+const showReviewHint = computed(
+  () => props.record.reviewState === 'REJECTED' || props.record.reviewManualRequired
+)
 const isAnalyzing = computed(
   () => props.record.pairState === 'PENDING' || props.record.pairState === 'SCORING'
 )
@@ -126,6 +142,9 @@ function handlePairChanged(result: PairActionResult): void {
     <header class="my-record__head">
       <RecordTypeTag :type="record.type" />
       <RecordStatusTag :status="record.status" />
+      <span class="badge" :class="reviewBadge.cls" data-testid="my-record-review-state">
+        {{ reviewBadge.text }}
+      </span>
       <span class="my-record__mine">我的启事</span>
       <span class="my-record__id">#{{ record.id }}</span>
     </header>
@@ -143,6 +162,25 @@ function handlePairChanged(result: PairActionResult): void {
 
     <p class="my-record__meta">
       {{ record.categoryName ?? '未分类' }} · {{ record.location }} · 发生 {{ record.occurredAt }}
+    </p>
+    <p v-if="record.summary && record.summary !== record.title" class="my-record__meta">
+      摘要：{{ record.summary }}
+    </p>
+    <p
+      v-if="showReviewHint"
+      class="alert alert--warning my-record__degraded"
+      role="status"
+      data-testid="my-record-review-hint"
+    >
+      <span class="alert__title">
+        {{ record.reviewState === 'REJECTED' ? '未通过审核' : '待本人确认' }}
+      </span>
+      <span class="alert__text">
+        {{
+          record.reviewReason ||
+          'AI 审核暂不可用：可在详情页「确认发布」先用脱敏文本上架（不会补审），或等待审核恢复。'
+        }}
+      </span>
     </p>
 
     <div class="my-record__match" data-testid="my-record-match">

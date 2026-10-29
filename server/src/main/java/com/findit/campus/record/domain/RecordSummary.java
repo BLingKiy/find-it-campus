@@ -25,6 +25,7 @@ public class RecordSummary {
     private String location;
     private LocalDateTime occurredAt;
     private Long publisherId;
+    private String summary;
     private LocalDateTime createdAt;
 
     public Long getId() {
@@ -107,6 +108,14 @@ public class RecordSummary {
 
     public void setOccurredAt(LocalDateTime occurredAt) {
         this.occurredAt = occurredAt;
+    }
+
+    public String getSummary() {
+        return summary;
+    }
+
+    public void setSummary(String summary) {
+        this.summary = summary;
     }
 
     public LocalDateTime getCreatedAt() {

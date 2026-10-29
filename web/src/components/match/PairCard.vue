@@ -253,6 +253,10 @@ async function saveNote(): Promise<void> {
       <span class="pair-card__id">#{{ card.pairId }}</span>
     </header>
 
+    <p v-if="card.scoreReason" class="hint pair-card__score-reason" data-testid="pair-score-reason">
+      判定依据：{{ card.scoreReason }}
+    </p>
+
     <div class="pair-card__counterpart">
       <div class="pair-card__counterpart-head">
         <RecordTypeTag :type="card.counterpart.type" />

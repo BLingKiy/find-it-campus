@@ -44,6 +44,70 @@ class RecordMapperSqlTest {
                 "旧条件会放行过期 COMPLETED：它不召回、详情 404，重算只是浪费 LLM 并产生死链通知");
     }
 
+    @Test
+    @DisplayName("发布闸门：公共列表 / 候选池 / 兜底扫描都通过 is_visible 过滤")
+    void publicSurfacesRequireVisibility() throws Exception {
+        assertTrue(normalized(fragment("listJoins")).contains("r.is_visible = 1"),
+                "公共列表必须只出已审核记录");
+        assertTrue(normalized(fragment("matchablePredicate")).contains("r.is_visible = 1"),
+                "候选池与 /api/match 回表必须只出已审核记录");
+        assertTrue(normalized(statement("selectPairScanTargets")).contains("r.is_visible = 1"),
+                "未审核记录不得进入打分扫描");
+    }
+
+    private static String fragment(String id) throws Exception {
+        String xml = mapperXml();
+        int start = xml.indexOf("<sql id=\"" + id + "\"");
+        assertTrue(start > 0, "找不到 SQL 片段 " + id);
+        int end = xml.indexOf("</sql>", start);
+        assertTrue(end > start, id + " 片段未闭合");
+        return xml.substring(start, end);
+    }
+
+    @Test
+    @DisplayName("审核写路径必须带 review_state='PENDING'，否则并发会覆盖已定稿结论")
+    void reviewWritesAreConditional() throws Exception {
+        for (String id : new String[]{"markReviewAttempt", "approveReview", "rejectReview",
+                "markOwnerConfirmRequired", "confirmOwnerReview"}) {
+            String sql = normalized(statement(id));
+            assertTrue(sql.contains("review_state = 'pending'"),
+                    id + " 缺少 review_state='PENDING' 条件");
+        }
+    }
+
+    @Test
+    @DisplayName("本人确认必须同时要求 review_manual_required=1：AI 正常时不能绕过审核")
+    void ownerConfirmRequiresOwnerConfirmRequiredFlag() throws Exception {
+        String sql = normalized(statement("confirmOwnerReview"));
+
+        assertTrue(sql.contains("review_manual_required = 1"),
+                "少了这个条件，任何 PENDING 记录都能被本人直接上架，闸门形同虚设");
+        assertTrue(sql.contains("review_engine = 'rule_only'"),
+                "本人确认的记录必须留可筛标记：它没有经过 AI 审核");
+    }
+
+    @Test
+    @DisplayName("ops 人工改判写语句必须彻底不存在（只保留只读队列查询）")
+    void noManualDecisionWritesRemain() throws Exception {
+        String xml = normalized(mapperXml());
+
+        assertFalse(xml.contains("markreviewapprovedmanually"), "人工放行写方法必须删除");
+        assertFalse(xml.contains("markreviewrejectedmanually"), "人工驳回写方法必须删除");
+        assertFalse(xml.contains("manual_approve"), "审计动作 MANUAL_APPROVE 不应再被写入");
+        assertFalse(xml.contains("manual_reject"), "审计动作 MANUAL_REJECT 不应再被写入");
+        assertTrue(xml.contains("selectownerconfirmqueue"), "只读排障队列应保留");
+    }
+
+    @Test
+    @DisplayName("删除记录时 SQL 必须把 raw_* 置 NULL（人类 2026-10-29 拍板）")
+    void deletePurgesRawColumns() throws Exception {
+        String sql = normalized(statement("markDeleted"));
+
+        assertTrue(sql.contains("raw_title = null"), "raw_title 必须清空");
+        assertTrue(sql.contains("raw_description = null"), "raw_description 必须清空");
+        assertTrue(sql.contains("raw_location = null"), "raw_location 必须清空");
+    }
+
     private static String statement(String id) throws Exception {
         String xml = mapperXml();
         int start = xml.indexOf("<" + tagOf(xml, id) + " id=\"" + id + "\"");

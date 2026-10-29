@@ -42,6 +42,27 @@ class PairFactsCardsSqlTest {
         assertTrue(sql.contains("f.status &lt;&gt; 'CLOSED'"), "对端记录 CLOSED 不得出卡");
         assertTrue(sql.contains("l.completed_at &gt; #{cutoff}"), "本人 COMPLETED 到期不得出卡");
         assertTrue(sql.contains("f.completed_at &gt; #{cutoff}"), "对端 COMPLETED 到期不得出卡");
+        assertTrue(sql.contains("l.is_visible = 1"), "本人记录未过审不得出卡");
+        assertTrue(sql.contains("f.is_visible = 1"), "对端记录未过审不得出卡");
+    }
+
+    @Test
+    @DisplayName("发布闸门：每一条事实查询都带 is_visible（新增查询漏写会在构建期红）")
+    void everyFactsSelectRequiresVisibility() throws Exception {
+        String xml = mapperXml();
+        int cursor = 0;
+        int checked = 0;
+        while ((cursor = xml.indexOf("<select id=\"", cursor)) > 0) {
+            int end = xml.indexOf("</select>", cursor);
+            assertTrue(end > cursor, "select 未闭合");
+            String statement = xml.substring(cursor, end);
+            assertTrue(statement.contains("is_visible = 1"),
+                    "事实查询缺少 is_visible："
+                            + statement.substring(0, Math.min(80, statement.length())));
+            checked++;
+            cursor = end;
+        }
+        assertEquals(5, checked, "PairFactsMapper 的 5 条事实查询都应被检查");
     }
 
     @Test

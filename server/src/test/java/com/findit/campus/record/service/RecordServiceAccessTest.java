@@ -1,6 +1,7 @@
 package com.findit.campus.record.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -21,6 +22,7 @@ import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.springframework.context.ApplicationEventPublisher;
 
 import com.findit.campus.auth.domain.SessionUser;
@@ -28,7 +30,9 @@ import com.findit.campus.category.service.CategoryService;
 import com.findit.campus.common.api.ErrorCode;
 import com.findit.campus.common.error.BizException;
 import com.findit.campus.pair.config.PairPolicyProperties;
+import com.findit.campus.pair.event.PairScoringRequested;
 import com.findit.campus.record.domain.Record;
+import com.findit.campus.record.domain.RecordReviewState;
 import com.findit.campus.record.domain.RecordStatus;
 import com.findit.campus.record.domain.RecordType;
 import com.findit.campus.record.mapper.RecordMapper;
@@ -36,6 +40,9 @@ import com.findit.campus.record.web.dto.RecordCreateRequest;
 import com.findit.campus.record.web.dto.RecordDetailResponse;
 import com.findit.campus.record.web.dto.StatusUpdateRequest;
 import com.findit.campus.record.web.dto.StatusUpdateResponse;
+import com.findit.campus.review.config.ReviewProperties;
+import com.findit.campus.review.event.RecordSubmittedForReview;
+import com.findit.campus.review.service.ReviewPersistence;
 import com.findit.campus.support.PairCardFixtures;
 
 /**
@@ -56,6 +63,7 @@ class RecordServiceAccessTest {
     private CategoryService categoryService;
     private PairFactsPort pairFactsPort;
     private ApplicationEventPublisher eventPublisher;
+    private ReviewPersistence reviewPersistence;
     private RecordService recordService;
 
     @BeforeEach
@@ -64,8 +72,10 @@ class RecordServiceAccessTest {
         categoryService = mock(CategoryService.class);
         pairFactsPort = mock(PairFactsPort.class);
         eventPublisher = mock(ApplicationEventPublisher.class);
+        reviewPersistence = mock(ReviewPersistence.class);
         recordService = new RecordService(recordMapper, categoryService, pairFactsPort,
-                new PairPolicyProperties(), eventPublisher);
+                new PairPolicyProperties(), eventPublisher, new ReviewProperties(),
+                reviewPersistence);
     }
 
     @Test
@@ -136,6 +146,98 @@ class RecordServiceAccessTest {
 
         assertEquals(ErrorCode.FORBIDDEN, ex.errorCode());
         verify(recordMapper, never()).markDeleted(anyLong(), any());
+        verify(reviewPersistence, never()).auditRawPurge(anyLong(), anyLong(), any());
+    }
+
+    @Test
+    @DisplayName("删除：markDeleted 成功后必须写 RAW_PURGE 审计（原文清除留痕）")
+    void deletePurgesRawTextAndAudits() {
+        Record pending = record(RecordStatus.PENDING, OWNER, null);
+        pending.setRawTitle("黑色钱包 13800000001 张三");
+        pending.setRawDescription("第三教学楼 201");
+        pending.setRawLocation("第三教学楼 201");
+        when(recordMapper.selectById(RECORD_ID)).thenReturn(pending);
+        when(recordMapper.markDeleted(eq(RECORD_ID), any())).thenReturn(1);
+
+        recordService.delete(RECORD_ID, OWNER);
+
+        verify(recordMapper).markDeleted(eq(RECORD_ID), any());
+        verify(reviewPersistence).auditRawPurge(eq(RECORD_ID), eq(OWNER), any());
+    }
+
+    @Test
+    @DisplayName("AI 正常（未失败）→ 本人确认返回 409，SQL 条件更新零调用，不能绕过 AI 审核")
+    void ownerConfirmUnavailableWhileAiIsHealthy() {
+        Record pending = record(RecordStatus.PENDING, OWNER, null);
+        pending.setReviewState(RecordReviewState.PENDING);
+        pending.setReviewManualRequired(false);
+        when(recordMapper.selectById(RECORD_ID)).thenReturn(pending);
+
+        BizException ex = assertThrows(BizException.class,
+                () -> recordService.confirmPublish(RECORD_ID, OWNER));
+
+        assertEquals(ErrorCode.RECORD_OPERATION_NOT_ALLOWED, ex.errorCode());
+        assertEquals(409, ex.errorCode().httpStatus().value());
+        assertTrue(ex.getMessage().contains("无需本人确认"));
+        assertTrue(ex.publicMessage().contains("无需本人确认"), "对外文案必须明确，不能只回通用「状态不可执行」");
+        verify(reviewPersistence, never()).ownerConfirm(anyLong(), anyLong(), any());
+    }
+
+    @Test
+    @DisplayName("AI 失败后本人确认 → 上架（APPROVED）、入口关闭、审计由 ReviewPersistence 记 OWNER_CONFIRM")
+    void ownerCanConfirmAfterAiFailure() {
+        Record pending = record(RecordStatus.PENDING, OWNER, null);
+        pending.setReviewState(RecordReviewState.PENDING);
+        pending.setReviewManualRequired(true);
+        pending.setReviewEngine("RULE_ONLY");
+        pending.setReviewReason("AI 审核连续失败，等待本人确认");
+        pending.setRawTitle("黑色钱包 13800000001 张三");
+        Record approved = record(RecordStatus.PENDING, OWNER, null);
+        approved.setReviewState(RecordReviewState.APPROVED);
+        approved.setReviewManualRequired(false);
+        approved.setReviewEngine("RULE_ONLY");
+        when(recordMapper.selectById(RECORD_ID)).thenReturn(pending, approved);
+        when(reviewPersistence.ownerConfirm(eq(RECORD_ID), eq(OWNER), any())).thenReturn(true);
+        when(pairFactsPort.cardsOf(any(), any(), any(), any())).thenReturn(Map.of());
+
+        RecordDetailResponse response = recordService.confirmPublish(RECORD_ID, OWNER);
+
+        assertEquals("APPROVED", response.getReviewState());
+        assertEquals(Boolean.FALSE, response.getOwnerConfirmAvailable());
+        assertEquals("RULE_ONLY", response.getReviewEngine(), "未经 AI 审核的标记必须保留");
+        verify(reviewPersistence).ownerConfirm(eq(RECORD_ID), eq(OWNER), any());
+    }
+
+    @Test
+    @DisplayName("他人不能代确认：未过审内容对他人 404，且 ownerConfirm 零调用")
+    void otherUserCannotConfirmOwnerPublish() {
+        Record pending = record(RecordStatus.PENDING, OWNER, null);
+        pending.setReviewState(RecordReviewState.PENDING);
+        pending.setReviewManualRequired(true);
+        when(recordMapper.selectById(RECORD_ID)).thenReturn(pending);
+
+        BizException ex = assertThrows(BizException.class,
+                () -> recordService.confirmPublish(RECORD_ID, OTHER));
+
+        assertEquals(ErrorCode.RECORD_NOT_FOUND, ex.errorCode());
+        assertEquals(404, ex.errorCode().httpStatus().value(), "与不存在同码，不泄露审核中");
+        verify(reviewPersistence, never()).ownerConfirm(anyLong(), anyLong(), any());
+    }
+
+    @Test
+    @DisplayName("mode=off（reviewState=APPROVED）→ 确认发布 409，v2.0 行为不受影响")
+    void offModeRecordHasNoOwnerConfirmEntry() {
+        Record approved = record(RecordStatus.PENDING, OWNER, null);
+        approved.setReviewState(RecordReviewState.APPROVED);
+        approved.setReviewManualRequired(false);
+        approved.setReviewEngine("OFF");
+        when(recordMapper.selectById(RECORD_ID)).thenReturn(approved);
+
+        BizException ex = assertThrows(BizException.class,
+                () -> recordService.confirmPublish(RECORD_ID, OWNER));
+
+        assertEquals(ErrorCode.RECORD_OPERATION_NOT_ALLOWED, ex.errorCode());
+        verify(reviewPersistence, never()).ownerConfirm(anyLong(), anyLong(), any());
     }
 
     @Test
@@ -344,6 +446,44 @@ class RecordServiceAccessTest {
         verify(recordMapper).insert(any(Record.class));
     }
 
+    @Test
+    @DisplayName("默认 ai 发布：落 raw/match/占位展示文本、review=PENDING、发审核事件且不触发打分")
+    void createInAiModeWritesThreeChannelsAndPending() {
+        when(recordMapper.insert(any(Record.class))).thenAnswer(invocation -> {
+            Record record = invocation.getArgument(0);
+            record.setId(88L);
+            return 1;
+        });
+        Record persisted = record(RecordStatus.PENDING, OWNER, null);
+        persisted.setId(88L);
+        persisted.setReviewState(RecordReviewState.PENDING);
+        persisted.setReviewManualRequired(false);
+        when(recordMapper.selectById(88L)).thenReturn(persisted);
+
+        RecordCreateRequest request = new RecordCreateRequest();
+        request.setType("LOST");
+        request.setTitle("黑色钱包 13800000009 张三");
+        request.setDescription("在第三教学楼 201 丢的，姓名张三");
+        request.setLocation("第三教学楼 201");
+        request.setOccurredAt("2026-10-20 15:00:00");
+        request.setContact("13800000009");
+
+        RecordDetailResponse response = recordService.create(request,
+                new SessionUser(OWNER, "demo01", "演示甲"));
+
+        ArgumentCaptor<Record> inserted = ArgumentCaptor.forClass(Record.class);
+        verify(recordMapper).insert(inserted.capture());
+        Record row = inserted.getValue();
+        assertEquals(RecordReviewState.PENDING, row.getReviewState());
+        assertTrue(row.getRawTitle().contains("13800000009"), "raw_* 必须保留原文");
+        assertFalse(row.getMatchTitle().contains("13800000009"), "match_text 必须剥离身份类");
+        assertEquals(row.getMatchTitle(), row.getTitle(), "审核前展示文本是已剥身份的占位版本");
+        assertNull(row.getSummary());
+        assertEquals("PENDING", response.getReviewState());
+        verify(eventPublisher).publishEvent(any(RecordSubmittedForReview.class));
+        verify(eventPublisher, never()).publishEvent(any(PairScoringRequested.class));
+    }
+
     private static StatusUpdateRequest statusRequest(String status) {
         StatusUpdateRequest request = new StatusUpdateRequest();
         request.setStatus(status);
@@ -376,6 +516,8 @@ class RecordServiceAccessTest {
         record.setContact("13812345678");
         record.setPublisherName("李同学");
         record.setPairState("READY");
+        // 发布闸门默认 off/APPROVED：v2.0 的可见性用例不受审核态影响
+        record.setReviewState(RecordReviewState.APPROVED);
         return record;
     }
 }

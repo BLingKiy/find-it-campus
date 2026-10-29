@@ -29,6 +29,8 @@ public class RecordListItemResponse {
     private Long categoryId;
     private String categoryName;
     private String location;
+    /** 展示摘要（类别+关键特征+模糊地点，≤40 字）；历史/未启用闸门的行回退为 null。 */
+    private String summary;
 
     @JsonFormat(pattern = JacksonConfig.DATE_TIME_PATTERN)
     private LocalDateTime occurredAt;
@@ -59,6 +61,9 @@ public class RecordListItemResponse {
         response.categoryId = summary.getCategoryId();
         response.categoryName = summary.getCategoryName();
         response.location = mine ? summary.getLocation() : MaskingPolicy.maskLocation(summary.getLocation());
+        response.summary = summary.getSummary() == null
+                ? null
+                : (mine ? summary.getSummary() : MaskingPolicy.maskDescription(summary.getSummary()));
         response.occurredAt = summary.getOccurredAt();
         response.createdAt = summary.getCreatedAt();
         response.isMine = mine;
@@ -91,6 +96,10 @@ public class RecordListItemResponse {
 
     public String getLocation() {
         return location;
+    }
+
+    public String getSummary() {
+        return summary;
     }
 
     public LocalDateTime getOccurredAt() {

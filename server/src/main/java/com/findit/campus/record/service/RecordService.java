@@ -18,6 +18,7 @@ import com.findit.campus.common.error.BizException;
 import com.findit.campus.pair.config.PairPolicyProperties;
 import com.findit.campus.pair.event.PairScoringRequested;
 import com.findit.campus.record.domain.Record;
+import com.findit.campus.record.domain.RecordReviewState;
 import com.findit.campus.record.domain.RecordSortField;
 import com.findit.campus.record.domain.RecordStatus;
 import com.findit.campus.record.domain.RecordType;
@@ -32,6 +33,10 @@ import com.findit.campus.record.web.dto.RecordListItemResponse;
 import com.findit.campus.record.web.dto.RecordQuery;
 import com.findit.campus.record.web.dto.StatusUpdateRequest;
 import com.findit.campus.record.web.dto.StatusUpdateResponse;
+import com.findit.campus.review.config.ReviewProperties;
+import com.findit.campus.review.event.RecordSubmittedForReview;
+import com.findit.campus.review.postprocess.IdentityScrubber;
+import com.findit.campus.review.service.ReviewPersistence;
 
 /**
  * 记录上下文的业务规则与事务边界（契约 §4）。
@@ -64,17 +69,23 @@ public class RecordService {
     private final PairFactsPort pairFactsPort;
     private final PairPolicyProperties pairPolicy;
     private final ApplicationEventPublisher eventPublisher;
+    private final ReviewProperties reviewProperties;
+    private final ReviewPersistence reviewPersistence;
 
     public RecordService(RecordMapper recordMapper,
                          CategoryService categoryService,
                          PairFactsPort pairFactsPort,
                          PairPolicyProperties pairPolicy,
-                         ApplicationEventPublisher eventPublisher) {
+                         ApplicationEventPublisher eventPublisher,
+                         ReviewProperties reviewProperties,
+                         ReviewPersistence reviewPersistence) {
         this.recordMapper = recordMapper;
         this.categoryService = categoryService;
         this.pairFactsPort = pairFactsPort;
         this.pairPolicy = pairPolicy;
         this.eventPublisher = eventPublisher;
+        this.reviewProperties = reviewProperties;
+        this.reviewPersistence = reviewPersistence;
     }
 
     /**
@@ -136,6 +147,10 @@ public class RecordService {
             throw BizException.of(ErrorCode.RECORD_NOT_FOUND);
         }
         if (access == DetailAccess.OWNER_PLAINTEXT) {
+            // 本人详情是唯一能读到 raw_* 的出口：读一次记一条审计（失败只告警，不阻断本人查看）
+            if (viewerId != null && record.getRawTitle() != null) {
+                reviewPersistence.auditRawView(id, viewerId, RequestContext.requestId());
+            }
             // 三个数/卡片共用同一个 cutoff：否则"详情说 1 条、卡片说 0 条"会出现在保留期边界上
             return RecordDetailResponse.ownerView(record,
                     pairFactsPort.countValidMatched(id, cutoff),
@@ -153,20 +168,25 @@ public class RecordService {
         Record record = new Record();
         record.setType(RecordType.valueOf(request.getType()));
         record.setStatus(RecordStatus.PENDING);
-        record.setTitle(request.getTitle());
-        record.setDescription(request.getDescription());
         record.setCategoryId(request.getCategoryId());
-        record.setLocation(request.getLocation());
         record.setOccurredAt(request.occurredAtAsDateTime());
         record.setContact(request.getContact());
         record.setPublisherName(request.getPublisherName() == null
                 ? publisher.displayName()
                 : request.getPublisherName());
         record.setPublisherId(publisher.id());
+        applySubmittedText(record, request);
 
         recordMapper.insert(record);
-        log.info("新增记录 id={} type={} publisherId={}", record.getId(), record.getType(), publisher.id());
-        publishPairScoring(record.getId(), "publish");
+        log.info("新增记录 id={} type={} publisherId={} reviewMode={} reviewState={}",
+                record.getId(), record.getType(), publisher.id(), reviewProperties.getMode(),
+                record.getReviewState());
+        if (reviewProperties.aiEnabled()) {
+            // 闸门模式：不触发打分，等审核通过后由 ReviewGateService 发事件
+            publishReview(record.getId(), "publish");
+        } else {
+            publishPairScoring(record.getId(), "publish");
+        }
         // 契约 §4.3：发布成功响应 pairs=[]（刚建的记录不可能已有到达阈值的 pair）
         return RecordDetailResponse.ownerView(requireRecord(record.getId()), 0, 0, List.of());
     }
@@ -193,22 +213,27 @@ public class RecordService {
         Record record = new Record();
         record.setId(id);
         record.setType(RecordType.valueOf(request.getType()));
-        record.setTitle(request.getTitle());
-        record.setDescription(request.getDescription());
         record.setCategoryId(request.getCategoryId());
-        record.setLocation(request.getLocation());
         record.setOccurredAt(request.occurredAtAsDateTime());
         record.setContact(request.getContact());
-        record.setPublisherName(request.getPublisherName());
+        record.setPublisherName(request.getPublisherName() == null
+                ? existing.getPublisherName()
+                : request.getPublisherName());
+        applySubmittedText(record, request);
 
         if (recordMapper.updateContent(record) == 0) {
             // 上面的 PENDING 检查是快照；PATCH 可能在本事务读取之后、UPDATE 之前提交了终态。
             // 条件更新（WHERE status='PENDING'）保证终态不被改写，这里只负责把 0 行翻译成正确错误码。
             throw updateContentConflict(id);
         }
-        log.info("修改记录 id={} publisherId={}", id, viewerId);
-        // 契约 §4.4：提交后触发该记录相关 pair 重算；不清空已有 pair 的 status/授权/附言/confirmed_at
-        publishPairScoring(id, "update");
+        log.info("修改记录 id={} publisherId={} reviewState={}", id, viewerId, record.getReviewState());
+        if (reviewProperties.aiEnabled()) {
+            // 内容变了就重新审：旧审核结论不能复用（否则改完即上架，闸门形同虚设）
+            publishReview(id, "update");
+        } else {
+            // 契约 §4.4：提交后触发该记录相关 pair 重算；不清空已有 pair 的 status/授权/附言/confirmed_at
+            publishPairScoring(id, "update");
+        }
         LocalDateTime cutoff = pairPolicy.completedCutoff(now);
         // 契约 §4.4：响应与详情同构（pairs 可能是重算前的旧分数，pairState=PENDING 表示分析中）
         return RecordDetailResponse.ownerView(requireRecord(id),
@@ -289,7 +314,48 @@ public class RecordService {
         if (recordMapper.markDeleted(id, now) == 0) {
             throw BizException.of(ErrorCode.RECORD_NOT_FOUND);
         }
-        log.info("逻辑删除记录 id={} publisherId={}", id, viewerId);
+        // 人类 2026-10-29 拍板：删除时清空 raw_*（SQL 内完成），审计留一条「已清除」。
+        // 审计失败会回滚整个删除事务：宁可删除失败，也不留下"原文已清但查无记录"的缺口。
+        reviewPersistence.auditRawPurge(id, viewerId, RequestContext.requestId());
+        log.info("逻辑删除记录 id={} publisherId={} rawPurged=true", id, viewerId);
+    }
+
+    /**
+     * 发布者本人确认发布：<b>仅</b>在 AI 重试耗尽、记录停在
+     * {@code PENDING + review_manual_required=1 + review_engine=RULE_ONLY} 时可用。
+     *
+     * <p>安全边界（人类 2026-10-29 拍板）：
+     * <ul>
+     *   <li>只有本人能确认；他人一律按不可见/403 拒绝，不提供代确认；</li>
+     *   <li>AI 正常或已出结论的记录返回 409「当前无需本人确认」，不能借这条路径绕过 AI；</li>
+     *   <li>确认后照常入池并触发配对打分，不特殊对待；审计记 {@code OWNER_CONFIRM} +
+     *       {@code engine=RULE_ONLY}，后台可筛出「未经 AI 审核」。</li>
+     * </ul>
+     */
+    @Transactional
+    public RecordDetailResponse confirmPublish(long id, Long viewerId) {
+        Record existing = requireRecord(id);
+        LocalDateTime now = LocalDateTime.now();
+        if (!RecordVisibilityPolicy.isOwner(existing, viewerId)) {
+            // 未过审内容对他人本就 404（不泄露存在性）；这里复用同一套判定，避免确认接口变成探针
+            throw writeAccessDenied(existing, viewerId, now);
+        }
+        if (existing.getStatus() != RecordStatus.PENDING) {
+            throw BizException.withPublicMessage(ErrorCode.RECORD_OPERATION_NOT_ALLOWED,
+                    "只有进行中的启事可以确认发布");
+        }
+        if (existing.getReviewState() != RecordReviewState.PENDING
+                || !Boolean.TRUE.equals(existing.getReviewManualRequired())) {
+            // 对外文案必须明确：这不是"状态冲突"，而是"AI 正常时没有本人确认入口"
+            throw BizException.withPublicMessage(ErrorCode.RECORD_OPERATION_NOT_ALLOWED,
+                    "当前无需本人确认：AI 审核可用时必须等待审核结论，不能绕过审核发布");
+        }
+        if (!reviewPersistence.ownerConfirm(id, viewerId, RequestContext.requestId())) {
+            throw BizException.withPublicMessage(ErrorCode.RECORD_OPERATION_NOT_ALLOWED,
+                    "审核状态已变化，请刷新后重试");
+        }
+        log.info("本人确认发布 id={} publisherId={} reviewEngine=RULE_ONLY", id, viewerId);
+        return detail(id, viewerId);
     }
 
     /**
@@ -324,6 +390,78 @@ public class RecordService {
      */
     private void publishPairScoring(long recordId, String trigger) {
         eventPublisher.publishEvent(new PairScoringRequested(recordId, trigger, RequestContext.requestId()));
+    }
+
+    /**
+     * 提交文本的三通道落位（发布与编辑共用，避免两条路径各写一份规则）。
+     *
+     * <p>{@code mode=ai}：
+     * <ul>
+     *   <li>{@code raw_*} = 原文（只给本人看，读取走审计）；</li>
+     *   <li>{@code match_*} = 仅剥离身份类（地点/时间/特征保留，供出分与 contentHash）；</li>
+     *   <li>{@code title/description/location} = 初始展示文本（先按同一份身份剥离，
+     *       审核通过后由 LLM 输出覆盖）。有闸门时它对外不可见，但即使某处谓词漏了，
+     *       漏出去的也是已剥离身份的版本 —— 纵深防御，不是主防线。</li>
+     * </ul>
+     *
+     * <p>{@code mode=off}：三份通道都退回原文，{@code review_state=APPROVED}，
+     * 行为与 v2.0 一致；{@code raw_*}/{@code match_*} 写 NULL，读取侧回退到展示文本。
+     */
+    private void applySubmittedText(Record record, RecordCreateRequest request) {
+        boolean ai = reviewProperties.aiEnabled();
+        String rawTitle = request.getTitle();
+        String rawDescription = request.getDescription();
+        String rawLocation = request.getLocation();
+        String publisherName = record.getPublisherName();
+
+        if (ai) {
+            String matchTitle = IdentityScrubber.scrub(rawTitle, publisherName);
+            String matchDescription = IdentityScrubber.scrub(rawDescription, publisherName);
+            String matchLocation = IdentityScrubber.scrub(rawLocation, publisherName);
+            record.setRawTitle(rawTitle);
+            record.setRawDescription(rawDescription);
+            record.setRawLocation(rawLocation);
+            record.setMatchTitle(matchTitle);
+            record.setMatchDescription(matchDescription);
+            record.setMatchLocation(matchLocation);
+            record.setTitle(matchTitle);
+            record.setDescription(matchDescription);
+            record.setLocation(matchLocation);
+            record.setSummary(null);
+            record.setReviewState(RecordReviewState.PENDING);
+            record.setReviewedAt(null);
+            record.setReviewReason(null);
+            record.setReviewEngine(null);
+            record.setReviewModel(null);
+            record.setReviewPromptVersion(null);
+            record.setReviewLatencyMs(null);
+            record.setReviewTokens(null);
+        } else {
+            record.setRawTitle(null);
+            record.setRawDescription(null);
+            record.setRawLocation(null);
+            record.setMatchTitle(null);
+            record.setMatchDescription(null);
+            record.setMatchLocation(null);
+            record.setTitle(rawTitle);
+            record.setDescription(rawDescription);
+            record.setLocation(rawLocation);
+            record.setSummary(null);
+            record.setReviewState(RecordReviewState.APPROVED);
+            record.setReviewedAt(LocalDateTime.now());
+            record.setReviewReason(null);
+            record.setReviewEngine("OFF");
+            record.setReviewModel(null);
+            record.setReviewPromptVersion(null);
+            record.setReviewLatencyMs(null);
+            record.setReviewTokens(null);
+        }
+        record.setReviewAttempts(0);
+        record.setReviewManualRequired(false);
+    }
+
+    private void publishReview(long recordId, String trigger) {
+        eventPublisher.publishEvent(new RecordSubmittedForReview(recordId, trigger, RequestContext.requestId()));
     }
 
     /**

@@ -4,9 +4,9 @@
 // C2：身份维度落到页面上 —— 非本人看到的是服务端遮蔽后的字段（contact 为 null），
 // 联系方式位渲染「登录后可查看」占位并给登录引导（带 redirect 回本页）；
 // 本人多一组管理入口（编辑 / 关闭）。真正的越权拦截仍在服务端。
-import { computed, onBeforeMount, watch } from 'vue'
+import { computed, onBeforeMount, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { getRecord, patchStatus } from '@/api/records'
+import { confirmPublish, getRecord, patchStatus } from '@/api/records'
 import { BizError } from '@/api/http'
 import RecordStatusTag from '@/components/record/RecordStatusTag.vue'
 import RecordTypeTag from '@/components/record/RecordTypeTag.vue'
@@ -67,6 +67,24 @@ function goLogin(): void {
 const { error: statusError, loading: statusLoading, run: runPatchStatus } = useRequest(patchStatus, {
   immediate: false
 })
+
+/**
+ * 发布闸门兜底：只在 AI 审核失败时出现。
+ * 入口是否渲染以服务端 `ownerConfirmAvailable` 为准 —— 不在前端自行组合 reviewState/manualRequired，
+ * 避免 AI 正常时因前端判断偏差露出绕过路径。
+ */
+const { error: confirmError, loading: confirmLoading, run: runConfirmPublish } = useRequest(
+  confirmPublish,
+  { immediate: false }
+)
+const justOwnerConfirmed = ref(false)
+
+async function confirmOwnerPublish(): Promise<void> {
+  const result = await runConfirmPublish(recordId.value)
+  if (!result) return
+  justOwnerConfirmed.value = true
+  void run(recordId.value)
+}
 
 /**
  * 详情页只保留「标记完成」这一个流转按钮：
@@ -195,14 +213,79 @@ function reload(): void {
       </p>
 
       <p v-if="justCreated" class="alert alert--success record-detail__created" role="status">
-        <span class="alert__title">发布成功</span>
-        <span class="alert__text">这条启事已经出现在列表里了。</span>
+        <span class="alert__title">
+          {{ record.reviewState === 'PENDING' ? '已提交，待审核' : '发布成功' }}
+        </span>
+        <span class="alert__text">
+          {{
+            record.reviewState === 'PENDING'
+              ? '审核通过后才会出现在公共列表与匹配结果中；可在「我的启事」查看审核进度。'
+              : '这条启事已经出现在列表里了。'
+          }}
+        </span>
       </p>
 
       <p v-else-if="justUpdated" class="alert alert--success record-detail__created" role="status">
-        <span class="alert__title">修改已保存</span>
-        <span class="alert__text">详情已刷新为最新内容。</span>
+        <span class="alert__title">
+          {{ record.reviewState === 'PENDING' ? '修改已保存，重新审核中' : '修改已保存' }}
+        </span>
+        <span class="alert__text">
+          {{
+            record.reviewState === 'PENDING'
+              ? '内容变更后需重新审核；通过前不会对外可见。'
+              : '详情已刷新为最新内容。'
+          }}
+        </span>
       </p>
+
+      <p
+        v-if="record.isMine && record.reviewState && record.reviewState !== 'APPROVED'"
+        class="alert alert--warning"
+        role="status"
+        data-testid="detail-review-state"
+      >
+        <span class="alert__title">
+          {{ record.reviewState === 'REJECTED' ? '未通过审核' : (record.reviewManualRequired ? '待本人确认' : '审核中') }}
+        </span>
+        <span class="alert__text">
+          {{
+            record.reviewManualRequired
+              ? 'AI 审核暂不可用。可以先用系统脱敏后的文本发布，发布后不会补审；也可以等待审核恢复。'
+              : (record.reviewReason || '审核通过前，这条启事不会出现在公共列表、匹配或配对中。')
+          }}
+        </span>
+        <!-- AI 正常时服务端 ownerConfirmAvailable=false，这一整块不渲染；后端同样返回 409 -->
+        <button
+          v-if="record.ownerConfirmAvailable"
+          type="button"
+          class="btn btn--sm btn--primary alert__action"
+          :disabled="confirmLoading"
+          data-testid="detail-owner-confirm"
+          @click="confirmOwnerPublish"
+        >
+          <span v-if="confirmLoading" class="btn__spinner" aria-hidden="true"></span>
+          确认发布
+        </button>
+      </p>
+
+      <p
+        v-if="justOwnerConfirmed"
+        class="alert alert--success"
+        role="status"
+        data-testid="detail-owner-confirmed"
+      >
+        <span class="alert__title">已确认发布</span>
+        <span class="alert__text">
+          本条已按规则脱敏后的文本上架，并开始匹配；该记录标记为「未经 AI 审核」，不会补审。
+        </span>
+      </p>
+
+      <ErrorBanner
+        v-if="confirmError"
+        :error="confirmError"
+        title="确认发布失败"
+        data-testid="detail-owner-confirm-error"
+      />
 
       <article class="panel record-detail__card">
         <div class="record-detail__tags">
@@ -273,6 +356,18 @@ function reload(): void {
             登录后可参与匹配、管理自己的启事；联系方式在配对确认后可见。
           </p>
         </div>
+
+        <!-- 原文仅本人可见（raw_*）；展示文本才是任何对外出口使用的那一份。 -->
+        <details
+          v-if="record.isMine && record.rawTitle && (record.rawTitle !== record.title || record.rawDescription !== record.description || record.rawLocation !== record.location)"
+          class="record-detail__raw"
+          data-testid="detail-raw"
+        >
+          <summary>查看原始内容（仅本人可见，读取会记录审计）</summary>
+          <p><strong>标题：</strong>{{ record.rawTitle }}</p>
+          <p><strong>地点：</strong>{{ record.rawLocation }}</p>
+          <p><strong>描述：</strong>{{ record.rawDescription }}</p>
+        </details>
 
         <!-- 状态操作只属于本人：非本人 allowedStatuses 恒为空，不能落到「已归档」的假说明上 -->
         <footer v-if="record.isMine" class="record-detail__actions">

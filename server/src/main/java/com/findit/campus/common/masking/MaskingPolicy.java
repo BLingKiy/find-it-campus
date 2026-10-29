@@ -56,6 +56,10 @@ public final class MaskingPolicy {
     /** 带 QQ 关键词的 5–9 位号；裸数字不命中（学号/卡号/房间号不掩码）。 */
     private static final Pattern QQ_RE = Pattern.compile("(?i)(QQ|扣扣|企鹅)\\s*[:：号]?\\s*(?<!\\d)\\d{5,9}(?!\\d)");
 
+    /** 邮箱：v2.0 出口层漏掉的一类身份信息，v2.1 与手机号同口径处理。 */
+    private static final Pattern EMAIL_RE = Pattern.compile(
+            "(?i)(?<![A-Za-z0-9._%+-])[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}(?![A-Za-z0-9.-])");
+
     /** 「昨天 14:30」类相对时间；绝对时间（2026-10-21 13:30）刻意不命中（N3 反例）。 */
     private static final Pattern RELATIVE_TIME_RE = Pattern.compile(
             "(?:昨天|前天|今天|昨日|当日|上周[一二三四五六日天]?|本周[一二三四五六日天]?|周[一二三四五六日天])"
@@ -64,6 +68,7 @@ public final class MaskingPolicy {
     private static final String ID_REPLACEMENT = "[证件号已隐藏]";
     private static final String MOBILE_REPLACEMENT = "[手机号已隐藏]";
     private static final String QQ_REPLACEMENT = "$1[QQ号已隐藏]";
+    private static final String EMAIL_REPLACEMENT = "[邮箱已隐藏]";
     private static final String TIME_REPLACEMENT = "[时间已隐藏]";
 
     private MaskingPolicy() {
@@ -131,6 +136,26 @@ public final class MaskingPolicy {
      * @param raw 原始文本；{@code null} 原样返回（可选字段）
      */
     public static String maskDescription(String raw) {
+        String s = maskIdentity(raw);
+        if (s == null) {
+            return null;
+        }
+        return RELATIVE_TIME_RE.matcher(s).replaceAll(Matcher.quoteReplacement(TIME_REPLACEMENT));
+    }
+
+    /**
+     * 只遮蔽<b>身份类</b>信息：证件号、手机号（含分隔符/国际前缀）、QQ、邮箱。
+     *
+     * <p>与 {@link #maskDescription} 的差别：<b>不动相对时间</b>。发布闸门的比对通道
+     * （{@code match_*}）要求「时间、地点细节、物品特征完整保留」，否则配对区分度被削；
+     * 但姓名/手机号/学号/邮箱/QQ 这些能指认到人的信息必须一条不剩。
+     *
+     * <p>展示通道仍走 {@link #maskDescription}（多一条相对时间规则），两个通道共用同一份
+     * 号码检测实现，不会出现「展示拦住了、比对没拦住」。
+     *
+     * @param raw 原文；{@code null} 原样返回
+     */
+    public static String maskIdentity(String raw) {
         if (raw == null) {
             return null;
         }
@@ -139,7 +164,7 @@ public final class MaskingPolicy {
         s = ID_RE.matcher(s).replaceAll(Matcher.quoteReplacement(ID_REPLACEMENT));
         s = MOBILE_RE.matcher(s).replaceAll(Matcher.quoteReplacement(MOBILE_REPLACEMENT));
         s = QQ_RE.matcher(s).replaceAll(QQ_REPLACEMENT);
-        s = RELATIVE_TIME_RE.matcher(s).replaceAll(Matcher.quoteReplacement(TIME_REPLACEMENT));
+        s = EMAIL_RE.matcher(s).replaceAll(Matcher.quoteReplacement(EMAIL_REPLACEMENT));
         return s;
     }
 

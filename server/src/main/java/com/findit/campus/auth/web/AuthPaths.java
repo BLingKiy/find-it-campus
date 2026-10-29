@@ -37,6 +37,9 @@ public final class AuthPaths {
      * <p>{@code /api/auth/logout} 必须在里面：契约 §4.10 要求未登录调用也 200（幂等）。
      * {@code /api/ops/pair-scan} 也在里面：它是运维接口，用 {@code X-Ops-Token} 认证，不是用户会话；
      * 放进白名单是为了让它<b>不</b>被会话门禁改写行为（D1 落地时按 token 判 401/404）。
+     *
+     * <p>{@code /api/ops/reviews} 已移除：人类 2026-10-29 拍板去掉人工改判入口，只剩只读 GET，
+     * 不再有需要放行的匿名写。
      */
     static final Set<String> PUBLIC_WRITE_PATHS = Set.of(
             "/api/auth/login",
@@ -67,7 +70,9 @@ public final class AuthPaths {
             return false;
         }
         if (!"GET".equalsIgnoreCase(method) && !"HEAD".equalsIgnoreCase(method)) {
-            return !PUBLIC_WRITE_PATHS.contains(path);
+            // 运维写入口（/api/ops/pair-scan）按前缀放行，认证仍由 X-Ops-Token 完成；
+            // 这里只让"会话门禁"不介入，不是让它匿名可写。
+            return PUBLIC_WRITE_PATHS.stream().noneMatch(prefix -> matches(path, prefix));
         }
         return LOGIN_REQUIRED_READS.stream().anyMatch(prefix -> matches(path, prefix));
     }
