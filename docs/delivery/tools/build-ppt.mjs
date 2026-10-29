@@ -231,15 +231,16 @@ function pngSize(file) {
   return { width: buf.readUInt32BE(16), height: buf.readUInt32BE(20) };
 }
 
-/** 图片按比例塞进框（contain），不拉伸。 */
-function fitImage(slide, rel, box) {
+/** 图片按比例塞进框（contain），不拉伸。alt 传图说时写进 cNvPr 的 descr（无障碍读屏与审阅都能看懂）。 */
+function fitImage(slide, rel, box, alt) {
   const file = resolveAsset(rel);
   const { width, height } = pngSize(file);
   const scale = Math.min(box.w / width, box.h / height);
   const w = width * scale;
   const h = height * scale;
   const pos = { x: box.x + (box.w - w) / 2, y: box.y + (box.h - h) / 2, w, h };
-  slide.addImage({ path: file, ...pos });
+  // 不传 alt 时退回文件名：默认行为会把本机绝对路径写进 descr，既泄露路径也对读者无意义
+  slide.addImage({ path: file, ...pos, altText: alt || path.basename(rel) });
   return pos;
 }
 
@@ -473,7 +474,7 @@ deck.forEach((s, idx) => {
     const boxH = 4.45;
     const imgW = Math.min(7.2, boxH * (px.width / px.height));
     const box = { x: M + CW - imgW, y: BODY_TOP, w: imgW, h: boxH };
-    const placed = fitImage(slide, s.images[0], box);
+    const placed = fitImage(slide, s.images[0], box, s.imageTitle);
     if (s.imageTitle) {
       slide.addText(s.imageTitle, {
         x: box.x, y: Math.min(placed.y + placed.h + 0.08, 6.2), w: imgW, h: 0.3,
@@ -494,7 +495,7 @@ deck.forEach((s, idx) => {
     s.images.forEach((rel, i) => {
       const x = M + i * (w + gap);
       slide.addShape('rect', { x, y: BODY_TOP, w, h: boxH, fill: { color: 'FFFFFF' }, line: { color: LINE } });
-      fitImage(slide, rel, { x, y: BODY_TOP, w, h: boxH });
+      fitImage(slide, rel, { x, y: BODY_TOP, w, h: boxH }, s.imageTitle);
       if (s.captions[i]) {
         slide.addText(s.captions[i], {
           x, y: BODY_TOP + boxH + 0.08, w, h: 0.28, fontSize: 9.5, bold: true, color: '33415C', fontFace: FONT, align: 'center',
