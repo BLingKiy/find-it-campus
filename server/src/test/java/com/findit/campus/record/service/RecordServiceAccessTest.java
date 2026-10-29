@@ -198,7 +198,7 @@ class RecordServiceAccessTest {
         approved.setReviewEngine("RULE_ONLY");
         when(recordMapper.selectById(RECORD_ID)).thenReturn(pending, approved);
         when(reviewPersistence.ownerConfirm(eq(RECORD_ID), eq(OWNER), any())).thenReturn(true);
-        when(pairFactsPort.cardsOf(any(), any(), any(), any())).thenReturn(Map.of());
+        when(pairFactsPort.cardsOf(any(), any())).thenReturn(Map.of());
 
         RecordDetailResponse response = recordService.confirmPublish(RECORD_ID, OWNER);
 
