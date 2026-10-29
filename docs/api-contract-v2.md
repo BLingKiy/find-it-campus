@@ -1,12 +1,12 @@
 # find-it-campus v2 · API 契约（A1 冻结稿）
 
 > 状态：**待门禁 0 冻结** · 版本 `v2.1`（2026-10-27 第二轮返工，按 vF 终态口径重写） · 日期 `2026-10-27`
-> 任务：ZHYYKFX-45（A1 架构与契约 v2）
+> 编制：成员 A（需求与架构）
 > 适用范围：v2 全部 REST 接口 + `web` 请求层。
 > 关系：v1 契约见 `docs/api-contract.md`；**本文是 v2 的唯一契约**。v1 的 8 个业务接口（另有 `GET /api/health`）在 v2 全部保留，其中 7 个的鉴权/可见性/校验有变更（见 §0.2）。v1 与本文冲突时，以本文为准。
 > 上游：`docs/design/v2-architecture.md`（数据模型、遮蔽算法、分档、LLM、三态/四态状态机）。本文只定义 HTTP 契约；实现细节回架构文档。
 > v2.1 变量：`status ∈ {PENDING, COMPLETED, CLOSED}`（`CLAIMED` 作废）；`pairStatus ∈ {NEW, CONTACTED, MATCHED, IGNORED}`；配置项 `contact_direct_threshold` / `contact_unlock_threshold` / `completed_retention_days` / `completed_visible_threshold`。
-> v2.1.1 补充（2026-10-28，ZHYYKFX-84）：上述阈值**按 pair 的 `engine` 取**——默认那套（语义引擎）+ `findit.pair.overrides.local` 覆盖；接口契约里的 `score ≥ contact_*_threshold` 语义不变，只是「阈值」随引擎不同。校准依据见 `docs/testing/v2/threshold-calibration.md`。
+> v2.1.1 补充（2026-10-28 校准）：上述阈值**按 pair 的 `engine` 取**——默认那套（语义引擎）+ `findit.pair.overrides.local` 覆盖；接口契约里的 `score ≥ contact_*_threshold` 语义不变，只是「阈值」随引擎不同。校准依据见 `docs/testing/v2/threshold-calibration.md`。
 
 ---
 
@@ -603,7 +603,7 @@ SELECT status, completed_at, updated_at FROM t_record WHERE id = ?;
 | `available` | boolean | 是否能看对方号码 |
 | `contact` | string/null | `available=true` 时为对方号码；否则 null |
 | `reason` | string/null | `NOT_PUBLIC` / `NOT_PROVIDED` / null |
-| `message` | string | 人类可读：`对方尚未公开` / `对方未填写联系方式` / `对方已公开联系方式` / `匹配度较高，可直接查看` |
+| `message` | string | 供人阅读：`对方尚未公开` / `对方未填写联系方式` / `对方已公开联系方式` / `匹配度较高，可直接查看` |
 | `unlockedAt` | string/null | 对方端授权时间；直看且未授权时为 null |
 | `note` | string/null | 对方端附言（已打码）；仅 `available=true` 且对方授权时返回 |
 

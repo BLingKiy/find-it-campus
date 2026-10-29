@@ -5,7 +5,7 @@
 > 表中「必填」指缺字段即 `10001`；「可空」指允许 `null`。字符串长度上限与 `db/schema.sql` 列长度一致。
 > **v2 的变化集中在三处**：写操作要登录、非所有者读要遮蔽、联系方式按分数分档。v1 的「九接口 / 无鉴权」口径已作废。
 >
-> **阈值口径补丁（2026-10-28，ZHYYKFX-84）：** 下文出现的 `score ≥ 0.90` / `0.75 ≤ score < 0.90` / `score < 0.75` / `notify_threshold = 0.75` 是 v2.0.0 的全局默认值。现行值是**按引擎两套**：默认（语义）`0.95/0.80`、`LOCAL_KEYWORD` 覆盖 `0.90/0.45`，通知阈值分别为 `0.90` / `0.90`（2026-10-28 同义/陷阱专项修正）；档位语义、错误码与审计口径不变。校准依据见 `docs/testing/v2/threshold-calibration.md`。
+> **阈值口径补丁（2026-10-28 校准）：** 下文出现的 `score ≥ 0.90` / `0.75 ≤ score < 0.90` / `score < 0.75` / `notify_threshold = 0.75` 是 v2.0.0 的全局默认值。现行值是**按引擎两套**：默认（语义）`0.95/0.80`、`LOCAL_KEYWORD` 覆盖 `0.90/0.45`，通知阈值分别为 `0.90` / `0.90`（2026-10-28 同义/陷阱专项修正）；档位语义、错误码与审计口径不变。校准依据见 `docs/testing/v2/threshold-calibration.md`。
 
 ## A.1 总览
 
@@ -355,7 +355,7 @@ Base path `/api`，无版本段；所有响应统一为 `{code, message, data, r
 | `recordId` | number | 跳详情用 |
 | `score` | number | `0–1`，两位小数 |
 | `scorePercent` | integer | `round(score × 100)`，后端算好，前端不二次加工 |
-| `reason` | string | 人类可读依据；**前端只展示不解析**（换实现后文案可能变化） |
+| `reason` | string | 供人阅读的依据；**前端只展示不解析**（换实现后文案可能变化） |
 | `type` / `status` / `title` / `categoryName` / `location` / `occurredAt` / `createdAt` | — | 由 `MatchService` 回表取得；标题/地点过遮蔽 |
 | `recordStatus` | string | **v2 新增**：`PENDING` / `COMPLETED`，让前端给保留期内的完成记录挂角标 |
 | `detailAccess` | string | **v2 新增**：`OPEN` / `RESTRICTED`。`COMPLETED` 恒为 `RESTRICTED`——命中不等于有详情权限，点进去仍按身份判定，可能 404（`MatchItemResponse.java:73`） |

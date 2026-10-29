@@ -156,7 +156,7 @@ export function request<T>(path: string, init?: {
 2. `AbortController` 超时；网络失败/超时抛 `BizError{code:-1,status:0}`，`message` 用固定中文"网络请求失败，请稍后再试"。
 3. 解包：`code===0 && 2xx` ⇒ resolve `data`；否则抛 `BizError`（携带 `code/message/fieldErrors/requestId`）。**页面层永远看不到 `ApiResponse` 外层**，也就永远不会忘了判 `code`。
 4. HTTP 与 code 的映射文案在 §9（api-contract.md）那张表里，前端错误展示按它分流，不在组件里 switch 数字——统一走 `describeError(err): string`（`src/api/http.ts` 导出）。
-5. 不自动重试任何接口（含幂等的 GET）：无缓存层、无写接口，重试只让演示时序更难解释。若人类要求 GET 失败静默重试 1 次，加在 `request` 内部一处（可逆）。
+5. 不自动重试任何接口（含幂等的 GET）：无缓存层、无写接口，重试只让演示时序更难解释。若组内要求 GET 失败静默重试 1 次，加在 `request` 内部一处（可逆）。
 
 ### 5.3 `useRequest`（把"请求时序"收在一个地方，防四类页面各写一套 loading）
 
@@ -227,7 +227,7 @@ export default defineConfig({
 |---|---|---|
 | `VITE_API_BASE_URL` | `/api` | 一般不改；若前端直连后端则设 `http://localhost:18080/api`，此时依赖后端 CORS（架构基线 §9.4） |
 
-- 前端**不读任何密钥**（外部模型 Key 只在后端）。若将来需要前端直连模型服务，那属于范围变更，须先报人类。
+- 前端**不读任何密钥**（外部模型 Key 只在后端）。若将来需要前端直连模型服务，那属于范围变更，须先组内确认。
 - 生产形态（若答辩需要打包演示）：`npm run build` 后把 `dist/` 交给 `server` 静态目录或由 Nginx 反代同源；本课程版**不实现**，README 写一句"演示用 dev server"。
   - **2026-10-26 更新**：此结论已被阶段 7（「Windows 可部署」范围追加）取代。现在有 Windows 单机部署包：`npm run build` 的 `dist/` 由包内 Nginx 在 8088 托管，`/api/` 反代到 127.0.0.1:18080，见 `docs/design/program-design.md` §3.6 与 `deploy/DEPLOY-WINDOWS.md`。本节保留原文作为 4.2 阶段的历史结论，不再作为当前事实。
 
