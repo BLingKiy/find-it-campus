@@ -1,0 +1,164 @@
+{
+  "label": "local",
+  "apiBase": "http://127.0.0.1:18088",
+  "runAt": "2026-10-28T18:14:05.966Z",
+  "config": "application.yml 默认值（DEEPSEEK 0.95/0.80/0.90/0.95；LOCAL 覆盖 0.90/0.45/0.90/0.90）",
+  "cases": [
+    {
+      "id": "S1-OO",
+      "kind": "OO",
+      "expect": "MATCH",
+      "lostId": 1,
+      "foundId": 2,
+      "pairState": "READY",
+      "lowConfidenceCount": 0,
+      "waitMs": 1138,
+      "card": {
+        "pairId": 1,
+        "score": 1,
+        "scorePercent": 100,
+        "engine": "LOCAL_KEYWORD",
+        "tier": "DIRECT",
+        "degraded": true,
+        "contactAvailable": true
+      },
+      "contact": {
+        "http": 200,
+        "code": 0,
+        "available": true,
+        "contactPresent": true,
+        "reason": null,
+        "message": "匹配度较高，可直接查看"
+      },
+      "closeHttp": [
+        200,
+        200
+      ],
+      "checks": {
+        "visible": true,
+        "tier": true,
+        "available": true
+      },
+      "passed": true
+    },
+    {
+      "id": "S2-OC",
+      "kind": "OC",
+      "expect": "MATCH",
+      "lostId": 3,
+      "foundId": 4,
+      "pairState": "READY",
+      "lowConfidenceCount": 0,
+      "waitMs": 468,
+      "card": {
+        "pairId": 2,
+        "score": 0.64,
+        "scorePercent": 64,
+        "engine": "LOCAL_KEYWORD",
+        "tier": "AUTHORIZABLE",
+        "degraded": true,
+        "contactAvailable": false
+      },
+      "contact": {
+        "http": 200,
+        "code": 0,
+        "available": false,
+        "contactPresent": false,
+        "reason": "NOT_PUBLIC",
+        "message": "对方尚未公开"
+      },
+      "closeHttp": [
+        200,
+        200
+      ],
+      "checks": {
+        "visible": true,
+        "tier": true,
+        "available": true
+      },
+      "passed": true
+    },
+    {
+      "id": "S1-OF",
+      "kind": "OF",
+      "expect": "MATCH",
+      "lostId": 5,
+      "foundId": 6,
+      "pairState": "READY",
+      "lowConfidenceCount": 1,
+      "waitMs": 438,
+      "card": null,
+      "contact": null,
+      "closeHttp": [
+        200,
+        200
+      ],
+      "checks": {
+        "visible": true,
+        "tier": true,
+        "available": true
+      },
+      "passed": true
+    },
+    {
+      "id": "T5",
+      "kind": "trap",
+      "expect": "NO_MATCH",
+      "lostId": 7,
+      "foundId": 8,
+      "pairState": "READY",
+      "lowConfidenceCount": 0,
+      "waitMs": 801,
+      "card": {
+        "pairId": 4,
+        "score": 0.85,
+        "scorePercent": 85,
+        "engine": "LOCAL_KEYWORD",
+        "tier": "AUTHORIZABLE",
+        "degraded": true,
+        "contactAvailable": false
+      },
+      "contact": {
+        "http": 200,
+        "code": 0,
+        "available": false,
+        "contactPresent": false,
+        "reason": "NOT_PUBLIC",
+        "message": "对方尚未公开"
+      },
+      "closeHttp": [
+        200,
+        200
+      ],
+      "checks": {
+        "visible": true,
+        "tier": true,
+        "available": true
+      },
+      "passed": true
+    },
+    {
+      "id": "T2",
+      "kind": "trap",
+      "expect": "NO_MATCH",
+      "lostId": 9,
+      "foundId": 10,
+      "pairState": "READY",
+      "lowConfidenceCount": 1,
+      "waitMs": 434,
+      "card": null,
+      "contact": null,
+      "closeHttp": [
+        200,
+        200
+      ],
+      "checks": {
+        "visible": true,
+        "tier": true,
+        "available": true
+      },
+      "passed": true
+    }
+  ],
+  "passed": true
+}

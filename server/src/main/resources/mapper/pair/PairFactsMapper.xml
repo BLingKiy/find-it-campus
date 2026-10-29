@@ -4,10 +4,22 @@
   t_pair_score 的只读事实查询（C1）。三条纪律：
   1. 只有 SELECT —— pair 的写路径属于 E1，C1 不改 pair 状态、不写审计。
   2. 保留期窗口由 #{cutoff} 传入，SQL 里不出现 30 这类魔数（配置只有 PairPolicyProperties 一份）。
+     v2.1 起阈值也同理：不写 0.75/0.90，按 pair 自己的 engine 在 #{threshold} / #{localThreshold}
+     之间二选一（见 score_at_or_above 片段）。
   3. 「有效」谓词三处一致：两端 deleted_at IS NULL、status <> 'CLOSED'、COMPLETED 端 completed_at > cutoff。
      三处写法一旦分叉，就会出现"详情说没配对、/my 说配了"的自相矛盾。
 -->
 <mapper namespace="com.findit.campus.pair.mapper.PairFactsMapper">
+
+    <!--
+      分数是否达到「该引擎的展示/可见门槛」。
+      LOCAL_KEYWORD 用 localThreshold，其余（DEEPSEEK 及未来引擎）用默认 threshold。
+      两套阈值来自 PairPolicyProperties.forEngine，SQL 只做选择，不做换算。
+    -->
+    <sql id="score_at_or_above">
+        ((p.engine = 'LOCAL_KEYWORD' AND p.score &gt;= #{localThreshold})
+         OR (p.engine &lt;&gt; 'LOCAL_KEYWORD' AND p.score &gt;= #{threshold}))
+    </sql>
 
     <select id="countValidMatched" resultType="int">
         SELECT COUNT(*)
@@ -37,7 +49,7 @@
           AND other.deleted_at IS NULL
           AND other.status &lt;&gt; 'CLOSED'
           AND (other.status = 'PENDING' OR other.completed_at &gt; #{cutoff})
-          AND p.score &gt;= #{threshold}
+          AND <include refid="score_at_or_above"/>
           AND p.status &lt;&gt; 'IGNORED'
     </select>
 
@@ -49,7 +61,7 @@
           AND other.deleted_at IS NULL
           AND other.status &lt;&gt; 'CLOSED'
           AND (other.status = 'PENDING' OR other.completed_at &gt; #{cutoff})
-          AND p.score &lt; #{threshold}
+          AND NOT <include refid="score_at_or_above"/>
     </select>
 
     <!--
@@ -59,8 +71,8 @@
     <select id="countByRecordIds" resultType="com.findit.campus.pair.domain.PairCountsRow">
         SELECT t.record_id AS record_id,
                COUNT(*) AS total,
-               SUM(CASE WHEN p.score &gt;= #{threshold} THEN 1 ELSE 0 END) AS related,
-               SUM(CASE WHEN p.score &lt; #{threshold} THEN 1 ELSE 0 END) AS low_confidence,
+               SUM(CASE WHEN <include refid="score_at_or_above"/> THEN 1 ELSE 0 END) AS related,
+               SUM(CASE WHEN NOT <include refid="score_at_or_above"/> THEN 1 ELSE 0 END) AS low_confidence,
                SUM(CASE WHEN p.status = 'MATCHED'
                          AND p.lost_confirmed_at IS NOT NULL
                          AND p.found_confirmed_at IS NOT NULL THEN 1 ELSE 0 END) AS matched
@@ -94,7 +106,7 @@
       1. 一条 SQL 覆盖整页，不按记录逐条查（禁止 N+1）。
       2. 「有效」谓词与 countByRecordIds 完全一致；两处一旦分叉，就会出现
          "卡片 1 张、relatedCount 说 2 张"这种自己跟自己打架的界面。
-      3. 低分不返回（score < threshold 只进 lowConfidenceCount）；IGNORED 照常返回 ——
+      3. 低分不返回（低于该引擎阈值只进 lowConfidenceCount）；IGNORED 照常返回 ——
          IGNORED 只描述这一对的进展，不隐藏卡片。
       4. 号码永远不出现在 SELECT 列里：只取 (other.contact IS NOT NULL AND other.contact <> '')
          这个布尔，Java 侧拿不到号码原文。
@@ -137,7 +149,7 @@
         JOIN t_record l ON l.id = p.lost_id
         JOIN t_record f ON f.id = p.found_id
         JOIN t_record other ON other.id = IF(p.lost_id = t.record_id, p.found_id, p.lost_id)
-        WHERE p.score &gt;= #{threshold}
+        WHERE <include refid="score_at_or_above"/>
           AND l.deleted_at IS NULL AND f.deleted_at IS NULL
           AND l.status &lt;&gt; 'CLOSED' AND f.status &lt;&gt; 'CLOSED'
           AND (l.status = 'PENDING' OR l.completed_at &gt; #{cutoff})

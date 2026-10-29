@@ -1,0 +1,90 @@
+{
+  "label": "deepseek",
+  "apiBase": "http://127.0.0.1:18089",
+  "runAt": "2026-10-28T18:14:53.753Z",
+  "config": "application.yml 默认值（DEEPSEEK 0.95/0.80/0.90/0.95；LOCAL 覆盖 0.90/0.45/0.90/0.90）",
+  "cases": [
+    {
+      "id": "S1-OC",
+      "kind": "OC",
+      "expect": "MATCH",
+      "lostId": 1,
+      "foundId": 2,
+      "pairState": "READY",
+      "lowConfidenceCount": 0,
+      "waitMs": 2230,
+      "card": {
+        "pairId": 1,
+        "score": 0.98,
+        "scorePercent": 98,
+        "engine": "DEEPSEEK",
+        "tier": "DIRECT",
+        "degraded": false,
+        "contactAvailable": true
+      },
+      "contact": {
+        "http": 200,
+        "code": 0,
+        "available": true,
+        "contactPresent": true,
+        "reason": null,
+        "message": "匹配度较高，可直接查看"
+      },
+      "closeHttp": [
+        200,
+        200
+      ],
+      "checks": {
+        "visible": true,
+        "tier": true,
+        "available": true
+      },
+      "passed": true
+    },
+    {
+      "id": "T1",
+      "kind": "trap",
+      "expect": "NO_MATCH",
+      "lostId": 3,
+      "foundId": 4,
+      "pairState": "READY",
+      "lowConfidenceCount": 1,
+      "waitMs": 1268,
+      "card": null,
+      "contact": null,
+      "closeHttp": [
+        200,
+        200
+      ],
+      "checks": {
+        "visible": true,
+        "tier": true,
+        "available": true
+      },
+      "passed": true
+    },
+    {
+      "id": "T6",
+      "kind": "trap",
+      "expect": "NO_MATCH",
+      "lostId": 5,
+      "foundId": 6,
+      "pairState": "READY",
+      "lowConfidenceCount": 1,
+      "waitMs": 1272,
+      "card": null,
+      "contact": null,
+      "closeHttp": [
+        200,
+        200
+      ],
+      "checks": {
+        "visible": true,
+        "tier": true,
+        "available": true
+      },
+      "passed": true
+    }
+  ],
+  "passed": true
+}

@@ -76,15 +76,8 @@ public class MyRecordService {
         List<Long> recordIds = rows.stream().map(MyRecordRow::getId).toList();
         // 同一个 cutoff 同时给计数与卡片：两处若各算一次 now，保留期边界上会出现"计数 1、卡片 0"
         LocalDateTime cutoff = pairPolicy.completedCutoff(LocalDateTime.now());
-        Map<Long, MyPairCounts> counts = pairFactsPort.countsOf(
-                recordIds,
-                pairPolicy.getContactUnlockThreshold(),
-                cutoff);
-        Map<Long, List<PairCardFacts>> cards = pairFactsPort.cardsOf(
-                recordIds,
-                pairPolicy.getContactUnlockThreshold(),
-                pairPolicy.getContactDirectThreshold(),
-                cutoff);
+        Map<Long, MyPairCounts> counts = pairFactsPort.countsOf(recordIds, cutoff);
+        Map<Long, List<PairCardFacts>> cards = pairFactsPort.cardsOf(recordIds, cutoff);
 
         List<MyRecordListItemResponse> items = rows.stream()
                 .map(row -> MyRecordListItemResponse.of(

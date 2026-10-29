@@ -29,13 +29,30 @@ class PairFactsCardsSqlTest {
     void cardsQueryKeepsOnlyUsablePairsAboveThreshold() throws Exception {
         String sql = cardsSelect();
 
-        assertTrue(sql.contains("p.score &gt;= #{threshold}"), "卡片下界必须由参数传入（不硬编码 0.75）");
+        assertTrue(sql.contains("<include refid=\"score_at_or_above\"/>"),
+                "卡片下界必须走共享片段（不硬编码 0.75，也不允许两处阈值分叉）");
+        String fragment = scoreFragment();
+        assertTrue(fragment.contains("p.engine = 'LOCAL_KEYWORD' AND p.score &gt;= #{localThreshold}"),
+                "本地引擎用 localThreshold");
+        assertTrue(fragment.contains("p.engine &lt;&gt; 'LOCAL_KEYWORD' AND p.score &gt;= #{threshold}"),
+                "其余引擎用默认 threshold");
         assertTrue(sql.contains("l.deleted_at IS NULL"), "本人记录已删除不得出卡");
         assertTrue(sql.contains("f.deleted_at IS NULL"), "对端记录已删除不得出卡");
         assertTrue(sql.contains("l.status &lt;&gt; 'CLOSED'"), "本人记录 CLOSED 不得出卡");
         assertTrue(sql.contains("f.status &lt;&gt; 'CLOSED'"), "对端记录 CLOSED 不得出卡");
         assertTrue(sql.contains("l.completed_at &gt; #{cutoff}"), "本人 COMPLETED 到期不得出卡");
         assertTrue(sql.contains("f.completed_at &gt; #{cutoff}"), "对端 COMPLETED 到期不得出卡");
+    }
+
+    @Test
+    @DisplayName("低分计数与卡片用的是同一个阈值片段：不会出现『卡片出了、计数还算低分』")
+    void lowConfidenceUsesSameFragment() throws Exception {
+        String xml = mapperXml();
+        int lowStart = xml.indexOf("<select id=\"countLowConfidence\"");
+        int lowEnd = xml.indexOf("</select>", lowStart);
+        String low = xml.substring(lowStart, lowEnd);
+        assertTrue(low.contains("NOT <include refid=\"score_at_or_above\"/>"),
+                "低分计数必须是同一片段的补集");
     }
 
     @Test
@@ -71,6 +88,15 @@ class PairFactsCardsSqlTest {
         assertTrue(start > 0, "找不到 selectCardsByRecordIds");
         int end = xml.indexOf("</select>", start);
         assertTrue(end > start, "selectCardsByRecordIds 未闭合");
+        return xml.substring(start, end);
+    }
+
+    private static String scoreFragment() throws Exception {
+        String xml = mapperXml();
+        int start = xml.indexOf("<sql id=\"score_at_or_above\">");
+        assertTrue(start > 0, "找不到 score_at_or_above 片段");
+        int end = xml.indexOf("</sql>", start);
+        assertTrue(end > start, "score_at_or_above 未闭合");
         return xml.substring(start, end);
     }
 

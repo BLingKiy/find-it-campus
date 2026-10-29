@@ -1,6 +1,8 @@
 <script setup lang="ts">
 // 详情页配对区（E2）：一条记录可同时拥有多对，逐条展示、各自操作、互不影响。
-// 卡片只从详情响应的 pairs[] 来；<0.75 的服务端不出卡片，只给 lowConfidenceCount。
+// 卡片只从详情响应的 pairs[] 来；低于服务端展示门槛的 pair 不出卡片，只给 lowConfidenceCount。
+// 门槛本身按引擎不同（语义 / 本地关键词各一套）且可配置，所以文案只说"未达展示门槛"，
+// 不写死某个百分比 —— 写死 75% 会在阈值调整后变成假话。
 import { computed, ref, watch } from 'vue'
 import PairCardView from '@/components/match/PairCard.vue'
 import type { PairActionResult, PairCard } from '@/types/api'
@@ -64,7 +66,7 @@ function handleChanged(result: PairActionResult): void {
       data-testid="pair-degraded-banner"
     >
       <span class="alert__title">已降级</span>
-      <span class="alert__text">智能匹配暂不可用，已用关键词匹配。分数仅供参考。</span>
+      <span class="alert__text">当前为关键词匹配，同义/近义描述可能匹配不到，也可能出现不相关的结果，结果显示仅供参考。</span>
     </p>
 
     <p v-else-if="analyzing" class="alert alert--info pair-panel__degraded" role="status">
@@ -86,7 +88,7 @@ function handleChanged(result: PairActionResult): void {
       暂时没有达到展示门槛的可能相关启事。新的寻物 / 招领发布后，匹配会自动重算。
     </p>
 
-    <!-- <0.75：只给条数，不渲染任何卡片、按钮或号码片段 -->
+    <!-- 低于展示门槛：只给条数，不渲染任何卡片、按钮或号码片段 -->
     <div
       v-if="lowConfidenceCount > 0"
       class="pair-panel__low"
@@ -94,7 +96,7 @@ function handleChanged(result: PairActionResult): void {
     >
       <p class="pair-panel__low-title">存在 {{ lowConfidenceCount }} 条可能相关</p>
       <p class="hint">
-        匹配度低于 75%，仅显示数量，不展示详情与联系方式。
+        匹配度未达到展示门槛，仅显示数量，不展示详情与联系方式。
       </p>
     </div>
 
