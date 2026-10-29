@@ -312,6 +312,8 @@ curl.exe -s -X POST http://127.0.0.1:8088/api/match `
 
 （上面是 PowerShell 写法：`\"` 是为了让 PowerShell 5.1 把双引号原样交给 `curl.exe`。若在 `cmd.exe` 里执行，把 `\"` 换成 `"` 即可。）
 
+> 这条命令**不带 `Origin` 请求头**，因此走不到浏览器那条 CORS 判定。2026-10-27 报障的「8088 页面上 POST 全部 403」就是这样漏过验收的：curl 全通，浏览器全挂。要按浏览器的方式复验，用 §9.1 的命令。
+
 纯 PowerShell（中文不会因控制台编码变成乱码）：
 
 ```powershell
@@ -435,7 +437,7 @@ MySQL    OK 127.0.0.1:3306 / MySQL 8.0.29             -     -
 
 ## 9 常见故障
 
-按顺序看第一列的现象，第二列是脚本或日志里的原文，第三列是处理。
+按顺序看第一列的现象，第二列是脚本或日志里的原文，第三列是处理。第 1–17 条的第二列是脚本输出的原文；第 18、19 条是浏览器里看到的现象，原文与完整排查步骤在 §9.1、§9.2。
 
 | # | 现象（原文） | 先看 | 处理 |
 |---|---|---|---|
@@ -450,12 +452,152 @@ MySQL    OK 127.0.0.1:3306 / MySQL 8.0.29             -     -
 | 9 | `data.db=DOWN`、HTTP 503、`code=10005` | `logs\backend-error.log` | 后端起来了但数据库探测失败：核对 `FINDIT_DB_URL`/账号/密码，确认 MySQL 服务在跑 |
 | 10 | `logs\nginx-error.log` 里 `bind() to 0.0.0.0:8088 failed (10013: ...)` | 端口与权限 | 8088 被占或端口段受限：先 `Get-NetTCPConnection -State Listen -LocalPort 8088`，再决定换端口 |
 | 11 | `502 Bad Gateway` | 后端是否在跑：`status.ps1`、`logs\backend-error.log` | 后端没起或崩了；`start.ps1` 会等到后端健康才启动 Nginx，502 多数是后端中途退出 |
-| 12 | `403 Forbidden` | `web\dist` 目录权限、Nginx 进程账号 | 解压时用了受限目录或权限被裁剪；把包放到当前用户可读写的目录重试 |
+| 12 | `403 Forbidden` | `web\dist` 目录权限、Nginx 进程账号 | 解压时用了受限目录或权限被裁剪；把包放到当前用户可读写的目录重试。**先分清是哪一个 403**：这里说的是打开页面/静态资源就 403、body 是 Nginx 的 HTML 错误页；如果页面能打开、只有 POST 报 403 且 body 是 `Invalid CORS request`，看第 18 条 |
 | 13 | `nginx: [emerg] ... unknown directive` / Nginx 起不来 | `logs\nginx-stderr.log` | `nginx\conf\nginx.conf` 被改坏或与 Nginx 版本不符；用包内原始文件覆盖 |
 | 14 | `config\deploy.env.ps1 仍是模板占位内容，请重新运行 install.ps1。` | `config\deploy.env.ps1` 是否含 `__` | 安装没跑完或文件被替换成模板；重跑 `install.ps1` |
 | 15 | 状态表 `8088 监听 CONFLICT` | 该行 PID | 8088 被非本包进程占用；`start.ps1` 不会抢，先停占用者 |
 | 16 | 停止后 `RESULT: PORT_NOT_RELEASED`（退出码 1） | 8088 / 18080 的占用 PID | 有进程没退干净；先确认是不是本包的残留（`status.ps1` 的 `CONFLICT` 行），必要时手工结束该 PID 后重跑 `stop.ps1` |
 | 17 | `无法加载文件 …\scripts\xxx.ps1，因为在此系统上禁止运行脚本。`（`UnauthorizedAccess` / `PSSecurityException`） | 有效执行策略：`Get-ExecutionPolicy` | 用了 `.\scripts\xxx.ps1` 直接调用，而有效值是 `Restricted`。改用 §2.1 的命令形式：`powershell -NoProfile -ExecutionPolicy Bypass -File scripts\xxx.ps1 …` |
+| 18 | 页面能打开，但登录、发布启事、编辑、`POST /api/match` 等**所有 POST** 都返回 **403**，body 只有一行 `Invalid CORS request` | §9.1；`logs\nginx-access.log` 里对应行是 `POST /api/… 403` | 反向代理把 `Host` 头改成了丢端口的形式，后端把同源请求判成跨源。按 §9.1 自查并改 `nginx.conf` 的 `$host` → `$http_host`，或升级到含该修复的包 |
+| 19 | 「我的启事」卡片显示「智能匹配暂不可用，已用关键词匹配」，`t_pair_score.engine` 一直是 `LOCAL_KEYWORD` | §9.2；`t_pair_score.degraded_reason` | 没配密钥时这是**预期行为**，不是故障；配了密钥仍降级，按 §9.2 的四步排查 |
+
+### 9.1 页面能打开，但所有 POST 返回 403 `Invalid CORS request`
+
+2026-10-27 报障、2026-10-28 复现确认的那个缺陷：`http://<host>:8088` 页面正常显示，但**写操作全线失败**——登录（`POST /api/auth/login`）、发布启事（`POST /api/records`）、编辑与改状态（`PUT` / `PATCH`）、`POST /api/match`。响应是 HTTP **403**，body 只有一行纯文本：
+
+```
+Invalid CORS request
+```
+
+它**没有** `code`/`message`/`requestId` 三个字段：这不是业务错误，是请求在进入业务代码之前就被拒了。GET（列表、详情、分类）不受影响，所以「页面能打开」和「操作全失败」可以同时成立。
+
+**根因**：`nginx\conf\nginx.conf` 把转发给后端的 `Host` 头改成了丢端口的形式。
+
+```nginx
+proxy_set_header   Host   $host;        # 坏：$host 不含端口
+```
+
+后端据此认为自己运行在 `http://127.0.0.1`（80 端口），而浏览器发的 `Origin` 是 `http://127.0.0.1:8088`，两者不相等 → Spring 判为跨源 → 查 `WebConfig` 的白名单，那里只有开发源 `http://localhost:5173`、`http://127.0.0.1:5173` → `403 Invalid CORS request`。
+
+**为什么之前的验收没抓到**：验收全用 curl 跑，而 curl 默认不带 `Origin` 头，永远进不到 CORS 判定这一步（§7.3 的命令同样如此）。
+
+**自查**
+
+1）看配置里的 Host 头用的是哪个变量：
+
+```powershell
+Select-String -Path nginx\conf\nginx.conf -Pattern 'proxy_set_header\s+Host'
+```
+
+有问题时输出这样一行（注意是 `$host`）：
+
+```
+nginx.conf:62:            proxy_set_header   Host              $host;
+```
+
+2）用浏览器同款 `Origin` 打一个**不需要登录**的 POST。登录接口本身也在 `/api/` 下、同样会被挡，正好拿它当探针：
+
+```powershell
+curl.exe -s -i -X POST http://127.0.0.1:8088/api/auth/login `
+  -H "Origin: http://127.0.0.1:8088" `
+  -H "Content-Type: application/json" `
+  --data-binary '{\"studentNo\":\"nobody\",\"password\":\"wrong\"}'
+```
+
+判据：首行 `HTTP/1.1 403`，body 是 `Invalid CORS request`。
+
+3）对照组：同一条命令去掉 `-H "Origin: ..."`，应得到 `HTTP/1.1 401` 与 `"code":10006`（凭据是编的，所以是「学号或密码不正确」）。**401 而不是 403**，说明这个 POST 已经进了业务层，被挡住的只有 CORS 判定。
+
+**改法**
+
+A. 手上只有当前包——改一个词再重启：
+
+```powershell
+# 1) $host → $http_host（保留端口）；写回时不留 BOM
+$p = 'nginx\conf\nginx.conf'
+$s = (Get-Content $p -Raw) -replace '(?m)^(\s*proxy_set_header\s+Host\s+)\$host;', '${1}$http_host;'
+[IO.File]::WriteAllText((Resolve-Path $p).Path, $s, (New-Object Text.UTF8Encoding($false)))
+
+# 2) 确认改到位（应输出 $http_host;）
+Select-String -Path $p -Pattern 'proxy_set_header\s+Host'
+
+# 3) 只校验配置语法，不启动
+nginx\nginx.exe -p nginx\ -c conf/nginx.conf -t
+
+# 4) 重启生效
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts\stop.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts\start.ps1
+```
+
+回到自查第 2 步复验：403 变成 401 `10006`（凭据填对就是 200），即为修复。
+
+第 1 步不要换成 `Set-Content -Encoding utf8`：PowerShell 5.1 会给文件加 3 字节 BOM（`EF BB BF`），配置文件开头就不再是 `#`，而是一个不可见字符。
+
+B. 换包：修复在 `ZHYYKFX-83`，**尚未合入 `main`，也没随任何已发布的包发出**。已发布的 `v2.0.0-windows`（`…-0ff400a.zip`）**受影响**，要么按 A 手工改，要么等含该修复的下一个部署包（版本号以实际发布为准）。升级按 §10.1，保留 `config\deploy.env.ps1`。
+
+**只改 Host 够不够**：够。经 8088 访问时，浏览器的 `Origin` 与转发后的 `Host` 一致，后端判为同源、不再走白名单。`WebConfig` 白名单放宽（同单另一处改动）兜的是「直连 18080」和将来挂域名/反代的场景，不影响 8088 的正常路径。
+
+**不要**改成 `Access-Control-Allow-Origin: *`：前端请求带 Cookie（`allowCredentials=true`），浏览器不接受通配符，只会把 403 换成一条「响应缺少有效的 CORS 头」的报错，故障从可解释变成不可解释。
+
+### 9.2 「智能匹配暂不可用，已用关键词匹配」：配对打分降级
+
+**现象**：「我的启事」卡片上出现「智能匹配暂不可用，已用关键词匹配。分数仅供参考。」，`t_pair_score.engine` 一直是 `LOCAL_KEYWORD`。
+
+先给结论：**不配 `DEEPSEEK_API_KEY` 时后端就用本地关键词分，这是设计好的降级，不是故障**（§8.5）。只有「配了密钥、重启了服务，还是降级」才需要往下查。
+
+**先分清两条线**——两个地方都有个叫 `engine` 的字段，含义不同，这是本例最容易踩错的地方：
+
+| 你看到的 | 决定它的变量 | 没配 / 配错的后果 |
+|---|---|---|
+| `t_pair_score.engine`（`DEEPSEEK` / `LOCAL_KEYWORD`）与 `degraded_reason` | `DEEPSEEK_API_KEY`，只影响**发布之后的异步配对打分** | 降级出分：pair、通知、分数都还在，只是分更粗（§8.5） |
+| `/api/match` 响应里的 `engine`（`LOCAL_KEYWORD`）与 HTTP 503 / `code=30002` | `FINDIT_MATCH_ENGINE`，只影响**前台「找相似」**那一次同步匹配 | 设成 `external` 却没填 `FINDIT_EMBED_BASE_URL` / `FINDIT_EMBED_API_KEY` → 匹配接口直接失败，**不降级** |
+
+`FINDIT_MATCH_ENGINE=external` 和 DeepSeek 是两条线：不配密钥不影响 `/api/match`；改 `FINDIT_MATCH_ENGINE` 也不会让配对打分用上模型。看到 `engine=LOCAL_KEYWORD` 就去改 `FINDIT_MATCH_ENGINE`，只会把本来能用的「找相似」改成 503。
+
+**自查**
+
+1）先看降级原因（库名、账号换成安装时 `install.ps1` 的取值）：
+
+```powershell
+mysql -h 127.0.0.1 -P 3306 -u root -p find_it_campus -e "SELECT degraded_reason, COUNT(*) AS n, MAX(updated_at) AS last_at FROM t_pair_score WHERE engine='LOCAL_KEYWORD' GROUP BY degraded_reason;"
+```
+
+2）按原因处置：
+
+| `degraded_reason` | 含义 | 处置 |
+|---|---|---|
+| `EMPTY_KEY` | 密钥为空或全是空白，**一次网络请求都没发**（`latency_ms` 与 token 列为 `NULL`） | 属预期行为，不必处理；要用真实模型见 §8.5 |
+| `UNAUTHORIZED` | 401/403：密钥无效、额度或权限不足，或值里混进了看不见的字符 | 先验密钥本身（第 3 步），再看是否被污染（第 4 步） |
+| `TIMEOUT` / `HTTP_ERROR` | 连不上、太慢，或返回 429/5xx | 查目标机出网、代理、供应商侧状态；`latency_ms` 给出卡了多久 |
+| `NON_JSON` / `SCORE_OUT_OF_RANGE` | 响应不是约定的 JSON，或分数不在 `[0,1]` | 端点被中间层改写了（网关、代理提示页）；确认 `findit.llm.base-url` 指向真正的 API |
+| `CIRCUIT_OPEN` | 前面连续 5 次失败触发熔断，冷却 5 分钟内不再发请求 | 本身会自愈；先按上面四条找到**第一次**失败的原因 |
+
+3）验证密钥本身（不消耗 token，也不打印明文）：
+
+```powershell
+$k = $env:DEEPSEEK_API_KEY
+if (-not $k) { 'DEEPSEEK_API_KEY 未设置（对应降级 EMPTY_KEY）' }
+else { 'len={0} head={1}' -f $k.Length, $k.Substring(0, [Math]::Min(3, $k.Length)) }
+curl.exe -s -o NUL -w "models=%{http_code}`n" --max-time 10 https://api.deepseek.com/v1/models -H "Authorization: Bearer $k"
+```
+
+`head` 应是 `sk-`；`models=200` 说明密钥与出网都通，`401` 说明密钥本身无效。最后那条打的是模型列表端点（`GET {base-url}/models`，OpenAI 兼容约定）；如果你的部署改过 `findit.llm.base-url`，把命令里的地址换成对应的 `{base-url}/models`，返回 404 就是地址填错了，不是密钥问题。本次交付实测的密钥长度是 35（`sk-` + 32 位），`len` 对不上就是值被污染了。
+
+4）确认后端拿到的是「干净的、且来自启动它的那个 shell」的值。后端**只在启动那一刻**读一次环境变量，之后怎么改都不认：
+
+- **密钥设在别的窗口**：`$env:XXX` 只对当前进程和它拉起的子进程有效。必须在跑 `start.ps1` 的那个窗口里设置——`start.ps1` 拉起 JVM，JVM 继承它的环境。
+- **用 `setx` 设的**：只对新开的进程生效，当前窗口看不到，已经在跑的后端也看不到。
+- **值里有 BOM / 引号 / 换行**：后端会对 `DEEPSEEK_API_KEY` 做 `.trim()`，能去掉首尾空白，但**去不掉 BOM（`EF BB BF`）和引号**，于是发出去的是 `Authorization: Bearer <BOM>sk-…`，供应商回 401 → 落成 `UNAUTHORIZED`。密钥存成 txt 再用 `cat` 或记事本读入时最容易中这一条。
+
+最稳的写法是放进 `config\deploy.env.ps1`（`start.ps1` 点源它之后才拉起 JVM，一定继承），在文件末尾加一行：
+
+```powershell
+$env:DEEPSEEK_API_KEY = (Get-Content 'C:\secrets\deepseek.txt' -Raw).Trim()
+```
+
+`Get-Content -Raw` 按 BOM 解码并去掉它，`.Trim()` 去掉尾部的换行——这两步就是防污染的地方。改完必须 `stop.ps1` 再 `start.ps1`。
+
+5）生效范围：新发布的启事一定会重新打分；**已有的降级行不会自己改写**，要等记录文本变化或每天 03:30 的兜底扫描（`findit.pair.score.scan-cron`）。急着复验就发布一条新启事，或在设了 `OPS_SCAN_TOKEN` 的部署上调 `POST /api/ops/pair-scan`（没设置时该路径返回 404）。页面的降级提示随下一次 `pair_state` 轮询或刷新消失。
 
 ## 10 升级、回滚与卸载
 
@@ -584,3 +726,5 @@ mysqldump -h 127.0.0.1 -P 3306 -u root -p --databases find_it_campus --single-tr
 | `engine=external` 的行为 | `install.ps1`、`MatchService` | 本期无外部实现，只验证了 `local` |
 | 升级/回滚/卸载/备份 | 脚本行为与目录结构 | 只验证了「停止 → 保留配置」这一半，未做整包替换演练 |
 | 组策略显式设置执行策略的机器（`MachinePolicy` / `UserPolicy` 已定义） | PowerShell 执行策略优先级 | 未构造组策略环境；这类机器由管理员统一放开，部署包不处理 |
+| §9.1 的 `403 Invalid CORS request` 与三条自查命令 | `WebConfig`（白名单只有 5173 两个开发源）、`nginx\conf\nginx.conf`（`$host`）、`AuthPaths`（登录接口在匿名白名单内，可当探针）、`ZHYYKFX-83` 的复现结论 | 写本文时**没有**在 8088 上复跑：`Invalid CORS request` 是 Spring `DefaultCorsProcessor` 的固定文案，白名单取值以仓库当前代码为准。修复尚未合入 `main`（§9.1 B），修复落地后本节与 §9.1 一并删除 |
+| §9.2 的七种 `degraded_reason` 与降级提示文案 | `DegradedReason`、`DeepSeekPairScorer`、`PairPanel.vue` / `MyRecordCard.vue`、`docs/testing/v2/D1-degradation.md` | 空 Key 为真实环境实测，401 / 超时 / 非 JSON 用本机假端点复现，其余为单测；`/v1/models` 探测命令与 BOM 处置未在这台机器上逐步复跑 |
