@@ -1854,7 +1854,7 @@ node build-docx.mjs  # 输出 docs/design/program-design.docx
 
 脚本做的事：把本文与附录 A/B 按标题层级转成 Word 结构（标题样式、表格、代码块、图片按页宽缩放），A4 纵向、页脚带页码。生成物可直接作为课程附件提交；如需 PDF，用 Word 打开后「另存为 PDF」即可——本项目不引入额外的 PDF 工具链。
 
-导出环境：Node 22.23.3 + docx 9.13.0。本次实测输出（2026-10-29，`64693ec` 基线，本文与附录 A/B 三份源合入后重导）：**1035 个块 / 内嵌 7 张图 / 774.3 KB**（`word/media/` 实测 7 个文件），`word/document.xml` 里没有缺图占位符。**页数本环境无法实测**（没有 Word）：请在 Word 里打开后取 `ComputeStatistics(2)`，或按「块数 / 每页约 15 块」粗估（约 69 页，粗估不是实测，不作为交付承诺）。早期一份 5 张图 / 603 块的中期稿在 Word 16 里读到过 **67 页**，那组数字与本文无关，别拿来引用。
+导出环境：Node 22.23.3 + docx 9.13.0。本次实测输出（2026-10-29，`64693ec` 基线，本文与附录 A/B 三份源合入后重导）：**1035 个块 / 内嵌 7 张图 / 约 774 KB**（`word/media/` 实测 7 个文件），`word/document.xml` 里没有缺图占位符。**页数本环境无法实测**（没有 Word）：请在 Word 里打开后取 `ComputeStatistics(2)`，或按「块数 / 每页约 15 块」粗估（约 69 页，粗估不是实测，不作为交付承诺）。早期一份 5 张图 / 603 块的中期稿在 Word 16 里读到过 **67 页**，那组数字与本文无关，别拿来引用。
 
 **图**：`docs/design/diagrams/*.mmd` 是源，`*.png` / `*.svg` 是导出物（已提交，通常不需要重新生成）。共 7 张同源同工具：`architecture-container`、`architecture-modules`、`deploy-windows`、`er`、`match-sequence`，以及本期新增的 `login-sequence`（§5.4.1）与 `pair-sequence`（§6.8）。
 
