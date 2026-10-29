@@ -126,7 +126,7 @@ class PairPolicyPropertiesTest {
     }
 
     @Test
-    @DisplayName("application.yml 的本地覆盖值来自同义/陷阱校准：0.45/0.90/0.90/0.90")
+    @DisplayName("application.yml 的本地覆盖值来自同义/陷阱校准：0.40/0.90/0.90/0.90")
     @SuppressWarnings("unchecked")
     void shippedLocalOverridesMatchCalibration() throws IOException {
         // 覆盖值只在 application.yml 里，Java 字段默认是 null（回退默认那套），
@@ -139,8 +139,8 @@ class PairPolicyPropertiesTest {
             Map<String, Object> overrides = (Map<String, Object>) pair.get("overrides");
             Map<String, Object> local = (Map<String, Object>) overrides.get("local");
 
-            assertEquals(0.45, ((Number) local.get("contact_unlock_threshold")).doubleValue(), 1e-9,
-                    "陷阱集 5/6 在 0.75–0.85，unlock 只能压在陷阱上沿之下换可见性");
+            assertEquals(0.40, ((Number) local.get("contact_unlock_threshold")).doubleValue(), 1e-9,
+                    "召回优先：同义样本 S1-OF 本地分 0.41，0.45 会把它卡在卡片外；0.40 之下陷阱最低 T2=0.33 仍不可见");
             assertEquals(0.90, ((Number) local.get("contact_direct_threshold")).doubleValue(), 1e-9,
                     "陷阱最高 0.85，直看档必须在其上，否则 5/6 陷阱免授权出号");
             assertEquals(0.90, ((Number) local.get("notify_threshold")).doubleValue(), 1e-9,
