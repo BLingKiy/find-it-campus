@@ -134,19 +134,53 @@ public interface RecordMapper {
     int markPairScored(@Param("id") long id, @Param("state") String state, @Param("at") LocalDateTime at);
 
     /**
-     * 每日扫描的记录候选（架构 §5.4 ①）：{@code PENDING} 或保留期内的 {@code COMPLETED}，
-     * 且 {@code pair_state IN ('PENDING','SCORING')} 停在超过 stale 窗口，或 {@code pair_state='DEGRADED'}。
+     * 打分被 LLM 预算截断时的收尾：只落 {@code pair_state}，<b>不刷新</b> {@code pair_scored_at}。
+     *
+     * <p>为什么不能复用 {@link #markPairScored}：刷新时间戳等于把这条记录推进 60 分钟冷却，
+     * 而它明明还有 pair 没算 —— 那会让"达到上限留到下一轮"变成"留到一小时以后"。
+     * 保持旧时间戳，下一轮降级重扫会立刻再次选中它。
+     */
+    int markPairScoredKeepTimestamp(@Param("id") long id, @Param("state") String state);
+
+    /**
+     * 每日全量扫描的记录候选（架构 §5.4 ①）：{@code PENDING} 或保留期内的 {@code COMPLETED}，
+     * 且 {@code pair_state IN ('PENDING','SCORING')} 停在超过 stale 窗口，或
+     * {@code pair_state='DEGRADED'} 距上次打分已超过降级冷却窗口。
      *
      * <p>排除 {@code CLOSED}、已删除与<b>过期 {@code COMPLETED}</b>（P2-4）：它们不召回，
      * 重算只会花 LLM 额度并产生指向 404 的 pair/通知。保留期口径与
      * {@code RecordVisibilityPolicy#isMatchable} 一致。
      *
+     * <p>{@code DEGRADED} 也带冷却（ZHYYKFX-88）：否则每轮扫描（以及 10 分钟一次的降级重扫）
+     * 都会把同一批刚试过的降级记录取出来，逐对判定再跳过，白白消耗连接与 SELECT。
+     * 注意这条冷却是<b>选材层</b>的，逐对的 {@code shouldRetryDegraded} 仍保留 —— 前者决定
+     * "这条记录值不值得看"，后者决定"这一对值不值得调 LLM"，两层都不能省。
+     *
      * @param staleBefore     卡在 SCORING 的过期下界（= now - staleMinutes）
      * @param completedCutoff 保留期下界（= now - retentionDays）
+     * @param degradedBefore  降级记录的冷却下界（= now - degradedRetryMinutes）
      */
     List<Long> selectPairScanTargets(@Param("staleBefore") LocalDateTime staleBefore,
                                      @Param("completedCutoff") LocalDateTime completedCutoff,
+                                     @Param("degradedBefore") LocalDateTime degradedBefore,
                                      @Param("limit") int limit);
+
+    /**
+     * 降级重扫的候选（ZHYYKFX-88）：<b>只</b>取 {@code pair_state='DEGRADED'} 且冷却已过的记录。
+     *
+     * <p>与 {@link #selectPairScanTargets} 分开而不是复用它加一个布尔参数，是因为两者是
+     * <b>两种调度</b>：全量扫描一天一次、降级重扫每 10 分钟一次，SQL 的可读性直接决定
+     * 排障时能不能一眼看出"这一轮到底会碰哪些记录"。共用一条动态 SQL 会把两个口径缠在一起。
+     *
+     * <p>保留期口径与全量扫描一致：过期 COMPLETED 不再重算，哪怕它停在 DEGRADED。
+     *
+     * @param degradedBefore  降级记录的冷却下界（= now - degradedRetryMinutes）
+     * @param completedCutoff 保留期下界（= now - retentionDays）
+     * @param limit           单轮上限（{@code degraded-scan-limit}）
+     */
+    List<Long> selectDegradedScanTargets(@Param("degradedBefore") LocalDateTime degradedBefore,
+                                         @Param("completedCutoff") LocalDateTime completedCutoff,
+                                         @Param("limit") int limit);
 
     /**
      * 到期 COMPLETED 计数（架构 §5.4 的"到期清扫"）：<b>只读</b>。

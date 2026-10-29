@@ -66,6 +66,79 @@ class LlmCircuitBreakerTest {
         assertTrue(breaker.allowRequest(), "清零后再失败 2 次仍未到阈值");
     }
 
+    @Test
+    @DisplayName("冷却结束只放 1 次探测：其它并发请求被挡；探测成功→CLOSED 且恢复回调只触发一次")
+    void halfOpenAllowsSingleProbeThenCloses() {
+        MutableClock clock = new MutableClock(Instant.parse("2026-10-28T10:00:00Z"));
+        LlmProperties properties = new LlmProperties();
+        properties.setCircuitFailureThreshold(2);
+        properties.setCircuitOpenDuration(Duration.ofMinutes(5));
+        LlmCircuitBreaker breaker = new LlmCircuitBreaker(properties, clock);
+        java.util.concurrent.atomic.AtomicInteger recovered = new java.util.concurrent.atomic.AtomicInteger();
+        breaker.addRecoveryListener(recovered::incrementAndGet);
+
+        breaker.recordFailure();
+        breaker.recordFailure();
+        assertEquals(LlmCircuitBreaker.State.OPEN, breaker.state());
+        assertFalse(breaker.allowRequest(), "打开期间拒绝");
+
+        clock.advance(Duration.ofMinutes(5).plusSeconds(1));
+        assertTrue(breaker.allowRequest(), "冷却结束放行唯一一次探测");
+        assertEquals(LlmCircuitBreaker.State.HALF_OPEN, breaker.state());
+        assertFalse(breaker.allowRequest(), "探测在飞时不许第二个请求同时出去");
+        assertEquals(0, recovered.get(), "探测还没成功，不能触发恢复回调");
+
+        breaker.recordSuccess();
+        assertEquals(LlmCircuitBreaker.State.CLOSED, breaker.state());
+        assertEquals(1, recovered.get(), "HALF_OPEN → CLOSED 触发一次恢复回调");
+        assertTrue(breaker.allowRequest());
+
+        breaker.recordSuccess();
+        assertEquals(1, recovered.get(), "CLOSED 下的成功不重复触发恢复回调");
+    }
+
+    @Test
+    @DisplayName("探测失败重新打开：重新计满 5 分钟，不会因半开而放宽")
+    void halfOpenProbeFailureReopens() {
+        MutableClock clock = new MutableClock(Instant.parse("2026-10-28T10:00:00Z"));
+        LlmProperties properties = new LlmProperties();
+        properties.setCircuitFailureThreshold(1);
+        properties.setCircuitOpenDuration(Duration.ofMinutes(5));
+        LlmCircuitBreaker breaker = new LlmCircuitBreaker(properties, clock);
+        java.util.concurrent.atomic.AtomicInteger recovered = new java.util.concurrent.atomic.AtomicInteger();
+        breaker.addRecoveryListener(recovered::incrementAndGet);
+
+        breaker.recordFailure();
+        clock.advance(Duration.ofMinutes(5).plusSeconds(1));
+        assertTrue(breaker.allowRequest());
+
+        breaker.recordFailure();
+
+        assertEquals(LlmCircuitBreaker.State.OPEN, breaker.state());
+        assertEquals(300L, breaker.openSecondsRemaining());
+        assertFalse(breaker.allowRequest());
+        assertEquals(0, recovered.get(), "探测失败不能触发恢复回调");
+    }
+
+    @Test
+    @DisplayName("探测超时无回报：再放一次探测，避免永久卡在 HALF_OPEN")
+    void halfOpenProbeTimeoutReleasesAnotherProbe() {
+        MutableClock clock = new MutableClock(Instant.parse("2026-10-28T10:00:00Z"));
+        LlmProperties properties = new LlmProperties();
+        properties.setCircuitFailureThreshold(1);
+        properties.setCircuitOpenDuration(Duration.ofMinutes(5));
+        properties.setTotalTimeoutMs(20_000);
+        LlmCircuitBreaker breaker = new LlmCircuitBreaker(properties, clock);
+
+        breaker.recordFailure();
+        clock.advance(Duration.ofMinutes(5).plusSeconds(1));
+        assertTrue(breaker.allowRequest());
+        assertFalse(breaker.allowRequest(), "探测期间第二个请求被挡");
+
+        clock.advance(Duration.ofMillis(40_001));
+        assertTrue(breaker.allowRequest(), "探测超过 2×总超时仍无回报，重新放行一次");
+    }
+
     /** 只有测试用：可推进的时钟。 */
     private static final class MutableClock extends Clock {
 

@@ -110,6 +110,12 @@ findit:
       scan-cron: '0 30 3 * * *'
       stale-minutes: 10
       degraded-retry-minutes: 60
+      # 降级重扫（ZHYYKFX-88）：只扫 pair_state=DEGRADED 的记录，默认每 10 分钟。
+      # 它把"LLM 恢复后要等次日 03:30"压到 ≤10 分钟；degraded-scan-enabled=false 可退回 v2.0 行为。
+      degraded-scan-enabled: true
+      degraded-scan-cron: '0 */10 * * * *'
+      # 单轮降级重扫的记录上限（经验值，需压测校准）；与 max-llm-calls 共同防止恢复瞬间的额度尖峰
+      degraded-scan-limit: 100
       # 必须明显小于 Hikari maximum-pool-size(10)：每对打分占一条连接做命名锁
       worker-threads: 2
       worker-queue-capacity: 200

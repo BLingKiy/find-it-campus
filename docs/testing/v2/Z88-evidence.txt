@@ -1,0 +1,111 @@
+
+===== 0. environment =====
+repo=C:\Project\hifox-workspaces\panshishi\work-v2-Z88
+jar=C:\Project\hifox-workspaces\panshishi\work-v2-Z88\server\target\find-it-campus-0.0.1-SNAPSHOT.jar bytes=28602157
+db=findit_z88 appPort=18088 stubPort=19090
+java=17.0.20.1
+
+===== 1. start MySQL 3306 =====
+MYSQL_VERSION=8.0.29
+
+===== 2. reset schema + minimal fixtures =====
+t_user=3 t_category=9 t_record=0
+
+===== 3. start stub LLM + phase-1 app (threshold=1, open=8s, degraded cron=*/5s) =====
+phase1 app started pid=13024
+
+===== 4. publish FOUND then LOST while LLM is down =====
+logged in demo01 / demo02
+ASSERT OK: POST /api/records FOUND -> 200
+ASSERT OK: POST /api/records LOST -> 200
+lostId=2 foundId=1
+pair state after outage: pairId=1 engine=LOCAL_KEYWORD reason=HTTP_ERROR score=0.5400 status=NEW
+record state after outage: recordId=2 pair_state=DEGRADED pair_scored_at=2026-10-29 01:39:35
+--- circuit open log ---
+2026-10-29 01:39:34.620 WARN  [pair-score-2] c.f.c.pair.engine.LlmCircuitBreaker - [0496c62e04ea4514] LLM 熔断打开：连续失败 1 次，0 分钟内直接本地降级
+
+===== 5. LLM recovers; wait past open-duration, then observe cooldown window =====
+stub mode -> ok
+after 9s (circuit expired, degraded-retry=60min): engine=LOCAL_KEYWORD pair_state=DEGRADED
+after 12 more seconds: engine=LOCAL_KEYWORD pair_state=DEGRADED
+ASSERT OK: fresh DEGRADED row is NOT selected before degraded-retry-minutes elapses
+ASSERT OK: record stays DEGRADED during cooldown
+2026-10-29 01:39:45.015 INFO  [scheduling-1] c.f.c.pair.service.PairScanService - [] pair scan done scope=DEGRADED trigger=degraded-scheduled scanned=0 rescored=0 degraded=0 skipped=0 expired=-1 limited=false elapsedMs=3 counters={llmCalls=1, llmSuccess=0, degraded=1, skippedUnchanged=0, pairsWritten=1, enqueueRejected=0, lockMisses=0, degradedByReason={HTTP_ERROR=1}}
+2026-10-29 01:39:50.010 INFO  [scheduling-1] c.f.c.pair.service.PairScanService - [] pair scan done scope=DEGRADED trigger=degraded-scheduled scanned=0 rescored=0 degraded=0 skipped=0 expired=-1 limited=false elapsedMs=2 counters={llmCalls=1, llmSuccess=0, degraded=1, skippedUnchanged=0, pairsWritten=1, enqueueRejected=0, lockMisses=0, degradedByReason={HTTP_ERROR=1}}
+2026-10-29 01:39:55.005 INFO  [scheduling-1] c.f.c.pair.service.PairScanService - [] pair scan done scope=DEGRADED trigger=degraded-scheduled scanned=0 rescored=0 degraded=0 skipped=0 expired=-1 limited=false elapsedMs=2 counters={llmCalls=1, llmSuccess=0, degraded=1, skippedUnchanged=0, pairsWritten=1, enqueueRejected=0, lockMisses=0, degradedByReason={HTTP_ERROR=1}}
+ASSERT OK: degraded cron ran and selected 0 records during cooldown
+
+===== 6. age the degraded evidence past 60 minutes + set MATCHED/unlock fixtures =====
+before rescore: LOCAL_KEYWORD|HTTP_ERROR|0.5400|MATCHED|2026-10-20 10:00:00|2026-10-20 10:05:00|2026-10-20 09:00:00|2026-10-20 09:10:00|e2e-note-lost|e2e-note-found
+
+===== 7. wait for the next degraded cycle to upgrade the row automatically =====
+ASSERT OK: LLM recovery within the next degraded cycle upgraded engine to DEEPSEEK
+after rescore:  DEEPSEEK|NULL|0.9300|MATCHED|2026-10-20 10:00:00|2026-10-20 10:05:00|2026-10-20 09:00:00|2026-10-20 09:10:00|e2e-note-lost|e2e-note-found
+record after rescore: recordId=2 pair_state=READY pair_scored_at=2026-10-29 01:40:01
+ASSERT OK: degraded_reason cleared
+ASSERT OK: pair status still MATCHED after rescore
+ASSERT OK: lost_confirmed_at preserved
+ASSERT OK: found_confirmed_at preserved
+ASSERT OK: lost_unlocked_at preserved
+ASSERT OK: found_unlocked_at preserved
+ASSERT OK: lost_unlock_note preserved
+ASSERT OK: found_unlock_note preserved
+
+===== 8. upgrade / recovery-event / scheduled-cycle logs =====
+2026-10-29 01:40:00.769 INFO  [scheduling-1] c.f.c.p.service.PairScoringService - [] pair score upgraded event=pair_score_upgraded recordId=2 pairId=1 lostId=2 foundId=1 trigger=degraded-scheduled oldEngine=LOCAL_KEYWORD oldScore=0.5400 newEngine=DEEPSEEK newScore=0.93 degradedReason=null latencyMs=30 elapsedMs=719
+ASSERT OK: upgrade log records recordId/pairId/old/new engine+score/elapsed
+2026-10-29 01:39:34.620 WARN  [pair-score-2] c.f.c.pair.engine.LlmCircuitBreaker - [0496c62e04ea4514] LLM 熔断打开：连续失败 1 次，0 分钟内直接本地降级
+2026-10-29 01:39:34.621 WARN  [pair-score-2] c.f.c.p.e.d.DeepSeekPairScorer - [0496c62e04ea4514] pair llm degraded lostId=2 foundId=1 reason=HTTP_ERROR latencyMs=56 httpStatus=500 at=2026-10-29 01:39:34
+2026-10-29 01:40:00.043 INFO  [scheduling-1] c.f.c.pair.engine.LlmCircuitBreaker - [] LLM 熔断进入 HALF_OPEN：冷却结束，放行 1 次探测调用
+2026-10-29 01:40:00.405 INFO  [scheduling-1] c.f.c.pair.engine.LlmCircuitBreaker - [] LLM 熔断恢复：HALF_OPEN 探测成功，状态 CLOSED
+2026-10-29 01:40:00.406 INFO  [scheduling-1] c.f.c.p.s.DegradedRescanTrigger - [] LLM 恢复事件：已提交一次降级重扫（trigger=llm-recovered）
+2026-10-29 01:40:00.407 INFO  [pair-degraded-rescan] c.f.c.p.s.DegradedRescanTrigger - [] pair degraded rescan on recovery skipped reason=IN_PROGRESS code=50006
+2026-10-29 01:40:00.407 INFO  [scheduling-1] c.f.c.p.e.d.DeepSeekPairScorer - [] pair llm ok lostId=2 foundId=1 engine=DEEPSEEK score=0.93 latencyMs=30 promptTokens=128 completionTokens=16 model=stub-model
+ASSERT OK: recovery event triggered a degraded rescan
+2026-10-29 01:39:50.010 INFO  [scheduling-1] c.f.c.pair.service.PairScanService - [] pair scan done scope=DEGRADED trigger=degraded-scheduled scanned=0 rescored=0 degraded=0 skipped=0 expired=-1 limited=false elapsedMs=2 counters={llmCalls=1, llmSuccess=0, degraded=1, skippedUnchanged=0, pairsWritten=1, enqueueRejected=0, lockMisses=0, degradedByReason={HTTP_ERROR=1}}
+2026-10-29 01:39:55.005 INFO  [scheduling-1] c.f.c.pair.service.PairScanService - [] pair scan done scope=DEGRADED trigger=degraded-scheduled scanned=0 rescored=0 degraded=0 skipped=0 expired=-1 limited=false elapsedMs=2 counters={llmCalls=1, llmSuccess=0, degraded=1, skippedUnchanged=0, pairsWritten=1, enqueueRejected=0, lockMisses=0, degradedByReason={HTTP_ERROR=1}}
+2026-10-29 01:40:00.801 INFO  [scheduling-1] c.f.c.pair.service.PairScanService - [] pair scan done scope=DEGRADED trigger=degraded-scheduled scanned=1 rescored=1 degraded=0 skipped=0 expired=-1 limited=false elapsedMs=792 counters={llmCalls=2, llmSuccess=1, degraded=1, skippedUnchanged=0, pairsWritten=2, enqueueRejected=0, lockMisses=0, degradedByReason={HTTP_ERROR=1}}
+GET /api/records/2 -> 200 pairScore=0.9300
+
+===== 9. phase 2: max-llm-calls=1 leaves the rest for the next round =====
+phase2 app started pid=9292
+ASSERT OK: phase2 FOUND created
+ASSERT OK: phase2 two LOST created
+phase2 pairs: 1:2-1:LOCAL_KEYWORD:HTTP_ERROR,2:3-1:LOCAL_KEYWORD:HTTP_ERROR
+round1 HTTP 200 body={"code":0,"message":"降级重扫完成","data":{"scanned":1,"rescored":1,"degraded":0,"skipped":0,"expired":-1,"limited":true,"elapsedMs":1142,"trigger":"http-degraded","scope":"DEGRADED","skipReason":null,"counters":{"llmCalls":3,"llmSuccess":1,"degraded":2,"skippedUnchanged":0,"pairsWritten":3,"enqueueRejected":0,"lockMisses":0,"degradedByReason":{"HTTP_ERROR":2}}},"requestId":"31702c29a0dd408f"}
+ASSERT OK: ops degraded scan -> 200
+ASSERT OK: round1 scanned exactly 1 record (max-llm-calls=1)
+ASSERT OK: round1 limited=true (quota reached, remaining left)
+ASSERT OK: round1 not skipped by circuit
+remaining degraded records after round1=1
+ASSERT OK: one degraded record left for the next round
+round2 HTTP 200 body={"code":0,"message":"降级重扫完成","data":{"scanned":1,"rescored":1,"degraded":0,"skipped":0,"expired":-1,"limited":false,"elapsedMs":1520,"trigger":"http-degraded","scope":"DEGRADED","skipReason":null,"counters":{"llmCalls":4,"llmSuccess":2,"degraded":2,"skippedUnchanged":0,"pairsWritten":4,"enqueueRejected":0,"lockMisses":0,"degradedByReason":{"HTTP_ERROR":2}}},"requestId":"1fd806ab181e41af"}
+ASSERT OK: round2 -> 200
+ASSERT OK: round2 picked the remaining record
+ASSERT OK: round2 not limited
+ASSERT OK: no degraded records left after round2
+final pairs: 1:DEEPSEEK:NULL:0.9300:NEW,2:DEEPSEEK:NULL:0.9300:NEW
+
+===== 10. phase-2 logs =====
+2026-10-29 01:40:29.816 INFO  [http-nio-18088-exec-1] c.f.c.p.service.PairScoringService - [31702c29a0dd408f] pair score upgraded event=pair_score_upgraded recordId=2 pairId=1 lostId=2 foundId=1 trigger=http-degraded oldEngine=LOCAL_KEYWORD oldScore=0.6600 newEngine=DEEPSEEK newScore=0.93 degradedReason=null latencyMs=5 elapsedMs=41
+2026-10-29 01:40:30.214 INFO  [http-nio-18088-exec-1] c.f.c.pair.service.PairScanService - [31702c29a0dd408f] pair scan done scope=DEGRADED trigger=http-degraded scanned=1 rescored=1 degraded=0 skipped=0 expired=-1 limited=true elapsedMs=1142 counters={llmCalls=3, llmSuccess=1, degraded=2, skippedUnchanged=0, pairsWritten=3, enqueueRejected=0, lockMisses=0, degradedByReason={HTTP_ERROR=2}}
+2026-10-29 01:40:31.572 INFO  [http-nio-18088-exec-2] c.f.c.p.service.PairScoringService - [1fd806ab181e41af] pair score upgraded event=pair_score_upgraded recordId=3 pairId=2 lostId=3 foundId=1 trigger=http-degraded oldEngine=LOCAL_KEYWORD oldScore=0.6200 newEngine=DEEPSEEK newScore=0.93 degradedReason=null latencyMs=342 elapsedMs=748
+2026-10-29 01:40:31.953 INFO  [http-nio-18088-exec-2] c.f.c.pair.service.PairScanService - [1fd806ab181e41af] pair scan done scope=DEGRADED trigger=http-degraded scanned=1 rescored=1 degraded=0 skipped=0 expired=-1 limited=false elapsedMs=1520 counters={llmCalls=4, llmSuccess=2, degraded=2, skippedUnchanged=0, pairsWritten=4, enqueueRejected=0, lockMisses=0, degradedByReason={HTTP_ERROR=2}}
+
+===== 11. phase 3: recovery event alone upgrades history (degraded cron = nightly) =====
+phase3 app started pid=6784
+ASSERT OK: phase3 FOUND created
+ASSERT OK: phase3 LOST created
+phase3 degraded: pairId=1 engine=LOCAL_KEYWORD reason=HTTP_ERROR
+aged history; now publish one new record to carry the HALF_OPEN probe (no cron involved)
+ASSERT OK: phase3 probe record created
+ASSERT OK: recovery event (not the cron) upgraded the aged degraded pair
+2026-10-29 01:41:05.936 INFO  [pair-degraded-rescan] c.f.c.p.s.DegradedRescanTrigger - [] pair degraded rescan on recovery done trigger=llm-recovered scanned=1 rescored=1 degraded=0 skipped=0 limited=false skipReason=null elapsedMs=102
+ASSERT OK: recovery-triggered rescan scanned the aged record
+2026-10-29 01:41:05.921 INFO  [pair-degraded-rescan] c.f.c.p.service.PairScoringService - [] pair score upgraded event=pair_score_upgraded recordId=2 pairId=1 lostId=2 foundId=1 trigger=llm-recovered oldEngine=LOCAL_KEYWORD oldScore=0.6200 newEngine=DEEPSEEK newScore=0.93 degradedReason=null latencyMs=7 elapsedMs=40
+ASSERT OK: upgrade log records trigger=llm-recovered (event-driven provenance)
+phase3 final pair: DEEPSEEK|NULL|0.9300|NEW
+phase3 final record: READY|2026-10-29 01:41:06
+
+===== RESULT =====
+ALL ASSERTIONS PASSED
