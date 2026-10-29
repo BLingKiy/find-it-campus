@@ -2,8 +2,8 @@
  * 把答辩 PPT 的 Markdown 文案稿渲染成可提交的 PPTX。
  *
  * 输入（相对本脚本）：
- *   ../6.2-defense-ppt.md            v1 文案稿（默认，不传参时行为与以前完全一致）
- *   ../v2-defense-ppt.md             v2 文案稿（`--src ../v2-defense-ppt.md --out ../v2-答辩PPT.pptx`）
+ *   ../答辩PPT.md                    本期文案稿（交付时用 `--src ../答辩PPT.md --out ../答辩PPT.pptx`）
+ *   ../6.2-defense-ppt.md            中期存档稿（脚本默认值仍指向它，只为兼容老命令）
  *   ../assets/shots/*.png            演示截图（由 demo-path-check.mjs 生成）
  *   ../assets/match-sample-s1*.json  真实请求/响应（PPT 的输入输出示例）
  *   ../../design/diagrams/*.png      架构 / ER / 时序图（6.1 已有）
@@ -21,7 +21,7 @@
  * 运行：
  *   cd docs/delivery/tools && npm install
  *   node build-ppt.mjs                                   # v1
- *   node build-ppt.mjs --src ../v2-defense-ppt.md --out ../v2-答辩PPT.pptx \
+ *   node build-ppt.mjs --src ../答辩PPT.md --out ../答辩PPT.pptx \
  *        --footer "find-it-campus · 校园失物招领　|　v2 阶段 4 答辩稿 2026-10-28"
  */
 import fs from 'node:fs';
@@ -33,8 +33,8 @@ const DELIVERY = path.resolve(HERE, '..');
 const DOCS = path.resolve(DELIVERY, '..');
 
 /**
- * `--key value` 形式；不传参时三个默认值就是 v1 的那套，老命令不必改。
- * 值一律按**相对本脚本目录**解析（`--src ../v2-defense-ppt.md`），所以从哪儿跑都一样。
+ * `--key value` 形式；不传参时三个默认值仍指向中期稿，老命令不必改。
+ * 值一律按**相对本脚本目录**解析（`--src ../答辩PPT.md`），所以从哪儿跑都一样。
  */
 const argOf = (name, fallback) => {
   const i = process.argv.indexOf(`--${name}`);
