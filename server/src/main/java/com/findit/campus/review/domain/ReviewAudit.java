@@ -49,15 +49,32 @@ public class ReviewAudit {
         return audit;
     }
 
-    public static ReviewAudit manual(long recordId, String action, String decision, String reviewState,
-                                     String reason, Long actorId, String requestId) {
+    /**
+     * 发布者本人确认发布（AI 重试耗尽后的唯一人工兜底）。
+     *
+     * <p>{@code engine=RULE_ONLY} 是刻意留下的可筛标记：判定材料里能一眼找出
+     * "未经 AI 审核、只经规则脱敏 + 本人自认"的记录。{@code actor} 记录为本人，
+     * 与 AI 的审计行可区分。
+     */
+    public static ReviewAudit ownerConfirm(long recordId, Long actorId, String reason, String requestId) {
         ReviewAudit audit = new ReviewAudit();
         audit.recordId = recordId;
-        audit.action = action;
-        audit.decision = decision;
-        audit.reviewState = reviewState;
+        audit.action = "OWNER_CONFIRM";
+        audit.decision = "APPROVE";
+        audit.reviewState = "APPROVED";
         audit.reason = reason;
-        audit.engine = "MANUAL";
+        audit.engine = "RULE_ONLY";
+        audit.actorType = "HUMAN";
+        audit.actorId = actorId;
+        audit.requestId = requestId;
+        return audit;
+    }
+
+    /** 删除记录时清除 {@code raw_*} 的留痕；不含原文。 */
+    public static ReviewAudit rawPurged(long recordId, Long actorId, String requestId) {
+        ReviewAudit audit = new ReviewAudit();
+        audit.recordId = recordId;
+        audit.action = "RAW_PURGE";
         audit.actorType = "HUMAN";
         audit.actorId = actorId;
         audit.requestId = requestId;

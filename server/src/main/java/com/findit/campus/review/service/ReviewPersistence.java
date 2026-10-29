@@ -90,12 +90,12 @@ public class ReviewPersistence {
         return true;
     }
 
-    /** 连续失败：保持 PENDING + manual=1；不写 review_state=APPROVED，也绝不触发打分。 */
+    /** 连续失败：保持 PENDING + manual=1 + RULE_ONLY；不写 APPROVED，也绝不触发打分。 */
     @Transactional
-    public void markManual(long recordId, String reason, PostprocessResult last, int attempts,
-                           String requestId) {
-        int affected = recordMapper.markReviewManual(recordId, truncate(reason),
-                last == null ? null : last.engine(), last == null ? null : last.model(),
+    public void markOwnerConfirmRequired(long recordId, String reason, PostprocessResult last, int attempts,
+                                         String requestId) {
+        int affected = recordMapper.markOwnerConfirmRequired(recordId, truncate(reason),
+                last == null ? null : last.model(),
                 last == null ? null : last.promptVersion(), last == null ? null : last.latencyMs(),
                 last == null ? null : last.totalTokensOrNull(), attempts);
         if (affected == 0) {
@@ -131,30 +131,37 @@ public class ReviewPersistence {
     }
 
     /**
-     * 人工通过：不重新生成文本。提交时写入 title/description/location 的已经是
-     * 规则剥离后的展示文本，人工审核确认的是"这份文本可以上架"，不是让模型再写一遍。
+     * 逻辑删除时已把 {@code raw_*} 置 NULL；这里留一条「已清除」审计。
+     *
+     * <p>与 {@link #auditRawView} 不同，<b>本方法不吞异常</b>：清除原文却不留痕，
+     * 等于隐私审计出现缺口。异常会让调用方事务回滚，删除与清除都不生效，比"删了但查无记录"安全。
      */
-    @Transactional
-    public boolean manualApprove(long recordId, String reason, long actorId, String requestId) {
-        int affected = recordMapper.markReviewApprovedManually(recordId, truncate(reason), LocalDateTime.now());
-        if (affected == 0) {
-            return false;
-        }
-        auditMapper.insert(ReviewAudit.manual(recordId, "MANUAL_APPROVE", "APPROVE", "APPROVED",
-                truncate(reason), actorId, requestId));
-        // 人工放行后同样要打分；事件在事务内发布，AFTER_COMMIT 监听器保证读到已提交的 is_visible=1
-        eventPublisher.publishEvent(new PairScoringRequested(recordId, "review-manual-approved", requestId));
-        return true;
+    public void auditRawPurge(long recordId, long actorId, String requestId) {
+        auditMapper.insert(ReviewAudit.rawPurged(recordId, actorId, requestId));
     }
 
+    /**
+     * 发布者本人确认发布：<b>仅</b>用于 AI 重试耗尽、记录停在
+     * {@code PENDING + review_manual_required=1} 的情况。
+     *
+     * <p>为什么条件里必须同时有 {@code review_manual_required=1}：AI 正常时这条路径必须不存在，
+     * 否则任何 PENDING 记录都能被本人绕过 AI 审核直接上架。状态条件在 SQL 里，
+     * service 的预检查只是把"不可用"翻译成 409，不是唯一防线。
+     *
+     * <p>放行后写入 {@code review_engine=RULE_ONLY}：隐私只经规则脱敏 + 本人自认，
+     * 没有模型二次把关；后台按该值可筛出"未经 AI 审核"的记录。
+     */
     @Transactional
-    public boolean manualReject(long recordId, String reason, long actorId, String requestId) {
-        int affected = recordMapper.markReviewRejectedManually(recordId, truncate(reason), LocalDateTime.now());
+    public boolean ownerConfirm(long recordId, long actorId, String requestId) {
+        String reason = "本人确认发布：AI 审核不可用，仅经规则脱敏，不会补审";
+        int affected = recordMapper.confirmOwnerReview(recordId, truncate(reason), LocalDateTime.now());
         if (affected == 0) {
+            log.info("owner confirm skipped recordId={}（非待本人确认态或已被处理）", recordId);
             return false;
         }
-        auditMapper.insert(ReviewAudit.manual(recordId, "MANUAL_REJECT", "REJECT", "REJECTED",
-                truncate(reason), actorId, requestId));
+        auditMapper.insert(ReviewAudit.ownerConfirm(recordId, actorId, truncate(reason), requestId));
+        // 本人确认后照常入池、照常打分，不特殊对待；事件在事务内发，AFTER_COMMIT 读到已提交的 is_visible=1
+        eventPublisher.publishEvent(new PairScoringRequested(recordId, "review-owner-confirmed", requestId));
         return true;
     }
 

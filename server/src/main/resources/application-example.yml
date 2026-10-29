@@ -34,12 +34,13 @@ findit:
       api-key: '${FINDIT_EMBED_API_KEY:}'
       timeout-ms: 3000
   review:
-    # off=不启用发布闸门（v2.0 行为，默认）；ai=规则打码 → LLM 后处理/审核 → 通过才上架
-    mode: '${FINDIT_REVIEW_MODE:off}'
+    # ai=规则打码 → LLM 后处理/审核 → 通过才上架（默认）；off=回退开关，行为同 v2.0
+    mode: '${FINDIT_REVIEW_MODE:ai}'
+    # 首次失败后的重试次数（总调用 = 1 + max-attempts），退避按 1s/2s/4s；单次超时 15s
     max-attempts: 3
-    retry-backoff-ms: 300
+    retry-delays-ms: 1000,2000,4000
     max-tokens: 900
-    timeout-ms: 45000
+    timeout-ms: 15000
     prompt-version: pair-postprocess-v1
     summary-max-code-points: 40
     reconcile-interval-ms: 60000

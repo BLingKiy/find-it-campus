@@ -92,12 +92,14 @@ function StartApp([string]$mode, [string]$key) {
     $env:FINDIT_DB_URL = "jdbc:mysql://127.0.0.1:3306/$db`?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai&characterEncoding=utf8"
     $env:FINDIT_DB_USER = 'root'
     $env:FINDIT_DB_PASSWORD = ''
-    $env:FINDIT_REVIEW_MODE = $mode
+    # 空字符串 = 不设置 env，验证 application.yml 的默认 ai（人类 2026-10-29 拍板）
+    if ($mode) { $env:FINDIT_REVIEW_MODE = $mode } else { Remove-Item Env:FINDIT_REVIEW_MODE -ErrorAction SilentlyContinue }
     $env:DEEPSEEK_API_KEY = $key
     $env:FINDIT_LLM_BASE_URL = 'http://127.0.0.1:19090/v1'
     $env:FINDIT_LLM_MODEL = 'stub-model'
-    $stdout = Join-Path $tmp "app-$mode.out.log"
-    $stderr = Join-Path $tmp "app-$mode.err.log"
+    $label = if ($mode) { $mode } else { 'default' }
+    $stdout = Join-Path $tmp "app-$label.out.log"
+    $stderr = Join-Path $tmp "app-$label.err.log"
     $p = Start-Process -FilePath $java -ArgumentList '-jar', $jar, "--server.port=$port" `
         -RedirectStandardOutput $stdout -RedirectStandardError $stderr -PassThru
     WaitHealth
@@ -159,7 +161,7 @@ try {
     Say ('visible=' + (Q 'SELECT COUNT(*) FROM t_record WHERE is_visible=1;'))
 
     Section '3. start stub LLM 19090'
-    $stubProc = Start-Process -FilePath 'node' -ArgumentList (Join-Path $root 'z85-stub-llm.cjs') `
+    $stubProc = Start-Process -FilePath 'node' -ArgumentList (Join-Path $repo 'docs\testing\v2\Z85-review-gate\tools\stub-llm.cjs') `
         -RedirectStandardOutput (Join-Path $tmp 'stub.out.log') -RedirectStandardError (Join-Path $tmp 'stub.err.log') -PassThru
     $stubReady = $false
     $stubProbeBody = WriteJsonFile @{ messages = @(@{ role = 'user'; content = 'ping' }) } (Join-Path $tmp 'stub-probe.json')
@@ -173,9 +175,9 @@ try {
     if (-not $stubReady) { throw 'stub llm not ready' }
     Say 'stub llm ready'
 
-    Section '4. mode=ai: publish PENDING / APPROVED / REJECT paths'
-    $appProc = StartApp 'ai' 'stub-key'
-    Say ('app pid=' + $appProc.Id + ' mode=ai')
+    Section '4. default mode (no FINDIT_REVIEW_MODE) must be ai: publish PENDING / APPROVED / REJECT paths'
+    $appProc = StartApp '' 'stub-key'
+    Say ('app pid=' + $appProc.Id + ' mode=default(ai)')
     $c1 = Join-Path $tmp 'cookie1.txt'
     $c2 = Join-Path $tmp 'cookie2.txt'
     Login 'demo01' $c1 | Out-Null
@@ -186,17 +188,31 @@ try {
     $sensitive = CreateRecord $c1 'LOST' 'Z85SENSITIVE 手机号' 'Z85SENSITIVE STUB_SENSITIVE 测试规则双检' '第三教学楼 201' '13800000009'
     $rejected = CreateRecord $c1 'LOST' 'Z85REJECT 无法去身份' 'Z85REJECT STUB_REJECT 测试模型拒绝' '第三教学楼 201' '13800000009'
     $failed = CreateRecord $c1 'LOST' 'Z85FAIL 审核不可用' 'Z85FAIL STUB_FAIL 测试连续失败' '第三教学楼 201' '13800000009'
+    $normal = CreateRecord $c1 'LOST' 'Z85NORMAL 审核中' 'Z85NORMAL STUB_SLOW 测试 AI 正常时不可本人确认' '第三教学楼 201' '13800000009'
 
-    foreach ($pair in @(@('pending', $pending), @('approved', $approved), @('sensitive', $sensitive), @('rejected', $rejected), @('failed', $failed))) {
+    foreach ($pair in @(@('pending', $pending), @('approved', $approved), @('sensitive', $sensitive), @('rejected', $rejected), @('failed', $failed), @('normal', $normal))) {
         $name = $pair[0]; $resp = $pair[1]
-        Say ("{0}: http={1} id={2} reviewState={3}" -f $name, $resp.status, $resp.json.data.id, $resp.json.data.reviewState)
+        Say ("{0}: http={1} id={2} reviewState={3} ownerConfirmAvailable={4}" -f $name, $resp.status, $resp.json.data.id, $resp.json.data.reviewState, $resp.json.data.ownerConfirmAvailable)
         if ($resp.status -ne 200) { throw "create $name failed: $($resp.text)" }
+        if ($resp.json.data.reviewState -ne 'PENDING') { throw "default mode is not ai: $name reviewState=$($resp.json.data.reviewState)" }
+        if ($resp.json.data.ownerConfirmAvailable -ne $false) { throw "owner confirm must not be available while AI is healthy ($name)" }
     }
     $pendingId = [long]$pending.json.data.id
     $approvedId = [long]$approved.json.data.id
     $sensitiveId = [long]$sensitive.json.data.id
     $rejectedId = [long]$rejected.json.data.id
     $failedId = [long]$failed.json.data.id
+    $normalId = [long]$normal.json.data.id
+
+    Section '4b. AI healthy: owner confirm entry is unavailable (409) and other user cannot confirm'
+    $normalConfirm = Call 'POST' ("/api/records/$normalId/confirm-publish") $c1 $null
+    Say ('owner confirm while AI healthy status=' + $normalConfirm.status + ' code=' + $normalConfirm.json.code + ' msg=' + $normalConfirm.json.message)
+    if ($normalConfirm.status -ne 409) { throw 'owner confirm was allowed while AI is healthy' }
+    if ($normalConfirm.text -notmatch '无需本人确认') { throw '409 message does not explain that owner confirm is not applicable' }
+    $normalConfirmOther = Call 'POST' ("/api/records/$normalId/confirm-publish") $c2 $null
+    Say ('other user confirm while AI healthy status=' + $normalConfirmOther.status)
+    if ($normalConfirmOther.status -ne 404 -and $normalConfirmOther.status -ne 403) { throw 'other user could probe/confirm a pending record' }
+    Say ('normal row still pending: ' + (Q ("SELECT review_state,review_manual_required,is_visible FROM t_record WHERE id={0};" -f $normalId)))
 
     Start-Sleep -Seconds 6
 
@@ -260,13 +276,69 @@ try {
     Say ('rejected public total=' + $pubR.json.data.total)
     if ($pubR.json.data.total -ne 0) { throw 'REJECTED record visible' }
 
-    Section '9. AI failure path'
-    $failedRow = Q ("SELECT review_state, review_attempts, review_manual_required, is_visible FROM t_record WHERE id={0};" -f $failedId)
+    Section '9. AI failure path: 3 retries (1s/2s/4s) then wait for owner confirm'
+    $failedRow = ''
+    for ($i = 0; $i -lt 30; $i++) {
+        $failedRow = Q ("SELECT review_state, review_attempts, review_manual_required, review_engine, is_visible FROM t_record WHERE id={0};" -f $failedId)
+        if ($failedRow -match "PENDING`t4`t1`tRULE_ONLY`t0") { break }
+        Start-Sleep -Milliseconds 500
+    }
     Say ('failed: ' + $failedRow)
-    if ($failedRow -notmatch "PENDING`t3`t1`t0") { throw 'AI failure did not stop in PENDING + manual' }
+    if ($failedRow -notmatch "PENDING`t4`t1`tRULE_ONLY`t0") { throw 'AI failure did not stop in PENDING + manual + RULE_ONLY' }
     $failedPairs = Q ("SELECT COUNT(*) FROM t_pair_score WHERE lost_id={0} OR found_id={0};" -f $failedId)
     Say ('failed pair rows=' + $failedPairs)
     if ([int]$failedPairs -ne 0) { throw 'failed record got scored' }
+
+    Section '9b. owner confirm: other user rejected, owner approves with OWNER_CONFIRM audit'
+    $failedDetail = Call 'GET' ("/api/records/$failedId") $c1 $null
+    Say ('owner detail status=' + $failedDetail.status + ' reviewState=' + $failedDetail.json.data.reviewState + ' manual=' + $failedDetail.json.data.reviewManualRequired + ' engine=' + $failedDetail.json.data.reviewEngine + ' canConfirm=' + $failedDetail.json.data.ownerConfirmAvailable)
+    if ($failedDetail.json.data.ownerConfirmAvailable -ne $true) { throw 'owner confirm entry not available after AI failure' }
+    $failedOtherConfirm = Call 'POST' ("/api/records/$failedId/confirm-publish") $c2 $null
+    Say ('other user confirm status=' + $failedOtherConfirm.status + ' code=' + $failedOtherConfirm.json.code)
+    if ($failedOtherConfirm.status -ne 404 -and $failedOtherConfirm.status -ne 403) { throw 'other user could confirm someone else record' }
+    Say ('after other attempt: ' + (Q ("SELECT review_state,review_manual_required,is_visible FROM t_record WHERE id={0};" -f $failedId)))
+
+    $ownerConfirm = Call 'POST' ("/api/records/$failedId/confirm-publish") $c1 $null
+    Say ('owner confirm status=' + $ownerConfirm.status + ' reviewState=' + $ownerConfirm.json.data.reviewState + ' engine=' + $ownerConfirm.json.data.reviewEngine + ' canConfirm=' + $ownerConfirm.json.data.ownerConfirmAvailable)
+    if ($ownerConfirm.status -ne 200) { throw "owner confirm failed: $($ownerConfirm.text)" }
+    if ($ownerConfirm.json.data.reviewState -ne 'APPROVED') { throw 'owner confirm did not approve' }
+    if ($ownerConfirm.json.data.reviewEngine -ne 'RULE_ONLY') { throw 'owner confirm lost RULE_ONLY marker' }
+    if ($ownerConfirm.json.data.ownerConfirmAvailable -ne $false) { throw 'owner confirm entry still available' }
+
+    $repeatConfirm = Call 'POST' ("/api/records/$failedId/confirm-publish") $c1 $null
+    Say ('repeat owner confirm status=' + $repeatConfirm.status + ' code=' + $repeatConfirm.json.code)
+    if ($repeatConfirm.status -ne 409) { throw 'repeat owner confirm is not idempotent-409' }
+
+    Start-Sleep -Seconds 4
+    $failedAfter = Q ("SELECT review_state,review_engine,review_manual_required,is_visible FROM t_record WHERE id={0};" -f $failedId)
+    Say ('after owner confirm: ' + $failedAfter)
+    if ($failedAfter -notmatch "APPROVED`tRULE_ONLY`t0`t1") { throw 'owner confirm DB state wrong' }
+    $confirmAudit = Q ("SELECT CONCAT_WS('|',action,decision,review_state,engine,actor_type,actor_id) FROM t_review_audit WHERE record_id={0} AND action='OWNER_CONFIRM' ORDER BY id DESC LIMIT 1;" -f $failedId)
+    Say ('owner confirm audit=' + $confirmAudit)
+    if ($confirmAudit -notmatch 'OWNER_CONFIRM\|APPROVE\|APPROVED\|RULE_ONLY\|HUMAN\|') { throw 'OWNER_CONFIRM audit incomplete' }
+    $pubF = Call 'GET' ('/api/records?keyword=Z85FAIL&pageSize=50') $null $null
+    Say ('owner-confirmed public total=' + $pubF.json.data.total)
+    if ($pubF.json.data.total -lt 1) { throw 'owner-confirmed record not visible' }
+    $failedPairsAfter = Q ("SELECT COUNT(*) FROM t_pair_score WHERE lost_id={0} OR found_id={0};" -f $failedId)
+    Say ('owner-confirmed pair rows=' + $failedPairsAfter)
+    if ([int]$failedPairsAfter -lt 1) { throw 'owner-confirmed record did not trigger scoring' }
+
+    Section '9c. delete clears raw_* and writes RAW_PURGE audit'
+    $purge = CreateRecord $c1 'LOST' 'Z85PURGE 姓名：张三' 'Z85PURGE 电话 13800000009 在第三教学楼 201 丢失的黑色钱包' '第三教学楼 201' '13800000009'
+    $purgeId = [long]$purge.json.data.id
+    Start-Sleep -Seconds 8
+    Say ('purge before delete: ' + (Q ("SELECT review_state,IFNULL(raw_title,'NULL'),IFNULL(raw_description,'NULL'),IFNULL(raw_location,'NULL') FROM t_record WHERE id={0};" -f $purgeId)))
+    $rawBefore = Q ("SELECT CONCAT_WS('|',raw_title,raw_description,raw_location) FROM t_record WHERE id={0};" -f $purgeId)
+    if ($rawBefore -notmatch '13800000009') { throw 'purge fixture has no raw text before delete' }
+    $del = Call 'DELETE' ("/api/records/$purgeId") $c1 $null
+    Say ('delete status=' + $del.status)
+    if ($del.status -ne 200) { throw "delete failed: $($del.text)" }
+    $purgeAfter = Q ("SELECT deleted_at IS NOT NULL,IFNULL(raw_title,'NULL'),IFNULL(raw_description,'NULL'),IFNULL(raw_location,'NULL') FROM t_record WHERE id={0};" -f $purgeId)
+    Say ('purge after delete: ' + $purgeAfter)
+    if ($purgeAfter -notmatch "^1`tNULL`tNULL`tNULL") { throw 'raw_* not cleared on delete' }
+    $purgeAudit = Q ("SELECT CONCAT_WS('|',action,actor_type,actor_id) FROM t_review_audit WHERE record_id={0} AND action='RAW_PURGE' ORDER BY id DESC LIMIT 1;" -f $purgeId)
+    Say ('RAW_PURGE audit=' + $purgeAudit)
+    if ($purgeAudit -notmatch 'RAW_PURGE\|HUMAN\|') { throw 'RAW_PURGE audit missing' }
 
     Section '10. double-channel columns + audit'
     Say ('approved display/raw/match:')

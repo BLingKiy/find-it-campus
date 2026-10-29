@@ -311,11 +311,18 @@
         WHERE id = #{id} AND deleted_at IS NULL AND status = 'PENDING'
     </update>
 
-    <!-- 只写 deleted_at/updated_at：删除与三态正交，删了也不会变成 CLOSED（契约 §4.6） -->
+    <!--
+      只写 deleted_at/updated_at：删除与三态正交，删了也不会变成 CLOSED（契约 §4.6）。
+      同时把 raw_* 置 NULL（人类 2026-10-29 拍板）：原文只用于本人回看与争议追溯，
+      记录删除后不再长期留存；清除动作由 service 写 RAW_PURGE 审计。
+    -->
     <update id="markDeleted">
         UPDATE t_record
-        SET deleted_at = #{deletedAt},
-            updated_at = #{deletedAt}
+        SET deleted_at      = #{deletedAt},
+            updated_at      = #{deletedAt},
+            raw_title       = NULL,
+            raw_description = NULL,
+            raw_location    = NULL
         WHERE id = #{id} AND deleted_at IS NULL
     </update>
 
@@ -457,14 +464,16 @@
     </update>
 
     <!--
-      AI 连续失败：状态保持 PENDING（不删、不过期、不上架），只置人工标记与可读原因。
-      WHERE 仍要求 PENDING：若审核在重试期间已被人工放行，这里不能把它拉回待审。
+      AI 连续失败：状态保持 PENDING（不删、不过期、不上架），置「待本人确认」与可读原因，
+      并把 review_engine 固定为 RULE_ONLY —— 这是「未经 AI 审核」的可筛标记，不随最后一次
+      尝试的引擎变化（模型也许返回过部分结果，但结论是规则兜底）。
+      WHERE 仍要求 PENDING：若审核在重试期间已被本人确认，这里不能把它拉回待审。
     -->
-    <update id="markReviewManual">
+    <update id="markOwnerConfirmRequired">
         UPDATE t_record
         SET review_manual_required = 1,
             review_reason          = #{reason},
-            review_engine          = #{engine},
+            review_engine          = 'RULE_ONLY',
             review_model           = #{model},
             review_prompt_version  = #{promptVersion},
             review_latency_ms      = #{latencyMs},
@@ -473,7 +482,7 @@
         WHERE id = #{id} AND deleted_at IS NULL AND review_state = 'PENDING'
     </update>
 
-    <!-- 兜底调度：拾取"待审、未转人工、已过冷却"的记录；manual=1 的永不被自动重试 -->
+    <!-- 兜底调度：拾取"待审、未等本人确认、已过冷却"的记录；manual=1 的永不被自动重试 -->
     <select id="selectReviewCandidates" resultMap="recordMap">
         SELECT <include refid="recordColumns"/>
         FROM t_record r
@@ -481,34 +490,31 @@
         WHERE r.deleted_at IS NULL
           AND r.review_state = 'PENDING'
           AND r.review_manual_required = 0
-          AND r.review_attempts &lt; #{maxAttempts}
+          AND r.review_attempts &lt; #{totalAttempts}
           AND r.created_at &lt;= #{createdBefore}
         ORDER BY r.created_at ASC, r.id ASC
         LIMIT #{limit}
     </select>
 
-    <!-- 人工放行/驳回：只改审核列，不碰展示文本（提交时已是规则剥离后的展示文本） -->
-    <update id="markReviewApprovedManually">
+    <!--
+      发布者本人确认：AI 重试耗尽后的唯一人工兜底。
+      条件里必须同时有 review_manual_required=1 —— AI 正常时这条 UPDATE 命中 0 行，
+      服务层据此返回 409，任何人（包括本人）都不能绕过 AI 审核。
+      review_engine 固定 RULE_ONLY：这条记录没有经过模型二次把关，后台要能筛出来。
+    -->
+    <update id="confirmOwnerReview">
         UPDATE t_record
         SET review_state           = 'APPROVED',
             reviewed_at            = #{at},
             review_reason          = #{reason},
-            review_engine          = 'MANUAL',
+            review_engine          = 'RULE_ONLY',
             review_manual_required = 0
         WHERE id = #{id} AND deleted_at IS NULL AND review_state = 'PENDING'
+          AND review_manual_required = 1
     </update>
 
-    <update id="markReviewRejectedManually">
-        UPDATE t_record
-        SET review_state           = 'REJECTED',
-            reviewed_at            = #{at},
-            review_reason          = #{reason},
-            review_engine          = 'MANUAL',
-            review_manual_required = 0
-        WHERE id = #{id} AND deleted_at IS NULL AND review_state = 'PENDING'
-    </update>
-
-    <select id="selectManualReviewQueue" resultMap="recordMap">
+    <!-- 只读排障队列：不得在此文件新增任何人工改判 UPDATE -->
+    <select id="selectOwnerConfirmQueue" resultMap="recordMap">
         SELECT <include refid="recordColumns"/>
         FROM t_record r
         LEFT JOIN t_category c ON c.id = r.category_id

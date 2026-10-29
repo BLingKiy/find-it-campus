@@ -47,8 +47,9 @@ class ReviewGateServiceTest {
         persistence = mock(ReviewPersistence.class);
         ReviewProperties properties = new ReviewProperties();
         properties.setMode("ai");
-        properties.setMaxAttempts(2);
-        properties.setRetryBackoffMs(0);
+        // 人类拍板：max-attempts 是重试次数（3），总调用 4 次；测试里退避置 0 避免拖慢
+        properties.setMaxAttempts(3);
+        properties.setRetryDelaysMs(List.of(0L, 0L, 0L));
         when(recordMapper.selectById(RECORD_ID)).thenReturn(pendingRecord());
         service = new ReviewGateService(recordMapper, client, persistence, properties);
     }
@@ -96,17 +97,17 @@ class ReviewGateServiceTest {
     }
 
     @Test
-    @DisplayName("AI 连续失败 → 停在 PENDING + 转人工，绝不触发打分")
-    void consecutiveFailuresGoManual() {
+    @DisplayName("AI 连续失败 → 1+3 次调用后停在 PENDING + 等本人确认，绝不触发打分")
+    void consecutiveFailuresGoOwnerConfirm() {
         PostprocessResult unavailable = PostprocessResult.unavailable("TIMEOUT", "DEEPSEEK",
                 "deepseek-chat", "pair-postprocess-v1", 30000);
         when(client.process(any())).thenReturn(unavailable);
 
         service.process(RECORD_ID, REQUEST_ID);
 
-        verify(client, times(2)).process(any());
-        verify(persistence).markManual(eq(RECORD_ID), contains("AI 审核连续失败"), eq(unavailable),
-                eq(2), eq(REQUEST_ID));
+        verify(client, times(4)).process(any());
+        verify(persistence).markOwnerConfirmRequired(eq(RECORD_ID), contains("AI 审核连续失败"),
+                eq(unavailable), eq(4), eq(REQUEST_ID));
         verify(persistence, never()).approve(anyLong(), any(), anyInt(), anyString());
     }
 

@@ -1,0 +1,23 @@
+# Z85 owner-confirm migration check (MySQL 8.0.29, 2026-10-29 Asia/Shanghai)
+# Simulates a DB that ran the first v2.1 up (old audit action CHECK), then applies the owner-confirm delta.
+# Steps: schema.sql + seed.sql -> force old CHECK -> owner-confirm-up -> insert OWNER_CONFIRM/RAW_PURGE
+#        -> owner-confirm-down with rows (must fail) -> archive rows -> down -> old CHECK rejects OWNER_CONFIRM
+
+DB_CREATED=findit_z85m
+records=24
+OLD_CONSTRAINT_SIMULATED
+OWNER_CONFIRM_UP=OK
+check_clause=(`action` in (_utf8mb4\\'REVIEW\\',_utf8mb4\\'OWNER_CONFIRM\\',_utf8mb4\\'RAW_VIEW\\',_utf8mb4\\'RAW_PURGE\\',_utf8mb4\\'MANUAL_APPROVE\\',_utf8mb4\\'MANUAL_REJECT\\'))
+NEW_ACTIONS_INSERT=OK
+new_action_rows=2
+DOWN_WITH_NEW_ROWS_EXIT=1
+cmd : ERROR 3819 (HY000) at line 10: Check constraint 'ck_review_audit_action' is violated.
+At line:1 char:3855
++ ... nWithRows = cmd /c "`"$mysql`" -u root -h 127.0.0.1 -P 3306 --default ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (ERROR 3819 (HY0...n' is violated.:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+OWNER_CONFIRM_DOWN_AFTER_ARCHIVE=OK
+check_clause_after_down=(`action` in (_utf8mb4\\'REVIEW\\',_utf8mb4\\'MANUAL_APPROVE\\',_utf8mb4\\'MANUAL_REJECT\\',_utf8mb4\\'RAW_VIEW\\'))
+OLD_CONSTRAINT_REJECTS_OWNER_CONFIRM_EXIT=1
+MIGRATION_CHECK_OK

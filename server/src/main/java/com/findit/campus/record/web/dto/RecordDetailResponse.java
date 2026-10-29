@@ -6,6 +6,7 @@ import java.util.List;
 import com.findit.campus.common.config.JacksonConfig;
 import com.findit.campus.common.masking.MaskingPolicy;
 import com.findit.campus.record.domain.Record;
+import com.findit.campus.record.domain.RecordReviewState;
 import com.findit.campus.record.domain.RecordStatus;
 import com.findit.campus.record.service.RecordStatusPolicy;
 
@@ -65,6 +66,15 @@ public class RecordDetailResponse {
     private String reviewState;
     private Boolean reviewManualRequired;
     private String reviewReason;
+
+    /** 审核引擎；仅本人可见。{@code RULE_ONLY} = AI 失败后由本人确认发布（可筛出未过 AI 的记录）。 */
+    private String reviewEngine;
+
+    /**
+     * 是否显示「确认发布」入口：仅 {@code isMine && PENDING && reviewManualRequired} 为 true。
+     * 由服务端算好而不是前端组合三个字段，避免前端漏判把入口露给 AI 正常审核中的记录。
+     */
+    private Boolean ownerConfirmAvailable;
 
     @JsonFormat(pattern = JacksonConfig.DATE_TIME_PATTERN)
     private LocalDateTime reviewedAt;
@@ -133,6 +143,9 @@ public class RecordDetailResponse {
             response.pairState = record.getPairState();
             response.reviewManualRequired = Boolean.TRUE.equals(record.getReviewManualRequired());
             response.reviewReason = record.getReviewReason();
+            response.reviewEngine = record.getReviewEngine();
+            response.ownerConfirmAvailable = record.getReviewState() == RecordReviewState.PENDING
+                    && Boolean.TRUE.equals(record.getReviewManualRequired());
             response.reviewedAt = record.getReviewedAt();
             // 只有真正按 AI 通道发布的行才有 raw_*；mode=off 不返回这三个键，保持 v2.0 形状
             if (record.getRawTitle() != null) {
@@ -153,6 +166,11 @@ public class RecordDetailResponse {
             response.contact = null;
             response.publisherName = MaskingPolicy.maskPublisherName(record.getPublisherName());
             response.pairState = null;
+            response.reviewManualRequired = null;
+            response.reviewReason = null;
+            response.reviewEngine = null;
+            // 非本人不出现「确认发布」入口，也不泄露是否待确认
+            response.ownerConfirmAvailable = false;
             response.hasMatchedPair = false;
             response.matchedPairCount = 0;
             response.lowConfidenceCount = 0;
@@ -255,6 +273,14 @@ public class RecordDetailResponse {
 
     public String getReviewReason() {
         return reviewReason;
+    }
+
+    public String getReviewEngine() {
+        return reviewEngine;
+    }
+
+    public Boolean getOwnerConfirmAvailable() {
+        return ownerConfirmAvailable;
     }
 
     public LocalDateTime getReviewedAt() {

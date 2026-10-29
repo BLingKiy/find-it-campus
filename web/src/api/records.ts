@@ -42,6 +42,14 @@ export function patchStatus(id: number, status: RecordStatus): Promise<{
   return request(`/records/${id}/status`, { method: 'PATCH', body: { status } })
 }
 
+/**
+ * POST /api/records/{id}/confirm-publish（发布闸门兜底）：
+ * 仅在 AI 审核重试耗尽、`ownerConfirmAvailable=true` 时可用；AI 正常时服务端返回 409。
+ */
+export function confirmPublish(id: number): Promise<RecordDetail> {
+  return request<RecordDetail>(`/records/${id}/confirm-publish`, { method: 'POST' })
+}
+
 /** DELETE /api/records/{id}（契约 §6.2，逻辑删除，data 恒为 null） */
 export function deleteRecord(id: number): Promise<null> {
   return request<null>(`/records/${id}`, { method: 'DELETE' })

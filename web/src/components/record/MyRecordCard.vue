@@ -47,7 +47,7 @@ const reviewBadge = computed(() => {
   }
   if (props.record.reviewState === 'PENDING') {
     return {
-      text: props.record.reviewManualRequired ? '待人工审核' : '审核中',
+      text: props.record.reviewManualRequired ? '待本人确认' : '审核中',
       cls: 'badge--pending'
     }
   }
@@ -173,10 +173,13 @@ function handlePairChanged(result: PairActionResult): void {
       data-testid="my-record-review-hint"
     >
       <span class="alert__title">
-        {{ record.reviewState === 'REJECTED' ? '未通过审核' : '待人工审核' }}
+        {{ record.reviewState === 'REJECTED' ? '未通过审核' : '待本人确认' }}
       </span>
       <span class="alert__text">
-        {{ record.reviewReason || 'AI 审核暂不可用，已转人工；通过前不会出现在公共列表或匹配中。' }}
+        {{
+          record.reviewReason ||
+          'AI 审核暂不可用：可在详情页「确认发布」先用脱敏文本上架（不会补审），或等待审核恢复。'
+        }}
       </span>
     </p>
 

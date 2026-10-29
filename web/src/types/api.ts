@@ -153,6 +153,10 @@ export interface RecordDetail extends RecordListItem {
   reviewState?: ReviewState
   reviewManualRequired?: boolean
   reviewReason?: string | null
+  /** 审核引擎；仅本人可见。RULE_ONLY = AI 失败后由本人确认发布（未经 AI 审核） */
+  reviewEngine?: string | null
+  /** 仅 isMine && PENDING && reviewManualRequired 时为 true：服务端算好，前端不自行组合 */
+  ownerConfirmAvailable?: boolean
   reviewedAt?: string | null
   /** 原文三通道：仅本人详情返回；对外响应不出现 */
   rawTitle?: string

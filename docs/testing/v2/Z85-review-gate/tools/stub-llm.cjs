@@ -14,8 +14,7 @@ function contentFor(userText) {
   if (userText.includes('STUB_FAIL')) {
     return { __fail: true };
   }
-  if (userText.includes('STUB_REJECT')) {
-    return {
+  if (userText.includes('STUB_REJECT')) {    return {
       decision: 'REJECT',
       reasons: ['内容包含无法在保留特征的前提下去身份化的信息'],
       title: '', description: '', location: '', summary: ''
@@ -72,6 +71,28 @@ const server = http.createServer((req, res) => {
     }
     const messages = body.messages || [];
     const userText = messages.filter((m) => m.role === 'user').map((m) => m.content).join('\n');
+    // STUB_SLOW: 延迟 5s 返回 APPROVE，用来在“AI 仍在审核中”时验证本人确认入口不可用（409）
+    if (userText.includes('STUB_SLOW')) {
+      setTimeout(() => {
+        reply(res, 200, {
+          choices: [{
+            message: {
+              role: 'assistant',
+              content: JSON.stringify({
+                decision: 'APPROVE',
+                reasons: ['stub: 慢响应后通过'],
+                title: 'Z85NORMAL 黑色钱包',
+                description: 'Z85NORMAL 在图书馆三楼捡到黑色皮质钱包',
+                location: '图书馆三楼',
+                summary: '黑色皮质钱包，图书馆三楼'
+              })
+            }
+          }],
+          usage: { prompt_tokens: 128, completion_tokens: 64 }
+        });
+      }, 5000);
+      return;
+    }
     const content = contentFor(userText);
     if (content.__fail) {
       reply(res, 500, { error: { message: 'stub failure' } });

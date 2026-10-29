@@ -93,6 +93,17 @@ public class RecordController {
         return ApiResponse.success(response, message);
     }
 
+    /**
+     * 本人确认发布：只在 AI 审核重试耗尽（{@code review_manual_required=1}）后可用。
+     * AI 正常时返回 409；他人调用按不可见/403 拒绝。成功后照常入池并触发打分。
+     */
+    @PostMapping("/{id}/confirm-publish")
+    public ApiResponse<RecordDetailResponse> confirmPublish(@PathVariable long id,
+                                                            HttpServletRequest request) {
+        long viewerId = SessionAuth.requireUser(request).id();
+        return ApiResponse.success(recordService.confirmPublish(id, viewerId), "已发布");
+    }
+
     /** 逻辑删除：三态都可删；只写 deleted_at，不改 status。 */
     @DeleteMapping("/{id}")
     public ApiResponse<Void> delete(@PathVariable long id, HttpServletRequest request) {

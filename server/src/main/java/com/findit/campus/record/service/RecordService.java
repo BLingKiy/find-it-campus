@@ -315,7 +315,48 @@ public class RecordService {
         if (recordMapper.markDeleted(id, now) == 0) {
             throw BizException.of(ErrorCode.RECORD_NOT_FOUND);
         }
-        log.info("逻辑删除记录 id={} publisherId={}", id, viewerId);
+        // 人类 2026-10-29 拍板：删除时清空 raw_*（SQL 内完成），审计留一条「已清除」。
+        // 审计失败会回滚整个删除事务：宁可删除失败，也不留下"原文已清但查无记录"的缺口。
+        reviewPersistence.auditRawPurge(id, viewerId, RequestContext.requestId());
+        log.info("逻辑删除记录 id={} publisherId={} rawPurged=true", id, viewerId);
+    }
+
+    /**
+     * 发布者本人确认发布：<b>仅</b>在 AI 重试耗尽、记录停在
+     * {@code PENDING + review_manual_required=1 + review_engine=RULE_ONLY} 时可用。
+     *
+     * <p>安全边界（人类 2026-10-29 拍板）：
+     * <ul>
+     *   <li>只有本人能确认；他人一律按不可见/403 拒绝，不提供代确认；</li>
+     *   <li>AI 正常或已出结论的记录返回 409「当前无需本人确认」，不能借这条路径绕过 AI；</li>
+     *   <li>确认后照常入池并触发配对打分，不特殊对待；审计记 {@code OWNER_CONFIRM} +
+     *       {@code engine=RULE_ONLY}，后台可筛出「未经 AI 审核」。</li>
+     * </ul>
+     */
+    @Transactional
+    public RecordDetailResponse confirmPublish(long id, Long viewerId) {
+        Record existing = requireRecord(id);
+        LocalDateTime now = LocalDateTime.now();
+        if (!RecordVisibilityPolicy.isOwner(existing, viewerId)) {
+            // 未过审内容对他人本就 404（不泄露存在性）；这里复用同一套判定，避免确认接口变成探针
+            throw writeAccessDenied(existing, viewerId, now);
+        }
+        if (existing.getStatus() != RecordStatus.PENDING) {
+            throw BizException.withPublicMessage(ErrorCode.RECORD_OPERATION_NOT_ALLOWED,
+                    "只有进行中的启事可以确认发布");
+        }
+        if (existing.getReviewState() != RecordReviewState.PENDING
+                || !Boolean.TRUE.equals(existing.getReviewManualRequired())) {
+            // 对外文案必须明确：这不是"状态冲突"，而是"AI 正常时没有本人确认入口"
+            throw BizException.withPublicMessage(ErrorCode.RECORD_OPERATION_NOT_ALLOWED,
+                    "当前无需本人确认：AI 审核可用时必须等待审核结论，不能绕过审核发布");
+        }
+        if (!reviewPersistence.ownerConfirm(id, viewerId, RequestContext.requestId())) {
+            throw BizException.withPublicMessage(ErrorCode.RECORD_OPERATION_NOT_ALLOWED,
+                    "审核状态已变化，请刷新后重试");
+        }
+        log.info("本人确认发布 id={} publisherId={} reviewEngine=RULE_ONLY", id, viewerId);
+        return detail(id, viewerId);
     }
 
     /**

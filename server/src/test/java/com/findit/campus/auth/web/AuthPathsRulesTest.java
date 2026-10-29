@@ -28,14 +28,16 @@ class AuthPathsRulesTest {
     }
 
     @Test
-    @DisplayName("匿名可写只有白名单：登录、登出、运维扫描")
+    @DisplayName("匿名可写只有白名单：登录、登出、运维扫描；人工改判入口已移除")
     void whitelistedWritesStayPublic() {
         assertThat(requiresLogin("POST", "/api/auth/login")).isFalse();
         assertThat(requiresLogin("POST", "/api/auth/logout")).isFalse();
         assertThat(requiresLogin("POST", "/api/ops/pair-scan")).isFalse();
-        // 人工审核入口与扫描同口径：会话门禁不介入，X-Ops-Token 是唯一认证
-        assertThat(requiresLogin("POST", "/api/ops/reviews/9/approve")).isFalse();
-        assertThat(requiresLogin("POST", "/api/ops/reviews/9/reject")).isFalse();
+        // 人类 2026-10-29 拍板：不再有 ops 人工改判写入口；即使有人加回来，也必须先过会话门禁
+        assertThat(requiresLogin("POST", "/api/ops/reviews/9/approve")).isTrue();
+        assertThat(requiresLogin("POST", "/api/ops/reviews/9/reject")).isTrue();
+        // 发布者本人确认是普通用户写接口，必须登录
+        assertThat(requiresLogin("POST", "/api/records/9/confirm-publish")).isTrue();
     }
 
     @Test

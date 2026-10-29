@@ -80,8 +80,17 @@ C:/Project/tools/mysql/mysql-8.0.29-winx64/bin/mysql.exe --default-character-set
 
 ```bash
 mysql --default-character-set=utf8mb4 -u root -p < db/migration/v2.1-review-gate-up.sql
+# 若该库已经执行过初版 up（2026-10-29 之前的版本），补这一步审计动作扩展：
+mysql --default-character-set=utf8mb4 -u root -p < db/migration/v2.1-review-gate-owner-confirm-up.sql
 # 回滚（有损，先停应用）：
+mysql --default-character-set=utf8mb4 -u root -p < db/migration/v2.1-review-gate-owner-confirm-down.sql
 mysql --default-character-set=utf8mb4 -u root -p < db/migration/v2.1-review-gate-down.sql
 ```
+
+2026-10-29 返工的新增点：审计动作增加 `OWNER_CONFIRM`（本人确认发布）与 `RAW_PURGE`
+（删除清空 `raw_*`）；`review_manual_required=1` 语义改为「等待发布者本人确认」；
+删除记录时 `raw_title/raw_description/raw_location` 置 NULL。已有库只需执行
+`owner-confirm-up`，不需要重跑初版 up。`owner-confirm-down` 在库中已有新动作行时会失败——
+这是有意的，先归档审计再回退。
 
 迁移后自检：`SELECT COUNT(*), SUM(is_visible) FROM t_record WHERE deleted_at IS NULL;`（两者相等）。

@@ -22,11 +22,12 @@ import com.findit.campus.review.postprocess.SensitiveTextScanner;
 /**
  * 发布闸门的编排：读记录 → 调 LLM → 规则双检 → 落结论 →（通过才）触发配对。
  *
- * <p>失败策略（人类已确认的默认口径）：
+ * <p>失败策略（人类 2026-10-29 拍板）：
  * <ol>
- *   <li>AI 不可用/超时/输出不完整 → 重试 {@code max-attempts} 次，指数退避；</li>
- *   <li>仍失败 → 记录停在 {@code PENDING} + {@code review_manual_required=1}，
- *       <b>绝不自动上架</b>；不删、不过期；</li>
+ *   <li>AI 不可用/超时/输出不完整 → 重试 {@code max-attempts} 次（默认 3 次），
+ *       退避 1s / 2s / 4s；单次超时 15s；</li>
+ *   <li>仍失败 → 记录停在 {@code PENDING} + {@code review_manual_required=1} +
+ *       {@code review_engine=RULE_ONLY}，等待<b>发布者本人</b>确认；<b>绝不自动上架</b>；</li>
  *   <li>AI 明确 REJECT 或规则双检命中 → 立即 REJECTED，不重试（重试不会改变确定性规则的结果）。</li>
  * </ol>
  *
@@ -74,13 +75,14 @@ public class ReviewGateService {
             return;
         }
         if (Boolean.TRUE.equals(record.getReviewManualRequired())) {
-            return; // 人工队列的行永不被自动重试，避免"人还没看，AI 先放行"
+            return; // 等本人确认的行永不被自动重试，避免"人还没确认，AI 先放行"
         }
 
         PostprocessCommand command = commandOf(record);
         int startAttempt = record.getReviewAttempts() == null ? 0 : record.getReviewAttempts();
+        int totalAttempts = properties.totalAttempts();
         PostprocessResult last = null;
-        for (int attempt = startAttempt + 1; attempt <= properties.getMaxAttempts(); attempt++) {
+        for (int attempt = startAttempt + 1; attempt <= totalAttempts; attempt++) {
             persistence.recordAttempt(recordId, attempt);
             last = client.process(command);
             Outcome outcome = decide(record, last);
@@ -102,8 +104,8 @@ public class ReviewGateService {
                 case RETRY -> {
                     persistence.auditFailure(recordId, outcome.reason(), last, requestId);
                     log.warn("review retry recordId={} attempt={}/{} reason={}", recordId, attempt,
-                            properties.getMaxAttempts(), outcome.reason());
-                    if (attempt < properties.getMaxAttempts()) {
+                            totalAttempts, outcome.reason());
+                    if (attempt < totalAttempts) {
                         sleepBackoff(attempt);
                     }
                 }
@@ -111,10 +113,10 @@ public class ReviewGateService {
         }
 
         String reason = "AI 审核连续失败（" + (last == null ? "UNKNOWN" : last.errorReason())
-                + "），记录保持待审并转人工；不会自动上架";
-        persistence.markManual(recordId, reason, last, properties.getMaxAttempts(), requestId);
-        log.warn("review manual required recordId={} attempts={} lastReason={}", recordId,
-                properties.getMaxAttempts(), last == null ? "UNKNOWN" : last.errorReason());
+                + "），记录保持待审并等待本人确认发布；不会自动上架";
+        persistence.markOwnerConfirmRequired(recordId, reason, last, totalAttempts, requestId);
+        log.warn("review owner confirm required recordId={} attempts={} lastReason={}", recordId,
+                totalAttempts, last == null ? "UNKNOWN" : last.errorReason());
     }
 
     private PostprocessCommand commandOf(Record record) {
@@ -178,8 +180,8 @@ public class ReviewGateService {
         return value.codePointCount(0, value.length());
     }
 
-    private void sleepBackoff(int attempt) {
-        long delay = properties.getRetryBackoffMs() * (1L << Math.min(attempt - 1, 4));
+    private void sleepBackoff(int retryIndex) {
+        long delay = properties.retryDelayMs(retryIndex);
         if (delay <= 0) {
             return;
         }

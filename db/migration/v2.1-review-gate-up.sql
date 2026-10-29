@@ -29,7 +29,7 @@ ALTER TABLE `t_record`
   ADD COLUMN `review_reason` VARCHAR(500) DEFAULT NULL
     COMMENT '判定理由（≤3 条，中文，分号分隔）；不含原文' AFTER `reviewed_at`,
   ADD COLUMN `review_engine` VARCHAR(32) DEFAULT NULL
-    COMMENT '审核引擎：DEEPSEEK / RULE_DOUBLE_CHECK / MANUAL / OFF' AFTER `review_reason`,
+    COMMENT '审核引擎：DEEPSEEK / RULE_DOUBLE_CHECK / RULE_ONLY / OFF' AFTER `review_reason`,
   ADD COLUMN `review_model` VARCHAR(64) DEFAULT NULL
     COMMENT '模型名；不落 key' AFTER `review_engine`,
   ADD COLUMN `review_prompt_version` VARCHAR(32) DEFAULT NULL
@@ -41,13 +41,13 @@ ALTER TABLE `t_record`
   ADD COLUMN `review_attempts` INT NOT NULL DEFAULT 0
     COMMENT 'AI 审核尝试次数（含失败）' AFTER `review_tokens`,
   ADD COLUMN `review_manual_required` TINYINT(1) NOT NULL DEFAULT 0
-    COMMENT '1=AI 连续失败/人工驳回后待人工处理；该行永不被自动上架' AFTER `review_attempts`,
+    COMMENT '1=AI 重试耗尽，等待发布者本人确认发布；该行永不被自动上架' AFTER `review_attempts`,
   ADD COLUMN `raw_title` VARCHAR(64) DEFAULT NULL
-    COMMENT '原文标题；仅本人详情可见' AFTER `review_manual_required`,
+    COMMENT '原文标题；仅本人详情可见，逻辑删除时置 NULL' AFTER `review_manual_required`,
   ADD COLUMN `raw_description` TEXT DEFAULT NULL
-    COMMENT '原文描述；仅本人详情可见' AFTER `raw_title`,
+    COMMENT '原文描述；仅本人详情可见，逻辑删除时置 NULL' AFTER `raw_title`,
   ADD COLUMN `raw_location` VARCHAR(128) DEFAULT NULL
-    COMMENT '原文地点；仅本人详情可见' AFTER `raw_description`,
+    COMMENT '原文地点；仅本人详情可见，逻辑删除时置 NULL' AFTER `raw_description`,
   ADD COLUMN `match_title` VARCHAR(64) DEFAULT NULL
     COMMENT '比对文本标题（仅剥离身份类，地点/时间/特征保留）' AFTER `raw_location`,
   ADD COLUMN `match_description` TEXT DEFAULT NULL
@@ -88,11 +88,11 @@ CREATE TABLE IF NOT EXISTS `t_review_audit` (
   `id`               BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   `record_id`        BIGINT UNSIGNED NOT NULL COMMENT '被审核的记录',
   `action`           VARCHAR(24)     NOT NULL
-                       COMMENT 'REVIEW=AI 审核 / MANUAL_APPROVE / MANUAL_REJECT / RAW_VIEW=本人读原文',
-  `decision`         VARCHAR(16)              DEFAULT NULL COMMENT 'APPROVE/REJECT/PENDING/ERROR；RAW_VIEW 为 NULL',
+                       COMMENT 'REVIEW=AI 审核 / OWNER_CONFIRM=本人确认发布 / RAW_VIEW=本人读原文 / RAW_PURGE=删除清原文',
+  `decision`         VARCHAR(16)              DEFAULT NULL COMMENT 'APPROVE/REJECT/PENDING/ERROR；RAW_VIEW/RAW_PURGE 为 NULL',
   `review_state`     VARCHAR(16)              DEFAULT NULL COMMENT '动作完成后的记录审核态',
   `reason`           VARCHAR(500)             DEFAULT NULL COMMENT '判定理由；不含原文',
-  `engine`           VARCHAR(32)              DEFAULT NULL COMMENT 'DEEPSEEK / RULE_DOUBLE_CHECK / MANUAL',
+  `engine`           VARCHAR(32)              DEFAULT NULL COMMENT 'DEEPSEEK / RULE_DOUBLE_CHECK / RULE_ONLY',
   `model`            VARCHAR(64)              DEFAULT NULL,
   `prompt_version`   VARCHAR(32)              DEFAULT NULL,
   `latency_ms`       INT                      DEFAULT NULL,
@@ -108,7 +108,7 @@ CREATE TABLE IF NOT EXISTS `t_review_audit` (
   CONSTRAINT `fk_review_audit_record` FOREIGN KEY (`record_id`) REFERENCES `t_record` (`id`)
     ON DELETE RESTRICT ON UPDATE RESTRICT,
   CONSTRAINT `ck_review_audit_action` CHECK (`action` IN
-    ('REVIEW','MANUAL_APPROVE','MANUAL_REJECT','RAW_VIEW')),
+    ('REVIEW','OWNER_CONFIRM','RAW_VIEW','RAW_PURGE','MANUAL_APPROVE','MANUAL_REJECT')),
   CONSTRAINT `ck_review_audit_decision` CHECK (`decision` IS NULL OR `decision` IN
     ('APPROVE','REJECT','PENDING','ERROR')),
   CONSTRAINT `ck_review_audit_state` CHECK (`review_state` IS NULL OR `review_state` IN

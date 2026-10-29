@@ -20,8 +20,8 @@ import com.findit.campus.review.config.ReviewProperties;
  * 没有兜底，记录会永远停在 PENDING（安全但不可用）。这里只拾取超过 5 分钟的记录，
  * 避开正在进行的请求；{@code review_attempts < max-attempts} 防止对已打满的记录无限重投。
  *
- * <p>人工标记 {@code review_manual_required=1} 的行<b>永不被本任务拾取</b>：
- * 人工还没看，AI 不能"自己又试一次然后放行"。
+ * <p>人工/本人确认标记 {@code review_manual_required=1} 的行<b>永不被本任务拾取</b>：
+ * 等本人确认期间，AI 不能"自己又试一次然后放行"。
  *
  * <p>单实例演示形态用 {@link AtomicBoolean} 单飞即可；多实例部署要换成命名锁/任务表，
  * 这一点写在 ADR 的演进路线里，不在本类里假装已经解决。
@@ -54,12 +54,12 @@ public class ReviewReconcileJob {
         try {
             LocalDateTime before = LocalDateTime.now().minusMinutes(COOLDOWN_MINUTES);
             List<Record> candidates = recordMapper.selectReviewCandidates(before,
-                    properties.getMaxAttempts(), properties.getReconcileBatchSize());
+                    properties.totalAttempts(), properties.getReconcileBatchSize());
             if (candidates.isEmpty()) {
                 return;
             }
             log.info("review reconcile start candidates={} maxAttempts={}", candidates.size(),
-                    properties.getMaxAttempts());
+                    properties.totalAttempts());
             for (Record candidate : candidates) {
                 try {
                     reviewGateService.process(candidate.getId(), null);
