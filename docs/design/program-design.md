@@ -219,7 +219,12 @@
 | 2026-10-27 | 手机号是否做短信验证、是否入 `t_user` | 只做格式校验、不做短信验证、`t_user` 不存手机号列；不自动下架 | `db/schema.sql` 表 1、`RecordCreateRequest` 的 `@Pattern`；§9.1 已知限制 |
 | 2026-10-27 | LLM 密钥放置 | 只走环境变量 `DEEPSEEK_API_KEY`；配置文件里**刻意没有 api-key 键**；代码/配置/日志/证据/文档零明文，证据只记 `model` / `latency_ms` / `tokens` | `LlmProperties`、`DeepSeekPairScorer`；§6.8（密钥纪律）、§9.2（限制） |
 | 2026-10-28 | F3 安全评审后的 P1/P2 处置 | P0=0；P1（分隔符/国际前缀归一，堵手机号与证件号绕过）与 P2（状态竞态条件更新、`Cache-Control: no-store` + `Vary: Cookie`、会话只允许 Cookie 承载、日志格式化、过期 COMPLETED 不再进扫描目标）各立分支，**当日已合入 `64693ec`（`main`）** | `08f4bb9`（P1）、`fbd538f`（P2）；本文 §5.1、§5.6、§5.8、§6.9 |
-| 2026-10-28 | 配对阈值是否需要按引擎分两套 | **必须分**。20 对标注样本实测：语义引擎正例 0.92–0.98 / 负例 0.00–0.15，本地关键词正例 0.20–0.73 / 负例 0.02–0.46；共用 0.75 等于本地引擎永远不出卡片。改为默认 `0.95/0.80/0.90/0.95` + `findit.pair.overrides.local` `0.90/0.45/0.90/0.90`（2026-10-28 同义/陷阱专项修正），`forEngine(engine)` 是唯一取阈值入口，两套都做 fail-fast 关系校验 | `docs/testing/v2/threshold-calibration.md`；`qa/datasets/pair-calibration/`；`PairPolicyProperties`、`PairFactsMapper.xml` |
+| 2026-10-28 | 配对阈值是否需要按引擎分两套 | **必须分**。20 对标注样本实测：语义引擎正例 0.92–0.98 / 负例 0.00–0.15，本地关键词正例 0.20–0.73 / 负例 0.02–0.46；共用 0.75 等于本地引擎永远不出卡片。改为默认 `0.95/0.80/0.90/0.95` + `findit.pair.overrides.local` `0.90/0.40/0.90/0.90`（`0.45` 于 2026-10-29 按召回优先口径下调到 `0.40`，见下条），`forEngine(engine)` 是唯一取阈值入口，两套都做 fail-fast 关系校验 | 交付：成员 B `f67a792`（分两套 + fail-fast）、`dcb25a8`（同义/陷阱专项修正）；`docs/testing/v2/threshold-calibration.md`；`qa/datasets/pair-calibration/`；`PairPolicyProperties`、`PairFactsMapper.xml`；§6.13 |
+| 2026-10-29 | 阈值口径取「尽量不误配」还是「宁可多显示不可漏匹配」 | **召回优先**。本地 `unlock` 由 `0.45` 下调到 `0.40`：同义对 S1-OF（小米充电宝）本地分 **0.41**，在 0.45 下被卡在卡片之外（17/18 = 94.4%），0.40 后 18/18 全部可见；代价经核对为零——陷阱集最低 T2 = 0.33，仍在门槛下，陷阱过阈维持 5/6。`direct` 保持 0.90，只控「能不能免对方授权看号码」，不放宽可见性 | 交付：成员 B `bfab99d`；依据 `docs/testing/v2/threshold-calibration.md`「出厂值变更」段；§6.13、`application.yml` |
+| 2026-10-29 | 发布内容要不要过审核才上架（ZHYYKFX-85） | **要。** 审核态 `review_state`（`PENDING`/`APPROVED`/`REJECTED`）与业务三态**正交**，不并进 `status`；发布改「同步落库 + 异步审核」，`POST` 仍返 200「已提交」但对他人不可见、不触发打分；默认 `findit.review.mode=ai`；失败重试 3 次（退避 1s/2s/4s、单次 15s）后停在待审，只允许**发布者本人**确认（`OWNER_CONFIRM` + `review_engine=RULE_ONLY`），AI 正常时该入口 409/`20003` 且前端不渲染；去掉 ops 人工改判，运维侧只留只读队列 | 交付：成员 B 后端 `33d3397`（初版 `f0e49be`）、成员 C 前端入口（确认块与待审态渲染）；上线前置 `704c141`（部署环境 POST 403 的根因：nginx Host 丢端口 + CORS 白名单缺部署源）；`docs/design/adr/AI-REVIEW-GATE.md`、`docs/testing/v2/Z85-review-gate/`；§5.9 |
+| 2026-10-29 | 展示文本、比对文本、原文是否分开存 | **分开，三份并存。** `raw_*` 原文（仅本人可见、读取写 `RAW_VIEW` 审计、逻辑删除即置 `NULL` 并留 `RAW_PURGE`）、`match_*` 比对文本（只剥身份类，地点/时间/特征保留）、`title/description/location` 展示文本（全脱敏 + 泛化，对外只出这一份）；`contentHash` 按 `match_*` 计算 | 交付：成员 B `f0e49be`；`IdentityScrubber`、`RecordService.applySubmittedText`、`db/schema.sql` 表 2；§5.10 |
+| 2026-10-29 | LLM 恢复后历史降级分数怎么办（ZHYYKFX-88） | **两条入口 + 两层冷却**：`degraded-scan-cron` 每 10 分钟只扫 `DEGRADED`；熔断 `HALF_OPEN → CLOSED` 再触发一次事件驱动重扫；`degraded-retry-minutes=60` 同时接在选材层（记录进不进候选）与逐对层（这一对重不重算）；重算只更新分数九列，不碰终态、不撤销已解锁状态，留痕 `pair_score_upgraded` | 交付：成员 B `c6ec799`；`docs/testing/v2/Z88-degraded-rescan.md`；§6.14 |
+| 2026-10-29 | 六条分支（闸门、阈值、降级重扫、绑定修复）何时合入 `main` | 人类批准，按 `--no-ff` 逐条合入，冲突取舍逐条记录；`main` 头 = `d21081b` | 交付：成员 A 执行合并、成员 D 记合并记录；`docs/testing/v2/v2.1.0-integration.md`；§10.5 |
 
 ### 2.5 场景级验收判据（评审追加七组）
 
@@ -690,7 +695,7 @@ notification → 只写自己的表，被 pair 上下文调用     category ✗�
 
 ### 5.2 接口清单
 
-十九个接口 = 17 个业务接口 + 2 个运维接口。逐条与 `server/src/main/java/com/findit/campus/*/web/*Controller.java` 的类级 `@RequestMapping` 与方法级注解对照过（核对记录见附录「一致性自查」）。参数级明细见 `docs/api-contract-v2.md` §4，本文不重复。
+二十个接口 = 18 个业务接口 + 2 个运维接口。逐条与 `server/src/main/java/com/findit/campus/*/web/*Controller.java` 的类级 `@RequestMapping` 与方法级注解对照过（核对记录见附录「一致性自查」）。参数级明细见 `docs/api-contract-v2.md` §4，本文不重复。
 
 | # | 方法与路径 | 用途 | 认证 | 实现位置 | 引入阶段 |
 |---|---|---|---|---|---|
@@ -711,16 +716,19 @@ notification → 只写自己的表，被 pair 上下文调用     category ✗�
 | 15 | `POST /api/pairs/{id}/contact-unlock` | 授权公开 / 撤回本端联系方式 | 两端任一 | 同上 | 新增 |
 | 16 | `GET /api/notifications` | 通知列表 + 未读数 | 需登录 | `notification/web/NotificationController` | 新增 |
 | 17 | `PATCH /api/notifications/{id}/read` | 标记已读 | 接收人 | 同上 | 新增 |
-| O1 | `GET /api/health` | 健康检查 | 公开 | `common/web/HealthController` | 保留，不计入 17 |
-| O2 | `POST /api/ops/pair-scan` | 手动兜底扫描 | `X-Ops-Token` | `pair/web/OpsPairScanController` | 新增，不计入 17 |
+| 18 | `POST /api/records/{id}/confirm-publish` | 本人确认发布（仅 AI 审核连续失败后） | 所有者 | `record/web/RecordController` | 新增 |
+| O1 | `GET /api/health` | 健康检查 | 公开 | `common/web/HealthController` | 保留，不计入 18 |
+| O2 | `POST /api/ops/pair-scan` | 手动兜底扫描 | `X-Ops-Token` | `pair/web/OpsPairScanController` | 新增，不计入 18 |
 
 O2 的两条实现细节要在这里说明，否则运维文档看不懂它的返回码：`OPS_SCAN_TOKEN` 未配置时该接口整体返回 **404**（入口隐藏），配置了但请求头不匹配也返回 **404**（不区分「没开」与「token 错」，避免给探测者反馈），比较用常量时间；已有扫描在跑则 409/`50006`。它不参与三态矩阵。
 
-### 5.3 权限矩阵（17 × 3，逐格有状态码）
+### 5.3 权限矩阵（18 × 3，逐格有状态码）
 
+> **审核态是本节全部格子的前置**：未过审（`review_state≠APPROVED`）或已删除的记录，对非所有者一律 ❌ 404，不区分「不存在」与「在审核中」（§5.9）。下表每一格都在「已过审且未删除」的前提下成立；所有者自己的行不受此限，他能看到自己的待审记录。
+>
 > 读法：`✅ 200` 允许；`❌ 401` 未登录；`❌ 403` 越权；`❌ 404` 不可见；`⚠️` 行内注明分支规则。**没有空格，没有「视情况」。**
 > 「所有者」对集合接口 = 该集合中属于他的那些资源；他拿不到别人的记录或通知。
-> 「合格对端」是**登录非所有者的子集**：本人某条未删除启事与目标记录存在 `pairUsable` 的 pair，且该 pair `score ≥ completed_visible_threshold`（`0.90`）。只在 `COMPLETED` 详情用；不满足按 404，不区分「不存在」与「不够格」。
+> 「合格对端」是**登录非所有者的子集**：本人某条未删除启事与目标记录存在 `pairUsable` 的 pair，且该 pair `score ≥ completed_visible_threshold`（按 pair 的 `engine` 取，默认 `0.95` / 本地 `0.90`，§6.13）。只在 `COMPLETED` 详情用；不满足按 404，不区分「不存在」与「不够格」。
 
 | # | 接口 | 匿名 | 登录非所有者 | 所有者 |
 |---|---|---|---|---|
@@ -741,8 +749,9 @@ O2 的两条实现细节要在这里说明，否则运维文档看不懂它的�
 | 15 | `POST /api/pairs/{id}/contact-unlock` | ❌ 401 | ❌ 403（10007） | ⚠️ `PUBLISH` 且 `score ≥ 0.75` → ✅ 200；`PUBLISH` 且 `score < 0.75` → ❌ 403（50002）；`REVOKE` 任意分档 → ✅ 200；任一端 `CLOSED`/到期 → ❌ 403（50005）；记录已删 → ❌ 404（20004） |
 | 16 | `GET /api/notifications` | ❌ 401 | ✅ 200（只返回自己的集合） | ✅ 200（同左） |
 | 17 | `PATCH /api/notifications/{id}/read` | ❌ 401 | ❌ 403（10007，他人通知） | ✅ 200；不存在 → ❌ 404（50004） |
+| 18 | `POST /api/records/{id}/confirm-publish` | ❌ 401 | ❌ 404（20001，未过审内容对非所有者不可见；可见但非所有者的 `PENDING` → ❌ 403/10007） | ⚠️ `review_state=PENDING` 且 `review_manual_required=1` 且 `status=PENDING` → ✅ 200（入池并触发打分）；AI 正常或已有结论 → ❌ 409（**20003**）；`status` 已是终态 → ❌ 409（20003） |
 
-**矩阵自检**：17 行 × 3 格 = 51 格，每格都有状态码。`⚠️` 只出现在「同一请求内按记录状态 / 分数 / action 分支」的行（#2、#4、#5、#13、#14、#15），分支条件与状态码都写死在格内。O1/O2 不在此表。
+**矩阵自检**：18 行 × 3 格 = 54 格，每格都有状态码。`⚠️` 只出现在「同一请求内按记录状态 / 分数 / action / 审核态分支」的行（#2、#4、#5、#13、#14、#15、#18），分支条件与状态码都写死在格内。O1/O2 不在此表。
 
 **三处容易读错的点**：
 
@@ -793,6 +802,8 @@ Cookie: JSESSIONID=…
 ```
 
 成功返回与详情同构（所有者视角），`status="PENDING"`、`completedAt=null`、`hasMatchedPair=false`、`matchedPairCount=0`、`allowedStatuses=["CLOSED"]`、`pairs=[]`、`pairState="PENDING"`、`lowConfidenceCount=0`、`message="已提交"`。请求体里**不接受** `publisherId`、`status`、`completedAt`、`pairState`——`publisherId` 一律取会话，客户端传了也被忽略。
+
+发布闸门打开时（默认），响应还带 `reviewState="PENDING"`、`reviewManualRequired=false`、`ownerConfirmAvailable=false`：`message` 仍是「已提交」，但这条记录此刻**对外不可见**，也不触发配对打分，直到审核通过（§5.9）。前端不能把 200 当成「已经上架」。
 
 `contact` 只做格式校验（`^1[3-9]\d{9}$`），**不做短信验证**；不合法 → `400/10001` + `fieldErrors`。
 
@@ -985,8 +996,8 @@ candidates = [{"score":0.78,"reason":"关键词命中:[手机号已隐藏]qq[QQ�
 | `LOW` | `score < 0.75` | 一律拒绝，**不出成功体**（`PairCard` 里连卡片都不生成） | `403/50002` |
 
 > **上表数字是早期「全局一套」的取值，已被取代。** 2026-10-28 校准后（ZHYYKFX-84），阈值按 pair 的 `engine` 取：
-> 默认（语义）`0.95 / 0.80`，`LOCAL_KEYWORD` 覆盖 `0.90 / 0.45`；三档语义与判定函数不变。
-> 现行值与理由见 `docs/testing/v2/threshold-calibration.md`。
+> 默认（语义）`0.95 / 0.80`，`LOCAL_KEYWORD` 覆盖 `0.90 / 0.40`；三档语义与判定函数不变。
+> 现行取值、两套的理由与召回优先口径见 §6.13，逐对样本见 `docs/testing/v2/threshold-calibration.md`。
 
 四条实现细节，都是踩过的位置：
 
@@ -1056,6 +1067,124 @@ NEW ──CONTACT──► CONTACTED ──CONFIRM(两端)──► MATCHED（�
 
 「完成」的记录仍进候选池，是这套语义的核心：**失主在别处重新发帖时，那条已经完成的招领还得能被匹配到**；如果他直接把它关了（`CLOSED`），就等于声明「不要再联系我了」，于是连召回一起消失。这也是为什么 `COMPLETED` 的保留期是**读时窗口**而不是定时改写——没有任何任务会在半夜把你的记录状态改掉，你什么时候点「标记完成」都是你自己那一次 UPDATE。
 
+上表所有「出现 / 0 命中」都默认记录已经过审：**未过审的记录不在这张表的讨论范围内**，它对非所有者连 404 都算不上「可见」，见 §5.9。
+
+### 5.9 发布闸门：审核通过才对外可见
+
+本节回答一个问题：一条启事从「提交成功」到「别人能看见」之间，多了一道什么闸，以及闸失灵时系统往哪边倒。
+
+**为什么要有这道闸**：遮蔽（§5.6）是确定性规则，只能认出手机号、证件号、QQ 号、相对时间这几类；用户写「我叫张三，3 号楼 201，微信 abc_12345」时，规则层拦不住真名与微信号，而这类内容一旦进公共列表就是收不回来的泄露。闸门做两件事：模型对**展示文本**做去身份与泛化，规则对**模型输出**再做一次确定性双检；两件都过，才允许上架。
+
+#### 审核态与业务三态正交
+
+`t_record.review_state`（`PENDING` / `APPROVED` / `REJECTED`）与 `status`（`PENDING` / `COMPLETED` / `CLOSED`）是两条互不覆盖的轴。**不做成第四个业务状态**的理由很具体：三态状态机已经被 45 条验收证据、PATCH 流转、`COMPLETED` 保留期绑死，「公共列表恒 `PENDING`」这类不变量牵一发动全身。审核只回答一个问题：**这条内容是否允许对外可见。**
+
+```
+POST / PUT（mode=ai）→ PENDING ──AI 通过且规则双检不命中──► APPROVED ──► 入池并触发配对打分
+                         ├──AI 明确 REJECT，或规则双检命中──► REJECTED（终态）
+                         └──连续失败（调用次数耗尽）──► PENDING + review_manual_required=1
+                                                          └─发布者本人确认──► APPROVED（engine=RULE_ONLY）
+mode=off（回退开关）  → 直接 APPROVED，行为等同没有闸门
+```
+
+三条迁移边都由**发布 / 编辑 / 审核 / 本人确认**四条路径写，系统任务一条都不写（与 §5.8、§6.6 的禁止清单同源）。**编辑会重新审**：`PUT` 把 `review_state` 重置为 `PENDING` 并清空上一轮的 `review_*` 字段——旧结论不能复用，否则「改完即上架」，闸门形同虚设。
+
+#### 判定顺序：规则双检在模型之后，但是唯一的放行凭证
+
+下面的顺序就是 `ReviewGateService.decide` 的实际判断链，表格第三列是「为什么必须排在这一格」：
+
+| 序 | 判定 | 结果 | 为什么排在这里 |
+|---|---|---|---|
+| 1 | 调用失败、超时、输出不是合法结构 | 重试 | 这是「没拿到答案」，不是「答案是否定」，不能当成拒稿 |
+| 2 | 规则双检命中（手机号 / 证件号 / 门牌等确定性规则） | 立即 `REJECTED`，**不重试** | 确定性规则命中不会因为再调一次而改变；而且**模型说通过也不算数** |
+| 3 | 模型 `decision=REJECT` | `REJECTED` | 拒稿是终态，重试只会烧额度 |
+| 4 | 字段缺失，或 `title` / `description` / `location` / `summary` 长度越界 | 重试 | 输出形态问题，下一次可能就合规 |
+| 5 | 以上都不命中 | `APPROVED` | 规则与模型都过，才允许上架 |
+
+为什么双检要跑在模型**之后**：模型是概率组件，prompt 只能压低残留概率；确定性扫描是唯一的放行凭证。顺序反过来（先规则、后模型）时，模型有机会把已经命中规则的文本「改写干净」，那等于让概率组件替规则背书。
+
+#### 失败策略：重试三次，然后交回本人，永不自动上架
+
+| 参数 | 默认值 | 说明 |
+|---|---|---|
+| `findit.review.max-attempts` | `3` | **重试次数**，不是总调用次数；单条记录最多调用 `1 + 3 = 4` 次 |
+| `findit.review.retry-delays-ms` | `1000,2000,4000` | 第 n 次重试前的等待；列表用尽后沿用最后一项 |
+| `findit.review.timeout-ms` | `15000` | 单次调用总超时（含建连与读），与 pair 打分的 `read-timeout-ms` 对齐 |
+| `findit.review.max-tokens` | `900` | 输出含 `title` / `description` / `location` / `summary` / `reasons` 五段，256 不够 |
+| `findit.review.summary-max-code-points` | `40` | `summary` 的硬上限，超了按「输出不合规」重试 |
+| `findit.review.prompt-version` | `pair-postprocess-v1` | 落 `t_record.review_prompt_version`；改 prompt 必须同时改它 |
+
+调用次数耗尽后，记录停在 `PENDING` + `review_manual_required=1` + `review_engine=RULE_ONLY`，**永不自动上架**。这是刻意的单向失败：宁可让发布者多一步手动确认，也不让一条没审过的内容因为「AI 挂了」而被放出去。每次尝试都先落 `review_attempts` 再发起调用——进程在调用中途崩溃时次数仍然真实，不会被无限重试。
+
+#### 唯一的兜底入口：发布者本人确认
+
+| 项 | 规则 |
+|---|---|
+| 入口 | `POST /api/records/{id}/confirm-publish` |
+| 前置 | 所有者 + 业务态 `PENDING` + `review_state=PENDING` + `review_manual_required=1`，四条同时成立 |
+| AI 正常时 | `409` / `20003`「当前无需本人确认」——这条路径不能被用来绕过 AI 审核 |
+| 他人调用 | 未过审内容对非所有者本就 `404`，确认接口复用同一套可见性判定，不泄露「审核中」的存在 |
+| 确认后 | 照常入池并触发配对打分，不特殊对待；审计记 `OWNER_CONFIRM` + `engine=RULE_ONLY`，后台可筛出「未经 AI 审核」的行 |
+| 前端 | 以服务端 `ownerConfirmAvailable` 为准，为 `false` 时整块不渲染；不在前端自行组合 `reviewState` 与 `manualRequired` |
+
+运维侧只保留**只读**的 `GET /api/ops/reviews/pending`（`X-Ops-Token`，未配置或传错一律 `404`）。人工改判入口被刻意去掉：任何能从 `PENDING` 直接改成 `APPROVED` 的入口，都会让「审核通过才上架」多一条绕过路径。
+
+#### 可见性只有一个事实来源
+
+```sql
+is_visible TINYINT(1) GENERATED ALWAYS AS (
+  CASE WHEN review_state = 'APPROVED' AND deleted_at IS NULL THEN 1 ELSE 0 END) STORED
+```
+
+列表、搜索、候选池、配对口径四处 SQL 都引用这一列，不各写一份 `review_state` 条件——漏一处就是「未审核内容能被看到」，靠人眼 grep 十几处 `status='PENDING'` 不可靠。生成列把「加审核态」变成「加一个条件」，并且可以单独建索引（`idx_record_visible`）。
+
+非所有者读未过审详情一律 `404`（与「不存在」同码，不泄露「这条在审核中」）；所有者仍能打开自己的记录看到审核态与审核理由——那不是对外可见，是本人回显。
+
+#### 留痕字段
+
+| 位置 | 字段 | 回答什么问题 |
+|---|---|---|
+| `t_record` | `review_state` / `reviewed_at` / `review_attempts` / `review_manual_required` | 现在是什么态、试了几次、是不是在等本人 |
+| `t_record` | `review_reason`（≤500 字，≤3 条，分号分隔） | 为什么拒——**存模型给出的中文理由，不复制原文** |
+| `t_record` | `review_engine` / `review_model` / `review_prompt_version` | 谁判的（`DEEPSEEK` / `RULE_DOUBLE_CHECK` / `RULE_ONLY` / `OFF`）、哪个模型、哪个 prompt 版本 |
+| `t_record` | `review_latency_ms` / `review_tokens` | 花了多久、花了多少 token；没发起调用时为 `NULL`，不估算 |
+| `t_review_audit`（append-only） | `action` / `decision` / `review_state` / `reason` / `engine` / `model` / `prompt_version` / `latency_ms` / `prompt_tokens` / `completion_tokens` / `actor_type` / `actor_id` / `request_id` | 每一次尝试与每一次人工动作。`action ∈ {REVIEW, OWNER_CONFIRM, RAW_VIEW, RAW_PURGE}`，`request_id` 与响应体同值，一个 id 从浏览器报错查到这条判定 |
+
+审计表**没有原文列**：审计不能变成第二份未脱敏语料库。单次失败的审计写入失败只告警、不阻断主流程；但「通过 / 拒绝」的状态更新与审计插入在同一个事务里，要么都写、要么都不写——否则会出现「审计说通过、实际被拒绝」的双结论。
+
+#### 代价与边界（照实写）
+
+- **发布不再立即可见**：从「提交成功」到「别人能看见」多了秒级到数十秒的间隔，中间还有一条待审态。前端必须把这层状态画出来（「已提交，待审核」），不能让用户以为发失败。
+- **每篇多一次 LLM 调用**：发布路径的 P95 变长、成本变高；`temperature=0` 只提高一致性，不承诺「必然遮住某一类」。
+- **默认 `ai` 意味着演示环境要有可用 key**：没有 key 时记录停在「待本人确认」，不会静默放行。`FINDIT_REVIEW_MODE=off` 是**显式**回退开关（演示兜底 / 排障），不是默认值；打开后读写行为与无闸门版本完全一致，`review_engine='OFF'`。
+- **去身份靠规则，不是 NER**：姓名检测依赖标签（姓名 / 名字 / 联系人 / 我叫）与发布者展示名精确匹配；正文用别的方式自述真名不保证被剥离。验收口径是规则双检 + 抽样人审，不承诺 100%（§9.2 已登记）。
+
+### 5.10 三通道文本：原文、比对文本、展示文本
+
+一条启事的文本在库里存三份，各自的读者和用途都不同。混淆它们的后果是两类：把原文发出去（隐私事故），或把泛化后的文本拿去打分（匹配质量塌陷）。
+
+| 通道 | 落库列 | 内容 | 谁读 | 用途 |
+|---|---|---|---|---|
+| 原文 | `raw_title` / `raw_description` / `raw_location` | 用户提交的原文，一个字不改 | **只有发布者本人**，且每次读取写一条 `RAW_VIEW` 审计 | 本人复核「我到底写了什么」；争议时对账 |
+| 比对文本 | `match_title` / `match_description` / `match_location` | 只剥离**身份类**：手机号 / 证件号 / QQ / 微信 / 学号 / 带标签的姓名 / 发布者展示名。**地点细节、时间、颜色、特征一律保留** | 打分链路与 `contentHash`，不出接口 | 判断「是不是同一件物品」 |
+| 展示文本 | `title` / `description` / `location`（+ `summary`） | 全脱敏 + 泛化：地点按码点截断并删精确定位，描述过遮蔽规则，`summary` 是模型给的「类别 + 关键特征 + 模糊地点」 | **所有对外响应** | 公共列表、详情、匹配结果、通知 |
+
+#### 三条不变量
+
+1. **对外只出展示文本**。任何一个响应里出现 `raw_*` 或 `match_*` 都是缺陷；`match_*` 保留地点细节，泄露程度只比原文轻一点。
+2. **`contentHash` 按比对文本算**。哈希覆盖 `trim(title) + trim(description) + trim(location) + categoryId + type`（取 `match_*`，`match_*` 为空时回退展示文本）——这正是打分的全部依据。改动展示文本（例如模型换了一种泛化措辞）不该让所有 pair 重算；改动比对文本必须重算，否则界面上挂着按旧内容算出来的分数（§6.7 的第 7 步就是为这种情形准备的）。
+3. **`raw_*` 只有一个出口，且删除即清空**。本人详情是唯一能读到原文的地方；逻辑删除时 SQL 内把 `raw_*` 置 `NULL` 并写一条 `RAW_PURGE` 审计，**审计失败会让整个删除事务回滚**——宁可删除失败，也不留下「原文已清但查无记录」的缺口。
+
+#### 为什么展示文本必须泛化、比对文本必须不泛化
+
+两条通道的失败代价方向相反。展示文本进公共列表，地点写「第三教学楼 201 室」等于把失主的准确位置公开给所有人；比对文本进打分，把「第三教学楼 201」泛化成「教学楼」会直接削掉区分度，表现就是「明明是同一条却匹配不上」。所以同一句原文，在两条通道里允许而且应该长得不一样。
+
+`IdentityScrubber` 只做身份剥离，不做泛化，这是它的能力边界：它调 `MaskingPolicy.maskIdentity` 保证号码类规则只有一份实现，再补三类规则层拦不住的东西（学号 / 工号、带标签的姓名、发布者展示名原文）。单字展示名不替换——「李」在正文里太常见，替换会毁掉语义。
+
+#### 退化路径
+
+`mode=off` 与闸门之前的历史行没有 `match_*`，读取侧统一走 `matchTitleOrDefault()` 一类的回退到展示文本；这条回退让老数据仍然能参与打分，代价是那部分记录用的是泛化文本。`raw_*` 同理，为 `NULL` 时接口不返回这三个键，保持旧响应形状。
+
 ---
 
 ## 6 匹配与配对设计
@@ -1071,7 +1200,7 @@ NEW ──CONTACT──► CONTACTED ──CONFIRM(两端)──► MATCHED（�
 | 产出 | 一次性排序结果 + `t_match_result` 快照 | `t_pair_score` 一行一对（**持久评估证据**）+ `t_notification` |
 | 打分方 | `MatchEngine`（当前只有本地关键词实现） | `DeepSeekPairScorer`，失败时 `LocalKeywordPairScorer` 顶替 |
 | 外部依赖挂了 | **503 / 30002，不顶替** | 本地关键词分顶替，`engine=LOCAL_KEYWORD` + `degraded_reason` |
-| 章节 | §6.1–§6.5 | §6.6–§6.9 |
+| 章节 | §6.1–§6.5 | §6.6–§6.10、§6.13–§6.14 |
 
 两条链路的候选口径**必须是同一份**：`MATCHABLE` = 未删除 且（`PENDING` 或 `completed_at` 在保留期内的 `COMPLETED`），`CLOSED` 一律不召回。这条谓词在 SQL 里只有一处（`RecordMapper.xml#matchablePredicate`），Java 侧的复核走 `RecordVisibilityPolicy.isMatchable`。
 
@@ -1286,13 +1415,13 @@ public MatchEngine keywordMatchEngine(@Lazy CategoryMapper categoryMapper) {
 
 ### 6.9 每日兜底扫描与到期统计
 
-**不新增第二个调度器**：`PairScanService` 一个 `@Scheduled(cron = "${findit.pair.score.scan-cron:0 30 3 * * *}", zone = "Asia/Shanghai")` 任务，同时负责补算与到期统计。它补三类漏算：
+**一个执行体，两个调度**：`PairScanService` 的补算与到期统计只有一个执行体，但挂在两个 `@Scheduled` 上——每日全量（`findit.pair.score.scan-cron`，默认 `0 30 3 * * *`）与降级重扫（`degraded-scan-cron`，默认 `0 */10 * * * *`，只扫 `pair_state='DEGRADED'`，见 §6.14）。两者共用同一个进程内单飞，不各写一份补算逻辑。它补三类漏算：
 
 | 类别 | 判据 | 怎么产生的 |
 |---|---|---|
 | 从未算过 | `pair_state='PENDING'` 且 `pair_scored_at IS NULL` | 队列满被丢弃、进程在打分前重启 |
 | 算到一半挂了 | `pair_state='SCORING'` 且 `pair_scored_at < now - stale-minutes` | 持锁线程被杀 |
-| 降级了 | `pair_state='DEGRADED'` | key 恢复后由 §6.7 的重算例外翻成 `DEEPSEEK` |
+| 降级了 | `pair_state='DEGRADED'` | key 恢复后由 §6.7 的重算例外翻成 `DEEPSEEK`；另有 10 分钟降级重扫与熔断恢复事件两条入口（§6.14） |
 
 - **单次限量**：`scan-limit`（500 条记录）与 `max-llm-calls`（500 次调用）双闸，达到上限就停并把 `limited=true` 返回，下一轮继续——宁可分多次跑完，也不要在一次扫描里把线程和配额耗尽。
 - **饿死保护**：目标 SQL `ORDER BY (pair_scored_at IS NULL) DESC, pair_scored_at ASC, id ASC`，从没算过的排最前，新记录不会被老积压挤掉。
@@ -1314,7 +1443,7 @@ public MatchEngine keywordMatchEngine(@Lazy CategoryMapper categoryMapper) {
 
 共同点有两条，且都不因降级而放宽：**降级不改判定流程**（三档语义与 fail-closed 审计一视同仁，低分照样拒绝），**降级不绕过可见性与审计**（取号仍走 §5.7 的三档判定与 fail-closed 审计）。
 
-但阈值**必须按引擎取**（2026-10-28 校准，ZHYYKFX-84）：`LOCAL_KEYWORD` 的分数尺度与 `DEEPSEEK` 不同（同一对内容可差 0.72），降级 pair 用 `findit.pair.overrides.local`（`0.90/0.45/0.90`）判定，语义 pair 用默认那一套（`0.95/0.80/0.90`）。旧口径「降级不改阈值（0.75/0.90 一视同仁）」是把「不改判定流程」误写成了「不改数字」，其直接后果是降级态下本地分全部低于 0.75、用户看不到任何卡片。校准依据见 `docs/testing/v2/threshold-calibration.md`。
+但阈值**必须按引擎取**（2026-10-28 校准，ZHYYKFX-84）：`LOCAL_KEYWORD` 的分数尺度与 `DEEPSEEK` 不同（同一对内容可差 0.72），降级 pair 用 `findit.pair.overrides.local`（`0.90/0.40/0.90/0.90`）判定，语义 pair 用默认那一套（`0.95/0.80/0.90/0.95`）。旧口径「降级不改阈值（0.75/0.90 一视同仁）」是把「不改判定流程」误写成了「不改数字」，其直接后果是降级态下本地分全部低于 0.75、用户看不到任何卡片。校准依据见 `docs/testing/v2/threshold-calibration.md`，两套的取值理由与召回优先口径见 §6.13。
 
 ### 6.11 实测证据（真实调用与降级各一组）
 
@@ -1349,8 +1478,151 @@ UI:「已降级 智能匹配暂不可用，已用关键词匹配。分数仅供�
 | 扫描的多实例互斥 | 明确不做 | 单实例演示形态；进程内 `AtomicBoolean` 单飞已够用，跨实例需数据库锁（§10 第 5 条） |
 | Micrometer / actuator 指标端点 | 明确不做 | 无外部仪表盘需求；`PairScoringMetrics` 的原子计数器 + 扫描响应是下限 |
 | pair 打分的实时推送 | 明确不做 | 前端 5 秒轮询 `/api/my/records`（仅「进行中」页签且有 `PENDING`/`SCORING` 时）已满足演示需求 |
-| 降级行的自动重算调优 | 未做 | 只有一个 60 分钟冷却窗口，没有按 `degraded_reason` 区别对待（如 `UNAUTHORIZED` 与 `EMPTY_KEY` 同权） |
+| 降级行的自动重算调优 | 未做 | 冷却窗口只有一个（60 分钟），没有按 `degraded_reason` 区别对待（如 `UNAUTHORIZED` 与 `EMPTY_KEY` 同权）；重扫周期与触发见 §6.14 |
 
+### 6.13 阈值：按引擎两套，口径召回优先
+
+这一节回答三个必答问题：为什么阈值要分两套、为什么不追求「误配为零」、`direct` 到底控制什么。
+
+#### 同一对内容，两套引擎的分数不在同一把尺子上
+
+20 对人工标注样本 + 18 对同义改写 + 6 对高重叠陷阱，实测分布如下（`qa/datasets/pair-calibration/`、`qa/datasets/pair-synonyms/`，逐对分数在 `results/local.json` / `deepseek.json`）：
+
+| 分布 | 语义引擎 `DEEPSEEK` | 本地引擎 `LOCAL_KEYWORD` |
+|---|---|---|
+| 正例区间（标注集） | 0.92 – 0.98 | 0.20 – 0.73 |
+| 负例区间（标注集） | 0.00 – 0.15 | 0.02 – 0.46 |
+| 同义改写保持率中位数（18 对） | 0.98 | 0.64（最低 0.41） |
+| 高重叠陷阱最高分（6 对） | 0.72 | 0.85 |
+
+共用一套 `0.90 / 0.75` 的结局只有两种：取语义尺度，本地引擎的正例全部落在 `unlock` 之外，降级态一张卡片都不出；取本地尺度，语义引擎的陷阱会被放进直看档。所以阈值的键有两组，取值也有两组：
+
+| 键 | 默认（语义引擎） | `overrides.local`（`LOCAL_KEYWORD`） | 控制什么 |
+|---|---|---|---|
+| `contact_unlock_threshold` | **0.80** | **0.40** | 出不出卡片、能不能申请解锁 |
+| `contact_direct_threshold` | **0.95** | **0.90** | 免不免对方授权就能看号码 |
+| `notify_threshold` | **0.90** | **0.90** | 写不写配对通知 |
+| `completed_visible_threshold` | **0.95** | **0.90** | 合格对端能不能看 `COMPLETED` 详情 |
+| `completed_retention_days` | 30 | 30（不分引擎） | `COMPLETED` 保留期 |
+
+`forEngine(engine)` 是**唯一**取阈值的入口，三档判定与卡片过滤都按 pair 自己的 `engine` 列取值；`engine` 为 `NULL`（还没打分）时按默认那套。两套都做启动期 fail-fast 的关系校验（`unlock < direct`、`notify ≥ unlock`），覆盖值写反了在启动期就炸，不会等到第一次渲染本地卡片。覆盖段是「覆盖」不是「另一份完整配置」：某个键没配就回退默认，所以 `overrides.local` 只有四个键真的需要写。
+
+#### 为什么两套、为什么不追求误配为零
+
+两套的根因是尺度差，不是调参没调好：同一对内容，本地引擎给 0.20，语义引擎给 0.92（P06）。一个阈值同时承担「出不出卡片」和「能不能取号」两件事，再叠加两套引擎共用一把尺子，就是上一版失效的全部原因。
+
+**召回优先**是这套取值背后的产品判断，也是本节最容易被问的一处：
+
+- 卡片上写着「可能相关」，它**不是结论**。用户看到一张不相关的卡片，代价是划过去多看一秒；用户漏掉一对真实匹配，代价是这条链路对他完全没有用——他根本不会知道有东西被漏了。
+- 所以 `unlock` 按下界取，`direct` 按上沿取：**多显示卡片，但不能多给号码**。真正出号码的那一步由对方授权 + fail-closed 审计兜着（§5.7），降级态下一个本地分 0.41 的 pair 最多是「可以申请解锁」，而不是「直接看到号码」。
+- 出厂值变更就是按这个口径做的：本地 `unlock` 由 `0.45` 下调到 **`0.40`**（`bfab99d`）。依据是一条具体的样本——同义对 S1-OF（小米充电宝，原文→招领）本地分 **0.41**，正好卡在 0.45 之外，同义集过阈率 17/18 = 94.4%；降到 0.40 后 **18/18** 全部可见。代价经核对为零：陷阱集最低分 T2 = **0.33**，0.40 之下仍然不可见，陷阱过阈比例维持 5/6，没有多放进一条负例。
+- 反证也在同一份证据里：把 `unlock` 抬到 `0.86`，同义集过阈率变 **0/18**，降级态又回到「一条都看不到」。**本地引擎没有语义判别力，这是算法边界，不是阈值还能再调出来的空间**——陷阱区间 0.33–0.85 与同义区间 0.41–0.74 完全交叠，任何单一阈值都无法把两者切开。
+
+#### `direct` 只控制「能不能直接看号码」
+
+四个键职责不同，混着读会得出错误结论：
+
+| 问题 | 由哪个键回答 |
+|---|---|
+| 这条 pair 值不值得显示成卡片？ | `contact_unlock_threshold` |
+| 命中后不经过对方同意就能看号码吗？ | `contact_direct_threshold` |
+| 要不要给两端各发一条通知？ | `notify_threshold` |
+| 我能不能看对方的 `COMPLETED` 记录详情？ | `completed_visible_threshold` |
+
+本地 `direct` 取 **0.90** 而不是旧值 `0.65`，理由是实测出的隐私缺陷：陷阱集里 6 对「不同物但描述高度重叠」的负例，本地引擎给到 0.33–0.85，最高 0.85；`direct=0.65` 会让 **5/6 陷阱免授权出号**，抬到 0.90 后是 **0/6**。代价是本地引擎不再有免授权直看档——同义对全部落在可授权档（0.41–0.74），这对降级态是可接受的：卡片还在，号码仍要对方点头。
+
+`contactAvailable` 只是按钮状态，不是号码；`PairCard` 永远不含 `contact` 字段，SQL 里只取「对方有没有填号」这一个布尔（§5.7）。
+
+#### 边界
+
+- 陷阱集只有 6 对，最高分 0.85 与本地 `direct=0.90` 只隔 0.05；再多几对同类型负例，0.90 也可能不够。这条写进 §9.2，不美化成「已收敛」。
+- 语义引擎的 0.95 直看档是 `deepseek-chat` 当前版本的行为，模型升级后正例可能整体下移，**0.95 会第一个失效**；换模型必须重跑两套样本，不能沿用旧阈值。
+- 标注样本是人工按校园场景编写的，不是生产日志抽样；阈值是经验区间，不是置信区间。
+
+### 6.14 降级重算：LLM 恢复后，旧分数怎么被追回来
+
+§6.8 写完「失败怎么降级」之后还剩一个尾巴：**降级行什么时候能被重新算成分数**。只加降级、不加恢复，降级态就成了单向门——key 恢复了，那批 `LOCAL_KEYWORD` 的旧分数还挂在界面上，用户看到的永远是「分数仅供参考」。
+
+#### 三条入口，一个执行体
+
+| 入口 | 触发 | 扫描范围 | 单轮上限 |
+|---|---|---|---|
+| 每日全量 | `findit.pair.score.scan-cron`（默认 `0 30 3 * * *`） | 从未算过、算到一半挂了、冷却已过的降级记录 | `scan-limit=500` 条 / `max-llm-calls=500` 次 |
+| 降级重扫 | `degraded-scan-cron`（默认 `0 */10 * * * *`，即每 10 分钟） | **只**扫 `pair_state='DEGRADED'` 且距上次打分 ≥ 冷却窗口的记录 | `degraded-scan-limit=100` 条 |
+| 熔断恢复事件 | `HALF_OPEN → CLOSED` 时触发一次 | 与降级重扫相同 | 同上 |
+
+三条入口共用同一个执行体与同一个进程内单飞（`AtomicBoolean`），撞车时 HTTP 入口返回 `409` / `50006`、定时入口记一行 skip 就返回。
+
+**为什么要短周期定时 + 恢复事件两条，而不是只留一条**：恢复事件是唯一「确知通路已恢复」的时刻，此刻重扫最省额度；但事件会因为「已有一轮在飞」被丢弃，而定时器不知道 LLM 什么时候好，却总能在 10 分钟内兜住。**这条链路允许丢事件，不允许丢数据**——候选由数据库状态决定，下一轮定时重扫会重新算出来。代价是「恢复瞬间立即出分」在事件被丢的少数情况下退化为「≤10 分钟出分」。
+
+把周期缩到 1 分钟不解决任何问题：故障期间那只是 10 倍的空转 SQL，恢复时刻一点都不会提前。
+
+#### 冷却落在两层，读同一个 `degraded-retry-minutes`
+
+| 层 | 判据 | 挡住什么 |
+|---|---|---|
+| 选材层 | `pair_state='DEGRADED' AND (pair_scored_at IS NULL OR pair_scored_at < now - 60min)` | 一条记录刚被打成 `DEGRADED`，10 分钟后又被整条捞出来、逐对判定再跳过——纯空转 |
+| 逐对层 | `engine='LOCAL_KEYWORD' AND updated_at < now - 60min` 才允许在哈希未变时重算 | 记录因为别的原因（编辑、发布）被重新打分，但这一对刚刚试过，不该再计费一次 |
+
+两层读同一个 `findit.pair.score.degraded-retry-minutes`（默认 `60`），口径不会分叉。为什么需要冷却：key 刚恢复时一次扫描可能面对上千条降级行，无冷却会把它们在同一分钟里全部重算，等于自制一次流量尖峰，还可能触发供应商限流。
+
+#### 熔断三态：恢复事件从哪来
+
+```
+CLOSED ──连续 5 次失败──► OPEN ──冷却 5 分钟──► HALF_OPEN ──探测成功──► CLOSED（触发恢复回调）
+                            ▲                        │
+                            └────────探测失败─────────┘
+```
+
+`OPEN` 冷却结束时**只放一次探测调用**，不是直接全量放行。这一格是本节的核心取舍：探测没证明通路可用之前放更多请求出去，只会再打开一次熔断；而「探测成功」这个时刻，正好是历史 `DEGRADED` 行最该被重算的时刻，恢复回调因此挂在 `HALF_OPEN → CLOSED` 上，而不是等下一次定时扫描。
+
+三个实现细节都是踩过的位置：
+
+- **回调必须异步**。回调跑在调用 `recordSuccess()` 的线程上，而那把线程通常正持有某条 pair 的 MySQL 命名锁（§6.7）。同步跑扫描会长期占着连接与锁，还会与当前记录自锁，所以 `DegradedRescanTrigger` 只做一次 `executor.execute`，回调立即返回。
+- **最多一个在飞**。熔断抖动（恢复→失败→恢复）能在几分钟内触发多次回调，排队多轮扫描没有意义——后一轮会看到同样的候选。被丢掉的那次由 10 分钟定时重扫兜底。
+- **探测超时兜底**。`HALF_OPEN` 期间如果探测没有回报（代码缺陷、进程被挂住），超过 `2 × total-timeout-ms` 后再放一次探测，避免永久半开。这个状态比直接打开更难排查。
+
+`HALF_OPEN` 期间的并发打分请求拿到 `CIRCUIT_OPEN` 降级（§6.8 的七种原因之一）。这是有意的背压，不是缺陷。
+
+#### 重算只改分数，不碰终态与已解锁状态
+
+降级重算走的是与首次打分**完全同一条** `upsertScore` 路径，列清单是白名单：只允许 `score / engine / degraded_reason / prompt_version / latency_ms / prompt_tokens / completion_tokens / lost_hash / found_hash`（外加模型给出的 `reason` 文本）九列。出现 `status` 或任何 `*_unlocked_*` / `*_confirmed_*` 就是 bug——重算不得把 `IGNORED` 翻回 `NEW`，也不得撤销已经公开的联系方式。这条纪律由 `PairScoreUpsertSqlTest` 解析 mapper XML 断言，不靠人眼。
+
+`INSERT` 分支不写 `status`，让 DDL 默认值 `NEW` 只对首次插入生效；也没有 `DELETE`——pair 是评估证据，失效是读时谓词，不是删行。重算同样不写 `t_record.status/completed_at/deleted_at/updated_at`，不关闭任何记录（§6.6 的禁止清单原样适用）。
+
+#### 留痕：`pair_score_upgraded`
+
+重算完成后打一行固定格式的业务日志，回答「这条是什么时候从关键词分升级成模型分的」：
+
+| 字段 | 含义 |
+|---|---|
+| `event` | 固定 `pair_score_upgraded`，可按 event 检索 |
+| `recordId` / `pairId` / `lostId` / `foundId` | 定位到具体的一条记录与一对 |
+| `trigger` | 谁触发的：`degraded-scheduled` / `llm-recovered` / `scheduled` |
+| `oldEngine` / `oldScore` | 升级前的引擎与分数（`LOCAL_KEYWORD` / 具体分值） |
+| `newEngine` / `newScore` | 升级后的引擎与分数 |
+| `degradedReason` / `latencyMs` | 本次调用的降级原因（成功时为 `NULL`）与耗时 |
+| `elapsedMs` | 这一对从头到尾的实际耗时，含等锁 |
+
+**只有真有旧行、且引擎确实从 `LOCAL_KEYWORD` 变成别的**才打这一行。首次打分（没有旧行）不算升级——否则「第一次就成功」会混进恢复统计，把恢复率算成 100%。这一行是**日志**不是表：升级是一次性事件，不需要为它建表，需要长期统计时按日志聚合。
+
+#### 额度闸门放在「每一对之前」
+
+只按记录粒度检查 `max-llm-calls` 时，一条记录若有 200 个候选 pair，单条就能把额度撑破 200 次。所以额度对象被传进候选循环，在**每一对打分之前**检查：
+
+- 超调上限为 0：最后那次把计数推到上限的调用之后，下一对之前就停。
+- 被截断时**不刷新** `pair_scored_at`（走 `markPairScoredKeepTimestamp`）：否则「剩余留到下一轮」会变成「剩余留到一小时后」，冷却窗口把没算完的记录一起推后。
+- 截断后扫描器立刻置 `limited=true` 并停止本轮，下一轮从这条记录继续。
+
+#### 熔断打开时，降级重扫整体跳过
+
+否则每一对都会「抓一次本地降级分、更新 `updated_at`」，把冷却时钟往后推——等于让已经能恢复的记录多等一个 60 分钟窗口。这里只用只读的 `isOpen()`，不会占用 `HALF_OPEN` 的探测名额；整轮跳过时响应体带 `skipReason=CIRCUIT_OPEN`，把「没活干」和「熔断挡着」分开。
+
+#### 边界
+
+- 单飞是进程内的。多实例部署时同一批记录可能被两台机器各扫一遍（结果仍幂等，代价是额度翻倍），与 §6.9 同一条已知限制。
+- 降级重扫每 10 分钟一次，**恢复后的可见延迟上限就是 10 分钟**；要更短只能缩短周期，而每缩短一次就多一轮空转 SQL。
+- 重算不做到期统计（响应里 `expired=-1`），避免每 10 分钟对一张随表增长的集合做一次 `COUNT`。
 
 ---
 
@@ -1366,10 +1638,10 @@ UI:「已降级 智能匹配暂不可用，已用关键词匹配。分数仅供�
 
 | 成员 | 主责域 | 覆盖章节 | 目录 / 文件落点 | 主责交付条目 | §2.4 决策 | 代表交付（可核对） |
 |---|---|---|---|---|---|---|
-| **成员 A** | 需求与架构 | §1、§2、§3、§7.1、§9 | `docs/architecture-baseline.md`、`docs/api-contract.md`、`docs/api-contract-v2.md`、`docs/design/api-list.md`；§3.6 的部署拓扑与端口 | 11 条 | 4 条 | 需求 38 条与验收判据（§2.1）、架构与接口基线两册；10005 与错误码三段式口径闭合 `1537d54`；阈值改为「按引擎两套 + 启动期 fail-fast」`f67a792`（ZHYYKFX-84） |
-| **成员 B** | 后端与匹配 | §4、§5、§6 | `server/`（`com/findit/campus` 下 record / auth / pair / notification / match / category / common 七个包）、`db/schema.sql`、`db/seed.sql` | 16 条 | 8 条 | 六类记录接口 + `/api/match` 编排 `229aaa4`；关键词引擎 `daedc22`；配对打分链路 `77596f7`；七表 DDL 与幂等 seed `a1d1d79`；遮蔽归一 `08f4bb9` |
-| **成员 C** | 前端与 UI | §1.2、§3.5、§5.5 | `web/`（`src/pages`、`src/components`、`src/composables`）、`docs/frontend-baseline.md`、`docs/ui-baseline.md` | 10 条 | 1 条 | 三页主流程与契约联调 `4f637ea`；UI 与组件基线 `89559e6`；登录态与路由守卫 `90d0628`；详情页三档卡片与授权/撤回 `2a1374c` |
-| **成员 D** | 测试、部署与交付材料 | §7.2–§7.5、§8、§10 | `qa/`、`docs/testing/`、`deploy/`、`docs/delivery/` | 14 条 | —（本域决策是部署形态与验收口径，见 §3.6 与本节「协作机制」） | 接口/走查/一致性/落库四套回归 `34c5dd1`；Windows 单端口部署包 `db59673`；集成回归 0 fail `941fdee`；干净目录两轮实测 `6ea7fb8`（`docs/testing/v2/G1-clean-install.md`） |
+| **成员 A** | 需求与架构 | §1、§2、§3、§7.1、§9 | `docs/architecture-baseline.md`、`docs/api-contract.md`、`docs/api-contract-v2.md`、`docs/design/api-list.md`；§3.6 的部署拓扑与端口 | 11 条 | 5 条 | 需求 38 条与验收判据（§2.1）、架构与接口基线两册；10005 与错误码三段式口径闭合 `1537d54`；阈值改为「按引擎两套 + 启动期 fail-fast」`f67a792`（ZHYYKFX-84）；六条分支合入 `main` 与合并记录 `d21081b`（ZHYYKFX-92） |
+| **成员 B** | 后端与匹配 | §4、§5、§6 | `server/`（`com/findit/campus` 下 record / auth / pair / notification / match / category / common / review 八个包）、`db/schema.sql`、`db/migration/`、`db/seed.sql` | 18 条 | 12 条 | 六类记录接口 + `/api/match` 编排 `229aaa4`；关键词引擎 `daedc22`；配对打分链路 `77596f7`；七表 DDL 与幂等 seed `a1d1d79`；遮蔽归一 `08f4bb9`；发布闸门与双通道文本 `33d3397`（§5.9、§5.10）；分引擎阈值 `f67a792` / `dcb25a8` / `bfab99d`（§6.13）；降级重扫与熔断恢复 `c6ec799`（§6.14） |
+| **成员 C** | 前端与 UI | §1.2、§3.5、§5.5、§5.9 的前端入口 | `web/`（`src/pages`、`src/components`、`src/composables`）、`docs/frontend-baseline.md`、`docs/ui-baseline.md` | 10 条 | 1 条 | 三页主流程与契约联调 `4f637ea`；UI 与组件基线 `89559e6`；登录态与路由守卫 `90d0628`；详情页三档卡片与授权/撤回 `2a1374c`；待审态与「确认发布」入口（以服务端 `ownerConfirmAvailable` 为准，AI 正常时不渲染）随 `33d3397` 同批 |
+| **成员 D** | 测试、部署与交付材料 | §7.2–§7.5、§8、§10 | `qa/`、`docs/testing/`、`deploy/`、`docs/delivery/`、`docs/archive/` | 15 条 | —（本域决策是部署形态与验收口径，见 §3.6 与本节「协作机制」） | 接口/走查/一致性/落库四套回归 `34c5dd1`；Windows 单端口部署包 `db59673`；集成回归 0 fail `941fdee`；干净目录两轮实测 `6ea7fb8`（`docs/testing/v2/G1-clean-install.md`）；中期答辩材料归档与本文四节补写同批（§10.5 末条） |
 
 **「主责交付条目」怎么数**：等于 §10.5 迭代记录里「主责」列出现该成员的记录条数（联合主责的条目两人各计一次），不是估算。**为什么不用代码行数或提交数**：行数奖励复制粘贴，不奖励判断；而分工要说明的是「这一段结果是谁负责的、出了问题找谁」。若要看提交量，按域取路径即可复算：`git rev-list --count main -- server/` = 27、`-- web/` = 18、`-- deploy/ qa/ docs/testing/ docs/delivery/` = 79、`-- docs/architecture-baseline.md docs/api-contract.md docs/api-contract-v2.md` = 13（2026-10-29 在 `d21081b` 上实测）。
 
@@ -1776,7 +2048,9 @@ node qa/run-all.mjs     # 前置：MySQL 已起、后端 18080、前端 5173（V
 
 | 限制 | 事实 | 影响 |
 |---|---|---|
-| 本文覆盖到 `64693ec` | `main` 之后又合入发布闸门 `f0e49be`、阈值再校准 `dcb25a8`、降级重扫 `c6ec799` 等分支 | 发布闸门改变的是「发布到上架」的前置条件，本文 §6.6 写的是上架之后的打分链路；阈值与扫描周期的新取值已同步进 §5.7 / §6.8。查发布闸门的行为请看 `docs/design/adr/AI-REVIEW-GATE.md` 与 `docs/testing/v2/Z85-review-gate/`，下一轮文档同步要把它并进正文 |
+| 本文覆盖到 `d21081b` | 本文基线是 `d21081b`（2026-10-29 六条分支合入后的 `main` 头）。闸门、双通道文本、分引擎阈值、降级重算四处缺口**已全部写进正文**：§5.9、§5.10、§6.13、§6.14；上一版在本节登记的「待补」条目已清空，不再有占位 | 读本文结论时不必再翻 ADR 或单独的证据文档；但**行为细节仍以代码为准**，本文只解释「为什么这样设计」与「失败时往哪边倒」 |
+| 去身份靠规则，不是 NER | 姓名剥离依赖标签（姓名 / 名字 / 联系人 / 我叫）与发布者展示名精确匹配（`IdentityScrubber`）；正文用别的方式自述真名（「我是张三」）不保证被剥离 | 闸门的验收口径是「规则双检 + 抽样人审」，不是「100% 去身份」。对外不能宣称「必然遮住」，§5.9 与 ADR 的风险节已同口径写明 |
+| `findit.review.mode=off` 可关掉整道闸门 | 环境变量 `FINDIT_REVIEW_MODE=off` 时直接 `APPROVED`，不调 LLM、不写审计，行为等同无闸门版本 | 这是显式的运维回退开关，不是默认值。**开着它跑，§5.9 的全部保证都不成立**；演示兜底用完必须改回来 |
 | 修复项只在合入点之后生效 | P1 遮蔽归一 `08f4bb9`、P2 加固 `fbd538f` 已合入 `64693ec`；更早的 `941fdee` 上仍没有这些行为 | 若手上的代码停在 `941fdee`：带空格/横线/`+86` 的号码**不会**被打码、PUT 与 PATCH 存在终态竞态、个性化 GET 无 `Cache-Control`、过期 COMPLETED 仍进扫描目标。核对本文 §5.1/§5.6/§5.8/§6.9 之前，先 `git merge-base --is-ancestor 08f4bb9 HEAD && git merge-base --is-ancestor fbd538f HEAD` 确认基线 |
 | 分隔符集合之外的绕过 | F3 复验遗留 R-1：`138,1234,5678`、`138：1234：5678`（逗号/冒号/分号，含全角）即使合入 `08f4bb9` 仍不打码 | 归一集合刻意只收「数字之间会出现的分隔」，不收标点——收了会把「3 号楼,201」这类正常描述切开。建议另开小修，本文不美化成「已全覆盖」 |
 | QQ 号未纳入分隔符归一 | F3 复验遗留 R-2：`QQ 123 456` 这类带分隔的 QQ 号仍原样输出——QQ 规则只匹配连续数字，没有并入手机号那套分隔符归一 | 与上一条同源。QQ 是否算「必须遮蔽的联系方式」本身还没拍板（契约只覆盖手机号与证件号），所以本期既没扩规则、也没在规则里写明「QQ 只匹配连续数字」。团队定调后再决定是扩归一还是扩文案 |
@@ -1801,7 +2075,7 @@ node qa/run-all.mjs     # 前置：MySQL 已起、后端 18080、前端 5173（V
 
 ### 9.4 本期明确不做（与 §1.4 同源）
 
-深色模式、多图片附件、认领申请与审核流、跨校区、外部嵌入模型实现（`ZHYYKFX-19` 待开始）、占用/锁定语义（冻结口径：pair 是 1:1 事实记录，不是资源锁）、pair 行的物理删除与历史归档。
+深色模式、多图片附件、认领申请（一个「认领—审核—归还」的第三方流程；发布内容的审核闸门是另一件事，见 §5.9）、跨校区、外部嵌入模型实现（`ZHYYKFX-19` 待开始）、占用/锁定语义（冻结口径：pair 是 1:1 事实记录，不是资源锁）、pair 行的物理删除与历史归档。
 
 ---
 
@@ -1934,10 +2208,14 @@ npx @mermaid-js/mermaid-cli -i er.mmd -o er.png -b white -s 2 -p puppeteer.json
 | 10-29 01:06 → 01:07 | 发布闸门与双通道文本 | B | `f0e49be`、`e8850d8` | AI 审核通过才上架；终测 266 运行 / 0 失败 / 1 跳过 |
 | 10-29 01:42 | 降级重扫与熔断恢复 | B | `c6ec799` | 降级重扫改 10 分钟周期；熔断恢复改为事件驱动 |
 | 10-29 02:24 | 同义/陷阱专项校准 | B | `dcb25a8` | 本地引擎直看门槛与通知门槛重校，附 20 对标注样本 |
+| 10-29 08:11 | 发布闸门按六项拍板返工 | B | `33d3397` | 默认 `ai`；重试 3 次 1s/2s/4s；去掉 ops 人工改判、改「本人确认」兜底（`OWNER_CONFIRM` + `RULE_ONLY`）；删除即清 `raw_*`；A/B 门槛注明样本量。终测 266 运行 / 0 失败 / 1 跳过 |
 | 10-29 08:22 → 08:29 | CORS 修复与六条分支合入 main | A | `704c141`、`592479d` | 部署环境 POST 403 的根因（nginx Host 丢端口 + 白名单缺部署源）修复后，六条分支合入 `main` |
+| 10-29 08:26（直接提交 `main`） | 本地解锁门槛按召回优先下调 | B | `bfab99d` | 本地 `unlock` 由 0.45 下调到 0.40：同义对 S1-OF=0.41 不再被卡（17/18→18/18），陷阱最低 T2=0.33 仍不可见 |
 | 10-29 08:32 | 合并后单测打桩对齐 | B | `e812790` | `RecordServiceAccessTest` 的 `cardsOf` 打桩对齐阈值入 `PairFactsAdapter` 后的签名 |
 | 10-29 08:51 | 合并记录与真包验证 | D | `d21081b` | 六条分支的合并记录、冲突取舍与真包四条验证，`main` 头 = `d21081b` |
 
-**一次交付，两段推进**：上表的 commit 全部落在同一棵树上，最终都以 `main` 为汇聚点（`d21081b`，2026-10-29）。过程里出现过一次形态调整——记录状态从 `PENDING/CLAIMED/CLOSED` 收敛为 `PENDING/COMPLETED/CLOSED`，表从 3 张扩到 7 张，接口从 9 个扩到 17 个——这些调整在 §2.4 的拍板记录里有决定与理由，在 §4.4 的 DDL 约束里有落点，**不构成两套系统**：早期形态没有对外发布、没有历史数据、没有迁移负担，最终交付的只有一套。
+**一次交付，两段推进**：上表的 commit 全部落在同一棵树上，最终都以 `main` 为汇聚点（`d21081b`，2026-10-29）。过程里出现过一次形态调整——记录状态从 `PENDING/CLAIMED/CLOSED` 收敛为 `PENDING/COMPLETED/CLOSED`，表从 3 张扩到 7 张，接口从 9 个扩到 18 个——这些调整在 §2.4 的拍板记录里有决定与理由，在 §4.4 的 DDL 约束里有落点，**不构成两套系统**：早期形态没有对外发布、没有历史数据、没有迁移负担，最终交付的只有一套。
+
+**中期答辩材料已归档，不作为交付正文**：[6.2-defense-ppt.md](../archive/6.2-defense-ppt.md)、[6.2-答辩PPT.pptx](../archive/6.2-答辩PPT.pptx)、[6.2-claims-evidence.md](../archive/6.2-claims-evidence.md) 三件（2026-10-22 至 10-26 的中期答辩稿与逐页证据对照）于 2026-10-29 移入 `docs/archive/`，正文之外只在每份文件顶部加了一行归档横幅，其余内容一字未改，只为追溯那段口径。**提交与答辩一律使用 `docs/delivery/答辩PPT.md` 与 `答辩PPT.pptx`**，录屏按 `docs/demo/record-script.md`；`6.2-` 前缀的文件是历史材料，不是现行口径，引用前先确认与本文是否有冲突（归档目录的索引见 `docs/archive/README.md`）。
 
 > 本文不承诺任何未经实测的性能、并发或安全数字。需要这些数字时，先跑测量，再把方法和结果一起写进来。
