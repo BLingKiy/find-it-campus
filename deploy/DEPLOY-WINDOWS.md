@@ -1,6 +1,6 @@
 # find-it-campus · Windows 部署说明
 
-> 适用版本：`0.0.1-SNAPSHOT`（部署包布局版本 7.4，文档版本 7.4）
+> 适用范围：`0.0.1-SNAPSHOT`
 > 本文所有命令、参数名、端口、路径与包内 `scripts/*.ps1`、`nginx/conf/nginx.conf` 逐字对应；
 > 示例输出取自 2026-10-26 的真实运行（见 §12 自检记录）。脚本改动后本文必须同步，否则按缺陷处理。
 > 全文的脚本命令都带 `powershell -NoProfile -ExecutionPolicy Bypass -File`，可以直接照抄；原因见 §2.1。
@@ -114,7 +114,7 @@ find-it-campus-windows-x64/
     conf/nginx.conf   本包的单端口配置（8088 + /api 反代）
     conf/…            官方 conf 附带文件（mime.types 等）
     logs/ temp/       Nginx 自身目录（运行日志实际写在包根 logs/）
-  db/                 schema.sql（三张表）/ seed.sql（9 分类 + 24 条记录）
+  db/                 schema.sql（八张表）/ seed.sql（9 分类 + 24 条记录）
   config/
     deploy.env.example  模板，可进仓库，无密码占位符
     deploy.env.ps1      安装后生成，含真实密码，只留本机
@@ -218,7 +218,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts\start.ps1 -JavaBin '
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts\start.ps1 2>&1 | Tee-Object -FilePath start.txt
 ```
 
-（CI / 验收脚本用这种写法即可。7.2 版本在管道下会一直挂到后端被杀才返回，7.4 已修复，见 §12.2。）
+（CI / 验收脚本用这种写法即可；当前脚本已处理管道退出，见 §12.2。）
 
 **幂等**：已在运行的后端/Nginx 会被识别并复用，输出「已在运行（PID xxxx），不重复拉起」。第二次执行 `start.ps1` 是安全的。
 
@@ -427,7 +427,7 @@ MySQL    OK 127.0.0.1:3306 / MySQL 8.0.29             -     -
 | `$env:FINDIT_EMBED_BASE_URL` / `$env:FINDIT_EMBED_API_KEY` | 空串 | 仅 `external` 引擎需要手工填写 |
 | `$env:DEEPSEEK_API_KEY` | 未询问，可留空 | 可选。留空/未设置 → 后端自动降级 `LOCAL_KEYWORD`（`degraded_reason=EMPTY_KEY`），登录、发布、召回与本地打分不受影响；设置后新发布走 `DEEPSEEK`。模板只放注释占位符，不写真实值 |
 
-### 8.5 DeepSeek 密钥与降级（v2）
+### 8.5 DeepSeek 密钥与降级
 
 - `install.ps1` **不询问** DeepSeek 密钥；`config\deploy.env.example` 只保留一行注释占位符（等号两侧带空格，密钥扫描器不会误报）。
 - 不设置 `DEEPSEEK_API_KEY`：后端使用 `LOCAL_KEYWORD` 引擎，`t_pair_score.engine='LOCAL_KEYWORD'`、`degraded_reason='EMPTY_KEY'`，`latency_ms` / token 列为 NULL；前端显示降级提示。登录、发布、pair 召回与出分都可用。
@@ -445,7 +445,7 @@ MySQL    OK 127.0.0.1:3306 / MySQL 8.0.29             -     -
 | 2 | `未找到 java.exe：请安装 JDK 17 并设置 JAVA_HOME/PATH，或用 -JavaBin 指定。` | `Get-Command java` | 同上；`start.ps1` 也认 `-JavaBin` |
 | 3 | `找不到MySQL 客户端：…（应为可执行文件或包含 mysql.exe 的目录）` | 传入的 `-MysqlBin` | 传到 `bin` 目录或 `mysql.exe` 本身，不要传安装根目录 |
 | 4 | `安装失败：数据库 find_it_campus 已存在。默认不覆盖现有数据；如确认要清空重建，请追加 -Force。` | 目标库名 | 换 `-DbName`，或备份后加 `-Force`（会 DROP） |
-| 5 | `需要 MySQL 8.x，服务端返回版本：5.7.x` | `mysql --version` / 服务端版本 | 升级到 MySQL 8；8.0.13 及以下另外缺 ngram 解析器 |
+| 5 | `需要 MySQL 8.x，服务端返回版本：5.7.x` | `mysql --version` / 服务端版本 | 改用 MySQL 8；8.0.13 及以下另外缺 ngram 解析器 |
 | 6 | `端口 8088 已被其他进程占用：PID xxxx / xxx / 路径。本脚本不会抢占或结束该进程。` | 输出里的 PID | `Get-Process -Id xxxx` 确认是谁；停掉它或改端口（§8.1），不要直接杀未知进程 |
 | 7 | 页面刷新 404，或首页 404 | `logs\nginx-access.log`、`web\dist\index.html` | ① 确认 `web\dist` 完整（不是只复制了 jar）；② `nginx.conf` 的 `root ../web/dist` 与 `try_files` 未被改动 |
 | 8 | `后端健康检查未通过（超过 60 秒仍未就绪）。请检查 JDK17、数据库连接和 logs\backend-error.log。` | `logs\backend-error.log` 尾部 20 行 | 常见是库连不上（看 `Access denied` / `Communications link failure`）或 18080 被占；确认 MySQL 已启动、`deploy.env.ps1` 里的账号密码正确 |
@@ -458,7 +458,7 @@ MySQL    OK 127.0.0.1:3306 / MySQL 8.0.29             -     -
 | 15 | 状态表 `8088 监听 CONFLICT` | 该行 PID | 8088 被非本包进程占用；`start.ps1` 不会抢，先停占用者 |
 | 16 | 停止后 `RESULT: PORT_NOT_RELEASED`（退出码 1） | 8088 / 18080 的占用 PID | 有进程没退干净；先确认是不是本包的残留（`status.ps1` 的 `CONFLICT` 行），必要时手工结束该 PID 后重跑 `stop.ps1` |
 | 17 | `无法加载文件 …\scripts\xxx.ps1，因为在此系统上禁止运行脚本。`（`UnauthorizedAccess` / `PSSecurityException`） | 有效执行策略：`Get-ExecutionPolicy` | 用了 `.\scripts\xxx.ps1` 直接调用，而有效值是 `Restricted`。改用 §2.1 的命令形式：`powershell -NoProfile -ExecutionPolicy Bypass -File scripts\xxx.ps1 …` |
-| 18 | 页面能打开，但登录、发布启事、编辑、`POST /api/match` 等**所有 POST** 都返回 **403**，body 只有一行 `Invalid CORS request` | §9.1；`logs\nginx-access.log` 里对应行是 `POST /api/… 403` | 反向代理把 `Host` 头改成了丢端口的形式，后端把同源请求判成跨源。按 §9.1 自查并改 `nginx.conf` 的 `$host` → `$http_host`，或升级到含该修复的包 |
+| 18 | 页面能打开，但登录、发布启事、编辑、`POST /api/match` 等**所有 POST** 都返回 **403**，body 只有一行 `Invalid CORS request` | §9.1；`logs\nginx-access.log` 里对应行是 `POST /api/… 403` | 反向代理把 `Host` 头改成了丢端口的形式，后端把同源请求判成跨源。按 §9.1 自查并改 `nginx.conf` 的 `$host` → `$http_host`，或换用已含该修复的部署包 |
 | 19 | 「我的启事」卡片显示「智能匹配暂不可用，已用关键词匹配」，`t_pair_score.engine` 一直是 `LOCAL_KEYWORD` | §9.2；`t_pair_score.degraded_reason` | 没配密钥时这是**预期行为**，不是故障；配了密钥仍降级，按 §9.2 的四步排查 |
 
 ### 9.1 页面能打开，但所有 POST 返回 403 `Invalid CORS request`
@@ -533,7 +533,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts\start.ps1
 
 第 1 步不要换成 `Set-Content -Encoding utf8`：PowerShell 5.1 会给文件加 3 字节 BOM（`EF BB BF`），配置文件开头就不再是 `#`，而是一个不可见字符。
 
-B. 换包：修复在 `ZHYYKFX-83`，**尚未合入 `main`，也没随任何已发布的包发出**。已发布的 `v2.0.0-windows`（`…-0ff400a.zip`）**受影响**，要么按 A 手工改，要么等含该修复的下一个部署包（版本号以实际发布为准）。升级按 §10.1，保留 `config\deploy.env.ps1`。
+B. 换包：修复在 `ZHYYKFX-83`，**尚未合入 `main`，也没随任何已发布的包发出**。已发布的部署包（`…-0ff400a.zip`）**受影响**，要么按 A 手工改，要么换用含该修复的部署包。换包时保留 `config\deploy.env.ps1`。
 
 **只改 Host 够不够**：够。经 8088 访问时，浏览器的 `Origin` 与转发后的 `Host` 一致，后端判为同源、不再走白名单。`WebConfig` 白名单放宽（同单另一处改动）兜的是「直连 18080」和将来挂域名/反代的场景，不影响 8088 的正常路径。
 
@@ -599,23 +599,9 @@ $env:DEEPSEEK_API_KEY = (Get-Content 'C:\secrets\deepseek.txt' -Raw).Trim()
 
 5）生效范围：新发布的启事一定会重新打分；**已有的降级行不会自己改写**，要等记录文本变化或每天 03:30 的兜底扫描（`findit.pair.score.scan-cron`）。急着复验就发布一条新启事，或在设了 `OPS_SCAN_TOKEN` 的部署上调 `POST /api/ops/pair-scan`（没设置时该路径返回 404）。页面的降级提示随下一次 `pair_state` 轮询或刷新消失。
 
-## 10 升级、回滚与卸载
+## 10 回滚、卸载与备份
 
-### 10.1 升级（保留数据）
-
-```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File scripts\stop.ps1    # 1) 先停，避免文件占用
-# 2) 覆盖三类文件：app\*.jar、web\dist\*、nginx\*（若 Nginx 也升级）
-# 3) 保留 config\deploy.env.ps1、db\、logs\、runtime\
-powershell -NoProfile -ExecutionPolicy Bypass -File scripts\start.ps1   # 4) 用原配置重新启动
-powershell -NoProfile -ExecutionPolicy Bypass -File scripts\status.ps1  # 5) 全绿即完成
-```
-
-`config\deploy.env.ps1` 是**不要覆盖**的那一个：它含本机密码，且新包解压出来只有 `deploy.env.example`。如果新版本改了配置项名，`start.ps1` 会报缺变量，此时按 §8.4 补齐后再启动。
-
-数据库结构有变更时，用新包 `db\schema.sql` 里附带的 ALTER 语句手工执行（本项目不用迁移工具，库里已有数据时不要直接重跑整份 `schema.sql`）。
-
-### 10.2 回滚（保留上一版包）
+### 10.1 回滚（保留上一版包）
 
 上一版目录整体留着即可：
 1. `stop.ps1` 停当前版本；
@@ -624,9 +610,9 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts\status.ps1  # 5) 全
 
 （三步都用 §3 的命令形式。）
 
-数据库若被升级脚本改过，回滚软件不会自动回滚数据——改结构前先 `mysqldump` 备份。
+回滚前先 `mysqldump` 备份；软件回滚不会自动回滚数据。
 
-### 10.3 卸载
+### 10.2 卸载
 
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts\stop.ps1   # 确保进程退出、端口释放
@@ -636,7 +622,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts\stop.ps1   # 确保�
 - **数据库默认保留**：卸载不影响 MySQL 里已有的库。确实要删，手工执行 `DROP DATABASE find_it_campus;`（或你安装时用的库名）——这一步不可撤销，先备份。
 - 卸载后 8088/18080 应无监听，可用 `Get-NetTCPConnection -State Listen -LocalPort 8088,18080` 自查。
 
-### 10.4 备份
+### 10.3 备份
 
 ```powershell
 # 只备份数据，不含建库语句
@@ -652,27 +638,27 @@ mysqldump -h 127.0.0.1 -P 3306 -u root -p --databases find_it_campus --single-tr
 | 对外端口 | 只有 8088（Nginx） | 后端 18080 绑定 `127.0.0.1`，局域网无法直连后端 |
 | 传输加密 | **无 HTTPS** | 明文 HTTP；只在可信内网/本机使用，不做公网暴露 |
 | 进程形态 | 普通进程，不注册服务 | 不开机自启，机器重启后需手工 `start.ps1`；不做崩溃自动拉起 |
-| 启动方式 | 隐藏的 `cmd.exe` 包装进程 | `start.ps1` 用它拉起后端与 Nginx，并把两者的 stdout/stderr 重定向到 `logs\`（7.4 起，见 §12.2）；`runtime\*.pid` 记的仍是 `java.exe` / `nginx.exe` 自身的 PID，不是包装进程 |
+| 启动方式 | 隐藏的 `cmd.exe` 包装进程 | `start.ps1` 用它拉起后端与 Nginx，并把两者的 stdout/stderr 重定向到 `logs\`（见 §12.2）；`runtime\*.pid` 记的仍是 `java.exe` / `nginx.exe` 自身的 PID，不是包装进程 |
 | 权限 | 不需要管理员 | 不为安装提权，不写系统目录，不改系统环境变量 |
 | 密码 | 只落 `config\deploy.env.ps1` | 该文件不进仓库、不进 zip（zip 里只有 `deploy.env.example`）；ACL 尽力收窄到当前用户 |
 | 运行身份 | 当前登录用户 | Nginx 与 JVM 都以该用户身份运行，没有单独的守护账号 |
 | 请求体上限 | 3 MB（`client_max_body_size`） | 超出由 Nginx 直接 413 |
 | 响应头 | `X-Content-Type-Options: nosniff`、`X-Frame-Options: SAMEORIGIN`、`Referrer-Policy: no-referrer-when-downgrade`、`server_tokens off` | 基础加固；`/assets/` 下这些头重复声明了一次 |
-| 认证与权限 | **v2 起：写接口要求登录**（服务端 session） | 读接口（列表/详情/分类）保持匿名可读；发布/编辑/改状态/匹配/我的启事/通知/pair 需登录。会话存在 JVM 内存里，**重启后端 = 所有会话失效**（见 §11.1）。本文档描述的 v1 安装包不包含登录页与会话，升级到 v2 后按 §11.1 的口径理解 |
+| 认证与权限 | **写接口要求登录**（服务端 session） | 读接口（列表/详情/分类）保持匿名可读；发布/编辑/改状态/匹配/我的启事/通知/pair 需登录。会话存在 JVM 内存里，**重启后端 = 所有会话失效**（见 §11.1）。本文对应的安装包包含登录页与会话，按 §11.1 的口径理解 |
 | Nginx 版本 | 官方 Windows 构建 1.30.6 | 单进程单 worker（`worker_processes 1`），面向演示与单机小规模，不是 Linux 生产形态 |
 
-`engine=external` 时，`install.ps1` 只写 `FINDIT_MATCH_ENGINE=external`，**不会**询问 embedding 地址与密钥；必须在启动前手工编辑 `config\deploy.env.ps1` 填 `FINDIT_EMBED_BASE_URL`、`FINDIT_EMBED_API_KEY`，否则匹配接口返回失败（503 / `code=30002`）。本期 v2 交付验证了 `LOCAL_KEYWORD`（无密钥降级）与 `DEEPSEEK`（真实密钥）两条路径；embedding 引擎仍未验证。
+`engine=external` 时，`install.ps1` 只写 `FINDIT_MATCH_ENGINE=external`，**不会**询问 embedding 地址与密钥；必须在启动前手工编辑 `config\deploy.env.ps1` 填 `FINDIT_EMBED_BASE_URL`、`FINDIT_EMBED_API_KEY`，否则匹配接口返回失败（503 / `code=30002`）。本期交付验证了 `LOCAL_KEYWORD`（无密钥降级）与 `DEEPSEEK`（真实密钥）两条路径；embedding 引擎仍未验证。
 
-### 11.1 登录与会话（v2 B2 起）
+### 11.1 登录与会话
 
 | 项 | 现状 | 运维含义 |
 |---|---|---|
 | 会话存储 | 进程内 `HttpSession`（Tomcat 内存），不下发 JWT | 单实例才有意义；多实例部署必须换外置会话（Redis/DB），当前不支持 |
-| **重启即失效** | JVM 重启后所有 `JSESSIONID` 全部作废，用户下一次请求得到 `401 + code=10006`（"请先登录"） | **升级/重启服务后，所有在线用户需要重新登录**；这不是故障，也不在客户端做"自动续期"补偿。发布窗口尽量避开使用高峰 |
+| **重启即失效** | JVM 重启后所有 `JSESSIONID` 全部作废，用户下一次请求得到 `401 + code=10006`（"请先登录"） | **重启服务后，所有在线用户需要重新登录**；这不是故障，也不在客户端做"自动续期"补偿。发布窗口尽量避开使用高峰 |
 | 超时 | 30 分钟无活动（`server.servlet.session.timeout=30m`） | 前端每次请求都会续期；超时后同样返回 401 |
 | Cookie 属性 | `JSESSIONID`；`Path=/`、`HttpOnly`、`SameSite=Lax`；HTTP 部署时不带 `Secure` | 生产放在 HTTPS 反代后，需把 `server.servlet.session.cookie.secure` 改为 `true` 再对外，否则 Cookie 会在明文链路传输 |
 | 登出 | `POST /api/auth/logout`：服务端 `invalidate()` + 下发 `Max-Age=0` 的同名 Cookie | 幂等：未登录/重复调用都返回 200；登出后旧 Cookie 立刻失效 |
-| 账号停用 | `t_user.is_active=0` 只拦截**新的登录** | 被停用者的**已存在会话**在超时（≤30 分钟）前仍然有效。v2 没有停用入口；若后续加管理端，需要在门禁里增加一次 `is_active` 复核 |
+| 账号停用 | `t_user.is_active=0` 只拦截**新的登录** | 被停用者的**已存在会话**在超时（≤30 分钟）前仍然有效。当前没有停用入口；若后续加管理端，需要在门禁里增加一次 `is_active` 复核 |
 | 客户端 IP | 取连接对端地址，**不信任** `X-Forwarded-For` | 登录失败计数按 `学号+IP` 记录；若将来挂在反代后并需要真实 IP，必须显式配置可信代理后再读该头 |
 | 登录失败 | 连续 5 次（15 分钟窗口）只写 WARN 日志，**不锁定账号、不返回 429** | 响应始终 `401 + 10006 + 学号或密码不正确`；要限流请放在反向代理/IP 层，应用层不改变契约 |
 | 注册 | **不开放** | 账号只来自 `db/seed.sql` 或运维路径；`/api/auth/register` 不存在（404 + `10003`） |
@@ -697,9 +683,9 @@ mysqldump -h 127.0.0.1 -P 3306 -u root -p --databases find_it_campus --single-tr
 - 另外验证：`GET /api/health` 200 且 `code=0` / `status=UP` / `db=UP`；`/`、`/records/1`、`/records/new` 均 200；停止后 `status.ps1` 退出码 `1`、`RESULT: UNHEALTHY`；再次 `stop.ps1` 退出码 `0`（幂等）。
 - 逐条命令转录与退出码、health 响应、包校验值都在 `docs/testing/7.4-deploy-fixes/`。
 
-### 12.2 管道与非交互回归（文档版本 7.4 的修复项）
+### 12.2 管道与非交互回归（脚本修复项）
 
-7.2 的 `start.ps1` 在输出被管道捕获时不返回：脚本 17:38:32 已打印「启动完成」，调用方直到 17:39:11 JVM 被杀才拿到退出码，**51.9 秒**——其中 39 秒是纯空等。
+`start.ps1` 曾在输出被管道捕获时不返回：脚本 17:38:32 已打印「启动完成」，调用方直到 17:39:11 JVM 被杀才拿到退出码，**51.9 秒**——其中 39 秒是纯空等。
 
 原因：`Start-Process` 一旦带 `-RedirectStandardOutput/-RedirectStandardError` 就走 `UseShellExecute=$false`，.NET Framework 以 `bInheritHandles=$true` 创建进程；后端与 Nginx 除了拿到重定向后的日志文件句柄，还连带继承调用方的 stdout 管道句柄。管道要等**所有**写入端关闭才到 EOF，而后端一直活着，于是调用方永久阻塞。
 
@@ -724,7 +710,7 @@ mysqldump -h 127.0.0.1 -P 3306 -u root -p --databases find_it_campus --single-tr
 | 非交互模式的交互提示文本 | `install.ps1` | 本次全部按非交互执行，提示文本取自代码 |
 | Nginx 403 / 502、`bind() failed` 等系统级报错 | `nginx\conf\nginx.conf`、§9 通用经验 | 未逐一制造；表格中给出的是定位方向，不是逐字原文 |
 | `engine=external` 的行为 | `install.ps1`、`MatchService` | 本期无外部实现，只验证了 `local` |
-| 升级/回滚/卸载/备份 | 脚本行为与目录结构 | 只验证了「停止 → 保留配置」这一半，未做整包替换演练 |
+| 回滚/卸载/备份 | 脚本行为与目录结构 | 只验证了「停止 → 保留配置」这一半，未做整包替换演练 |
 | 组策略显式设置执行策略的机器（`MachinePolicy` / `UserPolicy` 已定义） | PowerShell 执行策略优先级 | 未构造组策略环境；这类机器由管理员统一放开，部署包不处理 |
 | §9.1 的 `403 Invalid CORS request` 与三条自查命令 | `WebConfig`（白名单只有 5173 两个开发源）、`nginx\conf\nginx.conf`（`$host`）、`AuthPaths`（登录接口在匿名白名单内，可当探针）、`ZHYYKFX-83` 的复现结论 | 写本文时**没有**在 8088 上复跑：`Invalid CORS request` 是 Spring `DefaultCorsProcessor` 的固定文案，白名单取值以仓库当前代码为准。修复尚未合入 `main`（§9.1 B），修复落地后本节与 §9.1 一并删除 |
 | §9.2 的七种 `degraded_reason` 与降级提示文案 | `DegradedReason`、`DeepSeekPairScorer`、`PairPanel.vue` / `MyRecordCard.vue`、`docs/testing/v2/D1-degradation.md` | 空 Key 为真实环境实测，401 / 超时 / 非 JSON 用本机假端点复现，其余为单测；`/v1/models` 探测命令与 BOM 处置未在这台机器上逐步复跑 |

@@ -1,11 +1,11 @@
 # 附录 A · 接口清单
 
 > 本节是独立成表的接口清单，可直接对照代码核对。事实源：`server/src/main/java/com/findit/campus/**/web/*Controller.java`、`**/web/dto/*.java`、`docs/api-contract-v2.md`。
-> 核对结果（每条路径与字段的 `file:line`）见附录 B `consistency-checklist.md`（B.10 是 v2 抽查）。
+> 核对结果（每条路径与字段的 `file:line`）见附录 B `consistency-checklist.md`。
 > 表中「必填」指缺字段即 `10001`；「可空」指允许 `null`。字符串长度上限与 `db/schema.sql` 列长度一致。
-> **v2 的变化集中在三处**：写操作要登录、非所有者读要遮蔽、联系方式按分数分档。v1 的「九接口 / 无鉴权」口径已作废。
+> **三处要点**：写操作要登录、非所有者读要遮蔽、联系方式按分数分档。
 >
-> **阈值口径补丁（2026-10-28，ZHYYKFX-84）：** 下文出现的 `score ≥ 0.90` / `0.75 ≤ score < 0.90` / `score < 0.75` / `notify_threshold = 0.75` 是 v2.0.0 的全局默认值。现行值是**按引擎两套**：默认（语义）`0.95/0.80`、`LOCAL_KEYWORD` 覆盖 `0.90/0.45`，通知阈值分别为 `0.90` / `0.90`（2026-10-28 同义/陷阱专项修正）；档位语义、错误码与审计口径不变。校准依据见 `docs/testing/v2/threshold-calibration.md`。
+> **阈值口径：** 判定按 pair 自己的 `engine` 取两套——语义引擎 `0.95 / 0.80`，本地关键词 `0.90 / 0.40`，通知阈值两套都是 `0.90`。下文的具体分数示例按对应引擎理解，统一取值与理由见设计文档 §6.13。校准依据见 `docs/testing/v2/threshold-calibration.md`。
 
 ## A.1 总览
 
@@ -13,29 +13,31 @@ Base path `/api`，无版本段；所有响应统一为 `{code, message, data, r
 
 鉴权由服务端过滤器决定（`common/web/AuthGateFilter` + `AuthPaths` 规则表，先于 `DispatcherServlet`）：**写操作默认拒绝**，未登录一律 `401 / 10006`，客户端传什么身份字段都不作数。会话是 `HttpSession` + `JSESSIONID`（HttpOnly、SameSite=Lax、30 分钟、`tracking-modes: cookie`）。
 
-| # | 方法 | 路径 | 用途 | 请求体 | 成功 | 认证 | v1/v2 |
-|---|---|---|---|---|---|---|---|
-| 1 | GET | `/api/records` | 列表（筛选 + 分页 + 排序） | 无（Query） | 200 分页对象 | 匿名可读（输出遮蔽） | 输出改遮蔽 + `isMine` |
-| 2 | GET | `/api/records/{id}` | 详情（所有者含 pair 卡片） | 无 | 200 完整对象 | 匿名可读（按状态与身份分档） | 扩展 |
-| 3 | POST | `/api/records` | 发布 | JSON 8 字段 | 200 完整对象（本人明文） | **需登录** | 行为变更 |
-| 4 | PUT | `/api/records/{id}` | 全量修改内容 | JSON 8 字段 | 200 完整对象 | **所有者** | 行为变更 |
-| 5 | PATCH | `/api/records/{id}/status` | 三态流转（完成 / 关闭） | JSON 1 字段 | 200 `{id,status,…}` | **所有者** | 行为变更 |
-| 6 | DELETE | `/api/records/{id}` | 逻辑删除 | 无 | 200 `data=null` | **所有者** | 行为变更 |
-| 7 | GET | `/api/categories` | 分类字典 | 无（Query） | 200 数组 | 公开 | 不变 |
-| 8 | POST | `/api/match` | 同步匹配 | JSON 6 字段 | 200 匹配结果（遮蔽） | **需登录** | 行为变更 |
-| 9 | POST | `/api/auth/login` | 登录 | JSON 2 字段 | 200 用户对象 + `Set-Cookie` | 公开 | 新增 |
-| 10 | POST | `/api/auth/logout` | 登出 | 无 | 200 `data=null` | 公开（幂等） | 新增 |
-| 11 | GET | `/api/auth/me` | 当前用户 | 无 | 200 用户对象 | 需登录 | 新增 |
-| 12 | GET | `/api/my/records` | 我的启事（含 pair 卡片） | 无（Query） | 200 分页对象 | 需登录 | 新增 |
-| 13 | PATCH | `/api/pairs/{id}` | pair 动作：联系 / 确认 / 忽略 | JSON 1 字段 | 200 pair 状态 | 两端任一 | 新增 |
-| 14 | GET | `/api/pairs/{id}/contact` | 查看对方联系方式 | 无 | 200 `ContactView` | 两端任一（三档 + 审计） | 新增 |
-| 15 | POST | `/api/pairs/{id}/contact-unlock` | 授权公开 / 撤回本端联系方式 | JSON ≤2 字段 | 200 `ContactUnlockResponse` | 两端任一 | 新增 |
-| 16 | GET | `/api/notifications` | 通知列表 + 未读数 | 无（Query） | 200 分页 + `unreadCount` | 需登录 | 新增 |
-| 17 | PATCH | `/api/notifications/{id}/read` | 标记已读 | 无 | 200 `{id,read,readAt,unreadCount}` | 接收人 | 新增 |
-| O1 | GET | `/api/health` | 健康检查 | 无 | 200 `{status,db,version,engine}` | 公开 | 保留，不计入 17 |
-| O2 | POST | `/api/ops/pair-scan` | 手动兜底扫描 | 无 | 200 `PairScanResult` | `X-Ops-Token` | 新增，不计入 17 |
+| # | 方法 | 路径 | 用途 | 请求体 | 成功 | 认证 |
+|---|---|---|---|---|---|---|
+| 1 | GET | `/api/records` | 列表（筛选 + 分页 + 排序） | 无（Query） | 200 分页对象 | 匿名可读（输出遮蔽） |
+| 2 | GET | `/api/records/{id}` | 详情（所有者含 pair 卡片） | 无 | 200 完整对象 | 匿名可读（按状态与身份分档） |
+| 3 | POST | `/api/records` | 发布 | JSON 8 字段 | 200 完整对象（本人明文） | **需登录** |
+| 4 | PUT | `/api/records/{id}` | 全量修改内容 | JSON 8 字段 | 200 完整对象 | **所有者** |
+| 5 | PATCH | `/api/records/{id}/status` | 三态流转（完成 / 关闭） | JSON 1 字段 | 200 `{id,status,…}` | **所有者** |
+| 6 | DELETE | `/api/records/{id}` | 逻辑删除 | 无 | 200 `data=null` | **所有者** |
+| 7 | GET | `/api/categories` | 分类字典 | 无（Query） | 200 数组 | 公开 |
+| 8 | POST | `/api/match` | 同步匹配 | JSON 6 字段 | 200 匹配结果（遮蔽） | **需登录** |
+| 9 | POST | `/api/auth/login` | 登录 | JSON 2 字段 | 200 用户对象 + `Set-Cookie` | 公开 |
+| 10 | POST | `/api/auth/logout` | 登出 | 无 | 200 `data=null` | 公开（幂等） |
+| 11 | GET | `/api/auth/me` | 当前用户 | 无 | 200 用户对象 | 需登录 |
+| 12 | GET | `/api/my/records` | 我的启事（含 pair 卡片） | 无（Query） | 200 分页对象 | 需登录 |
+| 13 | PATCH | `/api/pairs/{id}` | pair 动作：联系 / 确认 / 忽略 | JSON 1 字段 | 200 pair 状态 | 两端任一 |
+| 14 | GET | `/api/pairs/{id}/contact` | 查看对方联系方式 | 无 | 200 `ContactView` | 两端任一（三档 + 审计） |
+| 15 | POST | `/api/pairs/{id}/contact-unlock` | 授权公开 / 撤回本端联系方式 | JSON ≤2 字段 | 200 `ContactUnlockResponse` | 两端任一 |
+| 16 | GET | `/api/notifications` | 通知列表 + 未读数 | 无（Query） | 200 分页 + `unreadCount` | 需登录 |
+| 17 | PATCH | `/api/notifications/{id}/read` | 标记已读 | 无 | 200 `{id,read,readAt,unreadCount}` | 接收人 |
+| 18 | POST | `/api/records/{id}/confirm-publish` | 本人确认发布（仅 AI 审核连续失败后） | 无 | 200 `RecordDetail` | 所有者 |
+| O1 | GET | `/api/health` | 健康检查 | 无 | 200 `{status,db,version,engine}` | 公开 |
+| O2 | POST | `/api/ops/pair-scan` | 手动兜底扫描 | 无 | 200 `PairScanResult` | `X-Ops-Token` |
+| O3 | GET | `/api/ops/reviews/pending` | 待审队列（只读） | 无（Query 分页） | 200 分页对象 | `X-Ops-Token` |
 
-「不计入 17」的意思是：正文 §5.3 的权限矩阵按业务接口逐格给状态码，运维接口不进三态矩阵（O1 公开、O2 用静态令牌，与用户身份无关）。
+「不计入 18」的意思是：正文 §5.3 的权限矩阵按业务接口逐格给状态码，运维接口不进三态矩阵（O1 公开、O2/O3 用静态令牌，与用户身份无关）。
 
 ## A.2 逐接口
 
@@ -54,7 +56,7 @@ Base path `/api`，无版本段；所有响应统一为 `{code, message, data, r
 | `sortBy` | string | 否 | `createdAt` | `createdAt` / `occurredAt` | 排序字段（白名单） |
 | `sortOrder` | string | 否 | `desc` | `asc` / `desc` | 排序方向 |
 
-**v2 的返回集合口径**：默认只返回 `status='PENDING'` 且未删除的记录；传 `status=COMPLETED` 或 `CLOSED` 也是 `200`，但**恒为空列表**（公共列表不返回终态，0 命中）。这不是过滤失败，是可见性规则——见正文 §5.8。
+**返回集合口径**：默认只返回 `status='PENDING'` 且未删除的记录；传 `status=COMPLETED` 或 `CLOSED` 也是 `200`，但**恒为空列表**（公共列表不返回终态，0 命中）。这不是过滤失败，是可见性规则——见正文 §5.8。
 
 **响应 `data`**
 
@@ -108,7 +110,7 @@ Base path `/api`，无版本段；所有响应统一为 `{code, message, data, r
 | `categoryId` | number | 否 | 存在且 `is_active=1`，否则 40001 / 40002 | `null` = 未分类 |
 | `location` | string | 是 | 1–128 字 | 丢失/发现地点 |
 | `occurredAt` | string | 是 | `yyyy-MM-dd HH:mm:ss`；日历上必须存在；不得晚于 now + 5 分钟 | 业务时间 |
-| `contact` | string | 否 | **`^1[3-9]\d{9}$`（11 位大陆手机号）** | **v2 变更**：不再接受自由格式。只做格式校验，**不做短信验证**，也不写进 `t_user` |
+| `contact` | string | 否 | **`^1[3-9]\d{9}$`（11 位大陆手机号）** | **约束**：只接受 11 位大陆手机号格式。只做格式校验，**不做短信验证**，也不写进 `t_user` |
 | `publisherName` | string | 否 | ≤ 32 字 | 联系人称呼 |
 
 `contact` 收紧成手机号的原因写在 DTO 注释里（`RecordCreateRequest.java:78-84`）：号码要在详情里原样回显给本人、要在三档授权里作为「联系方式」给出，自由格式会让「这是不是号码」变成前端猜；QQ/微信请写进描述（描述会被打码）。**历史非手机号值仍可读**，只有新写入/更新时必须合法或 `null`。
@@ -127,7 +129,7 @@ Base path `/api`，无版本段；所有响应统一为 `{code, message, data, r
 - 不改 `status`（状态走 A.2.5）。
 - 认证：所有者。非所有者可见时 `403 / 10007`，不可见时 `404 / 20001`。
 - `COMPLETED` / `CLOSED` → `409` + `20003`。
-- **并发口径**：`feat/v2-integration @ 64693ec` 给 UPDATE 加了 `AND status='PENDING'`，0 行时用 `SELECT … FOR UPDATE` 回读区分 `20001`（已删/不存在）与 `20003`（并发被改成终态）；更早的 `941fdee` 是「先读 status 再 UPDATE」。见正文 §5.8。
+- **并发口径**：`feat/v2-integration @ 64693ec` 给 UPDATE 加了 `AND status='PENDING'`，0 行时用 `SELECT … FOR UPDATE` 回读区分 `20001`（已删/不存在）与 `20003`（并发被改成终态）。见正文 §5.8。
 - 错误：`10001`、`10006`、`10007`、`20001`、`20003`、`40001`、`40002`。
 
 ### A.2.5 `PATCH /api/records/{id}/status`
@@ -167,7 +169,7 @@ Base path `/api`，无版本段；所有响应统一为 `{code, message, data, r
 
 ### A.2.8 `POST /api/match`
 
-**认证**：**需登录**（v2 变更，`viewerId` 从 session 取，用于算 `isMine` / `detailAccess`）。响应体仍是遮蔽的——候选是别人的记录。
+**认证**：**需登录**（`viewerId` 从 session 取，用于算 `isMine` / `detailAccess`）。响应体仍是遮蔽的——候选是别人的记录。
 
 **请求体**（`match/web/dto/MatchRequest.java`）
 
@@ -192,7 +194,7 @@ Base path `/api`，无版本段；所有响应统一为 `{code, message, data, r
 | `total` | number | = `items.length` |
 | `items[]` | array | 候选，字段见 A.3.3 |
 
-**`items` 保证**：按 `score` 倒序；`score >= minScore`；长度 ≤ `topN`；`recordId` 不重复；不含 `excludeRecordId`；同分按 `recordId` 升序。**候选池（v2 变更）**：`MATCHABLE` = `PENDING` 恒可 + 保留期内的 `COMPLETED`（带 `detailAccess=RESTRICTED`），`CLOSED` 与已删除恒 0 命中；上限 `findit.match.pool-size=500`。
+**`items` 保证**：按 `score` 倒序；`score >= minScore`；长度 ≤ `topN`；`recordId` 不重复；不含 `excludeRecordId`；同分按 `recordId` 升序。**候选池**：`MATCHABLE` = `PENDING` 恒可 + 保留期内的 `COMPLETED`（带 `detailAccess=RESTRICTED`），`CLOSED` 与已删除恒 0 命中；上限 `findit.match.pool-size=500`。
 
 **不降级**：引擎不可用就是 `503 / 30002`，**不会**偷偷换成本地关键词分（与配对链路的降级策略相反，理由见正文 §6.10）。
 
@@ -249,7 +251,7 @@ Base path `/api`，无版本段；所有响应统一为 `{code, message, data, r
 |---|---|
 | 认证 | 两端任一；非参与方 `403 / 10007` |
 | `id` 形状 | path 参数按 **String** 接（`PairController.java:59`），超 `bigint` 范围、非数字、`0`、`-1` 全部 `404 / 20004`，**不 500**（实测 18 次调用，门禁 2 §6.3） |
-| 响应头 | `Cache-Control: no-store` + `Vary: Cookie`（本接口 v1 起就有 `no-store`；其余 `/api/**` 由 `ApiResponseHeadersFilter` 统一施加，已合入 `feat/v2-integration @ 64693ec`） |
+| 响应头 | `Cache-Control: no-store` + `Vary: Cookie`（`/api/**` 由 `ApiResponseHeadersFilter` 统一施加） |
 | 审计 | **每次调用先写 `t_access_log` 再决定出号**，写失败即 500 且不出号（fail-closed）。审计记「谁、哪一端、看哪一端、当时分数、结果」，**不记号码本身** |
 
 **三档行为**（`PairAccessPolicy.tier`，阈值来自 `findit.pair.*`）：
@@ -291,6 +293,17 @@ Base path `/api`，无版本段；所有响应统一为 `{code, message, data, r
 
 无请求体；成功 `200`，`data = {id, read, readAt, unreadCount}`（`unreadCount` 是**标记后**的余量，前端不用再拉一次列表）。他人通知 → `403 / 10007`；不存在 → `404 / 50004`；重复标记幂等（`readAt` 保持首次值）。
 
+### A.2.18 `POST /api/records/{id}/confirm-publish`
+
+无请求体。只在「AI 审核连续失败 3 次、`review_manual_required=1`」时对所有者开放，成功后 `review_state` 转 `APPROVED`、`review_engine=RULE_ONLY`，并触发一次异步打分。
+
+| 项 | 内容 |
+|---|---|
+| 成功 | `200`，`data = RecordDetail`（`reviewState=APPROVED`、`ownerConfirmAvailable=false`） |
+| 副作用 | 写 `t_review_audit`（`action=OWNER_CONFIRM`、`actor_type=HUMAN`）；`is_visible` 生成列自动变 1 |
+| 非所有者 / 不可见 | `404 / 20001`（不区分「不存在」与「不是你的」） |
+| AI 正常 / 已有结论 / 终态 / 重复提交 | `409 / 20003` |
+
 ### A.2.O1 `GET /api/health`
 
 | 项 | 内容 |
@@ -314,6 +327,16 @@ Base path `/api`，无版本段；所有响应统一为 `{code, message, data, r
 
 限额：单次 `scan-limit=500`、`max-llm-calls=500`，`ORDER BY` 保证不被新记录饿死；`expired` 只计数，**不改 `status`**。
 
+### A.2.O3 `GET /api/ops/reviews/pending`
+
+| 项 | 内容 |
+|---|---|
+| 认证 | 与 O2 同一套：`X-Ops-Token`，未配置或不匹配一律 `404 / 10003` |
+| 参数 | `page`（默认 1）、`pageSize`（默认 10，1–50） |
+| 成功 | `200`，分页对象；`list[]` 每项 `{recordId, title, reviewState, reviewAttempts, reviewedAt, reviewReason, createdAt}` |
+| 语义 | **只读**，没有任何通过/驳回入口；判定权只在 AI 与发布者本人（设计文档 §5.9） |
+| 排序 | `created_at DESC, id DESC` |
+
 ## A.3 响应字段
 
 ### A.3.1 列表项（`GET /api/records` 的 `list[]`）
@@ -321,13 +344,13 @@ Base path `/api`，无版本段；所有响应统一为 `{code, message, data, r
 | 字段 | 类型 | 可空 | 说明 |
 |---|---|---|---|
 | `id` | number | 否 | 详情跳转用 |
-| `type` / `status` | string | 否 | 枚举原值，文案由前端映射；v2 三态 |
+| `type` / `status` | string | 否 | 枚举原值，文案由前端映射；业务三态 |
 | `title` | string | 否 | ≤ 64；**非所有者过 `maskDescription`** |
 | `categoryId` | number | 是 | 无分类时 `null` |
 | `categoryName` | string | 是 | 无分类时 `null`；停用分类的名称照常返回 |
 | `location` | string | 否 | ≤ 128；非所有者过 `maskLocation` |
 | `occurredAt` / `createdAt` | string | 否 | `yyyy-MM-dd HH:mm:ss` |
-| `isMine` | boolean | 否 | **v2 新增**：会话用户是否发布者（匿名恒 `false`） |
+| `isMine` | boolean | 否 | 会话用户是否发布者（匿名恒 `false`） |
 
 **刻意不返回**：`description`（省流量，卡片不展示）、`contact`、`publisherName`（最小暴露，只在详情给）。
 
@@ -355,10 +378,10 @@ Base path `/api`，无版本段；所有响应统一为 `{code, message, data, r
 | `recordId` | number | 跳详情用 |
 | `score` | number | `0–1`，两位小数 |
 | `scorePercent` | integer | `round(score × 100)`，后端算好，前端不二次加工 |
-| `reason` | string | 人类可读依据；**前端只展示不解析**（换实现后文案可能变化） |
+| `reason` | string | 供人阅读的依据；**前端只展示不解析**（换实现后文案可能变化） |
 | `type` / `status` / `title` / `categoryName` / `location` / `occurredAt` / `createdAt` | — | 由 `MatchService` 回表取得；标题/地点过遮蔽 |
-| `recordStatus` | string | **v2 新增**：`PENDING` / `COMPLETED`，让前端给保留期内的完成记录挂角标 |
-| `detailAccess` | string | **v2 新增**：`OPEN` / `RESTRICTED`。`COMPLETED` 恒为 `RESTRICTED`——命中不等于有详情权限，点进去仍按身份判定，可能 404（`MatchItemResponse.java:73`） |
+| `recordStatus` | string | `PENDING` / `COMPLETED`，让前端给保留期内的完成记录挂角标 |
+| `detailAccess` | string | `OPEN` / `RESTRICTED`。`COMPLETED` 恒为 `RESTRICTED`——命中不等于有详情权限，点进去仍按身份判定，可能 404（`MatchItemResponse.java:73`） |
 
 ### A.3.4 分类（`GET /api/categories` 的 `data[]`）
 
@@ -453,34 +476,26 @@ Base path `/api`，无版本段；所有响应统一为 `{code, message, data, r
 | 10003 | 404 | 任意不存在的路径；**`POST /api/ops/pair-scan` 的令牌不匹配也用它** |
 | 10004 | 405 | 任意路径的动词错误 |
 | 10005 | 500 / 503 | 全部接口的兜底；`/api/health` 的 DB DOWN 用 503 |
-| 10006 | 401 | **v2 新增**：全部写接口 + `/api/auth/me`、`/api/my/**`、`/api/pairs/**`、`/api/notifications/**`、`POST /api/match`；也用于登录失败（文案换成「学号或密码不正确」） |
-| 10007 | 403 | **v2**：非所有者改记录（#4/#5/#6）、非参与方动 pair（#13/#14/#15）、改他人通知（#17） |
+| 10006 | 401 | 全部写接口 + `/api/auth/me`、`/api/my/**`、`/api/pairs/**`、`/api/notifications/**`、`POST /api/match`；也用于登录失败（文案换成「学号或密码不正确」） |
+| 10007 | 403 | 非所有者改记录（#4/#5/#6）、非参与方动 pair（#13/#14/#15）、改他人通知（#17） |
 | 20001 | 404 | `#2/#4/#5/#6`：**也用于 `CLOSED`、到期 `COMPLETED`、非合格对端看 `COMPLETED`** |
 | 20002 | 409 | `PATCH /api/records/{id}/status`（同值、终态再流转） |
 | 20003 | 409 | `PUT /api/records/{id}`（`COMPLETED` / `CLOSED`） |
-| 20004 | 404 | **v2**：`#13/#14/#15`（pair 行不存在、超界 id、或任一端记录已删） |
-| 20005 | 409 | **v2**：`#5`（无有效 MATCHED pair 就标完成，零写入） |
+| 20004 | 404 | `#13/#14/#15`（pair 行不存在、超界 id、或任一端记录已删） |
+| 20005 | 409 | `#5`（无有效 MATCHED pair 就标完成，零写入） |
 | 30001 | 400 | `POST /api/match`（`text` 无效） |
 | 30002 | 503 | `POST /api/match`（引擎不可用，**不降级**） |
 | 30003 | 504 | `POST /api/match`（引擎超时） |
 | 40001 | 404 | `GET /api/records`、`POST /api/records`、`PUT /api/records/{id}`、`POST /api/match` |
 | 40002 | 409 | `POST /api/records`、`PUT /api/records/{id}` |
-| 50002 | 403 | **v2**：`#13/#14/#15`（`score < 0.75`，档位不足） |
-| 50003 | 409 | **v2**：`#13`（`MATCHED` / `IGNORED` 终态再改） |
-| 50004 | 404 | **v2**：`#17`（通知不存在） |
-| 50005 | 403 | **v2**：`#13/#14/#15`（pair 失效：任一端 `CLOSED` 或 `COMPLETED` 过保留期） |
-| 50006 | 409 | **v2**：`O2`（兜底扫描正在运行） |
+| 50002 | 403 | `#13/#14/#15`（`score < 0.75`，档位不足） |
+| 50003 | 409 | `#13`（`MATCHED` / `IGNORED` 终态再改） |
+| 50004 | 404 | `#17`（通知不存在） |
+| 50005 | 403 | `#13/#14/#15`（pair 失效：任一端 `CLOSED` 或 `COMPLETED` 过保留期） |
+| 50006 | 409 | `O2`（兜底扫描正在运行） |
 
 `30004`（429 匹配过频）在架构基线 §6.2 登记为「当前不实现」，枚举里没有这个值。
 
-## A.5 v1 → v2 的接口面变化
+## A.5 接口面构成
 
-| 变化 | v1 | v2 | 影响哪个客户端 |
-|---|---|---|---|
-| 写接口鉴权 | 无，任何访客可 POST | `AuthGateFilter` 默认拒绝，401/`10006` | 所有写操作要先带 `JSESSIONID` |
-| 身份来源 | 无 | `publisherId` / `viewerId` / pair 参与方判定全部取 session | 请求体里**没有也不需要**身份字段 |
-| `contact` 校验 | ≤64 字自由格式 | `^1[3-9]\d{9}$` | 提交页要挂手机号格式提示 |
-| 状态枚举 | `PENDING/CLAIMED/CLOSED` | `PENDING/COMPLETED/CLOSED`，`CLAIMED` → 400/`10001` | 老前端传 `CLAIMED` 会拿到校验错误而不是静默成功 |
-| 详情可见性 | 一律 200 | `CLOSED` / 到期 / 非合格对端的 `COMPLETED` → 404/`20001` | 「点进去 404」是正常分支，列表要靠 `detailVisible` / `detailAccess` 提前告诉用户 |
-| 输出内容 | 明文 | 五个出口统一遮蔽（§5.6） | 前端不许自己拼「`138****5678`」这类二次掩码 |
-| 新增资源 | — | auth / my / pairs / notifications 共 8 个接口 + 1 个运维接口 | — |
+当前 21 条路径 = 18 条业务接口 + 3 条运维接口；业务接口里 7 条只读、11 条写操作，除登录/登出外均要求登录。

@@ -1,39 +1,36 @@
-%% find-it-campus · POST /api/match 调用时序（v2，含失败出口）
-%% 事实来源：AuthGateFilter / MatchController / MatchService / RecordCandidatePoolAdapter / KeywordMatchEngine / MatchResultMapper
+%% find-it-campus · POST /api/match 调用时序（含失败出口）
+%% 事实来源：AuthGateFilter / MatchController / MatchService / RecordCandidatePoolAdapter /
+%%          KeywordMatchEngine / MatchResultMapper
+%% 版式：参与者 ≤5、单条消息 ≤18 字
+%%{init: {"themeVariables": {"fontSize": "18px"}, "sequence": {"actorFontSize": 18, "noteFontSize": 17, "messageFontSize": 17, "wrap": false}}}%%
 sequenceDiagram
   autonumber
-  participant C as 浏览器
-  participant Gate as AuthGateFilter
-  participant Ctl as MatchController
-  participant Svc as MatchService
-  participant Pool as MatchCandidatePoolPort
-  participant Eng as MatchEngine
+  participant B as 浏览器
+  participant C as MatchController
+  participant S as MatchService
+  participant E as MatchEngine
   participant DB as MySQL
 
-  C->>Gate: POST /api/match（带 JSESSIONID）
-  Gate->>Gate: 写路径默认拒绝：无会话即 401 · 10006
-  Gate->>Ctl: 已登录，放行
-  Ctl->>Svc: match(request, viewerId)
-  Svc->>Svc: 校验 text（30001）· topN/minScore/type（10001）· categoryId 存在性（40001）
+  B->>C: POST /api/match
+  Note over C,DB: 门禁在前：写路径无会话即 401
+  C->>S: match(请求, 查看人)
+  S->>S: 校验文本 / 条数 / 类型 / 分类
 
-  alt 引擎未装配（30002）
-    Svc-->>C: 503 · code 30002 · data.engine
-  else 引擎已装配
-    Svc->>Pool: load(type, categoryId, poolSize=500)
-    Pool->>DB: SELECT ... WHERE deleted_at IS NULL AND MATCHABLE LIMIT 500
-    Note over Pool,DB: MATCHABLE = PENDING 或保留期内的 COMPLETED；CLOSED 恒不召回
-    Pool-->>Svc: List<MatchCandidateSource>
-    Svc->>Svc: 剔除 excludeRecordId
-    Svc->>Eng: match(candidates, query)
-    alt MatchEngineException
-      Eng-->>Svc: UNAVAILABLE / TIMEOUT
-      Svc-->>C: 503 · 30002 / 504 · 30003（不回退本地分，见 §6.10）
+  alt 引擎未装配
+    S-->>B: 503 · 30002
+  else 引擎可用
+    S->>DB: 取候选池 500 条
+    Note over S,DB: 只取 PENDING 与保留期内的 COMPLETED
+    DB-->>S: 候选行
+    S->>E: 逐条打分
+    alt 引擎抛异常
+      E-->>S: 不可用 / 超时
+      S-->>B: 503 · 30002 或 504 · 30003
     else 正常返回
-      Eng-->>Svc: List<MatchCandidate>(recordId, score, reason)
-      Svc->>Svc: minScore 过滤 → 去重 → score DESC, recordId ASC → 截断 topN
-      Svc->>DB: selectSummariesByIds(ids, cutoff)（回表再校验 MATCHABLE）
-      Svc->>Svc: 按 viewerId 遮蔽 title/location · reason 恒过打码器
-      Svc->>DB: INSERT t_match_result（input_text/reason 写库前脱敏；失败仅 WARN）
-      Svc-->>C: 200 · code 0 · items（含 recordStatus / detailAccess）
+      E-->>S: 分数 + 理由
+      S->>S: 过滤 · 排序 · 截断
+      S->>DB: 回表复核并遮蔽
+      S->>DB: 写匹配快照
+      S-->>B: 200 · 候选列表
     end
   end

@@ -1,4 +1,4 @@
-﻿# =====================================================================
+# =====================================================================
 # find-it-campus · Windows 部署包构建脚本
 #
 # 用法（从仓库根目录或任意目录执行均可）：
@@ -373,6 +373,7 @@ try {
         ('Build time: ' + $buildTime),
         ('Git branch: ' + $gitInfo.Branch),
         ('Git commit: ' + $gitInfo.Sha),
+        ('Baseline: ' + $gitInfo.Branch + ' @ ' + $gitInfo.Sha),
         ('Git dirty: ' + $dirtyText),
         $(if ($dirtyList) { 'Git dirty files (first 20): ' + $dirtyList } else { 'Git dirty files: (none)' }),
         ('Build host OS: ' + [System.Environment]::OSVersion.VersionString),

@@ -1,0 +1,36 @@
+%% find-it-campus · ER 图（一）用户 / 记录 / 分类
+%% 事实来源：db/schema.sql（8 表 / 117 列 / 10 外键 / 29 CHECK，逐列核对；完整字段见文档 §4.3）
+%% 取舍：只画主键、外键与起约束作用的列 —— 117 列全塞进一张图会让字号小到不可读
+%%       配对 / 通知 / 审计三组表见 er-pair.mmd；t_match_result 是独立快照表，不画关系
+%%{init: {"themeVariables": {"fontSize": "18px"}, "er": {"diagramPadding": 18, "entityPadding": 12, "minEntityWidth": 120}}}%%
+erDiagram
+  t_user ||--o{ t_record : "publisher_id"
+  t_category ||--o{ t_record : "category_id"
+
+  t_user {
+    BIGINT id PK "自增主键"
+    VARCHAR student_no UK "登录名，唯一"
+    VARCHAR password_hash "bcrypt 哈希"
+    TINYINT is_active "0=停用"
+  }
+
+  t_category {
+    BIGINT id PK "主键"
+    VARCHAR code UK "如 WALLET"
+    VARCHAR name "中文名"
+    VARCHAR keywords "本地匹配词表"
+    TINYINT is_active "0=停用"
+  }
+
+  t_record {
+    BIGINT id PK "对外资源 id"
+    VARCHAR type "LOST 与 FOUND"
+    VARCHAR status "业务三态"
+    VARCHAR review_state "审核三态"
+    TINYINT is_visible "对外可见判据"
+    VARCHAR pair_state "系统写"
+    BIGINT category_id FK "指向分类"
+    BIGINT publisher_id FK "指向用户"
+    VARCHAR contact "输出层遮蔽"
+    DATETIME deleted_at "非空即删除"
+  }

@@ -2,8 +2,8 @@
  * 把答辩 PPT 的 Markdown 文案稿渲染成可提交的 PPTX。
  *
  * 输入（相对本脚本）：
- *   ../6.2-defense-ppt.md            v1 文案稿（默认，不传参时行为与以前完全一致）
- *   ../v2-defense-ppt.md             v2 文案稿（`--src ../v2-defense-ppt.md --out ../v2-答辩PPT.pptx`）
+ *   ../答辩PPT.md                    本期文案稿（交付时用 `--src ../答辩PPT.md --out ../答辩PPT.pptx`）
+ *   ../6.2-defense-ppt.md            中期存档稿（脚本默认值仍指向它，只为兼容老命令）
  *   ../assets/shots/*.png            演示截图（由 demo-path-check.mjs 生成）
  *   ../assets/match-sample-s1*.json  真实请求/响应（PPT 的输入输出示例）
  *   ../../design/diagrams/*.png      架构 / ER / 时序图（6.1 已有）
@@ -21,7 +21,7 @@
  * 运行：
  *   cd docs/delivery/tools && npm install
  *   node build-ppt.mjs                                   # v1
- *   node build-ppt.mjs --src ../v2-defense-ppt.md --out ../v2-答辩PPT.pptx \
+ *   node build-ppt.mjs --src ../答辩PPT.md --out ../答辩PPT.pptx \
  *        --footer "find-it-campus · 校园失物招领　|　v2 阶段 4 答辩稿 2026-10-28"
  */
 import fs from 'node:fs';
@@ -33,8 +33,8 @@ const DELIVERY = path.resolve(HERE, '..');
 const DOCS = path.resolve(DELIVERY, '..');
 
 /**
- * `--key value` 形式；不传参时三个默认值就是 v1 的那套，老命令不必改。
- * 值一律按**相对本脚本目录**解析（`--src ../v2-defense-ppt.md`），所以从哪儿跑都一样。
+ * `--key value` 形式；不传参时三个默认值仍指向中期稿，老命令不必改。
+ * 值一律按**相对本脚本目录**解析（`--src ../答辩PPT.md`），所以从哪儿跑都一样。
  */
 const argOf = (name, fallback) => {
   const i = process.argv.indexOf(`--${name}`);
@@ -231,16 +231,57 @@ function pngSize(file) {
   return { width: buf.readUInt32BE(16), height: buf.readUInt32BE(20) };
 }
 
-/** 图片按比例塞进框（contain），不拉伸。 */
-function fitImage(slide, rel, box) {
+/** 图片按比例塞进框（contain），不拉伸。alt 传图说时写进 cNvPr 的 descr（无障碍读屏与审阅都能看懂）。 */
+function fitImage(slide, rel, box, alt) {
   const file = resolveAsset(rel);
   const { width, height } = pngSize(file);
   const scale = Math.min(box.w / width, box.h / height);
   const w = width * scale;
   const h = height * scale;
   const pos = { x: box.x + (box.w - w) / 2, y: box.y + (box.h - h) / 2, w, h };
-  slide.addImage({ path: file, ...pos });
+  // 不传 alt 时退回文件名：默认行为会把本机绝对路径写进 descr，既泄露路径也对读者无意义
+  slide.addImage({ path: file, ...pos, altText: alt || path.basename(rel) });
   return pos;
+}
+
+/** 大图整页：宽度吃满版面，纵向按页切分；每页等效字号按 字号/原图宽×显示宽×72 计算。 */
+function addFullPageImage(s) {
+  const file = resolveAsset(s.images[0]);
+  const { width, height } = pngSize(file);
+  const fullW = CW;
+  const fullH = CW * (height / width);
+  const bodyH = BODY_BOTTOM - BODY_TOP;
+  const n = Math.max(1, Math.ceil(fullH / bodyH));
+  for (let i = 0; i < n; i += 1) {
+    const slide = pptx.addSlide();
+    slide.background = { color: 'FFFFFF' };
+    addTitle(slide, s.title + (n > 1 ? `（${i + 1}/${n}）` : ''));
+    addFooter(slide, nextPage());
+    const bulletsNote = s.bullets && s.bullets.length ? '本页要点：\n' + s.bullets.join('\n') : '';
+    if (i === 0) {
+      const notes = [s.note, bulletsNote].filter(Boolean).join('\n\n');
+      if (notes) slide.addNotes(notes);
+    }
+    if (n === 1) {
+      slide.addImage({
+        path: file, x: M, y: BODY_TOP, w: fullW, h: fullH,
+        altText: s.imageTitle || path.basename(file),
+      });
+      const rest = bodyH - fullH;
+      if (s.bullets && s.bullets.length && rest > 1.0) {
+        slide.addText(paras(s.bullets, { size: 12.5, spaceAfter: 8 }), {
+          x: M, y: BODY_TOP + fullH + 0.2, w: CW, h: rest - 0.25, valign: 'top',
+        });
+      }
+    } else {
+      const y = i === n - 1 ? fullH - bodyH : (fullH - bodyH) * (i / (n - 1));
+      slide.addImage({
+        path: file, x: M, y: BODY_TOP, w: fullW, h: fullH,
+        sizing: { type: 'crop', x: 0, y, w: fullW, h: bodyH },
+        altText: s.imageTitle || path.basename(file),
+      });
+    }
+  }
 }
 
 function quote(slide, text, y, { x = M, w = CW } = {}) {
@@ -407,8 +448,17 @@ pptx.company = 'find-it-campus';
 pptx.title = `${deck[0]?.title || '校园失物招领平台'} · 程序设计答辩`;
 pptx.subject = path.basename(OUT, '.pptx');
 
-deck.forEach((s, idx) => {
-  const page = idx + 1;
+let pageCounter = 0;
+const nextPage = () => { pageCounter += 1; return pageCounter; };
+
+deck.forEach((s) => {
+  /* ---- 大图整页（高图纵向分页，保证每页满宽、等效字号可读） ---- */
+  if (s.layout === 'image-full') {
+    addFullPageImage(s);
+    return;
+  }
+
+  const page = nextPage();
 
   /* ---- 封面 ---- */
   if (s.layout === 'cover') {
@@ -473,7 +523,7 @@ deck.forEach((s, idx) => {
     const boxH = 4.45;
     const imgW = Math.min(7.2, boxH * (px.width / px.height));
     const box = { x: M + CW - imgW, y: BODY_TOP, w: imgW, h: boxH };
-    const placed = fitImage(slide, s.images[0], box);
+    const placed = fitImage(slide, s.images[0], box, s.imageTitle);
     if (s.imageTitle) {
       slide.addText(s.imageTitle, {
         x: box.x, y: Math.min(placed.y + placed.h + 0.08, 6.2), w: imgW, h: 0.3,
@@ -494,7 +544,7 @@ deck.forEach((s, idx) => {
     s.images.forEach((rel, i) => {
       const x = M + i * (w + gap);
       slide.addShape('rect', { x, y: BODY_TOP, w, h: boxH, fill: { color: 'FFFFFF' }, line: { color: LINE } });
-      fitImage(slide, rel, { x, y: BODY_TOP, w, h: boxH });
+      fitImage(slide, rel, { x, y: BODY_TOP, w, h: boxH }, s.imageTitle);
       if (s.captions[i]) {
         slide.addText(s.captions[i], {
           x, y: BODY_TOP + boxH + 0.08, w, h: 0.28, fontSize: 9.5, bold: true, color: '33415C', fontFace: FONT, align: 'center',
@@ -557,4 +607,4 @@ deck.forEach((s, idx) => {
 });
 
 await pptx.writeFile({ fileName: OUT });
-console.log(`已生成 ${path.relative(process.cwd(), OUT)}（${deck.length} 页）`);
+console.log(`已生成 ${path.relative(process.cwd(), OUT)}（${pageCounter} 页）`);

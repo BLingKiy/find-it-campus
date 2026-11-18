@@ -1,0 +1,45 @@
+%% find-it-campus · 认领段时序：三档判定 → 先落审计 → 再出号
+%% 事实来源：PairController / PairContactService / PairAccessPolicy / PairPolicyProperties /
+%%          AccessLogService / PairPolicyProperties.forEngine / db/schema.sql
+%% 阈值按 pair 自己的 engine 取：默认 0.95 / 0.80，LOCAL_KEYWORD 覆盖 0.90 / 0.40
+%% 版式：参与者 ≤5、单条消息 ≤18 字；发布与审核段见 pair-publish-sequence.mmd
+%%{init: {"themeVariables": {"fontSize": "18px"}, "sequence": {"actorFontSize": 18, "noteFontSize": 17, "messageFontSize": 17, "wrap": false}}}%%
+sequenceDiagram
+  autonumber
+  participant B as 浏览器
+  participant C as PairController
+  participant T as 档位策略
+  participant A as 审计
+  participant DB as MySQL
+
+  B->>C: GET /api/pairs/id/contact
+  C->>DB: 读 pair 与两端记录
+  alt pair 不可用
+    C-->>B: 403 · 50005 或 404 · 20004
+  else pair 可用
+    C->>T: tier(分数, 直看阈值, 解锁阈值)
+    Note over T,DB: 默认 0.95 / 0.80；本地引擎 0.90 / 0.40
+    alt 分数达直看阈值
+      T-->>C: DIRECT
+      C->>A: 先写审计
+      A->>DB: 插一条已授权
+      C-->>B: 200 · 号码明文
+    else 分数达解锁阈值
+      T-->>C: AUTHORIZABLE
+      alt 对方已授权
+        C->>A: 先写审计
+        A->>DB: 插一条已授权
+        C-->>B: 200 · 号码与附言
+      else 对方未授权
+        C->>A: 写审计
+        A->>DB: 插一条未公开
+        C-->>B: 200 · 不可用
+      end
+    else 分数低于解锁阈值
+      T-->>C: LOW
+      C->>A: 写审计
+      A->>DB: 插一条低分拒绝
+      C-->>B: 403 · 50002
+    end
+  end
+  Note over A,DB: 审计写失败即 500，号码不出去
