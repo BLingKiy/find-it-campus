@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
@@ -180,7 +181,7 @@ class RecordServiceAccessTest {
         assertEquals(409, ex.errorCode().httpStatus().value());
         assertTrue(ex.getMessage().contains("无需本人确认"));
         assertTrue(ex.publicMessage().contains("无需本人确认"), "对外文案必须明确，不能只回通用「状态不可执行」");
-        verify(reviewPersistence, never()).ownerConfirm(anyLong(), anyLong(), any());
+        verify(reviewPersistence, never()).ownerConfirm(anyLong(), anyLong(), anyInt(), any());
     }
 
     @Test
@@ -197,7 +198,7 @@ class RecordServiceAccessTest {
         approved.setReviewManualRequired(false);
         approved.setReviewEngine("RULE_ONLY");
         when(recordMapper.selectById(RECORD_ID)).thenReturn(pending, approved);
-        when(reviewPersistence.ownerConfirm(eq(RECORD_ID), eq(OWNER), any())).thenReturn(true);
+        when(reviewPersistence.ownerConfirm(eq(RECORD_ID), eq(OWNER), anyInt(), any())).thenReturn(true);
         when(pairFactsPort.cardsOf(any(), any())).thenReturn(Map.of());
 
         RecordDetailResponse response = recordService.confirmPublish(RECORD_ID, OWNER);
@@ -205,7 +206,7 @@ class RecordServiceAccessTest {
         assertEquals("APPROVED", response.getReviewState());
         assertEquals(Boolean.FALSE, response.getOwnerConfirmAvailable());
         assertEquals("RULE_ONLY", response.getReviewEngine(), "未经 AI 审核的标记必须保留");
-        verify(reviewPersistence).ownerConfirm(eq(RECORD_ID), eq(OWNER), any());
+        verify(reviewPersistence).ownerConfirm(eq(RECORD_ID), eq(OWNER), anyInt(), any());
     }
 
     @Test
@@ -221,7 +222,7 @@ class RecordServiceAccessTest {
 
         assertEquals(ErrorCode.RECORD_NOT_FOUND, ex.errorCode());
         assertEquals(404, ex.errorCode().httpStatus().value(), "与不存在同码，不泄露审核中");
-        verify(reviewPersistence, never()).ownerConfirm(anyLong(), anyLong(), any());
+        verify(reviewPersistence, never()).ownerConfirm(anyLong(), anyLong(), anyInt(), any());
     }
 
     @Test
@@ -237,7 +238,7 @@ class RecordServiceAccessTest {
                 () -> recordService.confirmPublish(RECORD_ID, OWNER));
 
         assertEquals(ErrorCode.RECORD_OPERATION_NOT_ALLOWED, ex.errorCode());
-        verify(reviewPersistence, never()).ownerConfirm(anyLong(), anyLong(), any());
+        verify(reviewPersistence, never()).ownerConfirm(anyLong(), anyLong(), anyInt(), any());
     }
 
     @Test
@@ -482,6 +483,42 @@ class RecordServiceAccessTest {
         assertEquals("PENDING", response.getReviewState());
         verify(eventPublisher).publishEvent(any(RecordSubmittedForReview.class));
         verify(eventPublisher, never()).publishEvent(any(PairScoringRequested.class));
+    }
+
+    @Test
+    @DisplayName("C-11：POST/PUT 写回响应不回 raw_*，原文只保留在本人详情（且该出口写审计）")
+    void writeBackResponseDoesNotExposeRawText() {
+        when(recordMapper.insert(any(Record.class))).thenAnswer(invocation -> {
+            Record record = invocation.getArgument(0);
+            record.setId(99L);
+            return 1;
+        });
+        Record persisted = record(RecordStatus.PENDING, OWNER, null);
+        persisted.setId(99L);
+        persisted.setReviewState(RecordReviewState.PENDING);
+        persisted.setRawTitle("黑色钱包 13800000009 张三");
+        persisted.setRawDescription("在第三教学楼 201 丢的");
+        persisted.setRawLocation("第三教学楼 201");
+        when(recordMapper.selectById(99L)).thenReturn(persisted);
+
+        RecordCreateRequest request = new RecordCreateRequest();
+        request.setType("LOST");
+        request.setTitle("黑色钱包 13800000009 张三");
+        request.setDescription("在第三教学楼 201 丢的");
+        request.setLocation("第三教学楼 201");
+        request.setOccurredAt("2026-10-20 15:00:00");
+        request.setContact("13800000009");
+
+        RecordDetailResponse response = recordService.create(request,
+                new SessionUser(OWNER, "demo01", "演示甲"));
+
+        assertNull(response.getRawTitle(), "POST 响应不得带 raw_title");
+        assertNull(response.getRawDescription(), "POST 响应不得带 raw_description");
+        assertNull(response.getRawLocation(), "POST 响应不得带 raw_location");
+        // 原文仍在库里，本人再读取详情时由 detail() 写 RAW_VIEW 审计
+        ArgumentCaptor<Record> inserted = ArgumentCaptor.forClass(Record.class);
+        verify(recordMapper).insert(inserted.capture());
+        assertTrue(inserted.getValue().getRawTitle().contains("13800000009"));
     }
 
     private static StatusUpdateRequest statusRequest(String status) {

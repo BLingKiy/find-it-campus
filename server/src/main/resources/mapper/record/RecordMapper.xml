@@ -53,6 +53,7 @@
         <result property="reviewTokens" column="review_tokens"/>
         <result property="reviewAttempts" column="review_attempts"/>
         <result property="reviewManualRequired" column="review_manual_required"/>
+        <result property="contentVersion" column="content_version"/>
         <result property="rawTitle" column="raw_title"/>
         <result property="rawDescription" column="raw_description"/>
         <result property="rawLocation" column="raw_location"/>
@@ -213,7 +214,7 @@
         c.name AS category_name, r.location, r.occurred_at, r.contact, r.publisher_name,
         r.publisher_id, r.pair_state, r.review_state, r.reviewed_at, r.review_reason,
         r.review_engine, r.review_model, r.review_prompt_version, r.review_latency_ms,
-        r.review_tokens, r.review_attempts, r.review_manual_required,
+        r.review_tokens, r.review_attempts, r.review_manual_required, r.content_version,
         r.raw_title, r.raw_description, r.raw_location,
         r.match_title, r.match_description, r.match_location, r.summary,
         r.deleted_at, r.created_at, r.updated_at
@@ -283,6 +284,8 @@
             review_tokens   = NULL,
             review_attempts = 0,
             review_manual_required = 0,
+            -- 内容版本 +1：审核线程写回时必须匹配它，旧快照的结论不会覆盖这次编辑（P1-3）
+            content_version = content_version + 1,
             raw_title       = #{rawTitle},
             raw_description = #{rawDescription},
             raw_location    = #{rawLocation},
@@ -390,6 +393,17 @@
     </update>
 
     <!--
+      同步对端状态（P1-5）：只改已定稿的 READY/DEGRADED，不打断正在 SCORING 的记录，
+      也不刷新 pair_scored_at（对端的扫描时间由它自己的打分局决定）。
+    -->
+    <update id="markPairStateIfSettled">
+        UPDATE t_record
+        SET pair_state = #{state}
+        WHERE id = #{id} AND deleted_at IS NULL
+          AND pair_state IN ('READY', 'DEGRADED')
+    </update>
+
+    <!--
       扫描目标：未打分的 PENDING、卡死在 SCORING 的残留、以及冷却已过的 DEGRADED（key 恢复后重算）。
 
       召回口径与 matchablePredicate 一致（P2-4）：PENDING 恒扫；COMPLETED 只在保留期内扫；
@@ -455,6 +469,7 @@
         UPDATE t_record
         SET review_attempts = #{attempts}
         WHERE id = #{id} AND deleted_at IS NULL AND review_state = 'PENDING'
+          AND content_version = #{expectedVersion}
     </update>
 
     <update id="approveReview">
@@ -474,6 +489,7 @@
             review_attempts        = #{attempts},
             review_manual_required = 0
         WHERE id = #{id} AND deleted_at IS NULL AND review_state = 'PENDING'
+          AND content_version = #{expectedVersion}
     </update>
 
     <update id="rejectReview">
@@ -489,6 +505,7 @@
             review_attempts        = #{attempts},
             review_manual_required = #{manualRequired}
         WHERE id = #{id} AND deleted_at IS NULL AND review_state = 'PENDING'
+          AND content_version = #{expectedVersion}
     </update>
 
     <!--
@@ -508,6 +525,7 @@
             review_tokens          = #{tokens},
             review_attempts        = #{attempts}
         WHERE id = #{id} AND deleted_at IS NULL AND review_state = 'PENDING'
+          AND content_version = #{expectedVersion}
     </update>
 
     <!-- 兜底调度：拾取"待审、未等本人确认、已过冷却"的记录；manual=1 的永不被自动重试 -->
@@ -539,6 +557,7 @@
             review_manual_required = 0
         WHERE id = #{id} AND deleted_at IS NULL AND review_state = 'PENDING'
           AND review_manual_required = 1
+          AND content_version = #{expectedVersion}
     </update>
 
     <!-- 只读排障队列：不得在此文件新增任何人工改判 UPDATE -->

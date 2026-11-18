@@ -144,6 +144,15 @@ public interface RecordMapper {
     int markPairScoredKeepTimestamp(@Param("id") long id, @Param("state") String state);
 
     /**
+     * 只刷新 {@code pair_state}，不推进 {@code pair_scored_at}，也不碰 SCORING/PENDING。
+     *
+     * <p>P1-5：一条 pair 写入后，<b>对端</b>的状态也必须同步 —— 否则先发 LOST、后发 FOUND 时，
+     * LOST 会永远停在 READY，而它参与的 pair 其实是降级分。只改已定稿状态（READY/DEGRADED）
+     * 是为了不打断正在打分的那条记录（SCORING/PENDING 由它自己的线程收尾）。
+     */
+    int markPairStateIfSettled(@Param("id") long id, @Param("state") String state);
+
+    /**
      * 每日全量扫描的记录候选（架构 §5.4 ①）：{@code PENDING} 或保留期内的 {@code COMPLETED}，
      * 且 {@code pair_state IN ('PENDING','SCORING')} 停在超过 stale 窗口，或
      * {@code pair_state='DEGRADED'} 距上次打分已超过降级冷却窗口。
@@ -195,8 +204,16 @@ public interface RecordMapper {
     // 发布闸门（ZHYYKFX-85）：审核态写路径。全部带 review_state='PENDING' 条件。
     // ------------------------------------------------------------------
 
-    /** 记录一次 AI 尝试次数；{@code WHERE review_state='PENDING'} 保证不覆盖已定稿结论。 */
-    int markReviewAttempt(@Param("id") long id, @Param("attempts") int attempts);
+    /**
+     * 记录一次 AI 尝试次数；{@code WHERE review_state='PENDING'} 保证不覆盖已定稿结论。
+     *
+     * <p>P1-3：同时要求 {@code content_version} 匹配。编辑会把版本 +1 并重置 PENDING，
+     * 旧审核线程若在这一步之后才写，影响 0 行，调用方据此丢弃旧结果、让新内容重新审。
+     *
+     * @return 影响行数；0 = 记录已被编辑/已出结论，当前审核轮次必须放弃
+     */
+    int markReviewAttempt(@Param("id") long id, @Param("attempts") int attempts,
+                          @Param("expectedVersion") int expectedVersion);
 
     /** AI/人工通过：同一条 UPDATE 写展示文本、摘要与全部审计元数据，避免半套状态。 */
     int approveReview(@Param("id") long id,
@@ -211,7 +228,8 @@ public interface RecordMapper {
                       @Param("latencyMs") Integer latencyMs,
                       @Param("tokens") Integer tokens,
                       @Param("attempts") int attempts,
-                      @Param("at") LocalDateTime at);
+                      @Param("at") LocalDateTime at,
+                      @Param("expectedVersion") int expectedVersion);
 
     /** 拒绝：不改展示文本（它本来就不对外可见），只落结论、理由与审计元数据。 */
     int rejectReview(@Param("id") long id,
@@ -223,7 +241,8 @@ public interface RecordMapper {
                      @Param("tokens") Integer tokens,
                      @Param("attempts") int attempts,
                      @Param("manualRequired") boolean manualRequired,
-                     @Param("at") LocalDateTime at);
+                     @Param("at") LocalDateTime at,
+                     @Param("expectedVersion") int expectedVersion);
 
     /** AI 连续失败：保持 PENDING，标「待本人确认」并置 {@code review_engine=RULE_ONLY}。绝不自动上架。 */
     int markOwnerConfirmRequired(@Param("id") long id,
@@ -232,7 +251,8 @@ public interface RecordMapper {
                                  @Param("promptVersion") String promptVersion,
                                  @Param("latencyMs") Integer latencyMs,
                                  @Param("tokens") Integer tokens,
-                                 @Param("attempts") int attempts);
+                                 @Param("attempts") int attempts,
+                                 @Param("expectedVersion") int expectedVersion);
 
     /** 兜底调度候选：待审 + 未转本人确认 + 已过冷却。{@code totalAttempts} = 首次 + 重试次数。 */
     List<Record> selectReviewCandidates(@Param("createdBefore") LocalDateTime before,
@@ -247,7 +267,8 @@ public interface RecordMapper {
      */
     int confirmOwnerReview(@Param("id") long id,
                            @Param("reason") String reason,
-                           @Param("at") LocalDateTime at);
+                           @Param("at") LocalDateTime at,
+                           @Param("expectedVersion") int expectedVersion);
 
     /** 只读排障队列：待审且已标「待本人确认」。<b>不提供改判写方法。</b> */
     List<Record> selectOwnerConfirmQueue(@Param("limit") int limit);

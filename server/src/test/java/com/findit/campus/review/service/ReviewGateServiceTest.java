@@ -2,6 +2,7 @@ package com.findit.campus.review.service;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -34,6 +35,7 @@ class ReviewGateServiceTest {
 
     private static final long RECORD_ID = 9L;
     private static final String REQUEST_ID = "req-1";
+    private static final int CONTENT_VERSION = 0;
 
     private RecordMapper recordMapper;
     private PostprocessClient client;
@@ -51,6 +53,7 @@ class ReviewGateServiceTest {
         properties.setMaxAttempts(3);
         properties.setRetryDelaysMs(List.of(0L, 0L, 0L));
         when(recordMapper.selectById(RECORD_ID)).thenReturn(pendingRecord());
+        when(persistence.recordAttempt(eq(RECORD_ID), anyInt(), eq(CONTENT_VERSION))).thenReturn(true);
         service = new ReviewGateService(recordMapper, client, persistence, properties);
     }
 
@@ -60,11 +63,28 @@ class ReviewGateServiceTest {
         PostprocessResult result = approveResult("黑色皮质钱包", "在图书馆三楼捡到黑色皮质钱包",
                 "图书馆三楼", "黑色皮质钱包，图书馆三楼");
         when(client.process(any())).thenReturn(result);
-        when(persistence.approve(eq(RECORD_ID), eq(result), anyInt(), eq(REQUEST_ID))).thenReturn(true);
+        when(persistence.approve(eq(RECORD_ID), eq(result), anyInt(), eq(CONTENT_VERSION), eq(REQUEST_ID)))
+                .thenReturn(true);
 
         service.process(RECORD_ID, REQUEST_ID);
 
-        verify(persistence).approve(eq(RECORD_ID), eq(result), eq(1), eq(REQUEST_ID));
+        verify(persistence).approve(eq(RECORD_ID), eq(result), eq(1), eq(CONTENT_VERSION), eq(REQUEST_ID));
+    }
+
+    @Test
+    @DisplayName("P1-1：模型输出带全角冒号但无敏感信息 → 正常通过，不再误拒")
+    void fullWidthColonIsNotARejection() {
+        PostprocessResult result = approveResult("黑色钱包", "时间：昨天 14:30 在图书馆三楼捡到",
+                "图书馆三楼", "摘要：黑色钱包");
+        when(client.process(any())).thenReturn(result);
+        when(persistence.approve(eq(RECORD_ID), eq(result), anyInt(), eq(CONTENT_VERSION), eq(REQUEST_ID)))
+                .thenReturn(true);
+
+        service.process(RECORD_ID, REQUEST_ID);
+
+        verify(persistence).approve(eq(RECORD_ID), eq(result), eq(1), eq(CONTENT_VERSION), eq(REQUEST_ID));
+        verify(persistence, never()).reject(anyLong(), anyString(), any(), anyInt(), anyBoolean(),
+                anyInt(), anyString());
     }
 
     @Test
@@ -77,8 +97,40 @@ class ReviewGateServiceTest {
         service.process(RECORD_ID, REQUEST_ID);
 
         verify(persistence).reject(eq(RECORD_ID), contains("规则双检命中"), eq(result), eq(1),
-                eq(false), eq(REQUEST_ID));
-        verify(persistence, never()).approve(anyLong(), any(), anyInt(), anyString());
+                eq(false), eq(CONTENT_VERSION), eq(REQUEST_ID));
+        verify(persistence, never()).approve(anyLong(), any(), anyInt(), anyInt(), anyString());
+    }
+
+    @Test
+    @DisplayName("P1-3：审核写回版本失配（期间被编辑）→ 丢弃旧结论，不把 manual=1 写到新内容")
+    void staleSnapshotIsDiscarded() {
+        PostprocessResult result = approveResult("黑色皮质钱包", "在图书馆三楼捡到黑色皮质钱包",
+                "图书馆三楼", "黑色皮质钱包，图书馆三楼");
+        when(client.process(any())).thenReturn(result);
+        // 新内容已经写入，旧线程的 APPROVE 在 SQL 层影响 0 行
+        when(persistence.approve(eq(RECORD_ID), eq(result), anyInt(), eq(CONTENT_VERSION), eq(REQUEST_ID)))
+                .thenReturn(false);
+
+        service.process(RECORD_ID, REQUEST_ID);
+
+        verify(persistence).approve(eq(RECORD_ID), eq(result), eq(1), eq(CONTENT_VERSION), eq(REQUEST_ID));
+        verify(persistence, never()).reject(anyLong(), anyString(), any(), anyInt(), anyBoolean(),
+                anyInt(), anyString());
+        verify(persistence, never()).markOwnerConfirmRequired(anyLong(), anyString(), any(), anyInt(),
+                anyInt(), anyString());
+    }
+
+    @Test
+    @DisplayName("P1-3：尝试次数写回前已发现版本失配 → 不调模型，直接放弃本轮")
+    void staleSnapshotAbortsBeforeCallingModel() {
+        when(persistence.recordAttempt(eq(RECORD_ID), anyInt(), eq(CONTENT_VERSION))).thenReturn(false);
+
+        service.process(RECORD_ID, REQUEST_ID);
+
+        verify(client, never()).process(any());
+        verify(persistence, never()).approve(anyLong(), any(), anyInt(), anyInt(), anyString());
+        verify(persistence, never()).markOwnerConfirmRequired(anyLong(), anyString(), any(), anyInt(),
+                anyInt(), anyString());
     }
 
     @Test
@@ -93,7 +145,7 @@ class ReviewGateServiceTest {
 
         verify(client, times(1)).process(any());
         verify(persistence).reject(eq(RECORD_ID), contains("去身份化"), eq(result), eq(1),
-                eq(false), eq(REQUEST_ID));
+                eq(false), eq(CONTENT_VERSION), eq(REQUEST_ID));
     }
 
     @Test
@@ -107,8 +159,8 @@ class ReviewGateServiceTest {
 
         verify(client, times(4)).process(any());
         verify(persistence).markOwnerConfirmRequired(eq(RECORD_ID), contains("AI 审核连续失败"),
-                eq(unavailable), eq(4), eq(REQUEST_ID));
-        verify(persistence, never()).approve(anyLong(), any(), anyInt(), anyString());
+                eq(unavailable), eq(4), eq(CONTENT_VERSION), eq(REQUEST_ID));
+        verify(persistence, never()).approve(anyLong(), any(), anyInt(), anyInt(), anyString());
     }
 
     @Test
@@ -148,6 +200,7 @@ class ReviewGateServiceTest {
         record.setOccurredAt(LocalDateTime.of(2026, 10, 21, 13, 30));
         record.setReviewAttempts(0);
         record.setReviewManualRequired(false);
+        record.setContentVersion(CONTENT_VERSION);
         return record;
     }
 }

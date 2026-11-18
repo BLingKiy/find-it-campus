@@ -7,9 +7,9 @@ import com.findit.campus.common.masking.MaskingPolicy;
 /**
  * 比对通道（{@code match_*}）的身份剥离器：<b>只删身份类，不动场景类</b>。
  *
- * <p>这不是"打码"的第二份实现，而是 {@link MaskingPolicy#maskIdentity(String)} 之上补三类
+ * <p>这不是"打码"的第二份实现，而是 {@link MaskingPolicy#maskIdentity(String)} 之上补两类
  * 规则层拦不住的显式身份：学号/工号、带标签的姓名、以及发布者展示名原文。手机号/证件号/
- * QQ/邮箱仍走 MaskingPolicy 同一份检测，避免两处规则分叉。
+ * QQ/微信/邮箱仍走 MaskingPolicy 同一份检测，避免两处规则分叉。
  *
  * <p><b>为什么保留地点细节与时间</b>：比对通道的职责是判断「是不是同一件物品」。
  * 把「第三教学楼 201」泛化成「教学楼」、把「昨天下午」删掉，会直接拉低区分度，
@@ -30,13 +30,8 @@ public final class IdentityScrubber {
     private static final Pattern STUDENT_NO_LABEL = Pattern.compile(
             "(学号|工号|学籍号)\\s*[:：]?\\s*[A-Za-z0-9]{4,20}");
 
-    /** 「微信 abc_123」「QQ：12345678」：标签 + 5–20 位账号字符（纯数字 QQ 也覆盖）。 */
-    private static final Pattern SOCIAL_LABEL = Pattern.compile(
-            "(?i)(微信|wechat|QQ|扣扣|企鹅)\\s*[:：号]?\\s*[A-Za-z0-9_-]{5,20}");
-
     private static final String NAME_REPLACEMENT = "$1[已隐藏]";
     private static final String STUDENT_REPLACEMENT = "$1[已隐藏]";
-    private static final String SOCIAL_REPLACEMENT = "$1[已隐藏]";
 
     private IdentityScrubber() {
     }
@@ -53,7 +48,6 @@ public final class IdentityScrubber {
         String s = MaskingPolicy.maskIdentity(raw);
         s = NAME_LABEL.matcher(s).replaceAll(NAME_REPLACEMENT);
         s = STUDENT_NO_LABEL.matcher(s).replaceAll(STUDENT_REPLACEMENT);
-        s = SOCIAL_LABEL.matcher(s).replaceAll(SOCIAL_REPLACEMENT);
         if (publisherName != null && !publisherName.isBlank()) {
             String name = publisherName.strip();
             // 只替换显式出现的展示名；单字展示名不替换（"李"在正文里太常见，替换会毁掉语义）

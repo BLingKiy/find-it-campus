@@ -47,12 +47,13 @@ public class ReviewPersistence {
 
     /** 尝试次数先落库：进程在 LLM 调用中途崩溃时，次数仍然真实，不会无限重试。 */
     @Transactional
-    public void recordAttempt(long recordId, int attempts) {
-        recordMapper.markReviewAttempt(recordId, attempts);
+    public boolean recordAttempt(long recordId, int attempts, int expectedVersion) {
+        return recordMapper.markReviewAttempt(recordId, attempts, expectedVersion) > 0;
     }
 
     @Transactional
-    public boolean approve(long recordId, PostprocessResult result, int attempts, String requestId) {
+    public boolean approve(long recordId, PostprocessResult result, int attempts, int expectedVersion,
+                           String requestId) {
         String reason = joinReasons(result.reasons());
         if (reason.isBlank()) {
             reason = "AI 审核通过";
@@ -60,9 +61,10 @@ public class ReviewPersistence {
         int affected = recordMapper.approveReview(recordId, result.title(), result.description(),
                 result.location(), result.summary(), truncate(reason), result.engine(), result.model(),
                 result.promptVersion(), result.latencyMs(), result.totalTokensOrNull(), attempts,
-                LocalDateTime.now());
+                LocalDateTime.now(), expectedVersion);
         if (affected == 0) {
-            log.info("review approve skipped recordId={}（已被其它结论处理）", recordId);
+            log.info("review approve skipped recordId={} expectedVersion={}（内容已编辑或已被其它结论处理）",
+                    recordId, expectedVersion);
             return false;
         }
         auditMapper.insert(ReviewAudit.ai(recordId, "APPROVE", "APPROVED", truncate(reason),
@@ -76,12 +78,13 @@ public class ReviewPersistence {
 
     @Transactional
     public boolean reject(long recordId, String reason, PostprocessResult result, int attempts,
-                          boolean manualRequired, String requestId) {
+                          boolean manualRequired, int expectedVersion, String requestId) {
         int affected = recordMapper.rejectReview(recordId, truncate(reason), result.engine(), result.model(),
                 result.promptVersion(), result.latencyMs(), result.totalTokensOrNull(), attempts,
-                manualRequired, LocalDateTime.now());
+                manualRequired, LocalDateTime.now(), expectedVersion);
         if (affected == 0) {
-            log.info("review reject skipped recordId={}（已被其它结论处理）", recordId);
+            log.info("review reject skipped recordId={} expectedVersion={}（内容已编辑或已被其它结论处理）",
+                    recordId, expectedVersion);
             return false;
         }
         auditMapper.insert(ReviewAudit.ai(recordId, "REJECT", "REJECTED", truncate(reason),
@@ -93,11 +96,11 @@ public class ReviewPersistence {
     /** 连续失败：保持 PENDING + manual=1 + RULE_ONLY；不写 APPROVED，也绝不触发打分。 */
     @Transactional
     public void markOwnerConfirmRequired(long recordId, String reason, PostprocessResult last, int attempts,
-                                         String requestId) {
+                                         int expectedVersion, String requestId) {
         int affected = recordMapper.markOwnerConfirmRequired(recordId, truncate(reason),
                 last == null ? null : last.model(),
                 last == null ? null : last.promptVersion(), last == null ? null : last.latencyMs(),
-                last == null ? null : last.totalTokensOrNull(), attempts);
+                last == null ? null : last.totalTokensOrNull(), attempts, expectedVersion);
         if (affected == 0) {
             return;
         }
@@ -152,11 +155,13 @@ public class ReviewPersistence {
      * 没有模型二次把关；后台按该值可筛出"未经 AI 审核"的记录。
      */
     @Transactional
-    public boolean ownerConfirm(long recordId, long actorId, String requestId) {
+    public boolean ownerConfirm(long recordId, long actorId, int expectedVersion, String requestId) {
         String reason = "本人确认发布：AI 审核不可用，仅经规则脱敏，不会补审";
-        int affected = recordMapper.confirmOwnerReview(recordId, truncate(reason), LocalDateTime.now());
+        int affected = recordMapper.confirmOwnerReview(recordId, truncate(reason), LocalDateTime.now(),
+                expectedVersion);
         if (affected == 0) {
-            log.info("owner confirm skipped recordId={}（非待本人确认态或已被处理）", recordId);
+            log.info("owner confirm skipped recordId={} expectedVersion={}（非待本人确认态或已被处理）",
+                    recordId, expectedVersion);
             return false;
         }
         auditMapper.insert(ReviewAudit.ownerConfirm(recordId, actorId, truncate(reason), requestId));

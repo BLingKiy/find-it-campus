@@ -2,6 +2,9 @@ package com.findit.campus.common.masking;
 
 import java.text.Normalizer;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.EnumSet;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -56,6 +59,19 @@ public final class MaskingPolicy {
     /** 带 QQ 关键词的 5–9 位号；裸数字不命中（学号/卡号/房间号不掩码）。 */
     private static final Pattern QQ_RE = Pattern.compile("(?i)(QQ|扣扣|企鹅)\\s*[:：号]?\\s*(?<!\\d)\\d{5,9}(?!\\d)");
 
+    /**
+     * 社交账号标签：微信 / WeChat / QQ / 扣扣 / 企鹅。
+     *
+     * <p>号码本体由 {@link #maskSocialAccounts} 单独扫描，因为「标签 + 分隔符 + 账号」不是一条
+     * 定长正则能稳定表达的：{@code QQ 123 456}、{@code QQ 123-456}、{@code 微信 abc-123456}
+     * 都要求「先认标签，再按账号规则取本体」。这个模式只匹配标签和它后面的分隔符。
+     */
+    private static final Pattern SOCIAL_LABEL = Pattern.compile(
+            "(?i)(微信|wechat|QQ|扣扣|企鹅)\\s*[:：号]?\\s*");
+
+    /** 微信/QQ 字母数字账号：首字符必须是字母，避免把「微信 5 分钟」这类正文误判成账号。 */
+    private static final Pattern SOCIAL_ALPHA_ID = Pattern.compile("[A-Za-z][A-Za-z0-9_-]{4,19}");
+
     /** 邮箱：v2.0 出口层漏掉的一类身份信息，v2.1 与手机号同口径处理。 */
     private static final Pattern EMAIL_RE = Pattern.compile(
             "(?i)(?<![A-Za-z0-9._%+-])[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}(?![A-Za-z0-9.-])");
@@ -67,9 +83,44 @@ public final class MaskingPolicy {
 
     private static final String ID_REPLACEMENT = "[证件号已隐藏]";
     private static final String MOBILE_REPLACEMENT = "[手机号已隐藏]";
-    private static final String QQ_REPLACEMENT = "$1[QQ号已隐藏]";
+    private static final String QQ_ACCOUNT_REPLACEMENT = "[QQ号已隐藏]";
+    private static final String QQ_REPLACEMENT = "$1" + QQ_ACCOUNT_REPLACEMENT;
+    private static final String SOCIAL_ACCOUNT_REPLACEMENT = "[微信号已隐藏]";
     private static final String EMAIL_REPLACEMENT = "[邮箱已隐藏]";
     private static final String TIME_REPLACEMENT = "[时间已隐藏]";
+
+    /** 身份类命中的类别；扫描器据此判断「真的替换过」，不再用整串 diff 冒充命中。 */
+    public enum IdentityCategory {
+        ID_CARD("证件号"),
+        MOBILE("手机号"),
+        QQ("QQ号"),
+        SOCIAL("微信号"),
+        EMAIL("邮箱");
+
+        private final String label;
+
+        IdentityCategory(String label) {
+            this.label = label;
+        }
+
+        public String label() {
+            return label;
+        }
+    }
+
+    /**
+     * 检测结果：{@code masked} 是替换后的文本；{@code categories} 只在<b>真实替换</b>时非空。
+     *
+     * <p>归一化（全角数字/冒号 → 半角）会改变文本，但不算命中。把「检测」和「替换」拆开后，
+     * 调用方（规则双检）只需要看 {@code categories}，不会再出现「文本被归一化 = 有敏感信息」
+     * 的误拒。
+     */
+    public record IdentityDetection(String masked, Set<IdentityCategory> categories) {
+
+        public boolean hit() {
+            return !categories.isEmpty();
+        }
+    }
 
     private MaskingPolicy() {
     }
@@ -156,16 +207,54 @@ public final class MaskingPolicy {
      * @param raw 原文；{@code null} 原样返回
      */
     public static String maskIdentity(String raw) {
+        return detectIdentity(raw).masked();
+    }
+
+    /**
+     * 检测并替换身份类信息，同时返回<b>真实命中</b>的类别。
+     *
+     * <p>与 {@link #maskIdentity(String)} 的区别只在返回值：本方法把「归一化」与「命中」分开。
+     * 全角冒号、全角数字会被归一成半角，但只要没有任何号码、邮箱、社交账号被替换，
+     * {@link IdentityDetection#categories()} 就是空集合 —— 规则双检据此放行。
+     *
+     * @param raw 原文；{@code null} 返回 {@code (null, 空集合)}
+     */
+    public static IdentityDetection detectIdentity(String raw) {
         if (raw == null) {
-            return null;
+            return new IdentityDetection(null, Set.of());
         }
+        Set<IdentityCategory> categories = EnumSet.noneOf(IdentityCategory.class);
         String s = normalizeDigitsAndColon(raw);
-        s = maskSeparatedContactNumbers(s);
-        s = ID_RE.matcher(s).replaceAll(Matcher.quoteReplacement(ID_REPLACEMENT));
-        s = MOBILE_RE.matcher(s).replaceAll(Matcher.quoteReplacement(MOBILE_REPLACEMENT));
-        s = QQ_RE.matcher(s).replaceAll(QQ_REPLACEMENT);
-        s = EMAIL_RE.matcher(s).replaceAll(Matcher.quoteReplacement(EMAIL_REPLACEMENT));
-        return s;
+
+        ContactScan contact = maskSeparatedContactNumbers(s);
+        s = contact.text();
+        if (contact.idCard()) {
+            categories.add(IdentityCategory.ID_CARD);
+        }
+        if (contact.mobile()) {
+            categories.add(IdentityCategory.MOBILE);
+        }
+
+        if (ID_RE.matcher(s).find()) {
+            s = ID_RE.matcher(s).replaceAll(Matcher.quoteReplacement(ID_REPLACEMENT));
+            categories.add(IdentityCategory.ID_CARD);
+        }
+        if (MOBILE_RE.matcher(s).find()) {
+            s = MOBILE_RE.matcher(s).replaceAll(Matcher.quoteReplacement(MOBILE_REPLACEMENT));
+            categories.add(IdentityCategory.MOBILE);
+        }
+        if (QQ_RE.matcher(s).find()) {
+            s = QQ_RE.matcher(s).replaceAll(QQ_REPLACEMENT);
+            categories.add(IdentityCategory.QQ);
+        }
+        SocialScan social = maskSocialAccounts(s);
+        s = social.text();
+        categories.addAll(social.categories());
+        if (EMAIL_RE.matcher(s).find()) {
+            s = EMAIL_RE.matcher(s).replaceAll(Matcher.quoteReplacement(EMAIL_REPLACEMENT));
+            categories.add(IdentityCategory.EMAIL);
+        }
+        return new IdentityDetection(s, Collections.unmodifiableSet(categories));
     }
 
     /**
@@ -175,10 +264,12 @@ public final class MaskingPolicy {
      * 只有归一结果<b>整段</b>命中 18 位证件号 / 11 位手机号（含国际前缀）时才替换，
      * 未命中的片段按原文保留。这样“打不打码”由号码本身决定，而不是由用户怎么敲空格决定。
      */
-    private static String maskSeparatedContactNumbers(String s) {
+    private static ContactScan maskSeparatedContactNumbers(String s) {
         int length = s.length();
         StringBuilder out = new StringBuilder(length);
         int i = 0;
+        boolean idHit = false;
+        boolean mobileHit = false;
         while (i < length) {
             char first = s.charAt(i);
             boolean plus = isPlusSign(first);
@@ -216,12 +307,15 @@ public final class MaskingPolicy {
 
             String replacement = null;
             int replaceEnd = runEnd;
+            boolean replacementIsId = false;
             if (digitCount == 18) {
                 // 证件号：18 位，允许中间被分隔符拆开（1101 0119 9001 0112 34）。
                 replacement = ID_REPLACEMENT;
+                replacementIsId = true;
             } else if (digitCount == 17 && runEnd < length && isIdTail(s.charAt(runEnd))) {
                 // 证件号尾位 X，且 X 与最后一位数字相邻。
                 replacement = ID_REPLACEMENT;
+                replacementIsId = true;
                 replaceEnd = runEnd + 1;
             } else if (digitCount == 11 && isMobileAt(s, digitPositions, 0)) {
                 replacement = MOBILE_REPLACEMENT;
@@ -237,13 +331,22 @@ public final class MaskingPolicy {
             }
 
             if (replacement == null) {
-                out.append(maskMobilesInsideRun(s, i, runEnd, digitPositions, digitCount));
+                String chunk = maskMobilesInsideRun(s, i, runEnd, digitPositions, digitCount);
+                if (!chunk.equals(s.substring(i, runEnd))) {
+                    mobileHit = true;
+                }
+                out.append(chunk);
             } else {
+                if (replacementIsId) {
+                    idHit = true;
+                } else {
+                    mobileHit = true;
+                }
                 out.append(replacement);
             }
             i = replaceEnd;
         }
-        return out.toString();
+        return new ContactScan(out.toString(), idHit, mobileHit);
     }
 
     /**
@@ -397,6 +500,95 @@ public final class MaskingPolicy {
             return "*";
         }
         return new String(Character.toChars(first)) + "**";
+    }
+
+    /**
+     * 遮蔽「社交账号标签 + 任意分隔 + 5–9 位数字 / 5–20 位字母数字账号」。
+     *
+     * <p>与 {@link #maskSeparatedContactNumbers} 的分工：那边处理裸号码的分隔符，
+     * 这边处理「QQ 123 456」「微信 abc-123456」这类<b>先有标签</b>的账号。
+     * 只认标签能避免把正文里的裸数字误伤成 QQ 号。
+     */
+    private static SocialScan maskSocialAccounts(String s) {
+        Matcher matcher = SOCIAL_LABEL.matcher(s);
+        StringBuilder out = null;
+        Set<IdentityCategory> categories = EnumSet.noneOf(IdentityCategory.class);
+        int emitted = 0;
+        while (matcher.find()) {
+            int accountEnd = socialAccountEnd(s, matcher.end());
+            if (accountEnd < 0) {
+                continue;
+            }
+            String label = matcher.group(1);
+            boolean qq = isQqLabel(label);
+            if (out == null) {
+                out = new StringBuilder(s.length() + 16);
+            }
+            out.append(s, emitted, matcher.start()).append(label)
+                    .append(qq ? QQ_ACCOUNT_REPLACEMENT : SOCIAL_ACCOUNT_REPLACEMENT);
+            emitted = accountEnd;
+            categories.add(qq ? IdentityCategory.QQ : IdentityCategory.SOCIAL);
+            matcher.region(accountEnd, s.length());
+        }
+        if (categories.isEmpty()) {
+            return new SocialScan(s, Set.of());
+        }
+        out.append(s, emitted, s.length());
+        return new SocialScan(out.toString(), categories);
+    }
+
+    /**
+     * 取标签后的账号区间；不是账号返回 {@code -1}。
+     *
+     * <p>数字账号要求 5–9 位，允许中间任意分隔符（空格/短横/点/冒号……），
+     * 与现有 QQ 连续号码口径一致；字母账号沿用比对通道的 5–20 位字母数字下划线短横。
+     */
+    private static int socialAccountEnd(String s, int from) {
+        int length = s.length();
+        int cursor = from;
+        int digits = 0;
+        int lastDigitEnd = -1;
+        while (cursor < length) {
+            char c = s.charAt(cursor);
+            if (isAsciiDigit(c)) {
+                digits++;
+                lastDigitEnd = cursor + 1;
+                cursor++;
+            } else if (lastDigitEnd >= 0 && isDigitSeparator(c)
+                    && hasDigitAfterSeparators(s, cursor + 1)) {
+                cursor++;
+            } else {
+                break;
+            }
+        }
+        if (digits >= 5 && digits <= 9
+                && (lastDigitEnd >= length || !isAsciiDigit(s.charAt(lastDigitEnd)))) {
+            return lastDigitEnd;
+        }
+        Matcher alpha = SOCIAL_ALPHA_ID.matcher(s);
+        alpha.region(from, length);
+        if (alpha.lookingAt()) {
+            int end = alpha.end();
+            if (end >= length || !isSocialAccountChar(s.charAt(end))) {
+                return end;
+            }
+        }
+        return -1;
+    }
+
+    private static boolean isQqLabel(String label) {
+        return "qq".equalsIgnoreCase(label) || "扣扣".equals(label) || "企鹅".equals(label);
+    }
+
+    private static boolean isSocialAccountChar(char c) {
+        return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z')
+                || (c >= '0' && c <= '9') || c == '_' || c == '-';
+    }
+
+    private record ContactScan(String text, boolean idCard, boolean mobile) {
+    }
+
+    private record SocialScan(String text, Set<IdentityCategory> categories) {
     }
 
     /**

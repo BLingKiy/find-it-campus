@@ -6,6 +6,7 @@ import java.util.List;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
+import com.findit.campus.pair.domain.PairDegradedCountRow;
 import com.findit.campus.pair.domain.PairScore;
 
 /**
@@ -89,13 +90,17 @@ public interface PairScoreMapper {
                                         @Param("limit") int limit);
 
     /**
-     * 某条记录参与的 pair 里还有多少条是 {@code LOCAL_KEYWORD}（决定 {@code pair_state=DEGRADED}）。
+     * 批量统计「这些记录各自还有多少条<b>仍可重算</b>的降级 pair」。
      *
-     * <p>为什么不在内存里数本轮结果：本轮可能全部跳过（哈希未变），此时"看起来一条降级都没有"，
-     * 而库里明明躺着上次的降级行 —— 那会让 {@code pair_state} 从 DEGRADED 翻回 READY，
-     * 前端于是不再提示"已降级"，用户就会以为分数是智能匹配的。以库为准，避免这个错误。
+     * <p>与旧 {@code countDegradedByRecord} 的差别（P1-5）：
+     * <ul>
+     *   <li>批量：一条记录 + 它的全部对端一次查完，写完分后同步两端状态不会变成 N+1；</li>
+     *   <li>MATCHABLE：只数两端仍可见、未 CLOSED、COMPLETED 未过保留期的 pair。
+     *       对端失效后，这条本地分不会再让记录永久 DEGRADED，降级扫描也不会空转。</li>
+     * </ul>
      */
-    int countDegradedByRecord(@Param("recordId") long recordId);
+    List<PairDegradedCountRow> countDegradedByRecordIds(@Param("ids") List<Long> ids,
+                                                        @Param("cutoff") LocalDateTime cutoff);
 
     /**
      * 某条记录参与的所有 pair（两端任一命中），按 {@code updated_at} 升序取前 N 条。

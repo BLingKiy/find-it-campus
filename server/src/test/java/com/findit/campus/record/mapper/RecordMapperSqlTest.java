@@ -55,6 +55,29 @@ class RecordMapperSqlTest {
                 "未审核记录不得进入打分扫描");
     }
 
+    @Test
+    @DisplayName("P1-3 内容版本：编辑自增 content_version，四条审核写回都带版本条件")
+    void reviewWritesCarryContentVersion() throws Exception {
+        assertTrue(normalized(statement("updateContent")).contains("content_version = content_version + 1"),
+                "编辑必须递增内容版本");
+        for (String id : new String[]{"markReviewAttempt", "approveReview", "rejectReview",
+                "markOwnerConfirmRequired", "confirmOwnerReview"}) {
+            assertTrue(normalized(statement(id)).contains("content_version = #{expectedversion}"),
+                    id + " 缺少内容版本乐观校验：旧审核结果会覆盖编辑后的新内容");
+        }
+    }
+
+    @Test
+    @DisplayName("P1-5 对端状态同步：只改已定稿状态，不打断 SCORING")
+    void pairStateSyncDoesNotClobberScoring() throws Exception {
+        String sql = normalized(statement("markPairStateIfSettled"));
+
+        assertTrue(sql.contains("pair_state in ('ready', 'degraded')"),
+                "对端同步只能改已定稿状态，否则会把正在打分的记录改回 READY");
+        assertFalse(sql.contains("pair_scored_at"),
+                "对端同步不刷新扫描时间，扫描节奏由对端自己的打分局决定");
+    }
+
     private static String fragment(String id) throws Exception {
         String xml = mapperXml();
         int start = xml.indexOf("<sql id=\"" + id + "\"");

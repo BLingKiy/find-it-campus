@@ -29,6 +29,7 @@ import org.springframework.transaction.TransactionStatus;
 import com.findit.campus.notification.mapper.NotificationMapper;
 import com.findit.campus.pair.config.PairPolicyProperties;
 import com.findit.campus.pair.config.PairScoreProperties;
+import com.findit.campus.pair.domain.PairDegradedCountRow;
 import com.findit.campus.pair.domain.PairScore;
 import com.findit.campus.pair.domain.PairSide;
 import com.findit.campus.pair.engine.DegradedReason;
@@ -321,6 +322,34 @@ class PairScoringServiceTest {
     }
 
     @Test
+    @DisplayName("P1-5：写入降级分后两端 pair_state 同步为 DEGRADED（先 LOST 后 FOUND 不再一端 READY）")
+    void degradedPairSyncsBothEnds() {
+        when(pairScoreMapper.selectByPair(1L, 2L)).thenReturn(null);
+        when(llmScorer.score(any())).thenReturn(PairScoreResult.degraded(DegradedReason.TIMEOUT, 50));
+        when(pairScoreMapper.countDegradedByRecordIds(any(), any()))
+                .thenReturn(List.of(degradedRow(1L, 1), degradedRow(2L, 1)));
+
+        service.scoreRecord(1L, "publish");
+
+        verify(recordMapper).markPairScored(eq(1L), eq("DEGRADED"), any());
+        verify(recordMapper).markPairStateIfSettled(2L, "DEGRADED");
+    }
+
+    @Test
+    @DisplayName("P1-5：对端失效后批量计数不再计入该 pair → 两端都回到 READY，DEGRADED 不永久滞留")
+    void unmatchableCounterpartClearsDegraded() {
+        when(pairScoreMapper.selectByPair(1L, 2L)).thenReturn(null);
+        when(llmScorer.score(any())).thenReturn(PairScoreResult.degraded(DegradedReason.TIMEOUT, 50));
+        // MATCHABLE 过滤后没有可重算的降级 pair（对端 CLOSED/过期/删除）
+        when(pairScoreMapper.countDegradedByRecordIds(any(), any())).thenReturn(List.of());
+
+        service.scoreRecord(1L, "scan");
+
+        verify(recordMapper).markPairScored(eq(1L), eq("READY"), any());
+        verify(recordMapper).markPairStateIfSettled(2L, "READY");
+    }
+
+    @Test
     @DisplayName("预算在一条记录内生效：算完第 1 对就停，truncated=true 且不刷新 pair_scored_at")
     void budgetStopsWithinOneRecord() {
         Record found2 = record(3L, RecordType.FOUND, "捡到一张饭卡", "二食堂门口捡到，蓝色卡套");
@@ -353,6 +382,13 @@ class PairScoringServiceTest {
 
     private String foundHash() {
         return PairContentHasher.hash(foundSide);
+    }
+
+    private static PairDegradedCountRow degradedRow(long recordId, int count) {
+        PairDegradedCountRow row = new PairDegradedCountRow();
+        row.setRecordId(recordId);
+        row.setDegradedCount(count);
+        return row;
     }
 
     private static PairScore existingRow(String lostHash, String foundHash, BigDecimal score, String engine) {

@@ -39,6 +39,7 @@ class ReviewPersistenceOwnerConfirmTest {
 
     private static final long RECORD_ID = 9L;
     private static final long OWNER = 1L;
+    private static final int CONTENT_VERSION = 0;
     private static final String REQUEST_ID = "req-owner";
 
     private RecordMapper recordMapper;
@@ -57,9 +58,10 @@ class ReviewPersistenceOwnerConfirmTest {
     @Test
     @DisplayName("条件更新命中 → 写 OWNER_CONFIRM 审计（HUMAN/本人/RULE_ONLY）并触发打分")
     void ownerConfirmWritesAuditAndPublishesScoring() {
-        when(recordMapper.confirmOwnerReview(eq(RECORD_ID), anyString(), any())).thenReturn(1);
+        when(recordMapper.confirmOwnerReview(eq(RECORD_ID), anyString(), any(), eq(CONTENT_VERSION)))
+                .thenReturn(1);
 
-        assertTrue(persistence.ownerConfirm(RECORD_ID, OWNER, REQUEST_ID));
+        assertTrue(persistence.ownerConfirm(RECORD_ID, OWNER, CONTENT_VERSION, REQUEST_ID));
 
         ArgumentCaptor<ReviewAudit> audit = ArgumentCaptor.forClass(ReviewAudit.class);
         verify(auditMapper).insert(audit.capture());
@@ -81,22 +83,25 @@ class ReviewPersistenceOwnerConfirmTest {
                 List.of("已去身份"), "DEEPSEEK", "deepseek-chat", "pair-postprocess-v1",
                 12, 8, 4);
         when(recordMapper.approveReview(anyLong(), anyString(), anyString(), anyString(), anyString(),
-                anyString(), anyString(), anyString(), anyString(), anyInt(), anyInt(), anyInt(), any()))
+                anyString(), anyString(), anyString(), anyString(), anyInt(), anyInt(), anyInt(), any(),
+                eq(CONTENT_VERSION)))
                 .thenReturn(1);
 
-        assertTrue(persistence.approve(RECORD_ID, result, 1, REQUEST_ID));
+        assertTrue(persistence.approve(RECORD_ID, result, 1, CONTENT_VERSION, REQUEST_ID));
 
         verify(recordMapper).approveReview(eq(RECORD_ID), eq("改写标题"), eq("改写描述"),
                 eq("图书馆三楼"), eq("黑色钱包，图书馆三楼"), anyString(), eq("DEEPSEEK"),
-                eq("deepseek-chat"), eq("pair-postprocess-v1"), eq(12), eq(12), eq(1), any());
+                eq("deepseek-chat"), eq("pair-postprocess-v1"), eq(12), eq(12), eq(1), any(),
+                eq(CONTENT_VERSION));
     }
 
     @Test
     @DisplayName("条件更新 0 行（AI 正常/已被处理）→ 不写审计、不发打分事件")
     void ownerConfirmSkippedWhenNotManualRequired() {
-        when(recordMapper.confirmOwnerReview(eq(RECORD_ID), anyString(), any())).thenReturn(0);
+        when(recordMapper.confirmOwnerReview(eq(RECORD_ID), anyString(), any(), eq(CONTENT_VERSION)))
+                .thenReturn(0);
 
-        assertFalse(persistence.ownerConfirm(RECORD_ID, OWNER, REQUEST_ID));
+        assertFalse(persistence.ownerConfirm(RECORD_ID, OWNER, CONTENT_VERSION, REQUEST_ID));
 
         verifyNoInteractions(auditMapper, eventPublisher);
     }
@@ -113,6 +118,6 @@ class ReviewPersistenceOwnerConfirmTest {
         assertEquals(null, audit.getValue().getReason());
         assertEquals(null, audit.getValue().getEngine());
         verify(eventPublisher, never()).publishEvent(any());
-        verify(recordMapper, never()).confirmOwnerReview(anyLong(), anyString(), any());
+        verify(recordMapper, never()).confirmOwnerReview(anyLong(), anyString(), any(), anyInt());
     }
 }
