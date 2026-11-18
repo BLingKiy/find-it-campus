@@ -98,12 +98,37 @@
         LIMIT #{limit}
     </select>
 
-    <!-- 两端任一命中即可；两条单列索引在 OR 下走 index_merge，数据量到十万级再评估 -->
-    <select id="countDegradedByRecord" resultType="int">
-        SELECT COUNT(*)
-        FROM t_pair_score
-        WHERE (lost_id = #{recordId} OR found_id = #{recordId})
-          AND engine = 'LOCAL_KEYWORD'
+    <!--
+      P1-5：批量统计「这些记录各自还有多少条仍可重算的降级 pair」。
+      1. 先把 ids 展开成 (record_id, pair_id)，再回连两端记录做 MATCHABLE 过滤；
+      2. 失效对端（CLOSED / 过期 COMPLETED / 已删 / 未过审）不计数 —— 否则记录会永久 DEGRADED；
+      3. GROUP BY 一次返回所有记录，写分后同步两端状态不再 N+1。
+    -->
+    <select id="countDegradedByRecordIds" resultType="com.findit.campus.pair.domain.PairDegradedCountRow">
+        SELECT t.record_id AS record_id,
+               COUNT(*) AS degraded_count
+        FROM (
+            SELECT p.id AS pair_id, p.lost_id AS record_id
+            FROM t_pair_score p
+            WHERE p.engine = 'LOCAL_KEYWORD'
+              AND p.lost_id IN
+            <foreach item="id" collection="ids" open="(" separator="," close=")">#{id}</foreach>
+            UNION ALL
+            SELECT p.id AS pair_id, p.found_id AS record_id
+            FROM t_pair_score p
+            WHERE p.engine = 'LOCAL_KEYWORD'
+              AND p.found_id IN
+            <foreach item="id" collection="ids" open="(" separator="," close=")">#{id}</foreach>
+        ) t
+        JOIN t_pair_score p ON p.id = t.pair_id
+        JOIN t_record l ON l.id = p.lost_id
+        JOIN t_record f ON f.id = p.found_id
+        WHERE l.deleted_at IS NULL AND f.deleted_at IS NULL
+          AND l.is_visible = 1 AND f.is_visible = 1
+          AND l.status &lt;&gt; 'CLOSED' AND f.status &lt;&gt; 'CLOSED'
+          AND (l.status = 'PENDING' OR l.completed_at &gt; #{cutoff})
+          AND (f.status = 'PENDING' OR f.completed_at &gt; #{cutoff})
+        GROUP BY t.record_id
     </select>
 
     <!-- 重算时补齐"未进本次 topN 的老 pair"；升序 = 最旧的优先，避免饿死 -->

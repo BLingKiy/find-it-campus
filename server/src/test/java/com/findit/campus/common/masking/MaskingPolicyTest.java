@@ -2,6 +2,7 @@ package com.findit.campus.common.masking;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -119,6 +120,29 @@ class MaskingPolicyTest {
     }
 
     @Test
+    @DisplayName("C-11：非所有者详情的 summary 也走遮蔽；写回响应不返回 raw_*")
+    void summaryMaskedAndWriteBackHasNoRaw() {
+        Record record = sampleRecord();
+        record.setSummary("黑色钱包，联系 13812345678");
+        record.setRawTitle("原文标题 13812345678");
+        record.setRawDescription("原文描述");
+        record.setRawLocation("第三教学楼 201");
+
+        RecordDetailResponse masked = RecordDetailResponse.from(record);
+        assertFalse(masked.getSummary().contains("13812345678"), "非所有者详情摘要必须打码");
+        assertTrue(masked.getSummary().contains("[手机号已隐藏]"));
+
+        RecordDetailResponse ownerDetail = RecordDetailResponse.ownerView(record, 0, 0, List.of());
+        assertEquals("黑色钱包，联系 13812345678", ownerDetail.getSummary(), "本人详情保留摘要原文");
+        assertNotNull(ownerDetail.getRawTitle(), "本人详情是原文唯一出口");
+
+        RecordDetailResponse writeBack = RecordDetailResponse.ownerViewWithoutRaw(record, 0, 0, List.of());
+        assertNull(writeBack.getRawTitle(), "POST/PUT 响应不得带 raw_title");
+        assertNull(writeBack.getRawDescription(), "POST/PUT 响应不得带 raw_description");
+        assertNull(writeBack.getRawLocation(), "POST/PUT 响应不得带 raw_location");
+    }
+
+    @Test
     @DisplayName("身份维度：公共列表按 publisher_id 判 isMine，本人行原文、他人行打码")
     void listIdentityDimension() {
         RecordSummary summary = summary();
@@ -139,6 +163,37 @@ class MaskingPolicyTest {
     @DisplayName("英文大小写不敏感：qq 456789 也命中（(?i) 生效，保留原关键词大小写）")
     void qqKeywordIsCaseInsensitive() {
         assertEquals("qq[QQ号已隐藏]", MaskingPolicy.maskDescription("qq 456789"));
+    }
+
+    @Test
+    @DisplayName("P1-2：QQ 空格/短横、企鹅、微信字母 ID 都遮蔽；连续 QQ 与手机号分隔不回归")
+    void separatedSocialAccountsAreMasked() {
+        assertEquals("QQ[QQ号已隐藏]", MaskingPolicy.maskDescription("QQ 123 456"));
+        assertEquals("QQ[QQ号已隐藏]", MaskingPolicy.maskDescription("QQ 123-456"));
+        assertEquals("加我企鹅[QQ号已隐藏]", MaskingPolicy.maskDescription("加我企鹅 123 456"));
+        assertEquals("微信[微信号已隐藏]", MaskingPolicy.maskDescription("微信 abc-123456"));
+        // 不回归：连续 QQ 仍按原规则遮蔽；手机号分隔仍走号码通道
+        assertEquals("QQ[QQ号已隐藏]", MaskingPolicy.maskDescription("QQ:123456789"));
+        assertEquals("联系 [手机号已隐藏]", MaskingPolicy.maskDescription("联系 138 1234 5678"));
+        // 打码后不得残留原文片段
+        assertFalse(MaskingPolicy.maskDescription("QQ 123 456").contains("123 456"));
+        assertFalse(MaskingPolicy.maskDescription("微信 abc-123456").contains("abc-123456"));
+    }
+
+    @Test
+    @DisplayName("P1-1：检测与替换分离 —— 只有归一化时 hit=false，真号码 hit=true")
+    void detectionSeparatesNormalizationFromHits() {
+        MaskingPolicy.IdentityDetection colonOnly = MaskingPolicy.detectIdentity("时间：昨天 14:30");
+        assertFalse(colonOnly.hit(), "全角冒号只是归一化");
+        assertEquals("时间:昨天 14:30", colonOnly.masked(), "文本仍按既有口径归一化");
+
+        MaskingPolicy.IdentityDetection fullWidthDigits = MaskingPolicy.detectIdentity("２０２６年１０月２１日");
+        assertFalse(fullWidthDigits.hit(), "全角数字只是归一化");
+
+        MaskingPolicy.IdentityDetection realMobile = MaskingPolicy.detectIdentity("时间：昨天 14:30 电话 13800000001");
+        assertTrue(realMobile.hit());
+        assertTrue(realMobile.categories().contains(MaskingPolicy.IdentityCategory.MOBILE));
+        assertFalse(realMobile.masked().contains("13800000001"));
     }
 
     @Test

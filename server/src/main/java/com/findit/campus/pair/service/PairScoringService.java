@@ -3,6 +3,7 @@ package com.findit.campus.pair.service;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -19,6 +20,7 @@ import com.findit.campus.notification.domain.Notification;
 import com.findit.campus.notification.mapper.NotificationMapper;
 import com.findit.campus.pair.config.PairPolicyProperties;
 import com.findit.campus.pair.config.PairScoreProperties;
+import com.findit.campus.pair.domain.PairDegradedCountRow;
 import com.findit.campus.pair.domain.PairScore;
 import com.findit.campus.pair.domain.PairSide;
 import com.findit.campus.pair.engine.PairContentHasher;
@@ -131,7 +133,7 @@ public class PairScoringService {
      * 同上，并接受本轮 LLM 调用预算；{@code budget=null} 表示不设限（发布/编辑/手动重试走这里）。
      *
      * <p>预算耗尽时：<b>不再调 LLM</b>，但已算完的 pair 正常落库；记录状态仍按库里的
-     * {@code countDegradedByRecord} 落 READY/DEGRADED，且<b>不刷新</b> {@code pair_scored_at}
+     * {@code countDegradedByRecordIds} 落 READY/DEGRADED，且<b>不刷新</b> {@code pair_scored_at}
      * （见 {@code markPairScoredKeepTimestamp}）—— 下一条降级重扫/全量扫描会立刻重新选中它，
      * 而不是等一个 60 分钟冷却窗口。
      */
@@ -178,7 +180,7 @@ public class PairScoringService {
                     }
                 }
             }
-            int degradedPairs = pairScoreMapper.countDegradedByRecord(recordId);
+            int degradedPairs = syncPairStates(recordId, candidates, LocalDateTime.now());
             String state = degradedPairs > 0 ? STATE_DEGRADED : STATE_READY;
             if (truncated) {
                 // 保留旧的 pair_scored_at：本轮只是被预算截断，不是"冷却期内的完整一轮"
@@ -195,6 +197,46 @@ public class PairScoringService {
             log.warn("pair record scoring failed recordId={} trigger={} cause={}", recordId, trigger, e.getMessage());
             return RecordScoreOutcome.failed(recordId, e.getMessage());
         }
+    }
+
+    /**
+     * 写分后同步两端 {@code pair_state}（P1-5），并返回<b>本记录</b>还剩多少条降级 pair。
+     *
+     * <p>为什么必须同步对端：先发 LOST（当时无候选 → READY）、后发 FOUND 并打成降级分时，
+     * 只更新打分端会让 LOST 永远 READY，banner 不提示、降级重扫也不会选中它。
+     *
+     * <p>为什么用一条批量 COUNT 而不是逐条：一条记录最多 {@code pre-score-pool-size} 个对端，
+     * 逐个 COUNT 会把一次打分放大成几十次往返。批量查询同时应用 MATCHABLE 谓词，
+     * 失效对端上的本地分不再把任何一端钉死在 DEGRADED。
+     *
+     * <p>对端只改已定稿状态（READY/DEGRADED），不刷新 {@code pair_scored_at}，
+     * 由 {@code markPairStateIfSettled} 的 WHERE 保证不打断正在 SCORING 的记录。
+     */
+    private int syncPairStates(long recordId, List<PairSide> candidates, LocalDateTime now) {
+        Set<Long> affected = new LinkedHashSet<>();
+        affected.add(recordId);
+        for (PairSide candidate : candidates) {
+            affected.add(candidate.recordId());
+        }
+        List<PairDegradedCountRow> rows = pairScoreMapper.countDegradedByRecordIds(
+                new ArrayList<>(affected), policy.completedCutoff(now));
+        Map<Long, Integer> degradedById = new HashMap<>();
+        if (rows != null) {
+            for (PairDegradedCountRow row : rows) {
+                if (row.getRecordId() != null) {
+                    degradedById.put(row.getRecordId(),
+                            row.getDegradedCount() == null ? 0 : row.getDegradedCount());
+                }
+            }
+        }
+        for (Long id : affected) {
+            if (id == recordId) {
+                continue;
+            }
+            String state = degradedById.getOrDefault(id, 0) > 0 ? STATE_DEGRADED : STATE_READY;
+            recordMapper.markPairStateIfSettled(id, state);
+        }
+        return degradedById.getOrDefault(recordId, 0);
     }
 
     /**

@@ -187,8 +187,9 @@ public class RecordService {
         } else {
             publishPairScoring(record.getId(), "publish");
         }
-        // 契约 §4.3：发布成功响应 pairs=[]（刚建的记录不可能已有到达阈值的 pair）
-        return RecordDetailResponse.ownerView(requireRecord(record.getId()), 0, 0, List.of());
+        // 契约 §4.3：发布成功响应 pairs=[]（刚建的记录不可能已有到达阈值的 pair）。
+        // C-11：写回响应不回 raw_*，原文只从已审计的本人详情出口读取。
+        return RecordDetailResponse.ownerViewWithoutRaw(requireRecord(record.getId()), 0, 0, List.of());
     }
 
     /**
@@ -235,8 +236,9 @@ public class RecordService {
             publishPairScoring(id, "update");
         }
         LocalDateTime cutoff = pairPolicy.completedCutoff(now);
-        // 契约 §4.4：响应与详情同构（pairs 可能是重算前的旧分数，pairState=PENDING 表示分析中）
-        return RecordDetailResponse.ownerView(requireRecord(id),
+        // 契约 §4.4：响应与详情同构（pairs 可能是重算前的旧分数，pairState=PENDING 表示分析中）；
+        // C-11：写回响应不回 raw_*，避免出现第二个未审计的原文出口。
+        return RecordDetailResponse.ownerViewWithoutRaw(requireRecord(id),
                 pairFactsPort.countValidMatched(id, cutoff),
                 pairFactsPort.countLowConfidence(id, cutoff),
                 pairCards(id, cutoff));
@@ -350,7 +352,8 @@ public class RecordService {
             throw BizException.withPublicMessage(ErrorCode.RECORD_OPERATION_NOT_ALLOWED,
                     "当前无需本人确认：AI 审核可用时必须等待审核结论，不能绕过审核发布");
         }
-        if (!reviewPersistence.ownerConfirm(id, viewerId, RequestContext.requestId())) {
+        int expectedVersion = existing.getContentVersion() == null ? 0 : existing.getContentVersion();
+        if (!reviewPersistence.ownerConfirm(id, viewerId, expectedVersion, RequestContext.requestId())) {
             throw BizException.withPublicMessage(ErrorCode.RECORD_OPERATION_NOT_ALLOWED,
                     "审核状态已变化，请刷新后重试");
         }

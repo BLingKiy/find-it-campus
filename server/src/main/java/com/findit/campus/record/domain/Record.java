@@ -39,6 +39,13 @@ public class Record {
     private Integer reviewTokens;
     private Integer reviewAttempts;
     private Boolean reviewManualRequired;
+    /**
+     * 内容版本：编辑一次 +1，审核写回必须带这个版本做乐观校验。
+     *
+     * <p>没有它时，审核线程拿着旧快照也能命中 {@code review_state='PENDING'}，把旧文本覆盖到
+     * 用户刚编辑的新内容上，或把 {@code manual=1} 写到新内容上（P1-3）。
+     */
+    private Integer contentVersion;
     private String rawTitle;
     private String rawDescription;
     private String rawLocation;
@@ -245,6 +252,14 @@ public class Record {
 
     public void setReviewManualRequired(Boolean reviewManualRequired) {
         this.reviewManualRequired = reviewManualRequired;
+    }
+
+    public Integer getContentVersion() {
+        return contentVersion;
+    }
+
+    public void setContentVersion(Integer contentVersion) {
+        this.contentVersion = contentVersion;
     }
 
     public String getRawTitle() {

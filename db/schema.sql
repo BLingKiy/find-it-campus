@@ -141,6 +141,8 @@ CREATE TABLE `t_record` (
   `review_attempts` INT            NOT NULL DEFAULT 0 COMMENT 'AI 审核尝试次数（含失败）',
   `review_manual_required` TINYINT(1) NOT NULL DEFAULT 0
                                      COMMENT '1=AI 重试耗尽，等待发布者本人确认发布；该行永不被自动上架',
+  `content_version` INT            NOT NULL DEFAULT 0
+                                     COMMENT '内容版本；本人编辑时 +1，审核写回必须匹配，防止旧审核覆盖新内容',
   -- 双通道：raw_* 原文（仅本人可见、读取走审计）；match_* 仅剥离身份类信息（出分/contentHash）；
   -- title/description/location 存 display_text（全脱敏 + LLM 泛化），所有对外接口只出这一份。
   `raw_title`      VARCHAR(64)              DEFAULT NULL COMMENT '原文标题；仅本人详情可见，逻辑删除时置 NULL',

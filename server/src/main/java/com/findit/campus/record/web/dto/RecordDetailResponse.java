@@ -110,17 +110,34 @@ public class RecordDetailResponse {
 
     /** 遮蔽视角（匿名 / 登录非所有者 / COMPLETED 的合格对端）。{@code pairs} 字段整体省略。 */
     public static RecordDetailResponse from(Record record) {
-        return build(record, false, 0, 0, null);
+        return build(record, false, 0, 0, null, false);
     }
 
-    /** 所有者视角：明文 + 计数 + 真实 allowedStatuses + pair 卡片。 */
+    /**
+     * 所有者详情视角：明文 + 计数 + 真实 allowedStatuses + pair 卡片 + 原文。
+     *
+     * <p>这是<b>唯一</b>返回 {@code raw_*} 的出口，调用方必须写 {@code RAW_VIEW} 审计
+     * （见 {@code RecordService.detail}）。
+     */
     public static RecordDetailResponse ownerView(Record record, int matchedPairCount, int lowConfidenceCount,
                                                  List<PairCard> pairs) {
-        return build(record, true, matchedPairCount, lowConfidenceCount, pairs);
+        return build(record, true, matchedPairCount, lowConfidenceCount, pairs, true);
+    }
+
+    /**
+     * POST/PUT 的所有者回显：与详情同构，但<b>不返回 {@code raw_*}</b>。
+     *
+     * <p>C-11 的取舍：要么写回响应也补 {@code RAW_VIEW} 审计，要么不再多一个未审计的原文出口。
+     * 这里选后者 —— 原文让本人再 GET 详情（有审计），写回响应只回展示文本。
+     */
+    public static RecordDetailResponse ownerViewWithoutRaw(Record record, int matchedPairCount,
+                                                            int lowConfidenceCount, List<PairCard> pairs) {
+        return build(record, true, matchedPairCount, lowConfidenceCount, pairs, false);
     }
 
     private static RecordDetailResponse build(Record record, boolean ownerView, int matchedPairCount,
-                                              int lowConfidenceCount, List<PairCard> pairs) {
+                                              int lowConfidenceCount, List<PairCard> pairs,
+                                              boolean includeRaw) {
         RecordDetailResponse response = new RecordDetailResponse();
         response.id = record.getId();
         response.type = record.getType() == null ? null : record.getType().name();
@@ -132,11 +149,11 @@ public class RecordDetailResponse {
         response.updatedAt = record.getUpdatedAt();
         response.isMine = ownerView;
         response.reviewState = record.getReviewState() == null ? null : record.getReviewState().name();
-        response.summary = record.getSummary();
         if (ownerView) {
             response.title = record.getTitle();
             response.description = record.getDescription();
             response.location = record.getLocation();
+            response.summary = record.getSummary();
             response.completedAt = record.getCompletedAt();
             response.contact = record.getContact();
             response.publisherName = record.getPublisherName();
@@ -147,8 +164,9 @@ public class RecordDetailResponse {
             response.ownerConfirmAvailable = record.getReviewState() == RecordReviewState.PENDING
                     && Boolean.TRUE.equals(record.getReviewManualRequired());
             response.reviewedAt = record.getReviewedAt();
-            // 只有真正按 AI 通道发布的行才有 raw_*；mode=off 不返回这三个键，保持 v2.0 形状
-            if (record.getRawTitle() != null) {
+            // 只有真正按 AI 通道发布的行才有 raw_*；写回响应（includeRaw=false）刻意不带原文，
+            // 保持「原文唯一出口 = 已审计的本人详情」（C-11）。
+            if (includeRaw && record.getRawTitle() != null) {
                 response.rawTitle = record.rawTitleOrDefault();
                 response.rawDescription = record.rawDescriptionOrDefault();
                 response.rawLocation = record.rawLocationOrDefault();
@@ -162,6 +180,10 @@ public class RecordDetailResponse {
             response.title = MaskingPolicy.maskDescription(record.getTitle());
             response.description = MaskingPolicy.maskDescription(record.getDescription());
             response.location = MaskingPolicy.maskLocation(record.getLocation());
+            // 摘要同样是自由文本：非所有者视角必须走统一遮蔽出口（C-11）
+            response.summary = record.getSummary() == null
+                    ? null
+                    : MaskingPolicy.maskDescription(record.getSummary());
             response.completedAt = null;
             response.contact = null;
             response.publisherName = MaskingPolicy.maskPublisherName(record.getPublisherName());

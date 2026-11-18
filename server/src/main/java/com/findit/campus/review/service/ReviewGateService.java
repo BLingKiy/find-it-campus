@@ -79,24 +79,35 @@ public class ReviewGateService {
         }
 
         PostprocessCommand command = commandOf(record);
+        // 本轮审核针对的内容版本（P1-3）：编辑会 +1；所有写回都带这个版本，
+        // 失配说明用户已经改了内容 —— 旧结论必须丢弃，让新内容重新审。
+        int expectedVersion = record.getContentVersion() == null ? 0 : record.getContentVersion();
         int startAttempt = record.getReviewAttempts() == null ? 0 : record.getReviewAttempts();
         int totalAttempts = properties.totalAttempts();
         PostprocessResult last = null;
         for (int attempt = startAttempt + 1; attempt <= totalAttempts; attempt++) {
-            persistence.recordAttempt(recordId, attempt);
+            if (!persistence.recordAttempt(recordId, attempt, expectedVersion)) {
+                log.info("review attempt skipped recordId={} expectedVersion={}（内容已编辑或已出结论）",
+                        recordId, expectedVersion);
+                return;
+            }
             last = client.process(command);
             Outcome outcome = decide(record, last);
             switch (outcome.kind()) {
                 case APPROVE -> {
-                    if (persistence.approve(recordId, last, attempt, requestId)) {
+                    if (persistence.approve(recordId, last, attempt, expectedVersion, requestId)) {
                         log.info("review approved recordId={} attempts={} engine={} model={} latencyMs={} tokens={}",
                                 recordId, attempt, last.engine(), last.model(), last.latencyMs(),
                                 last.totalTokensOrNull());
+                    } else {
+                        log.info("review approve discarded recordId={} expectedVersion={}（内容已编辑，重新审核）",
+                                recordId, expectedVersion);
                     }
                     return;
                 }
                 case REJECT -> {
-                    persistence.reject(recordId, outcome.reason(), last, attempt, false, requestId);
+                    persistence.reject(recordId, outcome.reason(), last, attempt, false, expectedVersion,
+                            requestId);
                     log.info("review rejected recordId={} attempts={} reason={}", recordId, attempt,
                             outcome.reason());
                     return;
@@ -114,7 +125,7 @@ public class ReviewGateService {
 
         String reason = "AI 审核连续失败（" + (last == null ? "UNKNOWN" : last.errorReason())
                 + "），记录保持待审并等待本人确认发布；不会自动上架";
-        persistence.markOwnerConfirmRequired(recordId, reason, last, totalAttempts, requestId);
+        persistence.markOwnerConfirmRequired(recordId, reason, last, totalAttempts, expectedVersion, requestId);
         log.warn("review owner confirm required recordId={} attempts={} lastReason={}", recordId,
                 totalAttempts, last == null ? "UNKNOWN" : last.errorReason());
     }

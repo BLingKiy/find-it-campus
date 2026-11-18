@@ -29,8 +29,6 @@ import com.findit.campus.common.masking.MaskingPolicy;
  */
 public final class SensitiveTextScanner {
 
-    private static final Pattern EMAIL = Pattern.compile(
-            "(?i)(?<![A-Za-z0-9._%+-])[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}(?![A-Za-z0-9.-])");
     private static final Pattern STUDENT_LABEL = Pattern.compile(
             "(学号|工号|学籍号)\\s*[:：]?\\s*[A-Za-z0-9]{4,20}");
     private static final Pattern LONG_DIGITS = Pattern.compile("(?<!\\d)\\d{10,12}(?!\\d)");
@@ -42,8 +40,6 @@ public final class SensitiveTextScanner {
                     + "|((工位|座位|床号|柜号)\\s*\\d{1,4})"
                     + "|([A-Za-z]\\d{1,3}\\s*座)"
                     + "|((图书馆|教学楼|宿舍|寝室|食堂|实验楼|办公楼|自习室)\\s*[A-Za-z]?\\d{1,4})");
-    private static final Pattern QQ_LABEL = Pattern.compile(
-            "(?i)(QQ|扣扣|企鹅)\\s*[:：号]?\\s*(?<!\\d)\\d{5,11}(?!\\d)");
 
     private SensitiveTextScanner() {
     }
@@ -54,20 +50,16 @@ public final class SensitiveTextScanner {
         if (text == null || text.isBlank()) {
             return List.of();
         }
-        if (EMAIL.matcher(text).find()) {
-            hits.add("邮箱");
-        }
-        if (QQ_LABEL.matcher(text).find()) {
-            hits.add("QQ号");
-        }
         if (STUDENT_LABEL.matcher(text).find()) {
             hits.add("学号/工号");
         } else if (LONG_DIGITS.matcher(text).find()) {
             hits.add("10-12 位长数字（疑似学号）");
         }
-        // 手机号/证件号以及分隔符变体：用出口层同一份实现做差分判定
-        if (!MaskingPolicy.maskIdentity(text).equals(text)) {
-            hits.add("手机号/证件号/邮箱/QQ");
+        // 手机号/证件号/邮箱/QQ/微信：与展示层、比对通道共用同一份检测。
+        // 只认「真实替换」的类别 —— 全角冒号/全角数字的归一化不算命中（P1-1）。
+        MaskingPolicy.IdentityDetection identity = MaskingPolicy.detectIdentity(text);
+        for (MaskingPolicy.IdentityCategory category : identity.categories()) {
+            hits.add(category.label());
         }
         if (NAME_LABEL.matcher(text).find()) {
             hits.add("姓名");
