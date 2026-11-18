@@ -447,7 +447,7 @@ Base path `/api`，无版本段；所有响应统一为 `{code, message, data, r
 | `pairId` | number | 回显 |
 | `score` / `scorePercent` / `tier` | — | **当时**的分数（不缓存、不回填） |
 | `viewerSide` / `targetSide` | string | 我是哪一端、我看的是哪一端 |
-| `available` | boolean | 本次是否出号 |
+| `available` | boolean | 该次请求是否出号 |
 | `contact` | string \| null | 仅 `available=true` 时有值 |
 | `reason` | string \| null | `NOT_PUBLIC` / `NOT_PROVIDED`（200 不出号的两条路径） |
 | `message` | string | 可直接展示的文案 |

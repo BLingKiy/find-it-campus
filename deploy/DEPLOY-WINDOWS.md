@@ -2,7 +2,7 @@
 
 > 适用范围：`0.0.1-SNAPSHOT`
 > 本文所有命令、参数名、端口、路径与包内 `scripts/*.ps1`、`nginx/conf/nginx.conf` 逐字对应；
-> 示例输出取自 2026-10-26 的真实运行（见 §12 自检记录）。脚本改动后本文必须同步，否则按缺陷处理。
+> 示例输出取自真实运行（见 §12 自检记录）。脚本改动后本文必须同步，否则按缺陷处理。
 > 全文的脚本命令都带 `powershell -NoProfile -ExecutionPolicy Bypass -File`，可以直接照抄；原因见 §2.1。
 
 ## 1 这是什么
@@ -19,7 +19,7 @@
 | 为什么需要它 | 课程交付要求「可部署」，而不是只能在一台装了 Node 和 Maven 的开发机上 `npm run dev` |
 | 怎么开始 | 装 JDK 17 与 MySQL 8 → 按 §3 的四条命令执行（每条都带 `-ExecutionPolicy Bypass`，见 §2.1） |
 
-**本包不包含**：Docker、Linux 部署、HTTPS/域名、MSI 安装器、开机自启、服务注册。这些都在本期范围之外（§11）。
+**本包不包含**：Docker、Linux 部署、HTTPS/域名、MSI 安装器、开机自启、服务注册。这些都在范围之外（§11）。
 
 ## 2 前置条件
 
@@ -207,10 +207,10 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts\start.ps1 -JavaBin '
 
 1. 读 `config\deploy.env.ps1`，缺文件或缺变量直接报错让先跑 `install.ps1`。
 2. 校验 `app\find-it-campus-0.0.1-SNAPSHOT.jar`、`web\dist\index.html`、`nginx\nginx.exe`、`nginx\conf\nginx.conf` 都在。
-3. 后端以 `--server.address=127.0.0.1 --server.port=18080` 启动，输出重定向到 `logs\backend.log` 与 `logs\backend-error.log`；启动前把上一轮这两个文件重命名为 `*.log.<时间戳>.old`。
+3. 后端以 `--server.address=127.0.0.1 --server.port=18080` 启动，输出重定向到 `logs\backend.log` 与 `logs\backend-error.log`；启动前把已有的这两个文件重命名为 `*.log.<时间戳>.old`。
 4. 轮询 `http://127.0.0.1:18080/api/health`，要求 `code=0` + `status=UP` + `db=UP` 三者同时成立。
 5. 启动 Nginx（`-p <包根>\nginx\ -c conf/nginx.conf`），等 `runtime\nginx.pid` 落盘，再要求 `GET http://127.0.0.1:8088/` 返回 200 且 8088 的 `/api/health` 同样三项成立。
-6. 退出码 `0`。任一步失败退出码 `1`，且**回滚本次启动的进程**（只停本次拉起的那个 PID）。
+6. 退出码 `0`。任一步失败退出码 `1`，且**回滚该次启动的进程**（只停该次拉起的那个 PID）。
 
 **非交互**：脚本不读标准输入，参数齐全时完全非交互。可以安全地把输出接到管道里——脚本打印「启动完成」后立即返回退出码 `0`，不会等后端/Nginx 退出：
 
@@ -410,7 +410,7 @@ MySQL    OK 127.0.0.1:3306 / MySQL 8.0.29             -     -
 | `logs\nginx-error.log` | Nginx `error_log`（`warn` 级别起） | 502/403、配置错误、端口占用 |
 | `logs\nginx-access.log` | Nginx 访问日志 | 页面是否真的打到 8088、哪些请求 4xx/5xx |
 | `logs\nginx-stdout.log`、`logs\nginx-stderr.log` | Nginx 进程自身输出 | `nginx.exe` 起不来时的原始报错 |
-| `logs\install-*.log`、`start-*.log`、`stop-*.log`、`status-*.log` | 每次脚本运行的完整输出 | 复现某次操作；失败时脚本会在末尾打印本次日志路径 |
+| `logs\install-*.log`、`start-*.log`、`stop-*.log`、`status-*.log` | 每次脚本运行的完整输出 | 复现某次操作；失败时脚本会在末尾打印该次运行的日志路径 |
 
 ### 8.4 配置项
 
@@ -581,7 +581,7 @@ else { 'len={0} head={1}' -f $k.Length, $k.Substring(0, [Math]::Min(3, $k.Length
 curl.exe -s -o NUL -w "models=%{http_code}`n" --max-time 10 https://api.deepseek.com/v1/models -H "Authorization: Bearer $k"
 ```
 
-`head` 应是 `sk-`；`models=200` 说明密钥与出网都通，`401` 说明密钥本身无效。最后那条打的是模型列表端点（`GET {base-url}/models`，OpenAI 兼容约定）；如果你的部署改过 `findit.llm.base-url`，把命令里的地址换成对应的 `{base-url}/models`，返回 404 就是地址填错了，不是密钥问题。本次交付实测的密钥长度是 35（`sk-` + 32 位），`len` 对不上就是值被污染了。
+`head` 应是 `sk-`；`models=200` 说明密钥与出网都通，`401` 说明密钥本身无效。最后那条打的是模型列表端点（`GET {base-url}/models`，OpenAI 兼容约定）；如果你的部署改过 `findit.llm.base-url`，把命令里的地址换成对应的 `{base-url}/models`，返回 404 就是地址填错了，不是密钥问题。实测的密钥长度是 35（`sk-` + 32 位），`len` 对不上就是值被污染了。
 
 4）确认后端拿到的是「干净的、且来自启动它的那个 shell」的值。后端**只在启动那一刻**读一次环境变量，之后怎么改都不认：
 
@@ -601,11 +601,11 @@ $env:DEEPSEEK_API_KEY = (Get-Content 'C:\secrets\deepseek.txt' -Raw).Trim()
 
 ## 10 回滚、卸载与备份
 
-### 10.1 回滚（保留上一版包）
+### 10.1 回滚（保留旧包）
 
-上一版目录整体留着即可：
-1. `stop.ps1` 停当前版本；
-2. 把旧目录换回来（或用上一版 jar/dist 覆盖回去）；
+旧目录整体留着即可：
+1. `stop.ps1` 停当前服务；
+2. 把旧目录换回来（或用旧 jar/dist 覆盖回去）；
 3. `start.ps1`。
 
 （三步都用 §3 的命令形式。）
@@ -647,7 +647,7 @@ mysqldump -h 127.0.0.1 -P 3306 -u root -p --databases find_it_campus --single-tr
 | 认证与权限 | **写接口要求登录**（服务端 session） | 读接口（列表/详情/分类）保持匿名可读；发布/编辑/改状态/匹配/我的启事/通知/pair 需登录。会话存在 JVM 内存里，**重启后端 = 所有会话失效**（见 §11.1）。本文对应的安装包包含登录页与会话，按 §11.1 的口径理解 |
 | Nginx 版本 | 官方 Windows 构建 1.30.6 | 单进程单 worker（`worker_processes 1`），面向演示与单机小规模，不是 Linux 生产形态 |
 
-`engine=external` 时，`install.ps1` 只写 `FINDIT_MATCH_ENGINE=external`，**不会**询问 embedding 地址与密钥；必须在启动前手工编辑 `config\deploy.env.ps1` 填 `FINDIT_EMBED_BASE_URL`、`FINDIT_EMBED_API_KEY`，否则匹配接口返回失败（503 / `code=30002`）。本期交付验证了 `LOCAL_KEYWORD`（无密钥降级）与 `DEEPSEEK`（真实密钥）两条路径；embedding 引擎仍未验证。
+`engine=external` 时，`install.ps1` 只写 `FINDIT_MATCH_ENGINE=external`，**不会**询问 embedding 地址与密钥；必须在启动前手工编辑 `config\deploy.env.ps1` 填 `FINDIT_EMBED_BASE_URL`、`FINDIT_EMBED_API_KEY`，否则匹配接口返回失败（503 / `code=30002`）。已验证 `LOCAL_KEYWORD`（无密钥降级）与 `DEEPSEEK`（真实密钥）两条路径；embedding 引擎仍未验证。
 
 ### 11.1 登录与会话
 
@@ -707,9 +707,9 @@ mysqldump -h 127.0.0.1 -P 3306 -u root -p --databases find_it_campus --single-tr
 |---|---|---|
 | JDK 版本不符、MySQL 版本不符的报错原文 | `scripts\_common.ps1`、`scripts\install.ps1` | 本机只装了 17 与 8.0.29，未构造错误版本环境；原文逐字取自代码 |
 | `-Force` 的 DROP 重建、`-DbPassword` 与 `-EmptyDbPassword` 互斥 | `install.ps1` | 未在既有库上执行 DROP（避免破坏其他任务的数据） |
-| 非交互模式的交互提示文本 | `install.ps1` | 本次全部按非交互执行，提示文本取自代码 |
+| 非交互模式的交互提示文本 | `install.ps1` | 全部按非交互执行，提示文本取自代码 |
 | Nginx 403 / 502、`bind() failed` 等系统级报错 | `nginx\conf\nginx.conf`、§9 通用经验 | 未逐一制造；表格中给出的是定位方向，不是逐字原文 |
-| `engine=external` 的行为 | `install.ps1`、`MatchService` | 本期无外部实现，只验证了 `local` |
+| `engine=external` 的行为 | `install.ps1`、`MatchService` | 无外部实现，只验证了 `local` |
 | 回滚/卸载/备份 | 脚本行为与目录结构 | 只验证了「停止 → 保留配置」这一半，未做整包替换演练 |
 | 组策略显式设置执行策略的机器（`MachinePolicy` / `UserPolicy` 已定义） | PowerShell 执行策略优先级 | 未构造组策略环境；这类机器由管理员统一放开，部署包不处理 |
 | §9.1 的 `403 Invalid CORS request` 与三条自查命令 | `WebConfig`（白名单只有 5173 两个开发源）、`nginx\conf\nginx.conf`（`$host`）、`AuthPaths`（登录接口在匿名白名单内，可当探针）、`ZHYYKFX-83` 的复现结论 | 写本文时**没有**在 8088 上复跑：`Invalid CORS request` 是 Spring `DefaultCorsProcessor` 的固定文案，白名单取值以仓库当前代码为准。修复尚未合入 `main`（§9.1 B），修复落地后本节与 §9.1 一并删除 |

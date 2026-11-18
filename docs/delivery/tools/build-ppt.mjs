@@ -2,7 +2,7 @@
  * 把答辩 PPT 的 Markdown 文案稿渲染成可提交的 PPTX。
  *
  * 输入（相对本脚本）：
- *   ../答辩PPT.md                    本期文案稿（交付时用 `--src ../答辩PPT.md --out ../答辩PPT.pptx`）
+ *   ../答辩PPT.md                    答辩文案稿（交付时用 `--src ../答辩PPT.md --out ../答辩PPT.pptx`）
  *   ../6.2-defense-ppt.md            中期存档稿（脚本默认值仍指向它，只为兼容老命令）
  *   ../assets/shots/*.png            演示截图（由 demo-path-check.mjs 生成）
  *   ../assets/match-sample-s1*.json  真实请求/响应（PPT 的输入输出示例）
@@ -14,7 +14,7 @@
  * 为什么用 Markdown 当源而不是直接改 pptx：口径要能被评审、被 diff。
  * 直接改二进制文件的话，下一次构建就把改动冲掉，也没人能 review 改了什么。
  *
- * 只支持本稿实际用到的 Markdown 子集：`#` 页标题、`###` 副标题、`-` 列表（一层缩进）、
+ * 只支持文案稿实际用到的 Markdown 子集：`#` 页标题、`###` 副标题、`-` 列表（一层缩进）、
  * 表格、`>` 小结、以及 `<!-- layout/image/note/code-* -->` 指令。刻意不引完整的 Markdown
  * 解析器 —— 结构固定，自己解析比调解析器行为更快，也不会因为某个插件升级把排版弄坏。
  *
@@ -22,7 +22,7 @@
  *   cd docs/delivery/tools && npm install
  *   node build-ppt.mjs                                   # v1
  *   node build-ppt.mjs --src ../答辩PPT.md --out ../答辩PPT.pptx \
- *        --footer "find-it-campus · 校园失物招领　|　v2 阶段 4 答辩稿 2026-10-28"
+ *        --footer "find-it-campus · 校园失物招领　|　程序设计答辩"
  */
 import fs from 'node:fs';
 import path from 'node:path';
@@ -45,7 +45,7 @@ const SRC = argOf('src', path.join(DELIVERY, '6.2-defense-ppt.md'));
 const OUT = argOf('out', path.join(DELIVERY, '6.2-答辩PPT.pptx'));
 const FOOTER = process.argv.includes('--footer')
   ? process.argv[process.argv.indexOf('--footer') + 1]
-  : 'find-it-campus · 校园失物招领　|　程序设计答辩 2026-10-22';
+  : 'find-it-campus · 校园失物招领　|　程序设计答辩';
 
 /** 稿子里的相对路径可能落在 docs/delivery（截图、JSON）或 docs（6.1 的图）下：两处都试。 */
 const resolveAsset = (rel) => {
