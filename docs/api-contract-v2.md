@@ -14,8 +14,8 @@
 
 ### 0.1 接口数量
 
-- **17 个业务接口**（v1 8 个业务接口 + v2 新增 9 个），逐接口见 §4，权限矩阵见 §3。
-- **2 个运维接口**（`GET /api/health`、`POST /api/ops/pair-scan`）不属于 17 个业务接口，不参与三态矩阵，见 §4.18。
+- **18 个业务接口**（v1 8 个业务接口 + v2 新增 10 个），逐接口见 §4，权限矩阵见 §3。
+- **3 个运维接口**（`GET /api/health`、`POST /api/ops/pair-scan`、`GET /api/ops/reviews/pending`）不属于 18 个业务接口，不参与三态矩阵，见 §4.18。
 - 不开放注册接口；不存在“短信验证码”“找回密码”“自动下架”“pair 已解决”接口。
 
 ### 0.2 v2 对 v1 的破坏性/行为变更（下游必须知道）
@@ -108,14 +108,17 @@
 | 15 | POST | `/api/pairs/{id}/contact-unlock` | 授权公开 / 撤回本端联系方式 | 两端任一 | 新增 |
 | 16 | GET | `/api/notifications` | 通知列表 + 未读数 | 需登录 | 新增 |
 | 17 | PATCH | `/api/notifications/{id}/read` | 标记已读 | 接收人 | 新增 |
-| O1 | GET | `/api/health` | 健康检查（运维） | 公开 | v1 保留，不计入 17 |
-| O2 | POST | `/api/ops/pair-scan` | 手动兜底扫描（运维） | `X-Ops-Token` | 新增，不计入 17 |
+| 18 | POST | `/api/records/{id}/confirm-publish` | 本人确认发布（仅 AI 审核连续失败后） | 所有者 | 新增 |
+| O1 | GET | `/api/health` | 健康检查（运维） | 公开 | v1 保留，不计入 18 |
+| O2 | POST | `/api/ops/pair-scan` | 手动兜底扫描（运维） | `X-Ops-Token` | 新增，不计入 18 |
+| O3 | GET | `/api/ops/reviews/pending` | 待审队列，只读（运维） | `X-Ops-Token` | 新增，不计入 18 |
 
 ---
 
-## 3. 权限矩阵（17 × 3，逐格有状态码）
+## 3. 权限矩阵（18 × 3，逐格有状态码）
 
 > 读法：`✅ 200` 允许；`❌ 401` 未登录；`❌ 403` 越权；`❌ 404` 资源不存在；`⚠️` 行内注明多结果规则。**没有空格，没有“视情况”。**
+> **审核态是本节全部格子的前置**：`review_state != APPROVED` 或已删除的记录，对非所有者一律按不存在处理（404），不区分“在审核中”与“不存在”。所有者自己的行不受此限。
 > “所有者”对集合接口 = 该集合中属于他的那些资源；他拿不到别人的记录/通知。
 
 | # | 接口 | 匿名 | 登录非所有者 | 所有者 |
@@ -137,8 +140,9 @@
 | 15 | `POST /api/pairs/{id}/contact-unlock` | ❌ 401 | ❌ 403（10007，非参与方） | ⚠️ `PUBLISH` 且 `score ≥ contact_unlock_threshold` → ✅ 200；`PUBLISH` 且 `score < contact_unlock_threshold` → ❌ 403（50002）；`REVOKE` 任意分档 → ✅ 200；任一端 CLOSED 或 COMPLETED 已到期 → ❌ 403（50005）；记录已删除 → ❌ 404（20004） |
 | 16 | `GET /api/notifications` | ❌ 401 | ✅ 200（只返回自己的集合） | ✅ 200（只返回自己的集合） |
 | 17 | `PATCH /api/notifications/{id}/read` | ❌ 401 | ❌ 403（10007，他人通知） | ✅ 200；不存在 → ❌ 404（50004） |
+| 18 | `POST /api/records/{id}/confirm-publish` | ❌ 401 | ❌ 404（20001：待审内容对非所有者不可见） | ⚠️ `review_state=PENDING` 且 `review_manual_required=1` 且 `status=PENDING` → ✅ 200（转 `APPROVED`，入池并触发打分）；AI 审核仍正常、或已有结论 → ❌ 409（20003）；`status` 已是终态 → ❌ 409（20003） |
 
-**矩阵自检：** 17 行 × 3 格 = 51 格，每格都有状态码；`⚠️` 只出现在“同一请求内按记录状态/分数/action 分支”的行（#2/#4/#5/#13/#14/#15），分支条件与状态码都在格内写死，不是“视情况”。`GET /api/health` 与 `POST /api/ops/pair-scan` 不在此表。
+**矩阵自检：** 18 行 × 3 格 = 54 格，每格都有状态码；`⚠️` 只出现在“同一请求内按记录状态/分数/action/审核态分支”的行（#2/#4/#5/#13/#14/#15/#18），分支条件与状态码都在格内写死，不是“视情况”。`GET /api/health`、`POST /api/ops/pair-scan` 与 `GET /api/ops/reviews/pending` 不在此表。
 
 **两处容易读错的点：** ①#2 的“合格对端”是**登录非所有者**的子集，不是第四种身份；不满足时统一 404，避免泄露 COMPLETED 是否存在。②#1 的所有者格是 200，但 `PENDING` 以外的记录**0 命中**——公共列表从不返回 COMPLETED/CLOSED，所有者要看自己的完成/关闭记录请走 #12。
 
@@ -205,6 +209,8 @@
 
 ```text
 1. 记录不存在 / deleted_at 非空            → 404 + 20001
+1b. viewer 不是所有者且 review_state != 'APPROVED'
+                                           → 404 + 20001（待审/驳回内容对外不存在）
 2. status = 'CLOSED'                       → 404 + 20001（任何身份，含所有者）
 3. status = 'COMPLETED' 且已过保留期        → 404 + 20001（任何身份）
 4. status = 'COMPLETED' 且未到期：
@@ -212,9 +218,11 @@
       viewer 是合格对端（pairUsable 且 score ≥ 阈值） → 200（非所有者遮蔽视图：无 contact、无 pairs）
       其余                                  → 404 + 20001
 5. status = 'PENDING'：
-      viewer 是所有者                       → 200（明文 + pairs + allowedStatuses）
+      viewer 是所有者                       → 200（明文 + pairs + allowedStatuses + reviewState）
       其余（匿名/登录非所有者）              → 200（遮蔽；pairs 字段省略）
 ```
+
+> 第 1b 步是审核闸门的落点：待审记录对非所有者**一律 404**，与「不存在」不可区分；所有者自己能看到，并按 `ownerConfirmAvailable` 决定是否渲染「确认发布」入口。
 
 **`data` 字段：**
 
@@ -235,6 +243,9 @@
 | `matchedPairCount` | number | 否 | `0` | 本记录有效 MATCHED pair 数 |
 | `isMine` | boolean | 否 | `false` | `true` |
 | `pairState` | string | 是 | `null` | `PENDING/SCORING/READY/DEGRADED` |
+| `reviewState` | string | 否 | **总为 `APPROVED`**（非 `APPROVED` 的记录在第 1b 步已是 404，可见的必然是已过审的） | `PENDING/APPROVED/REJECTED`，与 `status` 正交 |
+| `ownerConfirmAvailable` | boolean | 否 | `false` | `reviewState=PENDING` 且 `reviewManualRequired=true` 且 `status=PENDING` 时为 `true`；前端据此决定是否渲染「确认发布」入口，无此条件时**根本不渲染** |
+| `reviewReason` | string | 是 | `null` | 最近一次审核的判定理由（≤3 条中文，分号分隔）；不含原文 |
 | `lowConfidenceCount` | number | 否 | `0` | `<contact_unlock_threshold` 的 pair 数 |
 | `pairs` | array | 否 | **字段省略** | `PairCard[]`，仅 `score≥contact_unlock_threshold` 且 `pairUsable` |
 | `createdAt`/`updatedAt` | string | 否 | 原值 | 原值 |
@@ -721,7 +732,7 @@ SELECT status, completed_at, updated_at FROM t_record WHERE id = ?;
 
 ---
 
-### 4.18 运维接口（不计入 17）
+### 4.18 运维接口（不计入 18）
 
 #### `GET /api/health`
 
@@ -734,7 +745,54 @@ SELECT status, completed_at, updated_at FROM t_record WHERE id = ?;
 - 实现另附 `trigger`（`http/scan`）与 `counters`（进程内计数器快照），属于排障附加信息，不参与扫描结果口径。
 - 并发：已有扫描在跑 → 409，body `code=50006`（`PAIR_SCAN_IN_PROGRESS`），`message=兜底扫描正在运行，请稍后重试`。
 - 不写 `t_record.status/deleted_at/updated_at`；只补配对与通知。
-- 不属于 17 个业务接口，不参与三态矩阵。
+- 不属于 18 个业务接口，不参与三态矩阵。
+
+#### `GET /api/ops/reviews/pending`
+
+- 同一套口令：`OPS_SCAN_TOKEN` 非空才启用，`X-Ops-Token` 不匹配一律 **404**（不区分“没开”与“token 错”），常量时间比较。
+- **只读**，无副作用：它只是让人看得见队列，不提供通过/驳回。判定权只在 AI 与发布者本人手里。
+- 查询参数：`page`（默认 1）、`pageSize`（默认 10，1–50）。
+- 成功：200，`data` 为分页对象，`list[]` 每项 `{recordId,title,reviewState,reviewAttempts,reviewedAt,reviewReason,createdAt}`；`title` 已脱敏，不含联系方式。
+- 排序：`created_at DESC, id DESC`（最久等的在最前需要手工翻页，这是已知的不便，见设计文档 §5.9）。
+- 不属于 18 个业务接口，不参与三态矩阵。
+
+---
+
+### 4.19 `POST /api/records/{id}/confirm-publish` — 本人确认发布（权限矩阵 #18）
+
+**什么时候用**：AI 审核连续失败 3 次（退避 1s/2s/4s、单次 15s 超时）后，记录停在 `review_state=PENDING` 且 `review_manual_required=1`。这时只有**发布者本人**能把它推上架，且入口只在此时开放。
+
+| 项 | 内容 |
+|---|---|
+| 认证 | 需登录，且必须是该记录的所有者 |
+| 请求体 | 无（`Content-Type` 可省略） |
+| 成功 | 200，`data` 为更新后的 `RecordDetail`；`reviewState=APPROVED`、`reviewEngine=RULE_ONLY`、`ownerConfirmAvailable=false` |
+| 副作用 | 写 `t_review_audit`（`action=OWNER_CONFIRM`、`actor_type=HUMAN`、`actor_id`=本人）；`is_visible` 由生成列自动变 1；触发一次异步打分 |
+
+错误响应：
+
+| 场景 | HTTP | code | 说明 |
+|---|---|---|---|
+| 未登录 / 会话失效 | 401 | `10006` | 门禁在前，不会进控制器 |
+| 非所有者，或内容对本人不可见 | 404 | `20001` | 不区分“不存在”与“不是你的” |
+| AI 审核仍正常、或已有结论 | 409 | `20003` | `message` 说明当前不需要本人确认；前端本就不渲染入口 |
+| `status` 已是 `COMPLETED`/`CLOSED` | 409 | `20003` | 终态不再变更审核态 |
+| 并发重复提交 | 409 | `20003` | 第二次提交时 `review_manual_required` 已为 0，走同一条分支 |
+
+```json
+{
+  "code": 0,
+  "message": "ok",
+  "data": {
+    "id": 27,
+    "reviewState": "APPROVED",
+    "reviewEngine": "RULE_ONLY",
+    "ownerConfirmAvailable": false,
+    "isVisible": true
+  },
+  "requestId": "3f6c1a9e-7b2d-4a55-9d10-2c8f0b6a1e44"
+}
+```
 
 ---
 
@@ -770,6 +828,14 @@ SELECT status, completed_at, updated_at FROM t_record WHERE id = ?;
 ### 5.2 `RecordDetail`
 
 见 §4.2 字段表；`pairs` 仅在 `isMine=true` 时出现，否则字段省略（不是空数组），前端用 `isMine` 判断。
+
+审核相关的三个字段对所有可见视图都存在，语义如下：
+
+| 字段 | 取值 | 前端怎么用 |
+|---|---|---|
+| `reviewState` | `PENDING` / `APPROVED` / `REJECTED` | 非所有者拿到的记录必然是 `APPROVED`（否则 404）；所有者用它在详情页渲染「审核中 / 已通过 / 未通过」横幅 |
+| `ownerConfirmAvailable` | boolean | `true` 才渲染「确认发布」按钮；`false` 时**不渲染**，避免点了必然 409 的按钮 |
+| `reviewReason` | string/null | 展示判定理由；`REJECTED` 时必看，`APPROVED` 时通常为 null |
 
 ### 5.3 `ContactView`
 
@@ -877,7 +943,7 @@ SELECT status, completed_at, updated_at FROM t_record WHERE id = ?;
 
 | 验收项 | 本文件位置 | 判定 |
 |---|---|---|
-| 17 接口 × 3 态逐格检查，无空格、无“视情况”、每格有状态码 | §3 矩阵 | 17 行 × 3 格 = 51 格；`⚠️` 分支条件写死（#2/#4/#5/#13/#14/#15） |
+| 18 接口 × 3 态逐格检查，无空格、无“视情况”、每格有状态码 | §3 矩阵 | 18 行 × 3 格 = 54 格；`⚠️` 分支条件写死（#2/#4/#5/#13/#14/#15/#18） |
 | 三态 × 召回/列表/详情无空格；COMPLETED/CLOSED 的 404、409 可复现 | 架构 §9.2/§9.3 + 本文 §4.1/§4.2/§4.5/§4.8/§4.12 | 三态表 + 409/20005 零写入 + CLOSED pair 403/50005 |
 | 未达 MATCHED 调「标记完成」→ 409，`status`/`updated_at` 不变 | 本文 §4.5 | 流转表 + 零写入验收 SQL |
 | COMPLETED 列表 0 命中、匹配保留期内可命中、<`completed_visible_threshold` 用户详情 404 | 本文 §4.1/§4.2/§4.8/§4.12 | 可见性判定 + `detailAccess` + `detailVisible` |
@@ -888,7 +954,7 @@ SELECT status, completed_at, updated_at FROM t_record WHERE id = ?;
 | 读 pair 状态机可找到“确认 A 不影响 B”，全文无「已解决」状态 | 架构 §9.1 + 本文 §4.13 | 单行 `WHERE id=?`；状态枚举四值；无占用/锁定 |
 | `t_user` 无 phone、无短信、无自动关闭/下架 | 架构 §4.2.1/§4.4/§9.2 | DDL + 不变量 + 无任务 |
 | 只出文档，`server/`、`web/` 0 行改动 | 本分支 diff | `git diff --stat` 只含 `docs/` |
-| 17 个接口都有方法+路径+入参+出参+错误码+幂等性 | §4.1–§4.17 | 每节含四要素 |
+| 18 个接口都有方法+路径+入参+出参+错误码+幂等性 | §4.1–§4.19 | 每节含四要素；#18 见 §4.19 |
 
 ---
 
@@ -898,5 +964,6 @@ SELECT status, completed_at, updated_at FROM t_record WHERE id = ?;
 |---|---|---|---|
 | 2026-10-27 | v2.0 | 初稿：17 接口、三态矩阵、认证/遮蔽/分档/LLM/pair 状态机/通知/审计；与 v1 的 8 项破坏性变更 | 磐石石 |
 | 2026-10-27 | v2.1 | 按 vF 终态口径返工：`t_record` 三态（COMPLETED 取代 CLAIMED）、`completed_at`、pair 四态含 MATCHED、两端 `confirmed_at`、三态×召回/列表/详情、409/20005、COMPLETED 详情门槛、配置项冻结名、`PATCH pair` 改 `action`、CLOSED pair 403/50005、矩阵 #1/#2/#5/#8/#14 重算 | 磐石石 |
+| 2026-11-18 | 增补 | 补发布闸门相关契约：`POST /api/records/{id}/confirm-publish`（矩阵 #18，四类错误响应）、`GET /api/ops/reviews/pending`（只读队列）、`RecordDetail` 增 `reviewState` / `ownerConfirmAvailable` / `reviewReason`，可见性判定补第 1b 步（未过审对非所有者一律 404）；接口数 17→18、运维 2→3、矩阵 51→54 格 | 文通通 |
 
 > 冻结后任何接口/字段/状态码变更必须先改本文 + 架构文档，再改代码；门禁 0 未过之前允许修订，但需在任务评论记录差异。

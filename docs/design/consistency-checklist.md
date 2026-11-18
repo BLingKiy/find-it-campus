@@ -2,12 +2,12 @@
 
 > 对象：`docs/design/program-design.md` + `docs/design/api-list.md`
 > 基线：`34c5dd1`，执行 2026-10-22，逐条读源码比对，不以其他文档为证据
-> **v2 抽查基线：`941fdee`（2026-10-28 执行，B.13）**；F3 的两项修复（`08f4bb9` / `fbd538f`）已于 2026-10-28 合入 `feat/v2-integration @ 64693ec`，它们带来的四处行为变化在 B.14 单列并与现行基线对齐
+> **抽查基线：`941fdee`（2026-10-28 执行，B.13）**；F3 的两项修复（`08f4bb9` / `fbd538f`）已于 2026-10-28 合入 `feat/v2-integration @ 64693ec`，它们带来的四处行为变化在 B.14 单列并与现行基线对齐
 > 判定口径：**以代码与 `db/schema.sql` 为准**。文档与 1.2 基线文档冲突时，若代码在基线一侧则说明代码；若代码已偏离基线，则说明代码并在此登记偏离项，同时不改代码。
 
 ## B.0 结论
 
-### B.0.1 v1（2026-10-22，保留原样，已被 v2 取代）
+### B.0.1 早期基线（2026-10-22，保留原样，已被现行基线取代）
 
 | 项 | 结果 |
 |---|---|
@@ -21,9 +21,9 @@
 | **需要说明的偏差** | **10 处**（C-01 ~ C-10），其中 3 处为已登记缺陷、2 处为基线文档与实现漂移、5 处为需求假设与实现差异 |
 | 与实现不符却未标注的描述 | 0 处 |
 
-> **附录 A 的条目编号在 v2 重排过**（v1 把 `GET /api/health` 记作 A.2.1，v2 按 §5.2 的业务接口顺序重编，运维接口记 O1/O2）。B.1–B.9 是 v1 的逐条记录，**保留原编号不改写**，对照如下：
+> **附录 A 的条目编号在现行口径下重排过**（早期把 `GET /api/health` 记作 A.2.1，现行按 §5.2 的业务接口顺序重编，运维接口记 O1/O2/O3）。B.1–B.9 是早期基线的逐条记录，**保留原编号不改写**，对照如下：
 >
-> | v1 编号 | v1 内容 | v2 编号 |
+> | 早期编号 | 早期内容 | 现行编号 |
 > |---|---|---|
 > | A.2.1 | `GET /api/health` | A.2.O1 |
 > | A.2.2 | `GET /api/records` | A.2.1 |
@@ -33,19 +33,21 @@
 > | A.2.8 | 分类 | A.2.7 |
 > | A.2.9 | `POST /api/match` | A.2.8 |
 
-### B.0.2 v2（2026-10-28，基线 `941fdee`）
+### B.0.2 现行口径（2026-10-28 基线 `941fdee`）
 
 | 项 | 结果 | 出处 |
 |---|---|---|
-| 表名 | **7/7** 一致 | B.13.1 |
-| 列数 | **7 + 8 + 17 + 10 + 21 + 8 + 11 = 82 列**，与正文 §4.3 各小节标题逐一对上 | B.13.1 |
-| 接口路径与动词 | **19/19**（17 业务 + O1/O2），与 §5.2 清单逐条一致 | B.13.5 |
-| 错误码 | **23/23**（`ErrorCode` 枚举 23 个常量，含成功码 `OK(0)`；附录 A.4 只列 22 个失败码。含 v2 新增 10006 / 10007 / 20004 / 20005 / 50002 / 50003 / 50004 / 50005 / 50006） | B.13.6 |
+| 表名 | **8/8** 一致（`t_review_audit` 随发布闸门加入后复算） | B.13.1、§10.3 |
+| 列数 | **7 + 8 + 35 + 16 + 10 + 22 + 8 + 11 = 117 列**，与正文 §4.3 各小节标题逐一对上 | B.13.1、§10.3 |
+| 接口路径与动词 | **21/21**（18 业务 + 3 运维），与 §5.2 清单逐条一致 | B.13.5、§10.3 |
+| 错误码 | **23/23**（`ErrorCode` 枚举 23 个常量，含成功码 `OK(0)`；附录 A.4 只列 22 个失败码。现行新增 10006 / 10007 / 20004 / 20005 / 50002 / 50003 / 50004 / 50005 / 50006） | B.13.6 |
 | 请求字段与校验 | 抽样 30 处一致（含 `contact` 收紧为手机号、`status` 三态、`CLAIMED` → 10001） | B.13.9–B.13.11 |
-| 响应字段 | 抽样 40 处一致（含 `isMine` / `recordStatus` / `detailAccess` / `PairCard` 全字段） | B.13.7、B.13.12 |
-| 枚举域 | 记录三态、`pair_state` 四值、pair 四态、通知三值，DDL CHECK 与文档同值 | B.13.4 |
-| **v2 需要说明的偏差** | **4 处**（C-11 ~ C-14，见 B.14） | B.14 |
+| 响应字段 | 抽样 40 处一致（含 `isMine` / `recordStatus` / `detailAccess` / `PairCard` 全字段，以及 `reviewState` / `ownerConfirmAvailable`） | B.13.7、B.13.12 |
+| 枚举域 | 记录三态、`pair_state` 四值、pair 四态、通知三值、审核三态，DDL CHECK 与文档同值 | B.13.4 |
+| **现行口径需要说明的偏差** | **4 处**（C-11 ~ C-14，见 B.14） | B.14 |
 | 与实现不符却未标注的描述 | 0 处（F3 四项修复的表述与合入点 `feat/v2-integration @ 64693ec` 一致，见 B.14） | B.14 |
+
+> 表中三项计数（表 / 列 / 路径）已于 2026-11-18 按 `main` 头 `d21081b` 复算，复算命令与输出见正文 §10.3；B.13 的逐条抽查结论仍以当时基线 `941fdee` 为准，两者不冲突。
 
 ---
 
@@ -368,18 +370,18 @@ grep -n "port\|engine\|pool-size\|timeout-ms" server/src/main/resources/applicat
 
 ---
 
-## B.13 v2 抽查（2026-10-28，基线 `941fdee`，逐条回到源码行）
+## B.13 抽查记录（2026-10-28，基线 `941fdee`，逐条回到源码行）
 
 > 方法同 v1：读源码，不读别人的文档结论。每条给「文档写在哪 → 文档说什么 → 事实源 `file:line` → 判定」四要素。**前 10 条即验收要求的「抽查 10 处」**，11–14 是补齐时顺手多核的。
 > 所有行号在 `feat/v2-F2-integration @ 941fdee` 上读取；`08f4bb9` / `fbd538f` 带来的差异不进本节，见 B.14。
 
 | # | 文档位置 | 文档写的 | 事实源 | 判定 |
 |---|---|---|---|---|
-| 1 | §4.2 / §4.3 各小节标题 | 7 张表，列数 7 / 8 / 17 / 10 / 21 / 8 / 11 | `db/schema.sql:58`(`t_user`)、`:78`(`t_category`)、`:105`(`t_record`)、`:163`(`t_match_result`)、`:197`(`t_pair_score`)、`:262`(`t_notification`)、`:290`(`t_access_log`)；列数用脚本按 `^  \`col\`` 计数得 7/8/17/10/21/8/11（合计 72） | 一致 |
+| 1 | §4.2 / §4.3 各小节标题 | 表的数量与逐表列数（具体数字以正文 §4.3 各小节标题为准，本条只核对「文档的每张表都能在 DDL 里找到、列数逐表对得上」） | `db/schema.sql:58`(`t_user`)、`:78`(`t_category`)、`:105`(`t_record`)、`:163`(`t_match_result`)、`:197`(`t_pair_score`)、`:262`(`t_notification`)、`:290`(`t_access_log`)；列数用脚本按 `^  \`col\`` 计数 | 一致（行号为当时基线 `941fdee` 的位置；现行六项计数见 §10.3 的复算命令） |
 | 2 | §4.3 `t_user`、§9.1 第 1 条 | `t_user` **不存手机号**，登录名是 `student_no` | `db/schema.sql:60` 列定义 + `:67` `uk_user_student_no` + `:55-56` 建表注释「没有 phone 列」 | 一致 |
 | 3 | §4.4 / §6.7 | `t_pair_score` 唯一键 `(lost_id, found_id)`，一行一对 | `db/schema.sql:224` `UNIQUE KEY uk_pair_lost_found` | 一致 |
 | 4 | §5.8 | 记录三态、`pair_state` 四值、pair 四态、通知三值 | `db/schema.sql:147` `ck_record_status`、`:151` `ck_record_pair_state`、`:237` `ck_pair_status`、`:279` `ck_notification_type` | 一致（取值逐个对过，`CLAIMED` 不在域内） |
-| 5 | §5.2 / 附录 A.1 | 19 条路径与动词（17 业务 + O1/O2） | `RecordController.java:54/62/69/77/86/97`、`CategoryController.java:34`、`MatchController.java:42`、`AuthController.java:51/61/70`、`MyRecordsController.java:38`、`PairController.java:58/71/82`、`NotificationController.java:41/48`、`HealthController.java:55`、`OpsPairScanController.java:52` | 一致，19/19 |
+| 5 | §5.2 / 附录 A.1 | 路径与动词逐条对照（当时 17 业务 + O1/O2；现行 18 业务 + O1–O3，多出的是本人确认发布与只读待审队列） | `RecordController.java:54/62/69/77/86/97`、`CategoryController.java:34`、`MatchController.java:42`、`AuthController.java:51/61/70`、`MyRecordsController.java:38`、`PairController.java:58/71/82`、`NotificationController.java:41/48`、`HealthController.java:55`、`OpsPairScanController.java:52`、`OpsReviewController.java:38` | 一致，逐条对上 |
 | 6 | §5.1 错误码表 / 附录 A.4 | 23 个码的 `code ↔ HTTP ↔ 文案` | `common/api/ErrorCode.java`（10003 `:22`、10006 `:33`、10007 `:41`、20001 `:44`、20004 `:53`、20005 `:60`、50002 `:74`、50003、50004、50005 `:80`、50006 `:88`） | 一致；`30004` 确实**不存在**于枚举，文档写「当前不实现」 |
 | 7 | §5.4.3 / 附录 A.3.2 | 详情按身份装配：本人明文、他人遮蔽且 `pairs` / `pairState` / `contact` / `completedAt` 键整个省略 | `record/web/dto/RecordDetailResponse.java:103-115`（本人分支）、`:116-130`（他人分支，`contact=null`、`pairs=null`）、`:71` `@JsonInclude(NON_NULL)`、`:127` 注释「null 不是空数组」 | 一致 |
 | 8 | §5.6 | 四条硬判据的顺序与形状（证件号 → 手机号 → QQ → 相对时间） | `common/masking/MaskingPolicy.java:50` `ID_RE`、`:53` `MOBILE_RE`、`:56` `QQ_RE`、`:59` `RELATIVE_TIME_RE`，编排入口 `maskDescription` `:115` | 一致（顺序按 ID→MOBILE→QQ→TIME，文档的「证件号必须先于手机号」在源码里就是这一行序） |
@@ -392,7 +394,7 @@ grep -n "port\|engine\|pool-size\|timeout-ms" server/src/main/resources/applicat
 
 **抽样口径说明**：请求字段与响应字段的「30 处 / 40 处」是把 8 个请求 DTO 与 9 个响应 DTO 的字段声明逐行抄出来比对文档表的合计（`auth/web/dto/LoginRequest.java`、`record/web/dto/{RecordQuery,RecordCreateRequest,MyRecordsQuery,StatusUpdateRequest,PairCard}.java`、`pair/web/dto/{PairActionRequest,ContactUnlockRequest,ContactView,ContactUnlockResponse,PairActionResponse,PairScanResult}.java`、`notification/web/dto/*.java`、`match/web/dto/*.java`），不是估算。
 
-## B.14 v2 的偏差登记（4 处）与 F3 修复的合入点
+## B.14 现行口径的偏差登记（4 处）与 F3 修复的合入点
 
 | # | 偏差 | 文档处理 | 判定 |
 |---|---|---|---|
@@ -412,13 +414,15 @@ grep -n "port\|engine\|pool-size\|timeout-ms" server/src/main/resources/applicat
 
 一句提醒：拿本文去核对 `941fdee` 的代码时，**这四条会「对不上」是预期内的**，因为那棵树早于合入点；核对 `64693ec` 及以上才对得上。合入验证：`git merge-base --is-ancestor 08f4bb9 64693ec && git merge-base --is-ancestor fbd538f 64693ec`。
 
-## B.15 v2 复核命令
+## B.15 复核命令
+
+> 现行基线的六项计数用一条命令即可复算：`node docs/design/tools/verify-counts.mjs`（输出与判定见正文 §10.3）。下面保留当时手工核对用的原始命令，供逐条追溯。
 
 ```bash
-# 7 表与列数（本文 B.13.1）
+# 表与列数（B.13.1）
 grep -n "CREATE TABLE\|^  \`" db/schema.sql
 
-# 19 条路径与动词（B.13.5）
+# 路径与动词（B.13.5）
 grep -rn "@\(Get\|Post\|Put\|Patch\|Delete\)Mapping" server/src/main/java/com/findit/campus/*/web/*.java
 
 # 错误码（B.13.6）

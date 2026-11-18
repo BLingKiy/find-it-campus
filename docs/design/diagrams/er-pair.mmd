@@ -1,0 +1,51 @@
+%% find-it-campus · ER 图（二）配对 / 通知 / 审计
+%% 事实来源：db/schema.sql（8 表 / 117 列 / 10 外键 / 29 CHECK）
+%% 取舍：t_record 与 t_user 在主图 er-core.mmd 里；本图用注释标出落在这两组表上的外键
+%%{init: {"themeVariables": {"fontSize": "18px"}, "er": {"diagramPadding": 18, "entityPadding": 12, "minEntityWidth": 120}}}%%
+erDiagram
+  t_record ||--o{ t_pair_score : "lost_id"
+  t_record ||--o{ t_pair_score : "found_id"
+  t_pair_score ||--o{ t_notification : "pair_id"
+  t_pair_score ||--o{ t_access_log : "pair_id"
+  t_record ||--o{ t_review_audit : "record_id"
+  t_user ||--o{ t_notification : "user_id"
+  t_user ||--o{ t_access_log : "viewer_id"
+
+  t_pair_score {
+    BIGINT id PK "pairId"
+    BIGINT lost_id FK "寻物记录"
+    BIGINT found_id FK "招领记录"
+    DECIMAL score "0 到 1"
+    VARCHAR engine "打分器"
+    VARCHAR degraded_reason "降级原因"
+    VARCHAR status "四态"
+    DATETIME lost_confirmed_at "两端确认"
+    DATETIME found_confirmed_at "两端确认"
+  }
+
+  t_notification {
+    BIGINT id PK "主键"
+    BIGINT user_id FK "接收人"
+    BIGINT pair_id FK "可空"
+    VARCHAR type "三类通知"
+    VARCHAR body "已打码"
+    DATETIME read_at "空即未读"
+  }
+
+  t_access_log {
+    BIGINT id PK "只插不改"
+    BIGINT pair_id FK "被查看对"
+    BIGINT viewer_id FK "查看人"
+    VARCHAR result "六种结果"
+    DECIMAL score "分数快照"
+  }
+
+  t_review_audit {
+    BIGINT id PK "只插不改"
+    BIGINT record_id FK "被审核记录"
+    VARCHAR action "六种动作"
+    VARCHAR decision "判定结果"
+    VARCHAR review_state "动作后状态"
+    VARCHAR engine "审核引擎"
+    VARCHAR reason "理由不含原文"
+  }

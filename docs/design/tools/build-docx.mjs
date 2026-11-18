@@ -175,18 +175,38 @@ function buildImage(alt, relPath, baseDir) {
   }
   const data = fs.readFileSync(abs);
   const { width, height } = pngSize(data);
-  // 同时受页宽与页高约束：太高的图会被自动缩小，但至少留出图注与页脚的空间
-  const scale = Math.min(1, 600 / width, 480 / height);
+
+  // 页宽 166mm（21cm − 左右各 2.2cm）≈ 627px @96dpi；图占满正文宽度，但不越过一页高度。
+  const CONTENT_W = 627;
+  const MAX_H = 760;
+  const scale = Math.min(CONTENT_W / width, MAX_H / height, 1);
+  const size = { width: Math.round(width * scale), height: Math.round(height * scale) };
+
+  // 优先嵌 SVG（矢量，缩放不糊），同时带一份 ≥3000px 的 PNG 兜底 —— Word 的 SVG 支持
+  // 要求 fallback，否则在老版本里整块空白。SVG 与 PNG 同一次导出（见 ../diagrams/export.mjs）。
+  const svgPath = abs.replace(/\.png$/i, '.svg');
+  const svgExists = fs.existsSync(svgPath);
+  const run = svgExists
+    ? new ImageRun({
+      type: 'svg',
+      data: fs.readFileSync(svgPath),
+      fallback: { type: 'png', data },
+      transformation: size,
+      altText: { name: alt, description: alt, title: alt },
+    })
+    : new ImageRun({
+      type: 'png',
+      data,
+      transformation: size,
+      altText: { name: alt, description: alt, title: alt },
+    });
+
   return [
     new Paragraph({
       alignment: AlignmentType.CENTER,
       spacing: { before: 160, after: 80 },
       keepNext: true,
-      children: [new ImageRun({
-        type: 'png',
-        data,
-        transformation: { width: Math.round(width * scale), height: Math.round(height * scale) },
-      })],
+      children: [run],
     }),
     new Paragraph({
       alignment: AlignmentType.CENTER,
@@ -349,11 +369,12 @@ function parseMarkdown(md, baseDir, outline) {
 /* ------------------------------------------------------------------ cover */
 
 function cover(outline) {
+  // 封面上不放版本号：这是一款产品的同一份设计文档，几轮修改都写进 §10.5 迭代记录。
   const meta = [
-    ['文档版本', 'v1.0'],
-    ['对应代码基线', '34c5dd1（feat/5.1-integration @ 919b3e9 + 5.1 测试资产）'],
+    ['文档状态', '本期交付版'],
+    ['定稿日期', '2026-11-18'],
+    ['对应代码基线', 'main @ d21081b'],
     ['适用仓库', 'https://github.com/BLingKiy/find-it-campus'],
-    ['编写日期', '2026-10-22'],
   ];
   return [
     new Paragraph({ spacing: { before: 1600 }, children: [] }),

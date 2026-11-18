@@ -1,0 +1,39 @@
+%% find-it-campus · 发布段时序：发布 → 审核闸门 → 异步打分
+%% 事实来源：RecordService / ReviewGateService / PairScoringEventListener / PairScoringService /
+%%          DeepSeekPairScorer / LocalKeywordPairScorer / LlmCircuitBreaker / db/schema.sql
+%% 三分支：AI 通过则入池打分；AI 连续失败转本人确认；本人确认后仍只走规则双检
+%% 版式：参与者 ≤5、单条消息 ≤18 字；取号段见 pair-contact-sequence.mmd
+%%{init: {"themeVariables": {"fontSize": "18px"}, "sequence": {"actorFontSize": 18, "noteFontSize": 17, "messageFontSize": 17, "wrap": false}}}%%
+sequenceDiagram
+  autonumber
+  participant B as 浏览器
+  participant R as 记录服务
+  participant G as 审核闸门
+  participant P as 打分服务
+  participant DB as MySQL
+
+  B->>R: POST /api/records
+  R->>DB: 落库 · 审核态待审
+  Note over R,DB: is_visible 由审核态派生，待审对他人不可见
+  R-->>B: 200 · 已提交
+  R->>G: 异步送审
+  Note over R,P: 发布请求不等模型，打分在提交后异步起
+
+  alt AI 审核通过
+    G->>DB: 审核态通过 · 写审计
+    G->>P: 触发打分
+    P->>DB: 召回候选并逐对打分
+    alt 模型失败
+      P->>DB: 落本地分 · 记降级原因
+    else 模型正常
+      P->>DB: 落语义分
+    end
+    P->>DB: 回写打分进度与通知
+  else 重试三次仍失败
+    G->>DB: 置「待本人确认」
+    G-->>B: 只对本人可见
+    B->>R: 本人确认发布
+    R->>G: 规则双检 · 写审计
+    G->>DB: 审核态通过
+    G->>P: 触发打分
+  end

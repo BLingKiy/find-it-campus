@@ -39,7 +39,7 @@
 
 ```bash
 cd <仓库根>
-mysql -u root < db/schema.sql                    # 7 张表全量重建，会清空已有数据
+mysql -u root < db/schema.sql                    # 8 张表全量重建，会清空已有数据
 mysql -u root find_it_campus < db/seed.sql       # 3 个演示账号 + 9 个分类 + 24 条记录 + 14 对 pair + 8 条通知
 ```
 
@@ -524,7 +524,7 @@ SELECT id, lost_id, found_id, score, engine, degraded_reason, status
 
 **讲解词**：
 > 把话说完整。当前的测试结果：接口 111 例全过、前端 E2E 25 例全过、跨页一致性 9 例、落库取证 19 项全过，
-> 服务端单测 242/242。前四项来自 F2 集成回归，一条命令可以复现：`node qa/run-all.mjs`；单测按现行基线复跑。
+> 服务端单测 313/313（307 个 `@Test` + 1 个参数化方法 6 例；无真 key 时 1 条跳过）。前四项来自 F2 集成回归，一条命令可以复现：`node qa/run-all.mjs`；单测按 `main` 头 `d21081b` 复算，计数命令 `node docs/design/tools/verify-counts.mjs`。
 > F3 安全复核报的 P1 与四条 P2 已修复并复验，2026-10-28 合入 `64693ec`（`08f4bb9` / `fbd538f`，该 commit 已在 `main` 上）。
 > 我讲的是这条集成分支上的行为，不是「提交了但没合进去」。
 > 四条已知限制照实念：一、手机号只做格式校验，**没有短信验证**，`t_user` 里根本不存手机号；
@@ -533,7 +533,7 @@ SELECT id, lost_id, found_id, score, engine, degraded_reason, status
 > 四、配对打分链路可以降级，`/api/match` 那条**不降级**，两条链路的取舍不一样。
 > 本期没做的还有：图片上传、性能压测、安全渗透、Firefox 与真机兼容。文档里都写着「本期未覆盖」。
 
-**易错点**：这段里的每一个「没有」都是刻意说的，别为了好听删掉：本期没做的四条限制与「本期未覆盖」清单，评委一比对文档就能发现。数字部分只说 242 和四条限制，不要说「全部已上线」。
+**易错点**：这段里的每一个「没有」都是刻意说的，别为了好听删掉：本期没做的四条限制与「本期未覆盖」清单，评委一比对文档就能发现。数字部分只说 313 和四条限制，不要说「全部已上线」。
 
 ---
 
@@ -569,7 +569,7 @@ S7 前半降级（「技术先进性」）。删掉任何一段，片子就退�
 ### 被追问时的两段标准答法
 
 - **「你们的登录与权限做到什么程度？」**
-  > 做。17 个业务接口里 **11 个必须登录**（8 个写 + 3 个私有读），门禁是一个排在 MVC 之前的过滤器，
+  > 做。18 个业务接口里 **13 个必须登录**（9 个写 + 4 个私有读），门禁是一个排在 MVC 之前的过滤器，
   > 非 `GET/HEAD` 的 `/api/**` 一律先要会话，私有读登记了四条前缀：`/api/auth/me`、`/api/my`、
   > `/api/notifications`、`/api/pairs`；白名单只有登录、登出和运维扫描三个入口，
   > 将来新增写接口忘了登记也不会变成「匿名可写」——
@@ -589,7 +589,7 @@ S7 前半降级（「技术先进性」）。删掉任何一段，片子就退�
 export DEEPSEEK_API_KEY='<只进环境变量，不进代码/配置/日志>'   # 录完立刻 unset
 ```
 
-预期差异：`t_pair_score` 里新行的 `engine=DEEPSEEK`、`degraded_reason=NULL`、`prompt_version=pair-score-v1`、
+预期差异：`t_pair_score` 里新行的 `engine=DEEPSEEK`、`degraded_reason=NULL`、`prompt_version=pair-score-v2`、
 `latency_ms` 与 `prompt_tokens` / `completion_tokens` **有值**。取证只报 model / 时延 / token 三个数，
 **绝不把响应原文贴进文档或截图**。这一段与 S7 互斥 —— 同一个环境只能录其中一条。
 
@@ -640,5 +640,5 @@ export DEEPSEEK_API_KEY='<只进环境变量，不进代码/配置/日志>'   # 
 10. /records/27 卡片「已降级」→ SQL: LOCAL_KEYWORD / EMPTY_KEY / latency NULL
     （可选）FINDIT_MATCH_ENGINE=external 重启 → 掉登录重登 → 开始匹配 503·30002
 11. /records/1 连点取号 3 次 → no-store、3 条请求、3 行审计、request_id 各不相同 → SHOW COLUMNS 11 列无 contact
-12. 切 PPT 第 21 / 25 页：111·25·9·19·242；F3 修复合入点 `64693ec`；四条限制照念
+12. 切 PPT 第 21 / 25 页：111·25·9·19·313；F3 修复合入点 `64693ec`；四条限制照念
 ```
