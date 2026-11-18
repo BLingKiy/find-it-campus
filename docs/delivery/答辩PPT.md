@@ -1,4 +1,4 @@
-# 答辩 PPT 文案稿（唯一事实源）
+﻿# 答辩 PPT 文案稿（唯一事实源）
 
 > 本文件是答辩 PPT 的**内容事实源**：`docs/delivery/tools/build-ppt.mjs` 读它生成 `docs/delivery/答辩PPT.pptx`。
 > 改文案只改这里，不要直接改 pptx —— 否则下次构建会把改动冲掉。
@@ -9,7 +9,7 @@
 > **代码基线：`6934e6e`**（八张表、118 列；18 业务接口 + 3 运维接口；全部计数以 `main @ 6934e6e` 为准）。
 > 每个技术数字都能在这棵树上指到出处；逐字段核对记录见 `docs/design/consistency-checklist.md` 附录 B。
 > 页面上任何标「已完成」的表述，必须能在 `docs/testing/v2/` 或 `qa/reports/` 找到证据。
-> 全片 34 页（其中 5 张大图按纵向分屏占 16 页），讲稿注释合计约 14 分钟；限时 8 分钟时优先删分屏页的后半段与讲稿标注的选讲页。
+> 全片 34 页（其中 5 张大图按纵向分屏占 13 页），讲稿注释合计约 14 分钟；限时 8 分钟时优先删分屏页的后半段与讲稿标注的选讲页。
 <!-- layout: cover -->
 # 校园失物招领平台
 ### 让「丢了东西」和「捡到东西」对上，并且对上了之后知道该给谁看
@@ -398,3 +398,4 @@
 - 全部证据：`docs/design/`（正文 + 附录 A 接口清单 + 附录 B 一致性自查）/ `docs/testing/v2/` / `docs/demo/record-script.md` / `deploy/DEPLOY-WINDOWS.md` / `qa/reports/`；一条命令复现回归：`node qa/run-all.mjs`
 仓库：github.com/BLingKiy/find-it-campus
 <!-- note: 30 秒。收尾只做一件事：把「已完成」「已合入」「计划中」三档再念一遍，让评委带走正确的印象——代码已在 main 上，边界写在第 25 页。 -->
+
